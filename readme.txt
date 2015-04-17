@@ -22,3 +22,7 @@ hooklib  - C DLL
 zlib     - C DLL
            ZLIB compression library - win2k+ compatiable
            Jean-loup Gailly & Mark Adler
+
+WinGraphviz - is a single DLL COM object directly usable from vb6.
+	      It uses the code from Graphviz which is public and 
+              freely available. Sample VB project included.
