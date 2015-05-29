@@ -26,3 +26,6 @@ zlib     - C DLL
 WinGraphviz - is a single DLL COM object directly usable from vb6.
 	      It uses the code from Graphviz which is public and 
               freely available. Sample VB project included.
+
+htmlViewer_lite - vb6 user control, lite weight htmlViewer based on rich 
+                  text box control

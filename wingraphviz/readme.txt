@@ -11,3 +11,10 @@ The Visual Basic six project file includes a basic graph and node generating cla
 that I wrote. These can generate the DOT textbased graph definition syntax to feed
 to the library. The library is capable of very complex layouts. My classes only support
 the basics that I see myself immediately needing. 
+
+If you're here looking for graphing libraries, the following might also be of interest.
+It automates uDrawGraph.exe through IPC which then renders the graph. )Also supports
+node click events.)
+
+https://github.com/dzzie/RE_Plugins/tree/master/uGrapher
+
