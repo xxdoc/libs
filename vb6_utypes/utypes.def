@@ -1,0 +1,9 @@
+LIBRARY UTypes
+      DESCRIPTION 'Unsigned number operations for VB6'
+      EXPORTS
+		ULong
+		UInt
+		U64
+		U642Str
+		toU64
+		U2Str

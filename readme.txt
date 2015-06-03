@@ -29,3 +29,5 @@ WinGraphviz - is a single DLL COM object directly usable from vb6.
 
 htmlViewer_lite - vb6 user control, lite weight htmlViewer based on rich 
                   text box control
+
+vb6_utypes - adds support for unsigned math operations w/ ints and longs
