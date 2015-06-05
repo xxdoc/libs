@@ -62,6 +62,7 @@ End Enum
 Private Declare Function ULong Lib "utypes.dll" (ByVal v1 As Long, ByVal v2 As Long, ByVal operation As Long) As Long
 Private Declare Function UInt Lib "utypes.dll" (ByVal v1 As Integer, ByVal v2 As Integer, ByVal operation As Long) As Integer
 Private Declare Function U64 Lib "utypes.dll" (ByVal v1 As Currency, ByVal v2 As Currency, ByVal operation As op) As Currency
+Private Declare Function UByte Lib "utypes.dll" (ByVal v1 As Byte, ByVal v2 As Byte, ByVal operation As op) As Byte
 
 'signed math for 64 bit numbers (necessary?)
 Private Declare Function S64 Lib "utypes.dll" (ByVal v1 As Currency, ByVal v2 As Currency, ByVal operation As op) As Currency
@@ -87,6 +88,7 @@ Private Sub Command1_Click()
     On Error Resume Next
     Dim a As Long
     Dim b As Integer
+    Dim c As Byte
     
     a = 2147483647 + 1
     MsgBox Hex(2147483647) & " + 1 = " & Hex(a) & " Error: " & Err.Description
@@ -104,6 +106,15 @@ Private Sub Command1_Click()
     MsgBox Hex(-32768) & " - 1 = " & Hex(b) & " Error: " & Err.Description
     Err.Clear
      
+    c = 0 - 1
+    MsgBox "Byte: 0 - 1 = " & c & " Error: " & Err.Description
+    Err.Clear
+    
+    c = &HFF + 2
+    MsgBox "Byte: &HFF + 2 = " & c & " Error: " & Err.Description
+    Err.Clear
+
+
 End Sub
 
 Private Sub Form_Load()
@@ -141,6 +152,10 @@ Private Sub Form_Load()
     
     d = U64(Str264("-1"), Str264("1"), op_sub)
     List1.AddItem Get64(d, mUnsigned)
+    
+    List1.AddItem "Byte &HFF + 2: " & UByte(&HFF, 2, op_add)
+    List1.AddItem "Byte 0 - 2: " & UByte(0, 2, op_sub)
+    
     
 End Sub
 

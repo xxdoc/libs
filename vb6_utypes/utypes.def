@@ -10,3 +10,4 @@ LIBRARY UTypes
 		Str264
 		fromU64
 		S64
+		UByte

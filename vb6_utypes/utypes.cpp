@@ -57,6 +57,24 @@ unsigned short __stdcall UInt(unsigned short v1, unsigned short v2, int operatio
 
 }  
 
+//this is just because i need the C style overflow wrap for a project..
+unsigned char __stdcall UByte(unsigned char v1, unsigned char v2, int operation){
+
+	switch(operation){
+		case op_add: return v1 + v2;
+		case op_sub: return v1 - v2;
+		case op_div: return v1 / v2;
+		case op_mul: return v1 * v2;
+		case op_mod: return v1 % v2;
+		case op_xor: return v1 ^ v2;
+		case op_and: return v1 & v2;
+		case op_or:  return v1 | v2;
+	}
+
+	return -1;
+
+}  
+
 unsigned __int64 __stdcall U64(unsigned __int64 v1, unsigned __int64 v2, int operation){
 
 	switch(operation){
