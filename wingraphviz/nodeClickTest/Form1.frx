@@ -1,0 +1,16 @@
+ digraph G {
+	node_0[ label="func_1" ];
+	node_1[ label="func_2" ];
+	node_2[ label="func_3" ];
+	node_0 -> node_1;
+	node_1 -> node_2;
+	node_0 -> node_2;
+}
+ digraph G {
+	node_0[ label="func_1" ];
+	node_1[ label="func_2" ];
+	node_2[ label="func_3" ];
+	node_0 -> node_1;
+	node_1 -> node_2;
+	node_0 -> node_2;
+}
