@@ -31,3 +31,8 @@ htmlViewer_lite - vb6 user control, lite weight htmlViewer based on rich
                   text box control
 
 vb6_utypes - adds support for unsigned math operations w/ ints and longs
+
+kroolCtls - winapi replacements for mscomctl controls by kroll:
+              listview, rtf, progressbar, tabstrip, treeview, + ipaddress
+              see readme for more details (some mods to rtf planned)
+
