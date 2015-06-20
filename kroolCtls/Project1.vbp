@@ -1,5 +1,5 @@
 Type=Control
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
 Reference=*\G{5B1EACE0-EDEB-11E1-AFF1-0800200C9A66}#1.0#0#OLEGuids2.tlb#OLE Guid and interface definitions
 Module=ComCtlsBase; ComCtlsBase.bas
 Module=Common; Common.bas
@@ -38,7 +38,7 @@ PropertyPage=ListView\PPListViewImageLists.pag
 PropertyPage=ListView\PPListViewSorting.pag
 UserControl=IPAddress\IPAddress.ctl
 Class=CPublicEnums; CPublicEnums.cls
-Startup="(None)"
+Startup="Sub Main"
 HelpFile=""
 Title="Project1"
 Command32=""

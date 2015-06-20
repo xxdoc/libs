@@ -5,7 +5,7 @@ Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmd
 Private Declare Function SetForegroundWindow Lib "user32" (ByVal hWnd As Long) As Long
 
 Sub Main()
-'    If App.PrevInstance = True And InIDE() = False Then
+    If App.PrevInstance = True And InIDE() = False Then
 '        Dim hWnd As Long
 '        hWnd = FindWindow(StrPtr("ThunderRT6FormDC"), StrPtr("ComCtls Demo"))
 '        If hWnd <> 0 Then
@@ -14,9 +14,9 @@ Sub Main()
 '            SetForegroundWindow hWnd
 '            AppActivate "ComCtls Demo"
 '        End If
-'    Else
-'        Call ComCtlsInitIDEStopProtection
-'        Call InitVisualStyles
+    Else
+        Call ComCtlsInitIDEStopProtection
+        Call InitVisualStyles
 '        MainForm.Show vbModeless
-'    End If
+    End If
 End Sub
