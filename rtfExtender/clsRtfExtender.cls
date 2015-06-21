@@ -12,42 +12,42 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+'Author    - David Zimmer <dzzie@yahoo.com> (few funcs ripped from krollCtls)
+'8.12.2001 - created
+'6.21.2015 - misc cleanups - this should be in a fairly good state now..
 
 Implements ICSubclass
 
-'David Zimmer <dzzie@yahoo.com> 2001
+Public TabsAsSpaces As Boolean
+Public TabWidth As Integer
+Public AutoIndent As Boolean
+Public isLocked As Boolean
+
+Event Scrolled()
+Event newLine(lineIndex As Long)
+Event LineChanged(PrevLine As Long)
+
+'----------------------------------------------------------------------
+
+
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (lpvDest As Any, lpvSource As Any, ByVal cbCopy As Long)
-
 Private Declare Function SendMessageW Lib "user32" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
-
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
 Private Declare Function SendMessageStr Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As String) As Long
+Private Declare Function SendMessageLong Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function GetTextMetrics Lib "gdi32" Alias "GetTextMetricsA" (ByVal hdc As Long, lpMetrics As TEXTMETRIC) As Long
 Private Declare Function SetMapMode Lib "gdi32" (ByVal hdc As Long, ByVal nMapMode As Long) As Long
 Private Declare Function GetWindowDC Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function ReleaseDC Lib "user32" (ByVal hwnd As Long, ByVal hdc As Long) As Long
-Private Declare Function Rectangle Lib "gdi32" (ByVal hdc As Long, ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As Long
-Private Declare Function CreateSolidBrush Lib "gdi32" (ByVal crColor As Long) As Long
-Private Declare Function CreatePen Lib "gdi32" (ByVal nPenStyle As Long, ByVal nWidth As Long, ByVal crColor As Long) As Long
 Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
 Private Declare Function SelectObject Lib "gdi32" (ByVal hdc As Long, ByVal hObject As Long) As Long
 Private Declare Function GetDC Lib "user32" (ByVal hwnd As Long) As Long
-Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hdc As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
-Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hdc As Long) As Long
 Private Declare Function LockWindowUpdate Lib "user32" (ByVal hwndLock As Long) As Long
-Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal xSrc As Long, ByVal ySrc As Long, ByVal dwRop As Long) As Long
-Private Declare Function CreateCaret Lib "user32" (ByVal hwnd As Long, ByVal hBitmap As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
-Private Declare Function ShowCaret Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function GetFocus Lib "user32" () As Long
 Private Declare Function SetCaretBlinkTime Lib "user32" (ByVal wMSeconds As Long) As Long
 Private Declare Function GetCaretBlinkTime Lib "user32" () As Long
 Private Declare Function GetAsyncKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
 Private Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
-Private Declare Function SendMessageLong Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-
-
-Private Const MM_TWIPS = 6
-Private Const WM_USER = &H400
 
 Private Type Rect
     left As Long
@@ -116,8 +116,6 @@ Public Enum tmMsgs
         EM_SCROLLCARET = &HB7
         EM_SETHANDLE = &HBC
         EM_SETCHARFORMAT = (WM_USER + 68)
-        EC_LEFTMARGIN = &H1
-        EC_RIGHTMARGIN = &H2
         EM_SCROLL = &HB5
         EM_REPLACESEL = &HC2
         EM_LINESCROLL = &HB6
@@ -173,13 +171,6 @@ Private Type CHARFORMAT2
     bReserved1 As Byte
 End Type
 
-Private Const WM_VScroll = &H115
-Private Const WM_CHAR = &H102
-Private Const WM_MBUTTONUP = &H208
-
-
-Private Const LF_FACESIZE = 32
- 
 Enum charFormatMasks
     CFM_BOLD = &H1&
     CFM_ITALIC = &H2&
@@ -221,69 +212,79 @@ Public Enum WordBreakOptions
       WB_RIGHTBREAK = 7 'Finds the beginning of a word to the right of the specified position. This is useful in right-aligned edit controls.</summary>
 End Enum
    
-
-'Private Const EC_LEFTMARGIN = &H1
-'Private Const EC_RIGHTMARGIN = &H2
-'Private Const LF_FACESIZE = 32
-'Private Const CFM_BACKCOLOR = &H4000000
+Private Const MM_TWIPS = 6
+Private Const LF_FACESIZE = 32
+Private Const EC_LEFTMARGIN = &H1
+Private Const EC_RIGHTMARGIN = &H2
 Private Const SCF_SELECTION = &H1
+Private Const CP_UNICODE As Long = 1200
+
 Private Const WM_PASTE = &H302
 Private Const WM_KEYDOWN = &H100
 Private Const WM_KEYUP = &H101
+Private Const WM_USER = &H400
+Private Const WM_VScroll = &H115
+Private Const WM_CHAR = &H102
+Private Const WM_MBUTTONUP = &H208
+
 Private Const GTL_DEFAULT As Long = 0
 Private Const GTL_USECRLF As Long = 1
 Private Const GTL_PRECISE As Long = 2
 Private Const GTL_CLOSE As Long = 4
 Private Const GTL_NUMCHARS As Long = 8
 Private Const GTL_NUMBYTES As Long = 16
-Private Const CP_UNICODE As Long = 1200
 
 Private myTopLine As Long
 Private TrackingScroll As Boolean
 Private OverRidingTabs As Boolean
 Private OverrideTabNow As Boolean
-
+Private LockCount As Integer
+Private ww As Boolean
+Private hwnd As Long
+Private mParent As Form
+Private arrTabStop() As Boolean
 Private hLine As HighlightedLine
 Private LastMousePos As POINTAPI
 Private myCurLine As Long
+Private mAllowTabs As Boolean
 
 Private SubClass As cSubclass
 Attribute SubClass.VB_VarHelpID = -1
 
 
-Public TabWidth As Integer
-Public AutoIndent As Boolean
 
 
-Event Scrolled()
-'Event AutoComplete()
-Event newLine(lineIndex As Long)
-Event ArrowUpLine(prevlineIndex As Long)
-Event ArrowDownLine(prevlineIndex As Long)
-'Event ClickedToNewLine(PrevLine As Long, curLine As Long)
 
-Public isLocked As Boolean
-Private LockCount As Integer
-Private ww As Boolean
-Private hwnd As Long
-
-Sub InitRtf(m_hwnd As Long)
+Sub InitRtf(rtf_hwnd As Long, parent As Form)
     
-    If IsWindow(m_hwnd) = 0 Then Exit Sub
+    If IsWindow(rtf_hwnd) = 0 Then Exit Sub
+    
+    Set mParent = parent
     
     If SubClass Is Nothing Then
         Set SubClass = New cSubclass
-        hwnd = m_hwnd
+        hwnd = rtf_hwnd
         SubClass.SubClass hwnd, Me
         'SubClass.AddMsg hwnd, WM_KEYDOWN
         SubClass.AddMsg hwnd, WM_KEYUP
         SubClass.AddMsg hwnd, WM_MOUSEMOVE
         SubClass.AddMsg hwnd, WM_VScroll
-        'SubClass.AddMsg hwnd, WM_MBUTTONUP
-        'SubClass.AddMsg hwnd, WM_CHAR, MSG_BEFORE
+        SubClass.AddMsg hwnd, WM_SETFOCUS
+        SubClass.AddMsg hwnd, WM_KILLFOCUS
+        SubClass.AddMsg hwnd, WM_LBUTTONUP
+        SubClass.AddMsg hwnd, WM_CHAR, MSG_BEFORE
     End If
     
 End Sub
+
+Property Get AllowTabs() As Boolean
+    AllowTabs = mAllowTabs
+End Property
+
+Property Let AllowTabs(v As Boolean)
+    mAllowTabs = v
+    ICSubclass_WndProc False, False, 0, 0, IIf(v, WM_SETFOCUS, WM_KILLFOCUS), 0, 0
+End Property
 
 Public Function LMouseDown() As Boolean
     GetAsyncKeyState vbKeyLButton
@@ -382,8 +383,9 @@ Sub LockUpdate()
     isLocked = True
 End Sub
 
-Sub UnlockUpdate()
+Sub UnlockUpdate(Optional force As Boolean)
     LockCount = LockCount - 1
+    If force And LockCount <> 0 Then LockCount = 0
     If LockCount = 0 Then
         LockWindowUpdate 0
         isLocked = False
@@ -525,45 +527,26 @@ Function CurrrentLineIndex() As Long
     CurrrentLineIndex = SendMessage(hwnd, EM_LINEFROMCHAR, -1&, ByVal 0&) + 1
 End Function
 
-'Function GetLine(lineNo As Long) As String
-'    'When retrieving a line into a buffer the first word
-'    'of the buffer specifies the max number of bytes to read,
-'    'so one has to guess the maximum line length.  When the bytes
-'    'are read into the buffer the first word gets overwritten.
-'    'Remember that lines in a TextBox are numbered starting at zero.
-'
-'    Dim lret As Long
-'    Dim strBuffer As String
-'    Dim intLineLen As Integer
-'    Const MAX_LINE_LEN = 300
-'
-'    strBuffer = Space(MAX_LINE_LEN) 'max width possible for line
-'    intLineLen = SendMessageStr(hwnd, EM_GETLINE, lineNo, strBuffer)
-'    GetLine = left(strBuffer, intLineLen)
-'
-'
-'End Function
-
 Public Function GetLine(ByVal LineNumber As Long) As String
-If LineNumber < 0 Then Err.Raise 380
-If hwnd <> 0 Then
-    Dim FirstCharPos As Long, length As Long
-    FirstCharPos = SendMessage(hwnd, EM_LINEINDEX, LineNumber, ByVal 0&)
-    If FirstCharPos > -1 Then
-        length = SendMessage(hwnd, EM_LINELENGTH, FirstCharPos, ByVal 0&)
-        If length > 0 Then
-            Dim Buffer As String
-            Buffer = ChrW(length) & String(length - 1, vbNullChar)
-            If LineNumber > 0 Then
-                If SendMessageW(hwnd, EM_GETLINE, LineNumber, ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
-            Else
-                If SendMessageW(hwnd, EM_GETLINE, SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, ByVal FirstCharPos), ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
+    If LineNumber < 0 Then Err.Raise 380
+    If hwnd <> 0 Then
+        Dim FirstCharPos As Long, length As Long
+        FirstCharPos = SendMessage(hwnd, EM_LINEINDEX, LineNumber, ByVal 0&)
+        If FirstCharPos > -1 Then
+            length = SendMessage(hwnd, EM_LINELENGTH, FirstCharPos, ByVal 0&)
+            If length > 0 Then
+                Dim Buffer As String
+                Buffer = ChrW(length) & String(length - 1, vbNullChar)
+                If LineNumber > 0 Then
+                    If SendMessageW(hwnd, EM_GETLINE, LineNumber, ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
+                Else
+                    If SendMessageW(hwnd, EM_GETLINE, SendMessage(hwnd, EM_EXLINEFROMCHAR, 0, ByVal FirstCharPos), ByVal StrPtr(Buffer)) > 0 Then GetLine = Buffer
+                End If
             End If
+        Else
+            Err.Raise 380
         End If
-    Else
-        Err.Raise 380
     End If
-End If
 End Function
 
 
@@ -606,7 +589,7 @@ End Property
 '    Dim p As POINTAPI
 '    Const EM_POSFROMCHAR = &HD6
 '
-'    caret = selstart - 1
+'    caret = SelStart - 1
 '    pos = SendMessage(hwnd, EM_POSFROMCHAR, caret, 0)
 '
 '    'pos is really a short of the x and a short of the y, packed into the
@@ -638,38 +621,16 @@ Sub ScrollIncremental(Optional horz As Long = 0, Optional vert As Long = 0)
 
 End Sub
 
-'Private Sub mRtf_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
-'
-'    Dim newCurLine As Long, tLine As Long
-'    tLine = TopLineIndex
-'    newCurLine = CurrrentLineIndex - 1
-'
-'    If hLine.endChar > 0 Then
-'        LockUpdate
-'        HighLightLine hLine.lineNo + 1, vbWhite, vbBlack
-'        hLine.endChar = 0: hLine.startChar = 0: hLine.lineNo = 0
-'        selstart = CharIndexUnderMouse
-'        UnlockUpdate
-'    End If
-'
-'    'ignore block selections!
-'    If newCurLine <> myCurLine And sellength = 0 Then
-'        LockUpdate
-'        RaiseEvent ClickedToNewLine(myCurLine, newCurLine)
-'        myCurLine = newCurLine
-'        ScrollToLine tLine
-'        selstart = CharIndexUnderMouse
-'        UnlockUpdate
-'    End If
-'
-'End Sub
+ 
 
 Private Sub ICSubclass_WndProc(ByVal bBefore As Boolean, ByRef bHandled As Boolean, ByRef lReturn As Long, ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long)
 
-On Error Resume Next
-Dim x As Integer
-Dim y As Integer
-
+    On Error Resume Next
+    Dim x As Integer
+    Dim y As Integer
+    Dim i As Long
+    Dim newCurLine As Long
+    
     Select Case wMsg
         Case WM_VScroll
             'now make sure we are not between line even a little cause it syucks and happens!
@@ -682,7 +643,31 @@ Dim y As Integer
             End If
             'If Not LMouseDown Then ScrollToLine TopLineIndex 'has to be like this :0-
 
- 
+        Case WM_SETFOCUS
+        
+                'Store the TabStop property for each control on the
+                'form and then set the TabStop property of each
+                'control to False
+                If AllowTabs And Not mParent Is Nothing Then
+                    If AryIsEmpty(arrTabStop) Then
+                        ReDim arrTabStop(0 To mParent.Controls.Count - 1) As Boolean
+                        For i = 0 To mParent.Controls.Count - 1
+                           arrTabStop(i) = mParent.Controls(i).TabStop
+                           mParent.Controls(i).TabStop = False
+                        Next
+                    End If
+                End If
+
+        Case WM_KILLFOCUS
+                
+                If AllowTabs And Not AryIsEmpty(arrTabStop) And Not mParent Is Nothing Then
+                    'Restore the Tabstop property for each control on the form
+                    For i = 0 To mParent.Controls.Count - 1
+                       mParent.Controls(i).TabStop = arrTabStop(i)
+                    Next
+                    Erase arrTabStop
+                End If
+                
         Case WM_MOUSEMOVE
         
                 x = LoWord(lParam)
@@ -699,22 +684,40 @@ Dim y As Integer
                 
         Case WM_CHAR
         
-            'replace tabs with spaces
-            If wParam = 9 Then
-                bHandled = True
-                If TabWidth = 0 Then TabWidth = 5
-                If SelLength > 0 Then
-                    If GetAsyncKeyState(vbKeyShift) Then 'shift tab - moves sel text left
-                        SelText = Replace(SelText, Space(TabWidth), "")
+                'replace tabs with spaces
+                If wParam = 9 And TabsAsSpaces Then
+                    bHandled = True
+                    If TabWidth = 0 Then TabWidth = 5
+                    If SelLength > 0 Then
+                        If GetAsyncKeyState(vbKeyShift) Then 'shift tab - moves sel text left
+                            SelText = Replace(SelText, Space(TabWidth), "")
+                        Else
+                            SelText = Space(TabWidth) & Replace(SelText, vbCrLf, vbCrLf & Space(TabWidth))
+                        End If
                     Else
-                        SelText = Space(TabWidth) & Replace(SelText, vbCrLf, vbCrLf & Space(TabWidth))
+                        SelText = Space(TabWidth)
                     End If
-                Else
-                    SelText = Space(TabWidth)
                 End If
-            End If
             
-'            Debug.Print
+        Case WM_LBUTTONUP
+        
+                If hLine.endChar > 0 Then
+                    LockUpdate
+                    HighLightLine hLine.lineNo + 1, vbWhite, vbBlack
+                    hLine.endChar = 0: hLine.startChar = 0: hLine.lineNo = 0
+                    SelStart = CharIndexUnderMouse
+                    UnlockUpdate
+                End If
+
+                newCurLine = CurrrentLineIndex
+                
+                'ignore block selections!
+                If newCurLine <> myCurLine And SelLength = 0 Then
+                    RaiseEvent LineChanged(myCurLine)
+                    myCurLine = newCurLine
+                End If
+                
+            
     End Select
     
     
@@ -725,26 +728,18 @@ Private Sub mRtf_KeyUp(KeyCode As Integer, Shift As Integer)
     Dim lstLine As String, spacer As String
     
     tli = TopLineIndex
-    myCurLine = CurrrentLineIndex - 1
-    
+      
     If tli <> myTopLine Then  'textbox has auto scrolled on us
         myTopLine = tli
         RaiseEvent Scrolled
         Exit Sub
     End If
-   
-    If KeyCode = 13 Then
-        RaiseEvent newLine(CurrrentLineIndex - 1)
-    End If
     
-    If KeyCode = 38 Then
-        RaiseEvent ArrowUpLine(CurrrentLineIndex + 1)
+    If KeyCode = 38 Or KeyCode = 40 Or KeyCode = 13 Then
+        RaiseEvent LineChanged(myCurLine)
+        If KeyCode = 13 Then RaiseEvent newLine(myCurLine)
     End If
-    
-    If KeyCode = 40 Then
-        RaiseEvent ArrowDownLine(CurrrentLineIndex - 1)
-    End If
-    
+ 
     If KeyCode = 13 And AutoIndent Then
         LockUpdate
         tli = CurrrentLineIndex
@@ -757,6 +752,7 @@ Private Sub mRtf_KeyUp(KeyCode As Integer, Shift As Integer)
         UnlockUpdate
     End If
 
+    myCurLine = CurrrentLineIndex
         
 End Sub
 
@@ -1002,6 +998,15 @@ Private Function MakeDWord(ByVal LoWord As Integer, ByVal HiWord As Integer) As 
     MakeDWord = (CLng(HiWord) * &H10000) Or (LoWord And &HFFFF&)
 End Function
 
+Private Function AryIsEmpty(ary) As Boolean
+  On Error GoTo oops
+  Dim i As Long
+    i = UBound(ary)  '<- throws error if not initalized
+    AryIsEmpty = False
+  Exit Function
+oops: AryIsEmpty = True
+End Function
+
 'Add 1 Command Button and 3 Text Boxes to your form.
 'Set Text1 MultiLine Property to True.
 'At Run-Time, insert the Text Box left margin to Text2, and the right margin to Text3,
@@ -1040,3 +1045,26 @@ End Function
 'long_value
 'End Sub
 '
+
+'
+'Dim arrTabStop() As Boolean
+'
+'      Private Sub RichTextBox1_GotFocus()
+'            'Store the TabStop property for each control on the
+'            'form and then set the TabStop property of each
+'            'control to False
+'            ReDim arrTabStop(0 To Controls.Count - 1) As Boolean
+'            For i = 0 To Controls.Count - 1
+'               arrTabStop(i) = Controls(i).TabStop
+'               Controls(i).TabStop = False
+'            Next
+'      End Sub
+'
+'      Private Sub RichTextBox1_LostFocus()
+'            'Restore the Tabstop property for each control on the form
+'            For i = 0 To Controls.Count - 1
+'               Controls(i).TabStop = arrTabStop(i)
+'            Next
+'      End Sub
+      
+      

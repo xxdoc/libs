@@ -50,7 +50,6 @@ Begin VB.Form Form1
       _ExtentX        =   13758
       _ExtentY        =   4948
       _Version        =   393217
-      Enabled         =   -1  'True
       ScrollBars      =   3
       TextRTF         =   $"Form1.frx":0000
    End
@@ -75,30 +74,27 @@ End Sub
 
 Private Sub Form_Load()
     Set re = New clsRtfExtender
-    re.InitRtf rtf.hwnd
+    
+    re.InitRtf rtf.hwnd, Me
+    re.AllowTabs = True
     re.AutoIndent = True
-    rtf.LoadFile App.Path & "\..\ips.txt"
+    rtf.LoadFile "C:\Documents and Settings\david\Desktop\Planet Source Code Shuts Down - YouTube.url"
     
 End Sub
 
-Private Sub re_ArrowDownLine(prevlineIndex As Long)
-    List1.AddItem "ArrowDownLine"
-End Sub
-
-Private Sub re_ArrowUpLine(prevlineIndex As Long)
-    List1.AddItem "ArrowupLine"
-End Sub
-
-Private Sub re_ClickedToNewLine(PrevLine As Long, curLine As Long)
-    List1.AddItem "ClickedToNewLine"
+Private Sub re_LineChanged(PrevLine As Long)
+    List1.AddItem "LineChanged lastLine: " & PrevLine
+    List1.ListIndex = List1.ListCount - 1
 End Sub
 
 Private Sub re_newLine(lineIndex As Long)
     List1.AddItem "newLine"
+    List1.ListIndex = List1.ListCount - 1
 End Sub
 
 Private Sub re_Scrolled()
     List1.AddItem "Scrolled curline:" & re.TopLineIndex
+    List1.ListIndex = List1.ListCount - 1
 End Sub
 
 Private Sub rtf_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
