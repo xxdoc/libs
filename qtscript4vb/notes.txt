@@ -1,0 +1,42 @@
+
+http://stackoverflow.com/questions/2040921/qtscript-how-to-reload-current-script
+
+The function call seems to happen on the original context, not the 
+current one. Upon looking at QScriptEngine::pushContext() documentation, 
+I saw that you need to explicitly use the context returned from it, and 
+on top of that, you must use QScriptEngine::activationContext() to 
+access any variables:
+
+scriptEngine.pushContext();
+    scriptEngine.evaluate("function onEquipped(entity) { print('changing pixmap to equipped sprite for ' + entity); }").toString();
+    QScriptValueList args;
+    args << QScriptValue("Pistol");
+    scriptEngine.currentContext()->activationObject().property("onEquipped").call(QScriptValue(), args);
+    scriptEngine.popContext();
+
+
+/*
+void displayProps(QScriptValue obj, bool toFile = false){
+
+	QString q;
+	
+	while (obj.isObject()) {
+		QScriptValueIterator it(obj);
+		while (it.hasNext()) {
+			it.next();
+			q += it.name() + " = " + it.value().toString()+"\n\n";
+		}
+		obj = obj.prototype();
+	}
+
+	if(toFile){
+		QFile oFile("props.txt");
+		oFile.open(QIODevice::WriteOnly);
+		oFile.write( q.toAscii(), q.length() ) ;
+		oFile.close();
+	}else{
+		MessageBoxA(0,q.toAscii(),"",0);
+	}
+
+}
+*/

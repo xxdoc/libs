@@ -1,0 +1,174 @@
+Math = [object Math]
+
+NaN = NaN
+
+undefined = undefined
+
+Infinity = Infinity
+
+JSON = [object JSON]
+
+Object = function Object() {
+    [native code]
+}
+
+Function = function Function() {
+    [native code]
+}
+
+Array = function Array() {
+    [native code]
+}
+
+Boolean = function Boolean() {
+    [native code]
+}
+
+String = function String() {
+    [native code]
+}
+
+Number = function Number() {
+    [native code]
+}
+
+Date = function Date() {
+    [native code]
+}
+
+RegExp = function RegExp() {
+    [native code]
+}
+
+Error = function Error() {
+    [native code]
+}
+
+EvalError = function EvalError() {
+    [native code]
+}
+
+RangeError = function RangeError() {
+    [native code]
+}
+
+ReferenceError = function ReferenceError() {
+    [native code]
+}
+
+SyntaxError = function SyntaxError() {
+    [native code]
+}
+
+TypeError = function TypeError() {
+    [native code]
+}
+
+URIError = function URIError() {
+    [native code]
+}
+
+eval = function eval() {
+    [native code]
+}
+
+parseInt = function parseInt() {
+    [native code]
+}
+
+parseFloat = function parseFloat() {
+    [native code]
+}
+
+isNaN = function isNaN() {
+    [native code]
+}
+
+isFinite = function isFinite() {
+    [native code]
+}
+
+escape = function escape() {
+    [native code]
+}
+
+unescape = function unescape() {
+    [native code]
+}
+
+decodeURI = function decodeURI() {
+    [native code]
+}
+
+decodeURIComponent = function decodeURIComponent() {
+    [native code]
+}
+
+encodeURI = function encodeURI() {
+    [native code]
+}
+
+encodeURIComponent = function encodeURIComponent() {
+    [native code]
+}
+
+print = function print() {
+    [native code]
+}
+
+gc = function gc() {
+    [native code]
+}
+
+version = function version() {
+    [native code]
+}
+
+nativeToUpper = function () {
+    [native code]
+}
+
+toString = function toString() {
+    [native code]
+}
+
+toLocaleString = function toLocaleString() {
+    [native code]
+}
+
+valueOf = function valueOf() {
+    [native code]
+}
+
+hasOwnProperty = function hasOwnProperty() {
+    [native code]
+}
+
+propertyIsEnumerable = function propertyIsEnumerable() {
+    [native code]
+}
+
+isPrototypeOf = function isPrototypeOf() {
+    [native code]
+}
+
+__defineGetter__ = function __defineGetter__() {
+    [native code]
+}
+
+__defineSetter__ = function __defineSetter__() {
+    [native code]
+}
+
+__lookupGetter__ = function __lookupGetter__() {
+    [native code]
+}
+
+__lookupSetter__ = function __lookupSetter__() {
+    [native code]
+}
+
+constructor = function Object() {
+    [native code]
+}
+
