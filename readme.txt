@@ -36,3 +36,5 @@ kroolCtls - winapi replacements for mscomctl controls by kroll:
               listview, rtf, progressbar, tabstrip, treeview, + ipaddress
               see readme for more details (some mods to rtf planned)
 
+gnu_whois - cmdline whois app, was going to convert to dll, but its fine
+            as is, just capture output via pipe. 93k

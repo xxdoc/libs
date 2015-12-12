@@ -1,0 +1,1 @@
+gcc win_funcs.c whois.c -lwsock32 -o ./output/whois.exe

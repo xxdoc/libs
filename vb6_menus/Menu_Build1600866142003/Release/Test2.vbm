@@ -1,0 +1,114 @@
+VERSION 5.00
+Begin VB.Form frmMenuTemplate
+   Caption="Test2"
+   Begin VB.Menu file
+      Caption         =   "&File"
+      Begin VB.Menu new
+            Caption         =   "&New Document"
+            Shortcut         =   ^N
+      End
+      Begin VB.Menu mnuNewTemplate
+            Caption         =   "&New From Template"
+         Begin VB.Menu mnuTemplate
+                  Caption         =   ""
+                  Index         =   0
+         End
+      End
+      Begin VB.Menu mnuBar10
+            Caption         =   "-"
+      End
+   End
+   Begin VB.Menu open
+      Caption         =   "&Open Document"
+      Begin VB.Menu close
+            Caption         =   "&Close"
+      End
+      Begin VB.Menu bar0
+            Caption         =   "-"
+      End
+      Begin VB.Menu save
+            Caption         =   "&Save Document"
+            Shortcut         =   ^S
+      End
+   End
+   Begin VB.Menu saveas
+      Caption         =   "Save Document &As"
+      Begin VB.Menu saveall
+            Caption         =   "Save A&ll"
+      End
+      Begin VB.Menu bar30
+            Caption         =   "-"
+      End
+   End
+   Begin VB.Menu saveftp
+      Caption         =   "&FTP"
+      Begin VB.Menu openftp
+            Caption         =   "&Open From FTP"
+         Begin VB.Menu saveto
+                  Caption         =   "&Save To FTP"
+         End
+      End
+      Begin VB.Menu bar1
+            Caption         =   "-"
+      End
+      Begin VB.Menu prints
+            Caption         =   "&Print"
+            Shortcut         =   ^P
+      End
+      Begin VB.Menu printsetup
+            Caption         =   "Printer &Setup"
+      End
+      Begin VB.Menu bar2
+            Caption         =   "-"
+      End
+      Begin VB.Menu properties
+            Caption         =   "&Document Properties"
+      End
+      Begin VB.Menu bar3
+            Caption         =   "-"
+      End
+      Begin VB.Menu mnuRecent
+            Caption         =   "&Recent Files"
+         Begin VB.Menu mnuRec
+                  Caption         =   ""
+                  Index         =   0
+         End
+         Begin VB.Menu mnuRec
+                  Caption         =   ""
+                  Index         =   1
+                  Visible         =   0   'False
+         End
+         Begin VB.Menu mnuRec
+                  Caption         =   ""
+                  Index         =   2
+                  Visible         =   0   'False
+         End
+         Begin VB.Menu mnuRec
+                  Caption         =   ""
+                  Index         =   3
+                  Visible         =   0   'False
+         End
+         Begin VB.Menu mnuRec
+                  Caption         =   ""
+                  Index         =   4
+                  Visible         =   0   'False
+         End
+         Begin VB.Menu mnuRec
+                  Caption         =   ""
+                  Index         =   5
+                  Visible         =   0   'False
+         End
+      End
+      Begin VB.Menu mnuBar5
+            Caption         =   "-"
+      End
+      Begin VB.Menu exit
+            Caption         =   "&Exit"
+      End
+   End
+
+
+End
+Option Explicit
+
+

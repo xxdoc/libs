@@ -1,0 +1,86 @@
+VERSION 5.00
+Begin VB.Form frmMenuTemplate
+   Caption="First1"
+   Begin VB.Menu mnuFile
+      Caption         =   "&File"
+      NegotiatePosition         =   1
+      Begin VB.Menu mnuFileNew
+            Caption         =   "&New Menu"
+            HelpContextID         =   1234
+            Shortcut         =   ^N
+      End
+      Begin VB.Menu mnuFileOpen
+            Caption         =   "&Open Form"
+            Shortcut         =   ^O
+      End
+      Begin VB.Menu mnuFileOpenTemplate
+            Caption         =   "Open &Template"
+            Shortcut         =   ^T
+      End
+      Begin VB.Menu mnuFileSpace
+            Caption         =   "-"
+      End
+      Begin VB.Menu mnuFileSaveForm
+            Caption         =   "Save Form"
+            Enabled         =   0
+            Shortcut         =   ^S
+      End
+      Begin VB.Menu mnuFileSaveMenuAsForm
+            Caption         =   "Save Menu As New Form"
+            Shortcut         =   ^{F12}
+      End
+      Begin VB.Menu mnuFileSaveMenuAsTemplate
+            Caption         =   "Save Menu As Template"
+            Shortcut         =   +{F12}
+      End
+      Begin VB.Menu mnuFileSpace1
+            Caption         =   "-"
+      End
+      Begin VB.Menu mnuFileExit
+            Caption         =   "Exit"
+            Shortcut         =   ^{F4}
+      End
+   End
+   Begin VB.Menu mnuEdit
+      Caption         =   "&Edit"
+      NegotiatePosition         =   3
+      Begin VB.Menu mnuEditCopy
+            Caption         =   "&Copy"
+            Shortcut         =   ^C
+      End
+      Begin VB.Menu mnuEditCopyParent
+            Caption         =   "Copy &with children"
+            Shortcut         =   ^W
+      End
+      Begin VB.Menu mnuEditPaste
+            Caption         =   "&Paste"
+            Shortcut         =   ^V
+      End
+      Begin VB.Menu mnuEditSep1
+            Caption         =   "-"
+      End
+      Begin VB.Menu mnuEditClear
+            Caption         =   "&Clear"
+      End
+      Begin VB.Menu mnuEditSep2
+            Caption         =   "-"
+      End
+      Begin VB.Menu mnuEditImportTemplate
+            Caption         =   "Import &Template"
+      End
+      Begin VB.Menu mnuEditImportFile
+            Caption         =   "Import &File"
+      End
+      Begin VB.Menu mnuEditSep3
+            Caption         =   "-"
+      End
+      Begin VB.Menu mnuEditPreviewItem
+            Caption         =   "&Preview item result"
+      End
+      Begin VB.Menu mnuEditPreview
+            Caption         =   "Preview &result"
+      End
+   End
+
+End
+

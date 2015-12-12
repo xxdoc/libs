@@ -1,0 +1,3 @@
+ScreenShot1.bmp: The user is presented with a dialog box when a menu item has been clicked.
+
+ScreenShot2.bmp: A dynamically created menu.

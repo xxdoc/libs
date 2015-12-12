@@ -1,0 +1,1 @@
+cl whois.c win_funcs.c /link wsock32.lib /out:./output/whois.exe
