@@ -169,6 +169,8 @@ Private Sub txtFilter_Change()
     Dim li As ListItem
     Dim t As String
     
+    On Error Resume Next
+    
     If Len(txtFilter) = 0 Then
         lvFilter.Visible = False
         Exit Sub
@@ -248,6 +250,17 @@ End Sub
 
 Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     RaiseEvent MouseUp(Button, Shift, x, y)
+End Sub
+
+Private Sub txtFilter_KeyPress(KeyAscii As Integer)
+    On Error Resume Next
+    If KeyAscii = 13 Then 'return key
+        If Left$(txtFilter, 3) = "/fc" Then
+            FilterColumn = CLng(Trim(Replace(txtFilter, "/fc", Empty)))
+            If Err.Number = 0 Then txtFilter = Empty
+        End If
+        KeyAscii = 0 'eat the keypress so no beep noise..
+    End If
 End Sub
 
 Private Sub UserControl_Resize()
