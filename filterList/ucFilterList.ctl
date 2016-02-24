@@ -87,6 +87,11 @@ Property Let MultiSelect(x As Boolean)
     lvFilter.MultiSelect = x
 End Property
 
+Property Let HideSelection(x As Boolean)
+    lv.HideSelection = x
+    lvFilter.HideSelection = x
+End Property
+
 Property Get lstView() As ListView
     On Error Resume Next
     If lvFilter.Visible Then
@@ -113,9 +118,20 @@ Property Let Filter(txt As String)
      txtFilter = txt
 End Property
 
-Function AddItem(txt As String) As ListItem
+Function AddItem(txt As String, ParamArray subItems()) As ListItem
+    On Error Resume Next
+    
+    Dim i As Integer
+    
     Set AddItem = lv.ListItems.Add(, , txt)
+    
+    For Each si In subItems
+        AddItem.subItems(i + 1) = si
+        i = i + 1
+    Next
+    
     txtFilter_Change
+    
 End Function
 
 Sub Clear()
@@ -166,7 +182,7 @@ Private Sub txtFilter_Change()
             t = li.Text
         Else
             If FilterColumn >= lv.ColumnHeaders.Count Then FilterColumn = lv.ColumnHeaders.Count - 1
-            t = li.SubItems(FilterColumn)
+            t = li.subItems(FilterColumn)
         End If
         If InStr(1, t, txtFilter, vbTextCompare) > 0 Then
             CloneListItemTo li, lvFilter
@@ -180,9 +196,17 @@ Sub CloneListItemTo(li As ListItem, lv As ListView)
     Dim li2 As ListItem, i As Integer
     Set li2 = lv.ListItems.Add(, , li.Text)
     For i = 1 To lv.ColumnHeaders.Count - 1
-        li2.SubItems(i) = li.SubItems(i)
+        li2.subItems(i) = li.subItems(i)
     Next
-    Set li2.Tag = li
+    If li.ForeColor <> vbBlack Then SetLiColor li2, li.ForeColor
+    
+    On Error Resume Next
+    If IsObject(li.Tag) Then
+        Set li2.Tag = li.Tag
+    Else
+        li2.Tag = li.Tag
+    End If
+    
 End Sub
 
 
@@ -295,7 +319,7 @@ Public Function GetAllElements() As String
     For Each li In ListViewControl.ListItems
         tmp = li.Text & vbTab
         For i = 1 To ListViewControl.ColumnHeaders.Count - 1
-            tmp = tmp & li.SubItems(i) & vbTab
+            tmp = tmp & li.subItems(i) & vbTab
         Next
         push ret, tmp
     Next
@@ -322,7 +346,7 @@ Function GetAllText(Optional subItemRow As Long = 0, Optional selectedOnly As Bo
                 push tmp, x
             End If
         Else
-            x = ListViewControl.ListItems(i).SubItems(subItemRow)
+            x = ListViewControl.ListItems(i).subItems(subItemRow)
             If selectedOnly And Not ListViewControl.ListItems(i).Selected Then x = Empty
             If Len(x) > 0 Then
                 push tmp, x

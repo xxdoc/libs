@@ -15,8 +15,8 @@ Begin VB.Form Form1
       TabIndex        =   0
       Top             =   135
       Width           =   8520
-      _extentx        =   15028
-      _extenty        =   8202
+      _ExtentX        =   15028
+      _ExtentY        =   8202
    End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
@@ -43,23 +43,30 @@ Attribute VB_Exposed = False
 Private Sub Form_Load()
     
     mnuPopup.Visible = False
+    lvFilter.HideSelection = True
     lvFilter.MultiSelect = True
     lvFilter.FilterColumn = 1
     lvFilter.SetColumnHeaders "test1,test2,test3,test4"
     
     Dim li As ListItem
     For i = 0 To 5
+    
         Set li = lvFilter.AddItem("text" & i)
-        li.SubItems(1) = "taco1 " & i
-        li.SubItems(2) = "test3 " & i
-        li.SubItems(3) = "test4 " & i
+        li.subItems(1) = "taco1 " & i
+        li.subItems(2) = "test3 " & i
+        li.subItems(3) = "test4 " & i
+        li.Tag = "whatever"
         
         Set li = lvFilter.AddItem("item " & i)
-        li.SubItems(1) = "item taco2  " & i
-        li.SubItems(2) = "item 2 test " & i
-        li.SubItems(3) = "item 2 test " & i
+        li.subItems(1) = "item taco2  " & i
+        li.subItems(2) = "item 2 test " & i
+        li.subItems(3) = "item 2 test " & i
+        Set li.Tag = Me
+        
     Next
     
+    Set li = lvFilter.AddItem("text", "item1", "item2", "item3")
+    lvFilter.SetLiColor li, vbBlue
     
 End Sub
 
