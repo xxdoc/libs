@@ -1,8 +1,8 @@
-modPEStructs = 44, 44, 1033, 769, Z
+modPEStructs = 44, 44, 1033, 769, 
 CExport = 0, 0, 0, 0, C
-CImport = 154, 154, 1030, 764, C
-CLoadExports = 132, 132, 1008, 742, 
-CLoadImports = 176, 176, 1052, 786, 
+CImport = 154, 154, 1030, 764, 
+CLoadExports = 127, 73, 1035, 898, C
+CLoadImports = 153, 96, 1029, 706, C
 COptionalHeader = 110, 110, 909, 651, C
 CPEEditor = 88, 88, 887, 629, 
 CSection = 176, 176, 915, 752, 
