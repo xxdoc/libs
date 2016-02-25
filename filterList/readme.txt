@@ -15,4 +15,11 @@ line processor.
 
 currently supports
 
-/fc[number]   - this lets the user change the column index to filter on at runtime. 
+Const cmdHelp = "Supports following commands: \n" & _
+                    "/fc[number]     set filter column number \n" & _
+                    "/copy           copy entire listview contents \n" & _
+                    "/copysel        copy selected items in listview \n" & _
+                    "/cc[number]     copy all elements from column number \n" & _
+                    "/multi          toggle multi selection mode \n" & _
+                    "/hide           toggle hide selection mode \n" & _
+                    "/help           display this help message"

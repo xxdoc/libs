@@ -254,11 +254,60 @@ End Sub
 
 Private Sub txtFilter_KeyPress(KeyAscii As Integer)
     On Error Resume Next
+    Dim x As String
+    Dim column As Long
+    
+    Const cmdHelp = "Supports following commands: \n" & _
+                    "/fc[number]     set filter column number \n" & _
+                    "/copy           copy entire listview contents \n" & _
+                    "/copysel        copy selected items in listview \n" & _
+                    "/cc[number]     copy all elements from column number \n" & _
+                    "/multi          toggle multi selection mode \n" & _
+                    "/hide           toggle hide selection mode \n" & _
+                    "/help           display this help message"
+    
     If KeyAscii = 13 Then 'return key
-        If Left$(txtFilter, 3) = "/fc" Then
+        x = LCase(txtFilter)
+        
+        If Left$(x, 3) = "/fc" Then
             FilterColumn = CLng(Trim(Replace(txtFilter, "/fc", Empty)))
             If Err.Number = 0 Then txtFilter = Empty
         End If
+        
+        If x = "/copy" Then
+            txtFilter = Empty
+            Clipboard.Clear
+            Clipboard.SetText Me.GetAllElements()
+        End If
+        
+        If x = "/copysel" Then
+            txtFilter = Empty
+            Clipboard.Clear
+            Clipboard.SetText Me.GetAllElements(True)
+        End If
+        
+        If x = "/multi" Then
+            Me.MultiSelect = Not lv.MultiSelect
+            txtFilter = Empty
+        End If
+        
+        If x = "/hide" Then
+            Me.HideSelection = Not lv.HideSelection
+            txtFilter = Empty
+        End If
+        
+        If Left(x, 3) = "/cc" Then
+            txtFilter = Empty
+            column = CLng(Trim(Replace(x, "/cc", Empty)))
+            Clipboard.Clear
+            Clipboard.SetText Me.GetAllText(column)
+        End If
+        
+        If x = "/help" Then
+            MsgBox Replace(cmdHelp, "\n", vbCrLf), vbInformation
+            txtFilter = Empty
+        End If
+        
         KeyAscii = 0 'eat the keypress so no beep noise..
     End If
 End Sub
@@ -289,7 +338,7 @@ Public Sub SetLiColor(li As ListItem, newcolor As Long)
     Next
 End Sub
 
-Public Sub ColumnSort(Column As ColumnHeader)
+Public Sub ColumnSort(column As ColumnHeader)
     Dim ListViewControl As ListView
     On Error Resume Next
     
@@ -297,8 +346,8 @@ Public Sub ColumnSort(Column As ColumnHeader)
     If lvFilter.Visible Then Set ListViewControl = lvFilter
         
     With ListViewControl
-       If .SortKey <> Column.Index - 1 Then
-             .SortKey = Column.Index - 1
+       If .SortKey <> column.Index - 1 Then
+             .SortKey = column.Index - 1
              .SortOrder = lvwAscending
        Else
              If .SortOrder = lvwAscending Then
@@ -312,10 +361,11 @@ Public Sub ColumnSort(Column As ColumnHeader)
     
 End Sub
 
-Public Function GetAllElements() As String
+Public Function GetAllElements(Optional selectedOnly As Boolean = False) As String
     Dim ret() As String, i As Integer, tmp As String
     Dim li As ListItem
     Dim ListViewControl As ListView
+    Dim include  As Boolean
     
     On Error Resume Next
     
@@ -330,11 +380,18 @@ Public Function GetAllElements() As String
     push ret, String(50, "-")
 
     For Each li In ListViewControl.ListItems
+    
+        If selectedOnly Then
+            If Not li.Selected Then GoTo nextOne
+        End If
+            
         tmp = li.Text & vbTab
         For i = 1 To ListViewControl.ColumnHeaders.Count - 1
             tmp = tmp & li.subItems(i) & vbTab
         Next
         push ret, tmp
+        
+nextOne:
     Next
 
     GetAllElements = Join(ret, vbCrLf)
