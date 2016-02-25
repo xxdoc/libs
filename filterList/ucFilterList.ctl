@@ -56,6 +56,25 @@ Begin VB.UserControl ucFilterList
       Appearance      =   1
       NumItems        =   0
    End
+   Begin VB.Label lblTools 
+      Alignment       =   2  'Center
+      Caption         =   "Tools"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   -1  'True
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FF0000&
+      Height          =   285
+      Left            =   6345
+      TabIndex        =   4
+      Top             =   4320
+      Width           =   510
+   End
    Begin VB.Label Label1 
       Caption         =   "Filter"
       Height          =   375
@@ -63,6 +82,27 @@ Begin VB.UserControl ucFilterList
       TabIndex        =   2
       Top             =   4320
       Width           =   1140
+   End
+   Begin VB.Menu mnuTools 
+      Caption         =   "mnuTools"
+      Begin VB.Menu mnuCopyAll 
+         Caption         =   "Copy All"
+      End
+      Begin VB.Menu mnuCopySel 
+         Caption         =   "Copy Sel"
+      End
+      Begin VB.Menu mnuCopyColumn 
+         Caption         =   "Copy Column"
+      End
+      Begin VB.Menu mnuSetFilterCol 
+         Caption         =   "Set Filter Column"
+      End
+      Begin VB.Menu mnuToggleMulti 
+         Caption         =   "MultiSelect"
+      End
+      Begin VB.Menu mnuHideSel 
+         Caption         =   "Hide Selection"
+      End
    End
 End
 Attribute VB_Name = "ucFilterList"
@@ -82,14 +122,20 @@ Event DblClick()
 Event ItemClick(ByVal Item As MSComctlLib.ListItem)
 Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 
+#If 0 Then
+    Dim x, y 'force lowercase so ide doesnt switch around on its own whim...
+#End If
+
 Property Let MultiSelect(x As Boolean)
     lv.MultiSelect = x
     lvFilter.MultiSelect = x
+    mnuToggleMulti.Checked = x
 End Property
 
 Property Let HideSelection(x As Boolean)
     lv.HideSelection = x
     lvFilter.HideSelection = x
+    mnuHideSel.Checked = x
 End Property
 
 Property Get lstView() As ListView
@@ -162,6 +208,47 @@ Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
         Next
     End If
     
+End Sub
+
+Private Sub lblTools_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If Button = vbLeftButton Then PopupMenu mnuTools
+End Sub
+
+Private Sub mnuCopyAll_Click()
+    Clipboard.Clear
+    Clipboard.SetText Me.GetAllElements()
+End Sub
+
+Private Sub mnuCopyColumn_Click()
+    On Error Resume Next
+    Dim x As Long
+    x = InputBox("Enter column index to copy", , 0)
+    If Len(x) = 0 Then Exit Sub
+    x = CLng(x) - 1 'we are 0 based internally..
+    Clipboard.Clear
+    Clipboard.SetText Me.GetAllText(x)
+End Sub
+
+Private Sub mnuCopySel_Click()
+    Clipboard.Clear
+    Clipboard.SetText Me.GetAllElements(True)
+End Sub
+
+Private Sub mnuHideSel_Click()
+    Me.HideSelection = Not lv.HideSelection
+End Sub
+
+Private Sub mnuSetFilterCol_Click()
+    On Error Resume Next
+    Dim x As Long
+    x = InputBox("Enter column that filter searches", , FilterColumn + 1)
+    If Len(x) = 0 Then Exit Sub
+    x = CLng(x) - 1 'we are 0 based internally..
+    FilterColumn = x
+End Sub
+
+Private Sub mnuToggleMulti_Click()
+    Me.MultiSelect = Not lv.MultiSelect
 End Sub
 
 Private Sub txtFilter_Change()
@@ -252,66 +339,6 @@ Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y
     RaiseEvent MouseUp(Button, Shift, x, y)
 End Sub
 
-Private Sub txtFilter_KeyPress(KeyAscii As Integer)
-    On Error Resume Next
-    Dim x As String
-    Dim column As Long
-    
-    Const cmdHelp = "Supports following commands: \n" & _
-                    "/fc[number]     set filter column number \n" & _
-                    "/copy           copy entire listview contents \n" & _
-                    "/copysel        copy selected items in listview \n" & _
-                    "/cc[number]     copy all elements from column number \n" & _
-                    "/multi          toggle multi selection mode \n" & _
-                    "/hide           toggle hide selection mode \n" & _
-                    "/help           display this help message"
-    
-    If KeyAscii = 13 Then 'return key
-        x = LCase(txtFilter)
-        
-        If Left$(x, 3) = "/fc" Then
-            FilterColumn = CLng(Trim(Replace(txtFilter, "/fc", Empty)))
-            If Err.Number = 0 Then txtFilter = Empty
-        End If
-        
-        If x = "/copy" Then
-            txtFilter = Empty
-            Clipboard.Clear
-            Clipboard.SetText Me.GetAllElements()
-        End If
-        
-        If x = "/copysel" Then
-            txtFilter = Empty
-            Clipboard.Clear
-            Clipboard.SetText Me.GetAllElements(True)
-        End If
-        
-        If x = "/multi" Then
-            Me.MultiSelect = Not lv.MultiSelect
-            txtFilter = Empty
-        End If
-        
-        If x = "/hide" Then
-            Me.HideSelection = Not lv.HideSelection
-            txtFilter = Empty
-        End If
-        
-        If Left(x, 3) = "/cc" Then
-            txtFilter = Empty
-            column = CLng(Trim(Replace(x, "/cc", Empty)))
-            Clipboard.Clear
-            Clipboard.SetText Me.GetAllText(column)
-        End If
-        
-        If x = "/help" Then
-            MsgBox Replace(cmdHelp, "\n", vbCrLf), vbInformation
-            txtFilter = Empty
-        End If
-        
-        KeyAscii = 0 'eat the keypress so no beep noise..
-    End If
-End Sub
-
 Private Sub UserControl_Resize()
     On Error Resume Next
     With UserControl
@@ -320,8 +347,10 @@ Private Sub UserControl_Resize()
         lv.Width = .Width
         lv.Height = .Height - txtFilter.Height - 300
         txtFilter.Top = .Height - txtFilter.Height - 150
-        txtFilter.Width = .Width - txtFilter.Left
-        Label1.Top = txtFilter.Top
+        txtFilter.Width = .Width - txtFilter.Left - lblTools.Width - 100
+        lblTools.Left = .Width - lblTools.Width
+        Label1.Top = txtFilter.Top + 30
+        lblTools.Top = txtFilter.Top + 30
     End With
     lvFilter.Move lv.Left, lv.Top, lv.Width, lv.Height
     lv.ColumnHeaders(lv.ColumnHeaders.Count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.Count).Left - 200
