@@ -56,9 +56,8 @@ Begin VB.UserControl ucFilterList
       Appearance      =   1
       NumItems        =   0
    End
-   Begin VB.Label lblTools 
-      Alignment       =   2  'Center
-      Caption         =   "Tools"
+   Begin VB.Label Label1 
+      Caption         =   "Filter"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
          Size            =   8.25
@@ -68,20 +67,11 @@ Begin VB.UserControl ucFilterList
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FF0000&
-      Height          =   285
-      Left            =   6345
-      TabIndex        =   4
-      Top             =   4320
-      Width           =   510
-   End
-   Begin VB.Label Label1 
-      Caption         =   "Filter"
       Height          =   375
       Left            =   45
       TabIndex        =   2
       Top             =   4320
-      Width           =   1140
+      Width           =   420
    End
    Begin VB.Menu mnuTools 
       Caption         =   "mnuTools"
@@ -210,8 +200,8 @@ Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
     
 End Sub
 
-Private Sub lblTools_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
-    If Button = vbLeftButton Then PopupMenu mnuTools
+Private Sub Label1_Click()
+    PopupMenu mnuTools
 End Sub
 
 Private Sub mnuCopyAll_Click()
@@ -347,10 +337,10 @@ Private Sub UserControl_Resize()
         lv.Width = .Width
         lv.Height = .Height - txtFilter.Height - 300
         txtFilter.Top = .Height - txtFilter.Height - 150
-        txtFilter.Width = .Width - txtFilter.Left - lblTools.Width - 100
-        lblTools.Left = .Width - lblTools.Width
+        txtFilter.Width = .Width - txtFilter.Left '- lblTools.Width - 100
+        'lblTools.Left = .Width - lblTools.Width
         Label1.Top = txtFilter.Top + 30
-        lblTools.Top = txtFilter.Top + 30
+        'lblTools.Top = txtFilter.Top + 30
     End With
     lvFilter.Move lv.Left, lv.Top, lv.Width, lv.Height
     lv.ColumnHeaders(lv.ColumnHeaders.Count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.Count).Left - 200
