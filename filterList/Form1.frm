@@ -9,6 +9,30 @@ Begin VB.Form Form1
    ScaleHeight     =   8730
    ScaleWidth      =   9540
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command3 
+      Caption         =   "Command3"
+      Height          =   465
+      Left            =   7965
+      TabIndex        =   3
+      Top             =   5175
+      Width           =   1095
+   End
+   Begin VB.CommandButton Command2 
+      Caption         =   "Command2"
+      Height          =   420
+      Left            =   4230
+      TabIndex        =   2
+      Top             =   5310
+      Width           =   1500
+   End
+   Begin VB.CommandButton Command1 
+      Caption         =   "Clear test"
+      Height          =   510
+      Left            =   6165
+      TabIndex        =   1
+      Top             =   5175
+      Width           =   1365
+   End
    Begin Project1.ucFilterList lvFilter 
       Height          =   4650
       Left            =   180
@@ -39,6 +63,24 @@ Attribute VB_Exposed = False
 'author:  David Zimmer <dzzie@yahoo.com>
 'site:    http://sandsprite.com
 'License: free for any use
+
+Private Sub Command1_Click()
+    lvFilter.ListItems.Clear
+End Sub
+
+Private Sub Command2_Click()
+    Dim li As ListItem
+    For Each li In lvFilter.ListItems
+        tmp = tmp & li.Text & ","
+    Next
+    MsgBox tmp
+End Sub
+
+Private Sub Command3_Click()
+    Dim li As ListItem
+    Set li = lvFilter.ListItems.Add(, , "no change test")
+    li.subItems(1) = "worked!"
+End Sub
 
 Private Sub Form_Load()
     

@@ -116,6 +116,10 @@ Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     Dim x, y 'force lowercase so ide doesnt switch around on its own whim...
 #End If
 
+Property Get ListItems() As ListItems 'doesnt seem to work as intended?
+    Set ListItems = lv.ListItems
+End Property
+
 Property Let MultiSelect(x As Boolean)
     lv.MultiSelect = x
     lvFilter.MultiSelect = x

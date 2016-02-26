@@ -40,3 +40,5 @@ gnu_whois - cmdline whois app, was going to convert to dll, but its fine
             as is, just capture output via pipe. 93k
 
 filterList - simple listview with filter textbox for easy searching
+
+anchor - very easy form element anchoring (automatic control resizing w/form)
