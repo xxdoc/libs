@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   8730
    ScaleWidth      =   9540
    StartUpPosition =   3  'Windows Default
+   Begin VB.CheckBox chkAllowDelete 
+      Caption         =   "Allow Delete"
+      Height          =   285
+      Left            =   1035
+      TabIndex        =   5
+      Top             =   5220
+      Width           =   1770
+   End
    Begin VB.CommandButton Command3 
       Caption         =   "Command3"
       Height          =   465
@@ -71,6 +79,10 @@ Attribute VB_Exposed = False
 'author:  David Zimmer <dzzie@yahoo.com>
 'site:    http://sandsprite.com
 'License: free for any use
+
+Private Sub chkAllowDelete_Click()
+    lvFilter.AllowDelete = (chkAllowDelete.value = 1)
+End Sub
 
 Private Sub Command1_Click()
     lvFilter.ListItems.Clear
