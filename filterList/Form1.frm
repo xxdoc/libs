@@ -87,8 +87,10 @@ Private Sub Form_Load()
     mnuPopup.Visible = False
     lvFilter.HideSelection = True
     lvFilter.MultiSelect = True
-    lvFilter.FilterColumn = 1
-    lvFilter.SetColumnHeaders "test1,test2,test3,test4"
+    
+    'you can set the filtercolumn either with the property manually, or by adding an * in the column header..
+    'lvFilter.FilterColumn = 2
+    lvFilter.SetColumnHeaders "test1,test2,test3*,test4"
     
     Dim li As ListItem
     For i = 0 To 5
