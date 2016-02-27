@@ -42,6 +42,14 @@ Begin VB.Form Form1
       _ExtentX        =   15028
       _ExtentY        =   8202
    End
+   Begin VB.Label Label1 
+      Caption         =   "You can also change the filter column from the filter textbox by entering /[index] and hitting return."
+      Height          =   1410
+      Left            =   540
+      TabIndex        =   4
+      Top             =   6300
+      Width           =   8250
+   End
    Begin VB.Menu mnuPopup 
       Caption         =   "mnuPopup"
       Begin VB.Menu mnuPopupTest 

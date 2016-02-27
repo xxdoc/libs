@@ -19,6 +19,7 @@ Begin VB.UserControl ucFilterList
       Left            =   360
       TabIndex        =   1
       Top             =   360
+      Visible         =   0   'False
       Width           =   5775
       _ExtentX        =   10186
       _ExtentY        =   5821
@@ -200,12 +201,12 @@ Property Let Filter(txt As String)
      txtFilter = txt
 End Property
 
-Function AddItem(txt As String, ParamArray subItems()) As ListItem
+Function AddItem(txt, ParamArray subItems()) As ListItem
     On Error Resume Next
     
     Dim i As Integer
     
-    Set AddItem = lv.ListItems.Add(, , txt)
+    Set AddItem = lv.ListItems.Add(, , CStr(txt))
     
     For Each si In subItems
         AddItem.subItems(i + 1) = si
@@ -314,8 +315,23 @@ Private Sub txtFilter_Change()
     On Error Resume Next
     
     If Len(txtFilter) = 0 Then
-        lvFilter.Visible = False
+        If lvFilter.Visible Then lvFilter.Visible = False
         Exit Sub
+    End If
+    
+    If Len(txtFilter) = 1 Then
+        If VBA.Left(txtFilter, 1) = "/" Then
+            lvFilter.Visible = False
+            Exit Sub
+        End If
+    End If
+        
+    If VBA.Left(txtFilter, 1) = "/" Then
+        t = Replace(txtFilter, "/", Empty)
+        If IsNumeric(t) Then
+            lvFilter.Visible = False
+            Exit Sub 'they are going to change the FilterColumn on "cmdline"
+        End If
     End If
     
     lvFilter.Visible = True
@@ -397,10 +413,28 @@ End Sub
 
 Private Sub txtFilter_KeyPress(KeyAscii As Integer)
     'MsgBox KeyAscii
+    
+    On Error Resume Next
+    Dim t As String
+    
     If KeyAscii = vbKeyEscape Then
         KeyAscii = 0
         Filter = Empty
     End If
+    
+    If KeyAscii = vbKeyReturn Then
+        KeyAscii = 0
+        If Len(txtFilter) > 0 Then
+            If Left(txtFilter, 1) = "/" Then
+                t = Replace(txtFilter, "/", Empty)
+                If IsNumeric(t) Then
+                    FilterColumn = CLng(t)
+                    Filter = Empty
+                End If
+            End If
+        End If
+    End If
+            
 End Sub
 
 Private Sub UserControl_Initialize()
