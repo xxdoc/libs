@@ -9,7 +9,7 @@ Begin VB.UserControl ucFilterList
    ScaleWidth      =   7605
    Begin VB.TextBox txtFilter 
       Height          =   330
-      Left            =   495
+      Left            =   540
       TabIndex        =   3
       Top             =   4320
       Width           =   1995
@@ -85,14 +85,29 @@ Begin VB.UserControl ucFilterList
       Begin VB.Menu mnuCopyColumn 
          Caption         =   "Copy Column"
       End
+      Begin VB.Menu mnuspacer4 
+         Caption         =   "-"
+      End
+      Begin VB.Menu mnuFilterHelp 
+         Caption         =   "Filter Help"
+      End
       Begin VB.Menu mnuSetFilterCol 
          Caption         =   "Set Filter Column"
+      End
+      Begin VB.Menu mnuResults 
+         Caption         =   "Results:"
+      End
+      Begin VB.Menu mnuspacer 
+         Caption         =   "-"
       End
       Begin VB.Menu mnuToggleMulti 
          Caption         =   "MultiSelect"
       End
       Begin VB.Menu mnuHideSel 
          Caption         =   "Hide Selection"
+      End
+      Begin VB.Menu mnuSelectInverse 
+         Caption         =   "Inverse Selection"
       End
       Begin VB.Menu mnuAlertColWidths 
          Caption         =   "Alert Column Widths (IDE Only)"
@@ -127,6 +142,7 @@ Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     Dim x, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
 #End If
 
+'note when locked you wont receive events, and can not add items..
 Property Get Locked() As Boolean
     Locked = m_Locked
 End Property
@@ -182,16 +198,33 @@ Property Get ListItems() As ListItems
     Set ListItems = lv.ListItems
 End Property
 
+Property Get MultiSelect() As Boolean
+    MultiSelect = lv.MultiSelect
+End Property
+
 Property Let MultiSelect(x As Boolean)
     lv.MultiSelect = x
     lvFilter.MultiSelect = x
     mnuToggleMulti.Checked = x
 End Property
 
+Property Get HideSelection() As Boolean
+    HideSelection = lv.MultiSelect
+End Property
+
 Property Let HideSelection(x As Boolean)
     lv.HideSelection = x
     lvFilter.HideSelection = x
     mnuHideSel.Checked = x
+End Property
+
+Property Get GridLines() As Boolean
+    GridLines = lv.GridLines
+End Property
+
+Property Let GridLines(x As Boolean)
+    lv.GridLines = x
+    lvFilter.GridLines = x
 End Property
 
 'which ever one is currently displayed
@@ -230,7 +263,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
     
     Dim i As Integer
     
-    If Locked Then Exit Function
+    If m_Locked Then Exit Function
     
     Set AddItem = lv.ListItems.Add(, , CStr(txt))
     
@@ -244,7 +277,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
 End Function
 
 Sub Clear()
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     lv.ListItems.Clear
     lvFilter.ListItems.Clear
 End Sub
@@ -291,7 +324,7 @@ Private Sub lv_KeyDown(KeyCode As Integer, Shift As Integer)
     
     On Error Resume Next
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
         For i = lv.ListItems.count To 1 Step -1
@@ -303,17 +336,17 @@ End Sub
 
 Private Sub lvFilter_KeyDown(KeyCode As Integer, Shift As Integer)
     Dim i As Long
-    Dim lvIndex As Long
+    Dim liMain As ListItem
     
     On Error Resume Next
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
         For i = lvFilter.ListItems.count To 1 Step -1
             If lvFilter.ListItems(i).Selected Then
-                lvIndex = getMainItemIndexFor(lvFilter.ListItems(i).index)
-                If lvIndex <> 0 Then lv.ListItems.Remove lvIndex
+                Set liMain = getMainListItemFor(lvFilter.ListItems(i))
+                If Not liMain Is Nothing Then lv.ListItems.Remove liMain.index
                 lvFilter.ListItems.Remove i
             End If
         Next
@@ -331,7 +364,8 @@ Private Sub mnuAlertColWidths_Click()
 End Sub
 
 Private Sub Label1_Click()
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
+    mnuResults.Caption = "Results: " & Me.currentLV.ListItems.count
     PopupMenu mnuTools
 End Sub
 
@@ -355,8 +389,40 @@ Private Sub mnuCopySel_Click()
     Clipboard.SetText Me.GetAllElements(True)
 End Sub
 
+Private Sub mnuFilterHelp_Click()
+    
+    Const msg = "You can enter multiple criteria to filter \n" & _
+                "on by seperating with commas. You can also\n" & _
+                "utilize a subtractive filter if the first \n" & _
+                "character in the textbox is a minus sign\n\n" & _
+                "The FilterColumn is marked with an * this is \n" & _
+                "the column that is being searched. You can \n" & _
+                "modify it on the filter menu, or by entering\n" & _
+                "/[index] in the filter textbox and hitting return\n\n" & _
+                "Pressing escape in the filter textbox will clear it.\n\n" & _
+                "If the AllowDelete property has been set, you can\n" & _
+                "select list items and press the delete key to remove\n" & _
+                "them."
+                
+                
+    MsgBox Replace(msg, "\n", vbCrLf), vbInformation
+                
+End Sub
+
 Private Sub mnuHideSel_Click()
     Me.HideSelection = Not lv.HideSelection
+End Sub
+
+Private Sub mnuSelectInverse_Click()
+    InvertSelection
+End Sub
+
+Public Sub InvertSelection()
+    If Not MultiSelect Then Exit Sub
+    Dim li As ListItem
+    For Each li In Me.currentLV.ListItems
+        li.Selected = Not li.Selected
+    Next
 End Sub
 
 Private Sub mnuSetFilterCol_Click()
@@ -376,74 +442,84 @@ Private Sub txtFilter_Change()
 
     Dim li As ListItem
     Dim t As String
+    Dim useSubtractiveFilter As Boolean
+    Dim tmp() As String, addit As Boolean, x
     
     On Error Resume Next
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
-    If Len(txtFilter) = 0 Then
-        If lvFilter.Visible Then lvFilter.Visible = False
-        Exit Sub
-    End If
+    If Len(txtFilter) = 0 Then GoTo hideExit
     
     If Len(txtFilter) = 1 Then
-        If VBA.Left(txtFilter, 1) = "/" Then
-            lvFilter.Visible = False
-            Exit Sub
-        End If
+        If VBA.Left(txtFilter, 1) = "/" Then GoTo hideExit
     End If
         
     If VBA.Left(txtFilter, 1) = "/" Then
         t = Replace(txtFilter, "/", Empty)
-        If IsNumeric(t) Then
-            lvFilter.Visible = False
-            Exit Sub 'they are going to change the FilterColumn on "cmdline"
-        End If
+        If IsNumeric(t) Then GoTo hideExit 'they are going to change the FilterColumn on "cmdline"
     End If
+    
+    
+    If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
+        If Len(txtFilter) = 1 Then GoTo hideExit
+        If VBA.Right(txtFilter, 1) = "," Then Exit Sub 'they are adding more criteria
+    End If
+
+    'should multiple (csv) filters only apply on hitting return?
+    'so you can see full list to work off of?
     
     lvFilter.Visible = True
     lvFilter.ListItems.Clear
     Set indexMapping = New Collection
     
-    'simple filter
-    For Each li In lv.ListItems
-        If FilterColumn = 1 Then
+    Dim sMatch As String
+    
+    If VBA.Left(txtFilter, 1) = "-" Then
+        useSubtractiveFilter = True
+        sMatch = Mid(txtFilter, 2)
+    Else
+        sMatch = txtFilter
+    End If
+    
+    'we allow for csv multiple criteria, also
+    'you can use a subtractive filter like -mnu,cmd,lv
+     For Each li In lv.ListItems
+        
+         If FilterColumn = 1 Then
             t = li.Text
-        Else
+         Else
             t = li.subItems(m_FilterColumn - 1)
-        End If
-        If InStr(1, t, txtFilter, vbTextCompare) > 0 Then
-            CloneListItemTo li, lvFilter
-        End If
-    Next
-    
-    'complex filtering from CodeView addin..adapt if desired..
-    
-'    If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
-'        If Len(txtFilter) = 1 Then Exit Sub
-'        If VBA.Right(txtFilter, 1) = "," Or VBA.Right(txtFilter, 1) = " " Then Exit Sub
-'    End If
-'
-'    If VBA.Left(txtFilter, 1) = "-" And Len(txtFilter) > 1 Then   'subtractive filter like -mnu,cmd,lv
-'        Dim tmp() As String, addit As Boolean, x
-'        addit = True
-'        If InStr(txtFilter, ",") Then tmp = Split(Mid(txtFilter, 2), ",") Else tmp = Split(Mid(txtFilter, 2), " ")
-'        For Each x In tmp
-'            If Len(x) > 0 Then
-'                If InStr(1, mber.Name, x, vbTextCompare) > 0 Then
-'                    addit = False
-'                    Exit For
-'                End If
-'            End If
-'        Next
-'        If addit Then
-'            CodeView.Nodes.Add Nodes(mType), tvwChild, mber.Scope & mType & hash & Loc & hash, mber.Name, mType + i
-'        Else
-'            'Stop
-'        End If
-'    ElseIf InStr(1, mber.Name, txtFilter, vbTextCompare) > 0 Then
-'        CodeView.Nodes.Add Nodes(mType), tvwChild, mber.Scope & mType & hash & Loc & hash, mber.Name, mType + i
-'    End If
+         End If
+        
+         addit = useSubtractiveFilter
+         If InStr(txtFilter, ",") Then
+            tmp = Split(sMatch, ",")
+         Else
+            push tmp, sMatch
+         End If
+         
+         For Each x In tmp
+             If Len(x) > 0 Then
+                 If InStr(1, t, x, vbTextCompare) > 0 Then
+                     addit = Not addit
+                     Exit For
+                 End If
+             End If
+         Next
+         
+         If addit Then
+             CloneListItemTo li, lvFilter
+         End If
+      
+     Next
+
+     
+Exit Sub
+
+hideExit:
+            lvFilter.Visible = False
+            Exit Sub
             
     
 End Sub
@@ -463,57 +539,65 @@ Sub CloneListItemTo(li As ListItem, lv As ListView)
         li2.Tag = li.Tag
     End If
     
-    indexMapping.Add li.index, "fi:" & li2.index 'filter list item index to lv item index map
+    indexMapping.Add li, "fObj:" & ObjPtr(li2)  'filter list item obj to lvFilter objPtr map
     
 End Sub
 
-'value of 0 is an error return code..can not exist
-Private Function getMainItemIndexFor(filtIndex As Long) As Long
+'we had to switch from index mapping to object mapping to account for column click sorts..
+Private Function getMainListItemFor(liFilt As ListItem) As ListItem
     On Error Resume Next
-    getMainItemIndexFor = indexMapping("fi:" & filtIndex)
+    Set getMainListItemFor = indexMapping("fObj:" & ObjPtr(liFilt))
 End Function
 
 Private Sub lv_Click()
+    If m_Locked Then Exit Sub
     RaiseEvent Click
 End Sub
 
 Private Sub lv_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     Me.ColumnSort ColumnHeader
     'RaiseEvent ColumnClick(ColumnHeader)
 End Sub
 
 Private Sub lv_DblClick()
+    If m_Locked Then Exit Sub
     RaiseEvent DblClick
 End Sub
 
 Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
+    If m_Locked Then Exit Sub
     RaiseEvent ItemClick(Item)
 End Sub
 
 Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If m_Locked Then Exit Sub
     RaiseEvent MouseUp(Button, Shift, x, y)
 End Sub
 
 Private Sub lvFilter_Click()
+    If m_Locked Then Exit Sub
     RaiseEvent Click
 End Sub
 
 Private Sub lvFilter_ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     Me.ColumnSort ColumnHeader
     'RaiseEvent ColumnClick(ColumnHeader)
 End Sub
 
 Private Sub lvFilter_DblClick()
+    If m_Locked Then Exit Sub
     RaiseEvent DblClick
 End Sub
 
 Private Sub lvFilter_ItemClick(ByVal Item As MSComctlLib.ListItem)
+    If m_Locked Then Exit Sub
     RaiseEvent ItemClick(Item)
 End Sub
 
 Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If m_Locked Then Exit Sub
     RaiseEvent MouseUp(Button, Shift, x, y)
 End Sub
 
@@ -523,7 +607,7 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
     On Error Resume Next
     Dim t As String
     
-    If Locked Then Exit Sub
+    If m_Locked Then Exit Sub
     
     If KeyAscii = vbKeyEscape Then
         KeyAscii = 0
