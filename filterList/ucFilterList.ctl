@@ -162,15 +162,15 @@ Property Let FilterColumn(x As Long)
     Dim tmp As String
     Dim ch As ColumnHeader
     
-    If lv.ColumnHeaders.count = 0 Then
+    If lv.ColumnHeaders.Count = 0 Then
         m_FilterColumnPreset = x
         Exit Property
     End If
     
     If x <= 0 Then x = 1
     
-    If x > lv.ColumnHeaders.count Then
-        x = lv.ColumnHeaders.count
+    If x > lv.ColumnHeaders.Count Then
+        x = lv.ColumnHeaders.Count
     End If
     
     'remove the visual marker that this is the filter column
@@ -277,9 +277,21 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
 End Function
 
 Sub Clear()
+
     If m_Locked Then Exit Sub
+    
+    Dim li As ListItem
+    For Each li In lv.ListItems
+        If IsObject(li.Tag) Then Set li.Tag = Nothing
+    Next
+    
+    For Each li In lvFilter.ListItems
+        If IsObject(li.Tag) Then Set li.Tag = Nothing
+    Next
+    
     lv.ListItems.Clear
     lvFilter.ListItems.Clear
+    
 End Sub
 
 Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
@@ -327,7 +339,7 @@ Private Sub lv_KeyDown(KeyCode As Integer, Shift As Integer)
     If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
-        For i = lv.ListItems.count To 1 Step -1
+        For i = lv.ListItems.Count To 1 Step -1
             If lv.ListItems(i).Selected Then lv.ListItems.Remove i
         Next
     End If
@@ -343,10 +355,10 @@ Private Sub lvFilter_KeyDown(KeyCode As Integer, Shift As Integer)
     If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
-        For i = lvFilter.ListItems.count To 1 Step -1
+        For i = lvFilter.ListItems.Count To 1 Step -1
             If lvFilter.ListItems(i).Selected Then
                 Set liMain = getMainListItemFor(lvFilter.ListItems(i))
-                If Not liMain Is Nothing Then lv.ListItems.Remove liMain.index
+                If Not liMain Is Nothing Then lv.ListItems.Remove liMain.Index
                 lvFilter.ListItems.Remove i
             End If
         Next
@@ -365,7 +377,7 @@ End Sub
 
 Private Sub Label1_Click()
     If m_Locked Then Exit Sub
-    mnuResults.Caption = "Results: " & Me.currentLV.ListItems.count
+    mnuResults.Caption = "Results: " & Me.currentLV.ListItems.Count
     PopupMenu mnuTools
 End Sub
 
@@ -527,7 +539,7 @@ End Sub
 Sub CloneListItemTo(li As ListItem, lv As ListView)
     Dim li2 As ListItem, i As Integer
     Set li2 = lv.ListItems.Add(, , li.Text)
-    For i = 1 To lv.ColumnHeaders.count - 1
+    For i = 1 To lv.ColumnHeaders.Count - 1
         li2.subItems(i) = li.subItems(i)
     Next
     If li.ForeColor <> vbBlack Then SetLiColor li2, li.ForeColor
@@ -649,8 +661,8 @@ Private Sub UserControl_Resize()
         'lblTools.Top = txtFilter.Top + 30
     End With
     lvFilter.Move lv.Left, lv.Top, lv.Width, lv.Height
-    lv.ColumnHeaders(lv.ColumnHeaders.count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.count).Left - 200
-    lvFilter.ColumnHeaders(lvFilter.ColumnHeaders.count).Width = lv.ColumnHeaders(lv.ColumnHeaders.count).Width
+    lv.ColumnHeaders(lv.ColumnHeaders.Count).Width = lv.Width - lv.ColumnHeaders(lv.ColumnHeaders.Count).Left - 200
+    lvFilter.ColumnHeaders(lvFilter.ColumnHeaders.Count).Width = lv.ColumnHeaders(lv.ColumnHeaders.Count).Width
 End Sub
 
 
@@ -671,8 +683,8 @@ Public Sub ColumnSort(Column As ColumnHeader)
     If lvFilter.Visible Then Set ListViewControl = lvFilter
         
     With ListViewControl
-       If .SortKey <> Column.index - 1 Then
-             .SortKey = Column.index - 1
+       If .SortKey <> Column.Index - 1 Then
+             .SortKey = Column.Index - 1
              .SortOrder = lvwAscending
        Else
              If .SortOrder = lvwAscending Then
@@ -697,7 +709,7 @@ Public Function GetAllElements(Optional selectedOnly As Boolean = False) As Stri
     Set ListViewControl = lv
     If lvFilter.Visible Then Set ListViewControl = lvFilter
         
-    For i = 1 To ListViewControl.ColumnHeaders.count
+    For i = 1 To ListViewControl.ColumnHeaders.Count
         tmp = tmp & ListViewControl.ColumnHeaders(i).Text & vbTab
     Next
 
@@ -711,7 +723,7 @@ Public Function GetAllElements(Optional selectedOnly As Boolean = False) As Stri
         End If
             
         tmp = li.Text & vbTab
-        For i = 1 To ListViewControl.ColumnHeaders.count - 1
+        For i = 1 To ListViewControl.ColumnHeaders.Count - 1
             tmp = tmp & li.subItems(i) & vbTab
         Next
         push ret, tmp
@@ -733,7 +745,7 @@ Function GetAllText(Optional subItemRow As Long = 0, Optional selectedOnly As Bo
     Set ListViewControl = lv
     If lvFilter.Visible Then Set ListViewControl = lvFilter
     
-    For i = 1 To ListViewControl.ListItems.count
+    For i = 1 To ListViewControl.ListItems.Count
         If subItemRow = 0 Then
             x = ListViewControl.ListItems(i).Text
             If selectedOnly And Not ListViewControl.ListItems(i).Selected Then x = Empty
@@ -769,7 +781,10 @@ Private Function isIde() As Boolean
 out: isIde = Err
 End Function
 
-
+Private Sub UserControl_Terminate()
+    m_Locked = False
+    Me.Clear
+End Sub
 
 
 
