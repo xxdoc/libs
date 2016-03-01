@@ -8,7 +8,7 @@ BEGIN
 END
 Attribute VB_Name = "LvwColumnHeader"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
@@ -171,6 +171,24 @@ PropForeColor = Value
 ShadowListView.FColumnHeadersRedraw
 End Property
 
+Public Property Get FilterType() As LvwColumnHeaderFilterTypeConstants
+Attribute FilterType.VB_Description = "Returns/sets the filter type of the column header."
+FilterType = ShadowListView.FColumnHeaderFilterType(PropIndex)
+End Property
+
+Public Property Let FilterType(ByVal Value As LvwColumnHeaderFilterTypeConstants)
+ShadowListView.FColumnHeaderFilterType(PropIndex) = Value
+End Property
+
+Public Property Get FilterValue() As Variant
+Attribute FilterValue.VB_Description = "Returns/sets the filter value of the column header."
+FilterValue = ShadowListView.FColumnHeaderFilterValue(PropIndex)
+End Property
+
+Public Property Let FilterValue(ByVal Value As Variant)
+ShadowListView.FColumnHeaderFilterValue(PropIndex) = Value
+End Property
+
 Public Property Get Left() As Single
 Attribute Left.VB_Description = "Returns/sets the distance between the internal left edge of an object and the left edge of its container."
 Left = ShadowListView.FColumnHeaderLeft(PropIndex)
@@ -183,6 +201,16 @@ End Property
 Public Sub AutoSize(ByVal Value As LvwColumnHeaderAutoSizeConstants)
 Attribute AutoSize.VB_Description = "Automatically sizes the column header."
 ShadowListView.FColumnHeaderAutoSize PropIndex, Value
+End Sub
+
+Public Sub EditFilter()
+Attribute EditFilter.VB_Description = "Moves the input focus to the filter edit control of the column header."
+ShadowListView.FColumnHeaderEditFilter PropIndex
+End Sub
+
+Public Sub ClearFilter()
+Attribute ClearFilter.VB_Description = "Clears the filter of the column header."
+ShadowListView.FColumnHeaderClearFilter PropIndex
 End Sub
 
 Public Function SubItemIndex() As Long

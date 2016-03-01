@@ -41,12 +41,14 @@ Class=CPublicEnums; CPublicEnums.cls
 Startup="Sub Main"
 HelpFile=""
 Title="Project1"
+ExeName32="kroolCtls.ocx"
 Command32=""
 Name="kroolCtls"
 HelpContextID="0"
 Description="krool's comctl replacement"
-CompatibleMode="0"
-CompatibleEXE32="Project1.ocx"
+CompatibleMode="2"
+CompatibleEXE32="kroolCtls.ocx"
+VersionCompatible32="1"
 MajorVer=1
 MinorVer=0
 RevisionVer=0
@@ -76,4 +78,4 @@ DebugStartupComponent=IPAddress
 AutoRefresh=1
 
 [fastBuild]
-fullPath=C:\Documents and Settings\david\Desktop\minDep\kroolCtls.ocx
+fullPath=D:\_code\libs\kroolCtls\kroolCtls.ocx

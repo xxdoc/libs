@@ -1,0 +1,150 @@
+29-Feb-2016
+- All controls are now "DPI Aware". (concerns exotic DPI or very large DPI, e.g. 113% and 200%)
+- ComboBoxW with Style 'CboStyleDropDownCombo' is now working on Windows 2000.
+  Message CB_GETCOMBOBOXINFO is not supported on Windows 2000, so little workaround was necessary to solve this.
+- Some other minor internal improvements.
+25-Feb-2016
+- Minor adjustment to the BackColor in the Toolbar control so that the Pager control can recognize it.
+24-Feb-2016
+- Fixed a bug that the Scroll event fired twice instead of once in the Slider control.
+19-Feb-2016
+- The BackColor property in the ToolBar control is now shown/visible at design-time.
+  But it remains ignored when the control paints via double-buffering. (also at run-time)
+30-Jan-2016
+- Included the ShowTrailingDates property in the MonthView control.
+- Included the CalendarShowTrailingDates property in the DTPicker control.
+- Forgot to rename the HotTrack property to 'HotTracking' in the property page of the SpinBox control.
+28-Jan-2016
+- Fixed a bug in the LVN_ITEMACTIVATE handler in the ListView control.
+  The Shift parameter in the ItemActivate event was not properly set.
+19-Jan-2016
+- Renamed the HotTrack property to 'HotTracking' in the SpinBox control.
+  So the wording is in line with the UpDown, TreeView, TabStrip, ListView and LinkLabel control.
+07-Jan-2016
+- Included the MaxText event in the TextBoxW and RichTextBox control.
+01-Jan-2016
+- Mouse events now again in correct order in the ImageCombo, TreeView and ListView control.
+  Some workaround was necessary to raise them 'After' (refer to update 21-Nov-2015) and keep correct order.
+  Issue was an internal modal message loop on these controls. (DragDetect)
+29-Dec-2015
+- UserControl_Resizer is now called in the CoolBar control when setting a child control.
+08-Dec-2015
+- WM_MOUSEWHEEL handlers are now "processed" (no forward to the chain anymore) in the DTPicker and MonthView Control.
+02-Dec-2015
+- Fixed a bug in the mouse events in the ListView and TreeView control. (relates to update on 21-Nov-2015)
+23-Nov-2015
+- Forgot to include ListBoxW and ComboBoxW in the ComCtlsIDEStopProtectionHandler.
+- InitReleaseVisualStyles function in VisualStyles.bas is now only called outside IDE.
+  This is more efficient then always call InitReleaseVisualStyles and do the IDE check on ReleaseVisualStyles.
+21-Nov-2015
+- Mouse events (e.g. MouseDown) are now raised 'After' the window procedures. (like MS controls do)
+  When using the GetCapture() API in the mouse events the return values are now appropriate.
+  Also calling for instance a MsgBox in the mouse events does not mess up the mouse capture anymore.
+  All other events (e.g. KeyDown) remains 'Before', as the values can be altered. (like MS controls do)
+20-Nov-2015
+- Included the TabScrollWheel property in the TabStrip control.
+16-Nov-2015
+- Included the constant 'CdlPDUseDevModeCopies' in the CommonDialog class.
+15-Nov-2015
+- Less memory consumption in Report View in the ListView control.
+13-Nov-2015
+- Control arrays are now working properly on all controls.
+  Shadow objects in class collections are now decoupled in design-time controls. (TabStrip, StatusBar, ToolBar, CoolBar and ImageList control)
+10-Nov-2015
+- Improved the InitReleaseVisualStyles function in VisualStyles.bas.
+30-Oct-2015
+- Some minor internal improvements.
+29-Oct-2015
+- Fixed a bug in the Font property in the LinkLabel control.
+- Setting 'Nothing' to the Font properties does not raise an error anymore.
+  Instead in that case the Font will be set to the 'Ambient.Font'. (like MS controls do)
+26-Oct-2015
+- Renamed 'CreateFontFromOLEFont' to 'CreateGDIFontFromOLEFont' and 'CloneFont' to 'CloneOLEFont' in Common.bas.
+18-Oct-2015
+- The ZOrder method is now also available when setting to a shadow object. ('Set' command)
+12-Oct-2015
+- Fixed a bug that Me.Controls.Add() caused an lack of functionality on some controls. (e.g. some Events not firing)
+10-Oct-2015
+- Graphical bugfix on the checkbox style ListBoxW control.
+02-Oct-2015
+- Some minor internal improvements.
+21-Sep-2015
+- Included the Click event in the DTPicker and MonthView control.
+- Included the Click and DblClick event in the StatusBar control.
+16-Sep-2015
+- Included the EllipsisFormat property in the ImageCombo control.
+12-Sep-2015
+- Included the StartOfWeek and Week property in the DTPicker control.
+- Fixed a bug in the StartOfWeek property in the MonthView control.
+17-Aug-2015
+- The DatePart function in the Week property uses now vbFirstFourDays instead of vbUseSystem in the MonthView control. (ISO-Norm)
+14-Aug-2015
+- Included the Week property in the MonthView control.
+- Some internal improvements in the DTPicker and MonthView control.
+04-Aug-2015
+- Included the Alignment property in the FrameW control.
+03-Aug-2015
+- Internal improvement in the UseColumnFilterBar property in the ListView control.
+02-Aug-2015
+- Included the EllipsisFormat property and the DisplayedCaption run time property in the LabelW control.
+19-Jul-2015
+- Included the SelectItem function in the ListBoxW control.
+  Also replaced LB_ITEMFROMPOINT to the LBItemFromPt comctl32 function as LB_ITEMFROMPOINT is restricted to 16 bit.
+16-Jul-2015
+- Fixed a bug in the Selected property in the ListBoxW control. (only effected single selection ListBoxW)
+  Also now the ItemClick event is fired when calling the Selected property resulted in a change. (Same behavior as on the MS ListBox)
+14-Jul-2015
+- The SizeGrip is now shown accordingly in the StatusBar control even when the parent/container has been changed at run time.
+13-Jul-2015
+- The StatusBar control does not need to subclass the parent form anymore.
+- Included the Increment method in the ProgressBar control.
+10-Jul-2015
+- Fixed a bug in the CDDS_ITEMPREPAINT handler in the ListView control.
+- Renamed the method 'SetFocusAPIField' to 'SetFocusToField' in the IPAddress control.
+07-Jul-2015
+- Included the UseColumnFilterBar property and ColumnFilterChanged/ColumnFilterButtonClick/BeforeFilterEdit/AfterFilterEdit event in the ListView control.
+- Included the ColumnFilterChangedTimeout run time property in the ListView control.
+- Included the FilterType/FilterValue property and EditFilter/ClearFilter method of a column header in the ListView control.
+01-Jul-2015
+- Included the DroppedDown property (replaces the ShowCalendar and CloseCalendar methods) in the DTPicker control.
+30-Jun-2015
+- Renamed the event 'GetCustomTipText' to 'ModifyTipText' in the Slider control.
+  The Text param is now set to what the current tip text is and if the param changes it updates the tip text.
+28-Jun-2015
+- Included the Reversed property and GetCustomTipText event in the Slider control.
+- Fixed a bug that the tool tip rect's did not update after resizing in the LinkLabel control.
+25-Jun-2015
+- Included the network address validation functionality into the TextBoxW control. ("msctls_netaddress")
+  Design time: NetAddressValidator/NetAddressType property.
+  Run time: ValidateNetAddress/ShowNetAddressErrorTip method and NetAddressFormat/NetAddressString/NetAddressPortNumber/NetAddressPrefixLength read-only property.
+19-Jun-2015
+- Included the Style/DownPicture/DisabledPicture/UseMaskColor/MaskColor/DrawMode property and OwnerDraw event in the CheckBoxW and OptionButtonW control.
+- Fixed a bug in the Picture property in the CommandButtonW, CheckBoxW and OptionButtonW control.
+17-Jun-2015
+- The MultiColumn property cannot be set to True anymore when the DrawMode property is OwnerDrawVariable in the ListBoxW control.
+  MSDN: The LBS_MULTICOLUMN and LBS_OWNERDRAWVARIABLE styles cannot be combined.
+16-Jun-2015
+- Included the ContextMenu event in the ComboBoxW control.
+15-Jun-2015
+- Included the ContextMenu and CalendarContextMenu event in the DTPicker control.
+14-Jun-2015
+- Included the GroupSubsetCount property in the ListView control.
+- Included the SubsetLink, Subseted and SubsetLinkSelected property of a Group in the ListView control.
+12-Jun-2015
+- Fixed an Overflow problem in the ListView control.
+07-Jun-2015
+- Included the FileShareViolation event in the CommonDialog class.
+05-Jun-2015
+- The Container property is now not anymore read-only on a shadow object.
+02-Jun-2015
+- Adjusted the behavior of the picture drawing (graphical style only) in the CommandButtonW control and VisualStyles.bas to match with the original behavior.
+01-Jun-2015
+- Fixed a bug in the handling of the DisabledPicture property in the CommandButtonW control and VisualStyles.bas.
+31-May-2015
+- Included the ForeColor/Style/DownPicture/DisabledPicture/UseMaskColor/MaskColor/DrawMode property and OwnerDraw event in the CommandButtonW control.
+- Some other minor improvements.
+
+[...]
+
+11-Nov-2012
+- First release.

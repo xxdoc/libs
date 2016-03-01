@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{13721F52-9B62-4CFD-B602-B9C73642064A}#1.0#0"; "kroolCtls.ocx"
+Object = "{B3802EF7-CC1A-4294-B64B-33354DC196B7}#1.1#0"; "kroolCtls.ocx"
 Begin VB.Form Form1 
    Caption         =   "Form1"
    ClientHeight    =   8460
@@ -10,17 +10,35 @@ Begin VB.Form Form1
    ScaleHeight     =   8460
    ScaleWidth      =   12105
    StartUpPosition =   3  'Windows Default
-   Begin kroolCtls.RichTextBox rtf 
-      Height          =   2985
-      Left            =   5265
-      TabIndex        =   3
-      Top             =   4815
-      Width           =   4245
-      _ExtentX        =   7488
-      _ExtentY        =   5265
+   Begin kroolCtls.TreeView TreeView1 
+      Height          =   3030
+      Left            =   8010
+      TabIndex        =   4
+      Top             =   2385
+      Width           =   2130
+      _ExtentX        =   3757
+      _ExtentY        =   5345
       BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "Courier"
-         Size            =   9.75
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+   End
+   Begin kroolCtls.RichTextBox RichTextBox1 
+      Height          =   3075
+      Left            =   1440
+      TabIndex        =   3
+      Top             =   4365
+      Width           =   4290
+      _ExtentX        =   7567
+      _ExtentY        =   5424
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
          Charset         =   0
          Weight          =   400
          Underline       =   0   'False
@@ -28,28 +46,18 @@ Begin VB.Form Form1
          Strikethrough   =   0   'False
       EndProperty
       MultiLine       =   -1  'True
-      ScrollBars      =   3
       WantReturn      =   -1  'True
       Text            =   "Form1.frx":0000
       TextRTF         =   "Form1.frx":0039
    End
-   Begin kroolCtls.ProgressBar pb 
-      Height          =   420
-      Left            =   5220
-      Top             =   3690
-      Width           =   4830
-      _ExtentX        =   8520
-      _ExtentY        =   741
-      Step            =   10
-   End
-   Begin kroolCtls.TabStrip TabStrip1 
-      Height          =   2805
-      Left            =   360
+   Begin kroolCtls.IPAddress IPAddress1 
+      Height          =   555
+      Left            =   7470
       TabIndex        =   2
-      Top             =   3195
-      Width           =   3525
-      _ExtentX        =   6218
-      _ExtentY        =   4948
+      Top             =   1260
+      Width           =   2940
+      _ExtentX        =   5186
+      _ExtentY        =   979
       BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
          Name            =   "MS Sans Serif"
          Size            =   8.25
@@ -59,38 +67,24 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      InitTabs        =   "Form1.frx":01AD
    End
-   Begin kroolCtls.TreeView tv 
-      Height          =   2940
-      Left            =   4950
-      TabIndex        =   1
-      Top             =   180
-      Width           =   3255
-      _ExtentX        =   5741
-      _ExtentY        =   5186
-      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Style           =   6
-      LineStyle       =   1
-      LabelEdit       =   1
-      Indentation     =   1
-   End
-   Begin kroolCtls.ListView lv 
-      Height          =   2715
-      Left            =   225
-      TabIndex        =   0
-      Top             =   225
+   Begin kroolCtls.ProgressBar ProgressBar1 
+      Height          =   555
+      Left            =   7425
+      Top             =   270
       Width           =   3750
       _ExtentX        =   6615
-      _ExtentY        =   4789
+      _ExtentY        =   979
+      Step            =   10
+   End
+   Begin kroolCtls.ListView ListView1 
+      Height          =   3480
+      Left            =   4725
+      TabIndex        =   1
+      Top             =   540
+      Width           =   2040
+      _ExtentX        =   3598
+      _ExtentY        =   6138
       BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
          Name            =   "MS Sans Serif"
          Size            =   8.25
@@ -100,14 +94,25 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      View            =   3
-      FullRowSelect   =   -1  'True
-      GridLines       =   -1  'True
-      LabelEdit       =   1
-      HideSelection   =   0   'False
-      GroupView       =   -1  'True
-      GroupSubsetCount=   2
-      UseColumnChevron=   -1  'True
+   End
+   Begin kroolCtls.TabStrip TabStrip1 
+      Height          =   3390
+      Left            =   315
+      TabIndex        =   0
+      Top             =   405
+      Width           =   3930
+      _ExtentX        =   6932
+      _ExtentY        =   5980
+      BeginProperty Font {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      InitTabs        =   "Form1.frx":01B9
    End
 End
 Attribute VB_Name = "Form1"

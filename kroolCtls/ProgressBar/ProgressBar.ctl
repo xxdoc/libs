@@ -82,10 +82,6 @@ Private Type PBRANGE
 Min As Long
 Max As Long
 End Type
-Private Type POINTAPI
-X As Long
-Y As Long
-End Type
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
 Attribute Click.VB_UserMemId = -600
@@ -122,8 +118,6 @@ Private Declare Function SetParent Lib "user32" (ByVal hWndChild As Long, ByVal 
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
-Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
 Private Const ICC_PROGRESS_CLASS As Long = &H20
 Private Const CLSID_ITaskBarList As String = "{56FDF344-FD6D-11D0-958A-006097C9A090}"
 Private Const IID_ITaskBarList3 As String = "{EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF}"
@@ -315,9 +309,9 @@ End Sub
 Private Sub UserControl_Resize()
 Static LastHeight As Single, LastWidth As Single, LastAlign As AlignConstants
 Static InProc As Boolean
-If ProgressBarHandle = 0 Or InProc = True Then Exit Sub
+If InProc = True Then Exit Sub
 InProc = True
-With Extender
+With UserControl.Extender
 Select Case .Align
     Case LastAlign
     Case vbAlignNone
@@ -336,7 +330,13 @@ LastHeight = .Height
 LastWidth = .Width
 LastAlign = .Align
 End With
-MoveWindow ProgressBarHandle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, 1
+With UserControl
+If (1440! \ Screen.TwipsPerPixelX) < (1440! / Screen.TwipsPerPixelX) Then
+    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
+    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
+End If
+If ProgressBarHandle <> 0 Then MoveWindow ProgressBarHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+End With
 InProc = False
 End Sub
 
@@ -418,6 +418,11 @@ End Property
 Public Property Let Visible(ByVal Value As Boolean)
 Extender.Visible = Value
 End Property
+
+Public Sub ZOrder(Optional ByRef Position As Variant)
+Attribute ZOrder.VB_Description = "Places a specified object at the front or back of the z-order within its graphical level."
+If IsMissing(Position) Then Extender.ZOrder Else Extender.ZOrder Position
+End Sub
 
 Public Property Get hWnd() As Long
 Attribute hWnd.VB_Description = "Returns a handle to a control."
@@ -666,18 +671,15 @@ End Property
 Public Property Let Orientation(ByVal Value As PrbOrientationConstants)
 Select Case Value
     Case PrbOrientationHorizontal, PrbOrientationVertical
-        If Extender.Align = vbAlignNone Then
-            Dim Swap As Single
-            If PropOrientation = PrbOrientationHorizontal And Value = PrbOrientationVertical Then
-                Swap = UserControl.Width
-                UserControl.Width = UserControl.Height
-                UserControl.Height = Swap
-            ElseIf PropOrientation = PrbOrientationVertical And Value = PrbOrientationHorizontal Then
-                Swap = UserControl.Height
-                UserControl.Height = UserControl.Width
-                UserControl.Width = Swap
+        With UserControl
+        If .Extender.Align = vbAlignNone And PropOrientation <> Value Then
+            If (1440! \ Screen.TwipsPerPixelX) < (1440! / Screen.TwipsPerPixelX) Then
+                .Extender.Move .Extender.Left, .Extender.Top, .Extender.Height, .Extender.Width
+            Else
+                .Size .ScaleX(.ScaleHeight, vbPixels, vbTwips), .ScaleY(.ScaleWidth, vbPixels, vbTwips)
             End If
         End If
+        End With
         PropOrientation = Value
     Case Else
         Err.Raise 380
@@ -747,7 +749,12 @@ End If
 End Property
 
 Public Property Let State(ByVal Value As PrbStateConstants)
-PropState = Value
+Select Case Value
+    Case PrbStateInProgress, PrbStateError, PrbStatePaused
+        PropState = Value
+    Case Else
+        Err.Raise 380
+End Select
 If ProgressBarHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
     SendMessage ProgressBarHandle, PBM_SETSTATE, PropState, ByVal 0&
 End If
@@ -827,6 +834,14 @@ Else
 End If
 End Sub
 
+Public Sub Increment(ByVal Delta As Long)
+Attribute Increment.VB_Description = "Advances the current position by a specified increment."
+If ProgressBarHandle <> 0 Then
+    SendMessage ProgressBarHandle, PBM_DELTAPOS, Delta, ByVal 0&
+    PropValue = Me.Value
+End If
+End Sub
+
 Public Sub SetTaskBarProgressState(ByVal State As PrbTaskBarStateConstants)
 Attribute SetTaskBarProgressState.VB_Description = "Sets the type and state of the progress indicator displayed on a taskbar button. This is only applicable on windows Vista/7 or above."
 If ProgressBarHandle <> 0 Then
@@ -880,6 +895,9 @@ Select Case wMsg
                 End If
             End If
         End If
+End Select
+WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim X As Single
         Dim Y As Single
@@ -908,11 +926,8 @@ Select Case wMsg
                 End Select
                 If ProgressBarIsClick = True Then
                     ProgressBarIsClick = False
-                    Dim P As POINTAPI
-                    GetCursorPos P
-                    If WindowFromPoint(P.X, P.Y) = hWnd Then RaiseEvent Click
+                    If (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then RaiseEvent Click
                 End If
         End Select
 End Select
-WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function

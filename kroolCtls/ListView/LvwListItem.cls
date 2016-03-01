@@ -8,7 +8,7 @@ BEGIN
 END
 Attribute VB_Name = "LvwListItem"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
@@ -22,10 +22,22 @@ Private PropForeColor As OLE_COLOR
 Private PropToolTipText As String
 Private PropIcon As Long
 Private PropSmallIcon As Long
-Private PropListSubItems As LvwListSubItems
+Private PropListSubItem As Collection
 
 Private Sub Class_Initialize()
 PropForeColor = -1
+End Sub
+
+Private Sub Class_Terminate()
+If Not PropListSubItem Is Nothing Then
+    Dim Item As Variant
+    With ShadowListView
+    For Each Item In PropListSubItem
+        .FListSubItemFree Item
+    Next Item
+    End With
+    Set PropListSubItem = Nothing
+End If
 End Sub
 
 Friend Sub FInit(ByVal Object As ListView, ByVal Index As Long, ByVal Key As String, ByVal Ptr As Long, ByVal Text As String, ByVal Icon As Long, ByVal SmallIcon As Long)
@@ -243,11 +255,9 @@ End Property
 
 Public Property Get ListSubItems() As LvwListSubItems
 Attribute ListSubItems.VB_Description = "Returns/sets a collection of list sub items belonging to the list item."
-If PropListSubItems Is Nothing Then
-    Set PropListSubItems = New LvwListSubItems
-    PropListSubItems.FInit ShadowListView, PropPtr, PropIndex
-End If
-Set ListSubItems = PropListSubItems
+If PropListSubItem Is Nothing Then Set PropListSubItem = New Collection
+Set ListSubItems = New LvwListSubItems
+ListSubItems.FInit ShadowListView, PropListSubItem, PropPtr, PropIndex
 End Property
 
 Public Property Get SubItems(ByVal Index As Integer) As String
@@ -258,16 +268,18 @@ End Property
 
 Public Property Let SubItems(ByVal Index As Integer, ByVal Value As String)
 If Index < 1 Or Index > (ShadowListView.ColumnHeaders.Count - 1) Then Err.Raise 380
-If Index > Me.ListSubItems.Count Then
+With Me.ListSubItems
+If Index > .Count Then
     Dim i As Long
-    For i = (Me.ListSubItems.Count + 1) To Index Step 1
+    For i = (.Count + 1) To Index Step 1
         If i < Index Then
-            Me.ListSubItems.Add
+            .Add
         Else
-            Me.ListSubItems.Add , , Value
+            .Add , , Value
         End If
     Next i
 Else
-    Me.ListSubItems(Index).Text = Value
+    .Item(Index).Text = Value
 End If
+End With
 End Property

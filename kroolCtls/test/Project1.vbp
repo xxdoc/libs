@@ -1,7 +1,8 @@
 Type=Exe
 Form=Form1.frm
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
-Object={13721F52-9B62-4CFD-B602-B9C73642064A}#1.0#0; kroolCtls.ocx
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
+Object={B3802EF7-CC1A-4294-B64B-33354DC196B7}#1.1#0; kroolCtls.ocx
+IconForm="Form1"
 Startup="Form1"
 Command32=""
 Name="Project1"

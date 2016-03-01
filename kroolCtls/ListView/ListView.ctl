@@ -30,6 +30,7 @@ Private LvwArrangeNone, LvwArrangeAutoLeft, LvwArrangeAutoTop, LvwArrangeLeft, L
 Private LvwColumnHeaderAlignmentLeft, LvwColumnHeaderAlignmentRight, LvwColumnHeaderAlignmentCenter
 Private LvwColumnHeaderSortArrowNone, LvwColumnHeaderSortArrowDown, LvwColumnHeaderSortArrowUp
 Private LvwColumnHeaderAutoSizeToItems, LvwColumnHeaderAutoSizeToHeader
+Private LvwColumnHeaderFilterTypeText, LvwColumnHeaderFilterTypeNumber
 Private LvwLabelEditAutomatic, LvwLabelEditManual, LvwLabelEditDisabled
 Private LvwSortOrderAscending, LvwSortOrderDescending
 Private LvwSortTypeBinary, LvwSortTypeText, LvwSortTypeNumeric, LvwSortTypeCurrency, LvwSortTypeDate
@@ -37,68 +38,6 @@ Private LvwPictureAlignmentTopLeft, LvwPictureAlignmentTopRight, LvwPictureAlign
 Private LvwGroupHeaderAlignmentLeft, LvwGroupHeaderAlignmentRight, LvwGroupHeaderAlignmentCenter
 Private LvwGroupFooterAlignmentLeft, LvwGroupFooterAlignmentRight, LvwGroupFooterAlignmentCenter
 #End If
-Public Enum LvwViewConstants
-LvwViewIcon = 0
-LvwViewSmallIcon = 1
-LvwViewList = 2
-LvwViewReport = 3
-LvwViewTile = 4
-End Enum
-Public Enum LvwArrangeConstants
-LvwArrangeNone = 0
-LvwArrangeAutoLeft = 1
-LvwArrangeAutoTop = 2
-LvwArrangeLeft = 3
-LvwArrangeTop = 4
-End Enum
-Public Enum LvwColumnHeaderAlignmentConstants
-LvwColumnHeaderAlignmentLeft = 0
-LvwColumnHeaderAlignmentRight = 1
-LvwColumnHeaderAlignmentCenter = 2
-End Enum
-Public Enum LvwColumnHeaderSortArrowConstants
-LvwColumnHeaderSortArrowNone = 0
-LvwColumnHeaderSortArrowDown = 1
-LvwColumnHeaderSortArrowUp = 2
-End Enum
-Public Enum LvwColumnHeaderAutoSizeConstants
-LvwColumnHeaderAutoSizeToItems = 0
-LvwColumnHeaderAutoSizeToHeader = 1
-End Enum
-Public Enum LvwLabelEditConstants
-LvwLabelEditAutomatic = 0
-LvwLabelEditManual = 1
-LvwLabelEditDisabled = 2
-End Enum
-Public Enum LvwSortOrderConstants
-LvwSortOrderAscending = 0
-LvwSortOrderDescending = 1
-End Enum
-Public Enum LvwSortTypeConstants
-LvwSortTypeBinary = 0
-LvwSortTypeText = 1
-LvwSortTypeNumeric = 2
-LvwSortTypeCurrency = 3
-LvwSortTypeDate = 4
-End Enum
-Public Enum LvwPictureAlignmentConstants
-LvwPictureAlignmentTopLeft = 0
-LvwPictureAlignmentTopRight = 1
-LvwPictureAlignmentBottomLeft = 2
-LvwPictureAlignmentBottomRight = 3
-LvwPictureAlignmentCenter = 4
-LvwPictureAlignmentTile = 5
-End Enum
-Public Enum LvwGroupHeaderAlignmentConstants
-LvwGroupHeaderAlignmentLeft = 0
-LvwGroupHeaderAlignmentRight = 1
-LvwGroupHeaderAlignmentCenter = 2
-End Enum
-Public Enum LvwGroupFooterAlignmentConstants
-LvwGroupFooterAlignmentLeft = 0
-LvwGroupFooterAlignmentRight = 1
-LvwGroupFooterAlignmentCenter = 2
-End Enum
 Private Type POINTAPI
 X As Long
 Y As Long
@@ -112,6 +51,15 @@ End Type
 Private Type SIZEAPI
 CX As Long
 CY As Long
+End Type
+Private Type WINDOWPOS
+hWnd As Long
+hWndInsertAfter As Long
+X As Long
+Y As Long
+CX As Long
+CY As Long
+Flags As Long
 End Type
 Private Type LVITEM
 Mask As Long
@@ -317,6 +265,11 @@ iItem As Long
 iButton As Long
 lPtrHDItem As Long
 End Type
+Private Type NMHDFILTERBTNCLICK
+hdr As NMHDR
+iItem As Long
+RC As RECT
+End Type
 Private Type HDITEM
 Mask As Long
 CXY As Long
@@ -327,6 +280,16 @@ fmt As Long
 lParam As Long
 iImage As Long
 iOrder As Long
+FilterType As Long
+pvFilter As Long
+End Type
+Private Type HDLAYOUT
+lpRC As Long
+lpWPOS As Long
+End Type
+Private Type HDTEXTFILTER
+pszText As Long
+cchTextMax As Long
 End Type
 Public Event Click()
 Attribute Click.VB_Description = "Occurs when the user presses and then releases a mouse button over an object."
@@ -376,6 +339,14 @@ Public Event ColumnCheck(ByVal ColumnHeader As LvwColumnHeader)
 Attribute ColumnCheck.VB_Description = "Occurs when a column header is checked. Requires comctl32.dll version 6.1 or higher."
 Public Event ColumnChevronPushed(ByVal ColumnHeader As LvwColumnHeader)
 Attribute ColumnChevronPushed.VB_Description = "Occurs when a chevron button of a column header is pushed. Requires comctl32.dll version 6.1 or higher."
+Public Event ColumnFilterChanged(ByVal ColumnHeader As LvwColumnHeader)
+Attribute ColumnFilterChanged.VB_Description = "Occurs when a filter of a column header has been changed."
+Public Event ColumnFilterButtonClick(ByVal ColumnHeader As LvwColumnHeader, ByRef RaiseFilterChanged As Boolean, ByVal ButtonLeft As Long, ByVal ButtonTop As Long, ByVal ButtonRight As Long, ByVal ButtonBottom As Long)
+Attribute ColumnFilterButtonClick.VB_Description = "Occurs when a filter button of a column header is clicked."
+Public Event BeforeFilterEdit(ByVal ColumnHeader As LvwColumnHeader, ByVal hWndFilterEdit As Long)
+Attribute BeforeFilterEdit.VB_Description = "Occurs when a user attempts to edit the filter of the corresponding column header."
+Public Event AfterFilterEdit(ByVal ColumnHeader As LvwColumnHeader)
+Attribute AfterFilterEdit.VB_Description = "Occurs after a user edits the filter of the corresponding column header."
 Public Event GetEmptyMarkup(ByRef Text As String, ByRef Centered As Boolean)
 Attribute GetEmptyMarkup.VB_Description = "Occurs when the list view has no list items. This is a request to provide a markup text. Requires comctl32.dll version 6.1 or higher."
 Public Event GroupCollapsedChanged(ByVal Group As LvwGroup)
@@ -431,11 +402,13 @@ Private Declare Function HeapAlloc Lib "kernel32" (ByVal hHeap As Long, ByVal dw
 Private Declare Function HeapFree Lib "kernel32" (ByVal hHeap As Long, ByVal dwFlags As Long, ByVal lpMem As Long) As Long
 Private Declare Function SysAllocString Lib "oleaut32" (ByVal lpString As Long) As Long
 Private Declare Function SysFreeString Lib "oleaut32" (ByVal lpString As Long) As Long
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function ImageList_GetIconSize Lib "comctl32" (ByVal hImageList As Long, ByRef CX As Long, ByRef CY As Long) As Long
 Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExW" (ByVal dwExStyle As Long, ByVal lpClassName As Long, ByVal lpWindowName As Long, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, ByRef lpParam As Any) As Long
 Private Declare Function SetWindowLong Lib "user32" Alias "SetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongW" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
+Private Declare Function GetClassName Lib "user32" Alias "GetClassNameW" (ByVal hWnd As Long, ByVal lpClassName As Long, ByVal nMaxCount As Long) As Long
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
@@ -450,13 +423,14 @@ Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Lon
 Private Declare Function SetTextColor Lib "gdi32" (ByVal hDC As Long, ByVal crColor As Long) As Long
 Private Declare Function RedrawWindow Lib "user32" (ByVal hWnd As Long, ByVal lprcUpdate As Long, ByVal hrgnUpdate As Long, ByVal fuRedraw As Long) As Long
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As POINTAPI) As Long
-Private Declare Function WindowFromPoint Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
 Private Declare Function ScreenToClient Lib "user32" (ByVal hWnd As Long, ByRef lpPoint As POINTAPI) As Long
 Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
 Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, ByRef lpRect As RECT) As Long
+Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hWndTo As Long, ByRef lppt As Any, ByVal cPoints As Long) As Long
 Private Declare Function GetSystemMetrics Lib "user32" (ByVal nIndex As Long) As Long
 Private Declare Function LoadCursor Lib "user32" Alias "LoadCursorW" (ByVal hInstance As Long, ByVal lpCursorName As Any) As Long
 Private Declare Function SetCursor Lib "user32" (ByVal hCursor As Long) As Long
+Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal X As Long, ByVal Y As Long, ByVal CX As Long, ByVal CY As Long, ByVal wFlags As Long) As Long
 Private Declare Function UpdateWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Const ICC_LISTVIEW_CLASSES As Long = &H1
 Private Const RDW_UPDATENOW As Long = &H100
@@ -480,10 +454,12 @@ Private Const SB_LINEUP As Long = 0, SB_LINEDOWN As Long = 1
 Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4, HTBORDER As Long = 18
 Private Const WM_MOUSEWHEEL As Long = &H20A
 Private Const SW_HIDE As Long = &H0
+Private Const SW_SHOW As Long = &H5
 Private Const WM_NOTIFY As Long = &H4E
 Private Const WM_NOTIFYFORMAT As Long = &H55
 Private Const WM_SETFOCUS As Long = &H7
 Private Const WM_KILLFOCUS As Long = &H8
+Private Const WM_COMMAND As Long = &H111
 Private Const WM_KEYDOWN As Long = &H100
 Private Const WM_KEYUP As Long = &H101
 Private Const WM_CHAR As Long = &H102
@@ -504,6 +480,9 @@ Private Const WM_CONTEXTMENU As Long = &H7B
 Private Const CLR_NONE As Long = &HFFFFFFFF
 Private Const CCM_FIRST As Long = &H2000
 Private Const CCM_SETVERSION As Long = (CCM_FIRST + 7)
+Private Const WM_USER As Long = &H400
+Private Const UM_ENDFILTEREDIT As Long = (WM_USER + 400)
+Private Const UM_BUTTONDOWN As Long = (WM_USER + 700)
 Private Const LVM_FIRST As Long = &H1000
 Private Const LVM_GETBKCOLOR As Long = (LVM_FIRST + 0)
 Private Const LVM_SETBKCOLOR As Long = (LVM_FIRST + 1)
@@ -745,10 +724,25 @@ Private Const LVHT_TOLEFT As Long = &H40
 Private Const LV_MAX_WORKAREAS As Long = 16
 Private Const EMF_CENTERED As Long = 1
 Private Const HDM_FIRST As Long = &H1200
+Private Const HDM_GETITEMA As Long = (HDM_FIRST + 3)
+Private Const HDM_GETITEMW As Long = (HDM_FIRST + 11)
+Private Const HDM_GETITEM As Long = HDM_GETITEMW
+Private Const HDM_SETITEMA As Long = (HDM_FIRST + 4)
+Private Const HDM_SETITEMW As Long = (HDM_FIRST + 12)
+Private Const HDM_SETITEM As Long = HDM_SETITEMW
+Private Const HDM_LAYOUT As Long = (HDM_FIRST + 5)
 Private Const HDM_SETIMAGELIST As Long = (HDM_FIRST + 8)
 Private Const HDM_GETIMAGELIST As Long = (HDM_FIRST + 9)
+Private Const HDM_SETFILTERCHANGETIMEOUT As Long = (HDM_FIRST + 22)
+Private Const HDM_EDITFILTER As Long = (HDM_FIRST + 23)
+Private Const HDM_CLEARFILTER As Long = (HDM_FIRST + 24)
+Private Const HDM_GETFOCUSEDITEM As Long = (HDM_FIRST + 27)
 Private Const HDSIL_NORMAL As Long = 0
 Private Const HDSIL_STATE As Long = 0
+Private Const HDI_FILTER As Long = &H100
+Private Const HDFT_ISSTRING As Long = &H0
+Private Const HDFT_ISNUMBER As Long = &H1
+Private Const HDFT_HASNOVALUE As Long = &H8000&
 Private Const HDF_SORTDOWN As Long = &H200
 Private Const HDF_SORTUP As Long = &H400
 Private Const HDF_BITMAP_ON_RIGHT As Long = &H1000
@@ -760,6 +754,7 @@ Private Const HDS_BUTTONS As Long = &H2
 Private Const HDS_HOTTRACK As Long = &H4
 Private Const HDS_CHECKBOXES As Long = &H400
 Private Const HDS_FULLDRAG As Long = &H80
+Private Const HDS_FILTERBAR As Long = &H100
 Private Const HDS_NOSIZING As Long = &H800
 Private Const HDS_OVERFLOW As Long = &H1000
 Private Const HDN_FIRST As Long = (-300)
@@ -771,6 +766,10 @@ Private Const HDN_ENDTRACKW As Long = (HDN_FIRST - 27)
 Private Const HDN_ENDTRACK As Long = HDN_ENDTRACKW
 Private Const HDN_BEGINDRAG As Long = (HDN_FIRST - 10)
 Private Const HDN_ENDDRAG As Long = (HDN_FIRST - 11)
+Private Const HDN_FILTERCHANGE As Long = (HDN_FIRST - 12)
+Private Const HDN_FILTERBTNCLICK As Long = (HDN_FIRST - 13)
+Private Const HDN_BEGINFILTEREDIT As Long = (HDN_FIRST - 14)
+Private Const HDN_ENDFILTEREDIT As Long = (HDN_FIRST - 15)
 Private Const HDN_ITEMSTATEICONCLICK As Long = (HDN_FIRST - 16)
 Private Const HDN_DROPDOWN As Long = (HDN_FIRST - 18)
 Private Const LVCF_FMT As Long = &H1
@@ -828,6 +827,7 @@ Private Const I_IMAGECALLBACK As Long = (-1)
 Private Const I_COLUMNSCALLBACK As Long = (-1)
 Private Const I_GROUPIDCALLBACK As Long = (-1)
 Private Const I_GROUPIDNONE As Long = (-2)
+Private Const MAX_PATH As Long = 260
 Private Const H_MAX As Long = (&HFFFF + 1)
 Private Const NM_FIRST As Long = H_MAX
 Private Const NM_CLICK As Long = (NM_FIRST - 2)
@@ -897,6 +897,7 @@ Private ListViewDragIndexBuffer As Long, ListViewDragIndex As Long
 Private ListViewDragOffsetX As Long, ListViewDragOffsetY As Long
 Private ListViewMemoryColumnWidth As Long
 Private ListViewIsClick As Boolean
+Private ListViewFilterEditHandle As Long, ListViewFilterEditIndex As Long
 Private DispIDMousePointer As Long
 Private DispIDHotMousePointer As Long
 Private DispIDIcons As Long, IconsArray() As String
@@ -959,6 +960,7 @@ Private PropSnapToGrid As Boolean
 Private PropGroupView As Boolean
 Private PropGroupSubsetCount As Long
 Private PropUseColumnChevron As Boolean
+Private PropUseColumnFilterBar As Boolean
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -972,11 +974,15 @@ If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
     Select Case KeyCode
         Case vbKeyUp, vbKeyDown, vbKeyLeft, vbKeyRight, vbKeyPageDown, vbKeyPageUp, vbKeyHome, vbKeyEnd, vbKeyReturn, vbKeyEscape
             If ListViewHandle <> 0 Then
-                If ListViewLabelInEdit = True Then
-                    SendMessage Me.hWndLabelEdit, wMsg, wParam, ByVal lParam
+                If ListViewFilterEditHandle = 0 Then
+                    If ListViewLabelInEdit = True Then
+                        SendMessage Me.hWndLabelEdit, wMsg, wParam, ByVal lParam
+                    Else
+                        If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
+                        SendMessage ListViewHandle, wMsg, wParam, ByVal lParam
+                    End If
                 Else
-                    If (KeyCode = vbKeyReturn Or KeyCode = vbKeyEscape) And IsInputKey = False Then Exit Sub
-                    SendMessage ListViewHandle, wMsg, wParam, ByVal lParam
+                    SendMessage ListViewFilterEditHandle, wMsg, wParam, ByVal lParam
                 End If
                 Handled = True
             End If
@@ -1144,8 +1150,13 @@ PropSnapToGrid = False
 PropGroupView = False
 PropGroupSubsetCount = 0
 PropUseColumnChevron = False
-Call CreateListView
-Me.FListItemsAdd 0, 1, Ambient.DisplayName
+PropUseColumnFilterBar = False
+If Ambient.UserMode = True Then
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
+Else
+    Call CreateListView
+    Me.FListItemsAdd 0, 1, Ambient.DisplayName
+End If
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
@@ -1206,9 +1217,10 @@ PropSnapToGrid = .ReadProperty("SnapToGrid", False)
 PropGroupView = .ReadProperty("GroupView", False)
 PropGroupSubsetCount = .ReadProperty("GroupSubsetCount", 0)
 PropUseColumnChevron = .ReadProperty("UseColumnChevron", False)
+PropUseColumnFilterBar = .ReadProperty("UseColumnFilterBar", PropUseColumnFilterBar)
 End With
 If Ambient.UserMode = True Then
-    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 3)
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 5)
     If Not PropIconsName = "(None)" Or Not PropSmallIconsName = "(None)" Or Not PropColumnHeaderIconsName = "(None)" Or Not PropGroupIconsName = "(None)" Then TimerImageList.Enabled = True
 Else
     Call CreateListView
@@ -1274,6 +1286,7 @@ With PropBag
 .WriteProperty "GroupView", PropGroupView, False
 .WriteProperty "GroupSubsetCount", PropGroupSubsetCount, 0
 .WriteProperty "UseColumnChevron", PropUseColumnChevron, False
+.WriteProperty "UseColumnFilterBar", PropUseColumnFilterBar, False
 End With
 End Sub
 
@@ -1386,10 +1399,17 @@ End If
 End Sub
 
 Private Sub UserControl_Resize()
-If ListViewHandle = 0 Then Exit Sub
+Static InProc As Boolean
+If InProc = True Then Exit Sub
+InProc = True
 With UserControl
-MoveWindow ListViewHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+If (1440! \ Screen.TwipsPerPixelX) < (1440! / Screen.TwipsPerPixelX) Then
+    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
+    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
+End If
+If ListViewHandle <> 0 Then MoveWindow ListViewHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
 End With
+InProc = False
 End Sub
 
 Private Sub UserControl_Hide()
@@ -1510,6 +1530,11 @@ Public Property Let Visible(ByVal Value As Boolean)
 Extender.Visible = Value
 End Property
 
+Public Sub ZOrder(Optional ByRef Position As Variant)
+Attribute ZOrder.VB_Description = "Places a specified object at the front or back of the z-order within its graphical level."
+If IsMissing(Position) Then Extender.ZOrder Else Extender.ZOrder Position
+End Sub
+
 Public Property Get hWnd() As Long
 Attribute hWnd.VB_Description = "Returns a handle to a control."
 Attribute hWnd.VB_UserMemId = -515
@@ -1542,6 +1567,7 @@ Set Me.Font = NewFont
 End Property
 
 Public Property Set Font(ByVal NewFont As StdFont)
+If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As Long, OldBoldFontHandle As Long, OldUnderlineFontHandle As Long, OldBoldUnderlineFontHandle As Long
 Dim TempFont As StdFont
 Set PropFont = NewFont
@@ -1549,17 +1575,17 @@ OldFontHandle = ListViewFontHandle
 OldBoldFontHandle = ListViewBoldFontHandle
 OldUnderlineFontHandle = ListViewUnderlineFontHandle
 OldBoldUnderlineFontHandle = ListViewBoldUnderlineFontHandle
-ListViewFontHandle = CreateFontFromOLEFont(PropFont)
-Set TempFont = CloneFont(PropFont)
+ListViewFontHandle = CreateGDIFontFromOLEFont(PropFont)
+Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
-ListViewBoldFontHandle = CreateFontFromOLEFont(TempFont)
-Set TempFont = CloneFont(PropFont)
+ListViewBoldFontHandle = CreateGDIFontFromOLEFont(TempFont)
+Set TempFont = CloneOLEFont(PropFont)
 TempFont.Underline = True
-ListViewUnderlineFontHandle = CreateFontFromOLEFont(TempFont)
-Set TempFont = CloneFont(PropFont)
+ListViewUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont)
+Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
 TempFont.Underline = True
-ListViewBoldUnderlineFontHandle = CreateFontFromOLEFont(TempFont)
+ListViewBoldUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont)
 If ListViewHandle <> 0 Then SendMessage ListViewHandle, WM_SETFONT, ListViewFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 If OldBoldFontHandle <> 0 Then DeleteObject OldBoldFontHandle
@@ -1575,17 +1601,17 @@ OldFontHandle = ListViewFontHandle
 OldBoldFontHandle = ListViewBoldFontHandle
 OldUnderlineFontHandle = ListViewUnderlineFontHandle
 OldBoldUnderlineFontHandle = ListViewBoldUnderlineFontHandle
-ListViewFontHandle = CreateFontFromOLEFont(PropFont)
-Set TempFont = CloneFont(PropFont)
+ListViewFontHandle = CreateGDIFontFromOLEFont(PropFont)
+Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
-ListViewBoldFontHandle = CreateFontFromOLEFont(TempFont)
-Set TempFont = CloneFont(PropFont)
+ListViewBoldFontHandle = CreateGDIFontFromOLEFont(TempFont)
+Set TempFont = CloneOLEFont(PropFont)
 TempFont.Underline = True
-ListViewUnderlineFontHandle = CreateFontFromOLEFont(TempFont)
-Set TempFont = CloneFont(PropFont)
+ListViewUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont)
+Set TempFont = CloneOLEFont(PropFont)
 TempFont.Bold = True
 TempFont.Underline = True
-ListViewBoldUnderlineFontHandle = CreateFontFromOLEFont(TempFont)
+ListViewBoldUnderlineFontHandle = CreateGDIFontFromOLEFont(TempFont)
 If ListViewHandle <> 0 Then SendMessage ListViewHandle, WM_SETFONT, ListViewFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 If OldBoldFontHandle <> 0 Then DeleteObject OldBoldFontHandle
@@ -2149,6 +2175,7 @@ If ListViewHandle <> 0 And Ambient.UserMode = True Then
     SendMessage ListViewHandle, WM_SETREDRAW, IIf(PropRedraw = True, 1, 0), ByVal 0&
     If PropRedraw = True Then Me.Refresh
 End If
+UserControl.PropertyChanged "Redraw"
 End Property
 
 Public Property Get View() As LvwViewConstants
@@ -3007,6 +3034,42 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
     End If
 End If
 UserControl.PropertyChanged "UseColumnChevron"
+End Property
+
+Public Property Get UseColumnFilterBar() As Boolean
+Attribute UseColumnFilterBar.VB_Description = "Returns/sets a value indicating if a filter bar is used on the column headers to allow users to conveniently apply a filter to the display."
+UseColumnFilterBar = PropUseColumnFilterBar
+End Property
+
+Public Property Let UseColumnFilterBar(ByVal Value As Boolean)
+PropUseColumnFilterBar = Value
+If ListViewHandle <> 0 Then
+    If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then
+        Dim dwStyle As Long
+        dwStyle = GetWindowLong(ListViewHeaderHandle, GWL_STYLE)
+        If Not PropUseColumnFilterBar = CBool((dwStyle And HDS_FILTERBAR) = HDS_FILTERBAR) Then
+            If PropUseColumnFilterBar = True Then
+                If Not (dwStyle And HDS_FILTERBAR) = HDS_FILTERBAR Then dwStyle = dwStyle Or HDS_FILTERBAR
+            Else
+                If (dwStyle And HDS_FILTERBAR) = HDS_FILTERBAR Then dwStyle = dwStyle And Not HDS_FILTERBAR
+            End If
+            SetWindowLong ListViewHeaderHandle, GWL_STYLE, dwStyle
+            ' The header layout needs to be adjusted.
+            Dim HDL As HDLAYOUT, RC As RECT, WPOS As WINDOWPOS
+            GetClientRect ListViewHandle, RC
+            HDL.lpRC = VarPtr(RC)
+            HDL.lpWPOS = VarPtr(WPOS)
+            SendMessage ListViewHeaderHandle, HDM_LAYOUT, 0, ByVal VarPtr(HDL)
+            SetWindowPos WPOS.hWnd, WPOS.hWndInsertAfter, WPOS.X, WPOS.Y, WPOS.CX, WPOS.CY, WPOS.Flags
+            SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
+            ' Hide and show will force the necessary updates in the view area.
+            ShowWindow ListViewHandle, SW_HIDE
+            ShowWindow ListViewHandle, SW_SHOW
+        End If
+    End If
+End If
+UserControl.PropertyChanged "UseColumnFilterBar"
 End Property
 
 Public Property Get ListItems() As LvwListItems
@@ -3954,6 +4017,130 @@ If ListViewHandle <> 0 And ComCtlsSupportLevel() >= 2 Then
 End If
 End Property
 
+Friend Property Get FColumnHeaderFilterType(ByVal Index As Long) As LvwColumnHeaderFilterTypeConstants
+If ListViewHandle <> 0 Then
+    ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then
+        Dim HDI As HDITEM
+        With HDI
+        .Mask = HDI_FILTER
+        SendMessage ListViewHeaderHandle, HDM_GETITEM, Index - 1, ByVal VarPtr(HDI)
+        If (.FilterType And HDFT_HASNOVALUE) = HDFT_HASNOVALUE Then .FilterType = .FilterType And Not HDFT_HASNOVALUE
+        Select Case .FilterType
+            Case HDFT_ISSTRING
+                FColumnHeaderFilterType = LvwColumnHeaderFilterTypeText
+            Case HDFT_ISNUMBER
+                FColumnHeaderFilterType = LvwColumnHeaderFilterTypeNumber
+        End Select
+        End With
+    End If
+End If
+End Property
+
+Friend Property Let FColumnHeaderFilterType(ByVal Index As Long, ByVal Value As LvwColumnHeaderFilterTypeConstants)
+If ListViewHandle <> 0 Then
+    ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then
+        Select Case Value
+            Case LvwColumnHeaderFilterTypeText, LvwColumnHeaderFilterTypeNumber
+                Dim HDI As HDITEM
+                With HDI
+                .Mask = HDI_FILTER
+                .FilterType = Value
+                Select Case .FilterType
+                    Case HDFT_ISSTRING
+                        Dim HDTF As HDTEXTFILTER
+                        .pvFilter = VarPtr(HDTF)
+                    Case HDFT_ISNUMBER
+                        Dim LngValue As Long
+                        .pvFilter = VarPtr(LngValue)
+                End Select
+                SendMessage ListViewHeaderHandle, HDM_SETITEM, Index - 1, ByVal VarPtr(HDI)
+                .FilterType = .FilterType Or HDFT_HASNOVALUE
+                .pvFilter = 0
+                SendMessage ListViewHeaderHandle, HDM_SETITEM, Index - 1, ByVal VarPtr(HDI)
+                End With
+            Case Else
+                Err.Raise 380
+        End Select
+    End If
+End If
+End Property
+
+Friend Property Get FColumnHeaderFilterValue(ByVal Index As Long) As Variant
+If ListViewHandle <> 0 Then
+    ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then
+        Dim HDI As HDITEM
+        With HDI
+        .Mask = HDI_FILTER
+        SendMessage ListViewHeaderHandle, HDM_GETITEM, Index - 1, ByVal VarPtr(HDI)
+        If (.FilterType And HDFT_HASNOVALUE) = HDFT_HASNOVALUE Then
+            FColumnHeaderFilterValue = Null
+        Else
+            Select Case .FilterType
+                Case HDFT_ISSTRING
+                    Dim HDTF As HDTEXTFILTER, Buffer As String
+                    Buffer = String(MAX_PATH, vbNullChar) & vbNullChar
+                    HDTF.pszText = StrPtr(Buffer)
+                    HDTF.cchTextMax = Len(Buffer)
+                    .pvFilter = VarPtr(HDTF)
+                    SendMessage ListViewHeaderHandle, HDM_GETITEM, Index - 1, ByVal VarPtr(HDI)
+                    FColumnHeaderFilterValue = Left$(Buffer, InStr(Buffer, vbNullChar) - 1)
+                Case HDFT_ISNUMBER
+                    Dim LngValue As Long
+                    .pvFilter = VarPtr(LngValue)
+                    SendMessage ListViewHeaderHandle, HDM_GETITEM, Index - 1, ByVal VarPtr(HDI)
+                    FColumnHeaderFilterValue = LngValue
+            End Select
+        End If
+        End With
+    End If
+End If
+End Property
+
+Friend Property Let FColumnHeaderFilterValue(ByVal Index As Long, ByVal Value As Variant)
+If ListViewHandle <> 0 Then
+    ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then
+        Dim HDI As HDITEM, ErrVal As Long
+        With HDI
+        .Mask = HDI_FILTER
+        SendMessage ListViewHeaderHandle, HDM_GETITEM, Index - 1, ByVal VarPtr(HDI)
+        If (.FilterType And HDFT_HASNOVALUE) = HDFT_HASNOVALUE Then .FilterType = .FilterType And Not HDFT_HASNOVALUE
+        Select Case .FilterType
+            Case HDFT_ISSTRING
+                Dim HDTF As HDTEXTFILTER
+                Select Case VarType(Value)
+                    Case vbString
+                        HDTF.pszText = StrPtr(Value)
+                        HDTF.cchTextMax = Len(Value)
+                        .pvFilter = VarPtr(HDTF)
+                    Case vbNull, vbEmpty
+                        .FilterType = .FilterType Or HDFT_HASNOVALUE
+                        .pvFilter = 0
+                    Case Else
+                        Err.Raise 13
+                End Select
+            Case HDFT_ISNUMBER
+                Dim LngValue As Long
+                Select Case VarType(Value)
+                    Case vbLong, vbInteger, vbByte
+                        LngValue = Value
+                        .pvFilter = VarPtr(LngValue)
+                    Case vbNull, vbEmpty
+                        .FilterType = .FilterType Or HDFT_HASNOVALUE
+                        .pvFilter = 0
+                    Case Else
+                        Err.Raise 13
+                End Select
+        End Select
+        SendMessage ListViewHeaderHandle, HDM_SETITEM, Index - 1, ByVal VarPtr(HDI)
+        End With
+    End If
+End If
+End Property
+
 Friend Property Get FColumnHeaderLeft(ByVal Index As Long) As Single
 If ListViewHandle <> 0 Then
     Dim i As Long
@@ -3979,6 +4166,23 @@ If ListViewHandle <> 0 Then
 End If
 End Sub
 
+Friend Sub FColumnHeaderEditFilter(ByVal Index As Long)
+If ListViewHandle <> 0 Then
+    If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then
+        UserControl.SetFocus
+        SendMessage ListViewHeaderHandle, HDM_EDITFILTER, Index - 1, ByVal 0&
+    End If
+End If
+End Sub
+
+Friend Sub FColumnHeaderClearFilter(ByVal Index As Long)
+If ListViewHandle <> 0 Then
+    If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then SendMessage ListViewHeaderHandle, HDM_CLEARFILTER, Index - 1, ByVal 0&
+End If
+End Sub
+
 Friend Function FColumnHeaderSubItemIndex(ByVal Index As Long) As Long
 If ListViewHandle <> 0 Then
     Dim LVC As LVCOLUMN
@@ -3995,7 +4199,7 @@ If PropGroups Is Nothing Then
         Set PropGroups = New LvwGroups
         PropGroups.FInit Me
     Else
-        Err.Raise Number:=91, Description:="To use this functionality, you must provide a manifest specifying comctl32.dll version 6.0 or higher"
+        Err.Raise Number:=91, Description:="To use this functionality, you must provide a manifest specifying comctl32.dll version 6.0 or higher."
     End If
 End If
 Set Groups = PropGroups
@@ -4667,7 +4871,10 @@ If PropHideSelection = False Then dwStyle = dwStyle Or LVS_SHOWSELALWAYS
 If PropHideColumnHeaders = True Then dwStyle = dwStyle Or LVS_NOCOLUMNHEADER
 If Ambient.RightToLeft = True Then dwExStyle = dwExStyle Or WS_EX_RTLREADING
 ListViewHandle = CreateWindowEx(dwExStyle, StrPtr("SysListView32"), StrPtr("List View"), dwStyle, 0, 0, UserControl.ScaleWidth, UserControl.ScaleHeight, UserControl.hWnd, 0, App.hInstance, ByVal 0&)
-If PropView = LvwViewReport Then ListViewHeaderHandle = Me.hWndHeader
+If PropView = LvwViewReport Then
+    ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then Call ComCtlsSetSubclass(ListViewHeaderHandle, Me, 4)
+End If
 If ListViewHandle <> 0 Then If Ambient.UserMode = True And PropView = LvwViewTile Then SendMessage ListViewHandle, LVM_SETVIEW, LV_VIEW_TILE, ByVal 0&
 Set Me.Font = PropFont
 Me.VisualStyles = PropVisualStyles
@@ -4699,6 +4906,7 @@ Me.SnapToGrid = PropSnapToGrid
 Me.GroupView = PropGroupView
 Me.GroupSubsetCount = PropGroupSubsetCount
 Me.UseColumnChevron = PropUseColumnChevron
+Me.UseColumnFilterBar = PropUseColumnFilterBar
 If ListViewHandle <> 0 Then
     If ComCtlsSupportLevel() = 0 Then
         ' According to MSDN:
@@ -5407,6 +5615,26 @@ If ListViewHandle <> 0 Then
 End If
 End Property
 
+Public Property Get ColumnFilterChangedTimeout() As Long
+Attribute ColumnFilterChangedTimeout.VB_Description = "Returns/sets the time in milliseconds before the 'ColumnFilterChanged' event is fired afer a filter was changed. A value of -1 indicates that the 'ColumnFilterChanged' is fired only when the filter edit is completed."
+Attribute ColumnFilterChangedTimeout.VB_MemberFlags = "400"
+If ListViewHandle <> 0 Then
+    If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then
+        ' When passing zero in HDM_SETFILTERCHANGETIMEOUT the timeout interval will not be changed and returns the current value.
+        ColumnFilterChangedTimeout = SendMessage(ListViewHeaderHandle, HDM_SETFILTERCHANGETIMEOUT, 0, ByVal 0&)
+    End If
+End If
+End Property
+
+Public Property Let ColumnFilterChangedTimeout(ByVal Value As Long)
+If Value = 0 Or Value < -1 Then Err.Raise 380
+If ListViewHandle <> 0 Then
+    If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then SendMessage ListViewHeaderHandle, HDM_SETFILTERCHANGETIMEOUT, 0, ByVal Value
+End If
+End Property
+
 Private Sub SetVisualStylesHeader()
 If ListViewHandle <> 0 Then
     If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
@@ -5457,7 +5685,10 @@ End If
 End Sub
 
 Private Sub CheckHeaderControl()
-If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
+If ListViewHeaderHandle = 0 Then
+    ListViewHeaderHandle = Me.hWndHeader
+    If ListViewHeaderHandle <> 0 Then Call ComCtlsSetSubclass(ListViewHeaderHandle, Me, 4)
+End If
 If ListViewHeaderHandle <> 0 Then
     If Not PropColumnHeaderIconsName = "(None)" Then
         If PropColumnHeaderIconsControl Is Nothing Then
@@ -5471,6 +5702,7 @@ If ListViewHeaderHandle <> 0 Then
     Me.TrackSizeColumnHeaders = PropTrackSizeColumnHeaders
     Me.ResizableColumnHeaders = PropResizableColumnHeaders
     Me.UseColumnChevron = PropUseColumnChevron
+    Me.UseColumnFilterBar = PropUseColumnFilterBar
     SendMessage ListViewHandle, LVM_UPDATE, 0, ByVal 0&
     Me.Refresh
 End If
@@ -5670,6 +5902,31 @@ If IsGroupAvailable(ID) = True Then
 End If
 End Function
 
+Private Function GetFilterEditIndex(ByVal hWndFilterEdit As Long) As Long
+If ListViewHandle = 0 Or hWndFilterEdit = 0 Then Exit Function
+' If comctl32.dll version is 6.1 or higher then HDN_BEGINFILTEREDIT and HDN_ENDFILTEREDIT will be sent.
+' Thus we return zero in order to not raise the events 'BeforeFilterEdit' and 'AfterFilterEdit' twice.
+If ComCtlsSupportLevel() >= 2 Then Exit Function
+If ListViewHeaderHandle = 0 Then ListViewHeaderHandle = Me.hWndHeader
+If ListViewHeaderHandle <> 0 Then
+    Dim Count As Long
+    Count = Me.ColumnHeaders.Count
+    If Count > 0 Then
+        Dim RC As RECT
+        GetClientRect hWndFilterEdit, RC
+        MapWindowPoints hWndFilterEdit, ListViewHeaderHandle, RC, 2
+        Dim LVC As LVCOLUMN, i As Long, CX As Long
+        LVC.Mask = LVCF_WIDTH
+        For i = 1 To Count
+            SendMessage ListViewHandle, LVM_GETCOLUMN, i - 1, ByVal VarPtr(LVC)
+            CX = CX + LVC.CX
+            If CX >= RC.Left Then Exit For
+        Next i
+        GetFilterEditIndex = i
+    End If
+End If
+End Function
+
 Private Function IndexToStateImageMask(ByVal ImgIndex As Long) As Long
 IndexToStateImageMask = ImgIndex * (2 ^ 12)
 End Function
@@ -5685,6 +5942,10 @@ Select Case dwRefData
     Case 2
         ISubclass_Message = WindowProcLabelEdit(hWnd, wMsg, wParam, lParam)
     Case 3
+        ISubclass_Message = WindowProcFilterEdit(hWnd, wMsg, wParam, lParam)
+    Case 4
+        ISubclass_Message = WindowProcHeader(hWnd, wMsg, wParam, lParam)
+    Case 5
         ISubclass_Message = WindowProcUserControl(hWnd, wMsg, wParam, lParam)
     Case 10
         ISubclass_Message = ListItemsSortingFunctionBinary(wParam, lParam)
@@ -5781,46 +6042,14 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
-    Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
-        Dim X As Single
-        Dim Y As Single
-        X = UserControl.ScaleX(Get_X_lParam(lParam), vbPixels, vbTwips)
-        Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
-        Select Case wMsg
-            Case WM_LBUTTONDOWN
-                RaiseEvent MouseDown(vbLeftButton, GetShiftState(), X, Y)
-                ListViewButtonDown = vbLeftButton
-                ListViewIsClick = True
-            Case WM_MBUTTONDOWN
-                RaiseEvent MouseDown(vbMiddleButton, GetShiftState(), X, Y)
-                ListViewButtonDown = vbMiddleButton
-                ListViewIsClick = True
-            Case WM_RBUTTONDOWN
-                RaiseEvent MouseDown(vbRightButton, GetShiftState(), X, Y)
-                ListViewButtonDown = vbRightButton
-                ListViewIsClick = True
-            Case WM_MOUSEMOVE
-                RaiseEvent MouseMove(GetMouseState(), GetShiftState(), X, Y)
-            Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
-                Select Case wMsg
-                    Case WM_LBUTTONUP
-                        RaiseEvent MouseUp(vbLeftButton, GetShiftState(), X, Y)
-                    Case WM_MBUTTONUP
-                        RaiseEvent MouseUp(vbMiddleButton, GetShiftState(), X, Y)
-                    Case WM_RBUTTONUP
-                        RaiseEvent MouseUp(vbRightButton, GetShiftState(), X, Y)
-                End Select
-                If ListViewIsClick = True Then
-                    ListViewIsClick = False
-                    Dim P As POINTAPI
-                    GetCursorPos P
-                    If WindowFromPoint(P.X, P.Y) = hWnd Then RaiseEvent Click
-                End If
-        End Select
+    Case WM_LBUTTONDOWN
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbLeftButton, 0), ByVal lParam
+    Case WM_RBUTTONDOWN
+        PostMessage hWnd, UM_BUTTONDOWN, MakeDWord(vbRightButton, 0), ByVal lParam
     Case WM_NOTIFY
         Dim NM As NMHDR
         CopyMemory NM, ByVal lParam, LenB(NM)
-        If NM.hWndFrom = ListViewHeaderHandle Then
+        If NM.hWndFrom = ListViewHeaderHandle And ListViewHeaderHandle <> 0 Then
             Dim Cancel As Boolean
             Dim NMHDR As NMHEADER
             Select Case NM.Code
@@ -5862,6 +6091,27 @@ Select Case wMsg
                         RaiseEvent ColumnCheck(Me.ColumnHeaders(NMHDR.iItem + 1))
                         Exit Function
                     End If
+                Case HDN_FILTERCHANGE
+                    CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
+                    If NMHDR.iItem > -1 Then RaiseEvent ColumnFilterChanged(Me.ColumnHeaders(NMHDR.iItem + 1))
+                Case HDN_FILTERBTNCLICK
+                    Dim NMHDFBC As NMHDFILTERBTNCLICK
+                    CopyMemory NMHDFBC, ByVal lParam, LenB(NMHDFBC)
+                    If NMHDFBC.iItem > -1 Then
+                        Dim RaiseFilterChanged As Boolean
+                        With NMHDFBC
+                        RaiseEvent ColumnFilterButtonClick(Me.ColumnHeaders(.iItem + 1), RaiseFilterChanged, .RC.Left, .RC.Top, .RC.Right, .RC.Bottom)
+                        End With
+                        If RaiseFilterChanged = True Then WindowProcControl = 1: Exit Function
+                    End If
+                Case HDN_BEGINFILTEREDIT
+                    CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
+                    If NMHDR.iItem > -1 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1), ListViewFilterEditHandle)
+                Case HDN_ENDFILTEREDIT
+                    CopyMemory NMHDR, ByVal lParam, LenB(NMHDR)
+                    ' It is necessary to overwrite iItem by HDM_GETFOCUSEDITEM as otherwise it would be always -1.
+                    NMHDR.iItem = SendMessage(NMHDR.hdr.hWndFrom, HDM_GETFOCUSEDITEM, 0, ByVal 0&)
+                    If NMHDR.iItem > -1 Then RaiseEvent AfterFilterEdit(Me.ColumnHeaders(NMHDR.iItem + 1))
                 Case NM_CUSTOMDRAW
                     Dim FontHandle As Long
                     Dim NMCD As NMCUSTOMDRAW
@@ -5884,8 +6134,47 @@ Select Case wMsg
                     End Select
             End Select
         End If
+    Case UM_BUTTONDOWN
+        ' The control enters a modal message loop on WM_LBUTTONDOWN and WM_RBUTTONDOWN. (DragDetect)
+        ' This workaround is necessary to raise 'MouseDown' before the button was released or the mouse was moved.
+        RaiseEvent MouseDown(LoWord(wParam), GetShiftState(), UserControl.ScaleX(Get_X_lParam(lParam), vbPixels, vbTwips), UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips))
+        ListViewButtonDown = LoWord(wParam)
+        ListViewIsClick = True
+        Exit Function
 End Select
 WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
+    Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
+        Dim X As Single
+        Dim Y As Single
+        X = UserControl.ScaleX(Get_X_lParam(lParam), vbPixels, vbTwips)
+        Y = UserControl.ScaleY(Get_Y_lParam(lParam), vbPixels, vbTwips)
+        Select Case wMsg
+            Case WM_LBUTTONDOWN
+                ' See UM_BUTTONDOWN
+            Case WM_MBUTTONDOWN
+                RaiseEvent MouseDown(vbMiddleButton, GetShiftState(), X, Y)
+                ListViewButtonDown = 0
+                ListViewIsClick = True
+            Case WM_RBUTTONDOWN
+                ' See UM_BUTTONDOWN
+            Case WM_MOUSEMOVE
+                RaiseEvent MouseMove(GetMouseState(), GetShiftState(), X, Y)
+            Case WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
+                Select Case wMsg
+                    Case WM_LBUTTONUP
+                        RaiseEvent MouseUp(vbLeftButton, GetShiftState(), X, Y)
+                    Case WM_MBUTTONUP
+                        RaiseEvent MouseUp(vbMiddleButton, GetShiftState(), X, Y)
+                    Case WM_RBUTTONUP
+                        RaiseEvent MouseUp(vbRightButton, GetShiftState(), X, Y)
+                End Select
+                If ListViewIsClick = True Then
+                    ListViewIsClick = False
+                    If (X >= 0 And X <= UserControl.Width) And (Y >= 0 And Y <= UserControl.Height) Then RaiseEvent Click
+                End If
+        End Select
+End Select
 End Function
 
 Private Function WindowProcLabelEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
@@ -5905,6 +6194,46 @@ Select Case wMsg
         Exit Function
 End Select
 WindowProcLabelEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+End Function
+
+Private Function WindowProcFilterEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+If wMsg = WM_KILLFOCUS Then
+    ' The filter edit window will be destroyed when it receives WM_KILLFOCUS.
+    Call ComCtlsRemoveSubclass(hWnd)
+End If
+WindowProcFilterEdit = WindowProcLabelEdit(hWnd, wMsg, wParam, lParam)
+If wMsg = WM_KILLFOCUS Then
+    If ListViewFilterEditIndex > 0 Then RaiseEvent AfterFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex))
+    ListViewFilterEditHandle = 0
+    ListViewFilterEditIndex = 0
+End If
+End Function
+
+Private Function WindowProcHeader(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Select Case wMsg
+    Case WM_COMMAND
+        Const EN_SETFOCUS As Long = &H100, EN_KILLFOCUS = &H200
+        Select Case HiWord(wParam)
+            Case EN_SETFOCUS
+                ListViewFilterEditHandle = lParam
+                ListViewFilterEditIndex = GetFilterEditIndex(lParam)
+                If lParam <> 0 Then Call ComCtlsSetSubclass(lParam, Me, 3)
+                If ListViewFilterEditIndex > 0 Then RaiseEvent BeforeFilterEdit(Me.ColumnHeaders(ListViewFilterEditIndex), ListViewFilterEditHandle)
+            Case EN_KILLFOCUS
+                ' When the user types ESC or RETURN the filter edit window sends EN_KILLFOCUS.
+                ' In all other cases the filter edit window sends WM_KILLFOCUS.
+                ' Thus it is necessary to handle both EN_KILLFOCUS and WM_KILLFOCUS.
+                ' UM_ENDFILTEREDIT will be posted as the filter edit window is not yet destroyed.
+                PostMessage hWnd, UM_ENDFILTEREDIT, ListViewFilterEditIndex, ByVal 0&
+                ListViewFilterEditHandle = 0
+                ListViewFilterEditIndex = 0
+                If lParam <> 0 Then Call ComCtlsRemoveSubclass(lParam)
+        End Select
+    Case UM_ENDFILTEREDIT
+        If wParam > 0 Then RaiseEvent AfterFilterEdit(Me.ColumnHeaders(wParam))
+        Exit Function
+End Select
+WindowProcHeader = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
@@ -6003,14 +6332,9 @@ Select Case wMsg
                 Case LVN_ITEMACTIVATE
                     CopyMemory NMIA, ByVal lParam, LenB(NMIA)
                     Dim Shift As Integer
-                    Select Case NMIA.uKeyFlags
-                        Case LVKF_ALT
-                            Shift = vbAltMask
-                        Case LVKF_CONTROL
-                            Shift = vbCtrlMask
-                        Case LVKF_SHIFT
-                            Shift = vbShiftMask
-                    End Select
+                    If (NMIA.uKeyFlags And LVKF_SHIFT) = LVKF_SHIFT Then Shift = vbShiftMask
+                    If (NMIA.uKeyFlags And LVKF_CONTROL) = LVKF_CONTROL Then Shift = Shift Or vbCtrlMask
+                    If (NMIA.uKeyFlags And LVKF_ALT) = LVKF_ALT Then Shift = Shift Or vbAltMask
                     RaiseEvent ItemActivate(Me.ListItems(NMIA.iItem + 1), NMIA.iSubItem, Shift)
                 Case NM_CLICK, NM_RCLICK
                     CopyMemory NMIA, ByVal lParam, LenB(NMIA)
@@ -6022,13 +6346,12 @@ Select Case wMsg
                         End If
                     End If
                     If NMIA.iItem > -1 Or (NMIA.iItem = -1 And (PropView = LvwViewReport Or PropView = LvwViewList)) Then
-                        Dim P1 As POINTAPI
-                        GetCursorPos P1
-                        ScreenToClient ListViewHandle, P1
-                        RaiseEvent MouseUp(ListViewButtonDown, GetShiftState(), UserControl.ScaleX(P1.X, vbPixels, vbTwips), UserControl.ScaleY(P1.Y, vbPixels, vbTwips))
-                        ListViewButtonDown = 0
-                        ListViewIsClick = False
-                        RaiseEvent Click
+                        If ListViewButtonDown <> 0 Then
+                            RaiseEvent MouseUp(ListViewButtonDown, GetShiftState(), UserControl.ScaleX(NMIA.PTAction.X, vbPixels, vbTwips), UserControl.ScaleY(NMIA.PTAction.Y, vbPixels, vbTwips))
+                            ListViewButtonDown = 0
+                            ListViewIsClick = False
+                            RaiseEvent Click
+                        End If
                     End If
                 Case NM_DBLCLK, NM_RDBLCLK
                     CopyMemory NMIA, ByVal lParam, LenB(NMIA)
@@ -6054,24 +6377,22 @@ Select Case wMsg
                             If NMLVCD.NMCD.lItemlParam <> 0 Then
                                 Set ListItem = PtrToObj(NMLVCD.NMCD.lItemlParam)
                                 With ListItem
-                                If NMLVCD.iSubItem = 0 Then
-                                    If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
-                                        If .Bold = True Then FontHandle = ListViewBoldFontHandle
-                                        NMLVCD.ClrText = WinColor(.ForeColor)
-                                    Else
-                                        If PropUnderlineHot = True Then
-                                            If .Bold = True Then
-                                                FontHandle = ListViewBoldUnderlineFontHandle
-                                            Else
-                                                FontHandle = ListViewUnderlineFontHandle
-                                            End If
+                                If (NMLVCD.NMCD.uItemState And CDIS_HOT) = 0 Then
+                                    If .Bold = True Then FontHandle = ListViewBoldFontHandle
+                                    NMLVCD.ClrText = WinColor(.ForeColor)
+                                Else
+                                    If PropUnderlineHot = True Then
+                                        If .Bold = True Then
+                                            FontHandle = ListViewBoldUnderlineFontHandle
                                         Else
-                                            If .Bold = True Then FontHandle = ListViewBoldFontHandle
+                                            FontHandle = ListViewUnderlineFontHandle
                                         End If
-                                        If PropHighlightHot = False Then NMLVCD.ClrText = WinColor(.ForeColor)
+                                    Else
+                                        If .Bold = True Then FontHandle = ListViewBoldFontHandle
                                     End If
-                                    RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
+                                    If PropHighlightHot = False Then NMLVCD.ClrText = WinColor(.ForeColor)
                                 End If
+                                RaiseEvent ItemBkColor(ListItem, NMLVCD.ClrTextBk)
                                 End With
                             End If
                             SelectObject NMLVCD.NMCD.hDC, FontHandle
@@ -6229,13 +6550,13 @@ Select Case wMsg
         End If
     Case WM_CONTEXTMENU
         If wParam = ListViewHandle Then
-            Dim P2 As POINTAPI
-            P2.X = Get_X_lParam(lParam)
-            P2.Y = Get_Y_lParam(lParam)
-            If P2.X > 0 And P2.Y > 0 Then
-                ScreenToClient ListViewHandle, P2
-                RaiseEvent ContextMenu(UserControl.ScaleX(P2.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P2.Y, vbPixels, vbContainerPosition))
-            ElseIf P2.X = -1 And P2.Y = -1 Then
+            Dim P As POINTAPI
+            P.X = Get_X_lParam(lParam)
+            P.Y = Get_Y_lParam(lParam)
+            If P.X > 0 And P.Y > 0 Then
+                ScreenToClient ListViewHandle, P
+                RaiseEvent ContextMenu(UserControl.ScaleX(P.X, vbPixels, vbContainerPosition), UserControl.ScaleY(P.Y, vbPixels, vbContainerPosition))
+            ElseIf P.X = -1 And P.Y = -1 Then
                 ' If the user types SHIFT + F10 then the X and Y coordinates are -1.
                 RaiseEvent ContextMenu(-1, -1)
             End If

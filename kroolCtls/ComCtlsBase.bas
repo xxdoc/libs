@@ -12,7 +12,48 @@ Private CCLeftRightAlignmentLeft, CCLeftRightAlignmentRight
 Private CCVerticalAlignmentTop, CCVerticalAlignmentCenter, CCVerticalAlignmentBottom
 Private CCIMEModeNoControl, CCIMEModeOn, CCIMEModeOff, CCIMEModeDisable, CCIMEModeHiragana, CCIMEModeKatakana, CCIMEModeKatakanaHalf, CCIMEModeAlphaFull, CCIMEModeAlpha, CCIMEModeHangulFull, CCIMEModeHangul
 #End If
-Private Type TagInitCommonControlsEx
+'Public Enum OLEDropModeConstants
+'OLEDropModeNone = vbOLEDropNone
+'OLEDropModeManual = vbOLEDropManual
+'End Enum
+'Public Enum CCAppearanceConstants
+'CCAppearanceFlat = 0
+'CCAppearance3D = 1
+'End Enum
+'Public Enum CCBorderStyleConstants
+'CCBorderStyleNone = 0
+'CCBorderStyleSingle = 1
+'CCBorderStyleThin = 2
+'CCBorderStyleSunken = 3
+'CCBorderStyleRaised = 4
+'End Enum
+'Public Enum CCBackStyleConstants
+'CCBackStyleTransparent = 0
+'CCBackStyleOpaque = 1
+'End Enum
+'Public Enum CCLeftRightAlignmentConstants
+'CCLeftRightAlignmentLeft = 0
+'CCLeftRightAlignmentRight = 1
+'End Enum
+'Public Enum CCVerticalAlignmentConstants
+'CCVerticalAlignmentTop = 0
+'CCVerticalAlignmentCenter = 1
+'CCVerticalAlignmentBottom = 2
+'End Enum
+'Public Enum CCIMEModeConstants
+'CCIMEModeNoControl = 0
+'CCIMEModeOn = 1
+'CCIMEModeOff = 2
+'CCIMEModeDisable = 3
+'CCIMEModeHiragana = 4
+'CCIMEModeKatakana = 5
+'CCIMEModeKatakanaHalf = 6
+'CCIMEModeAlphaFull = 7
+'CCIMEModeAlpha = 8
+'CCIMEModeHangulFull = 9
+'CCIMEModeHangul = 10
+'End Enum
+Private Type TINITCOMMONCONTROLSEX
 dwSize As Long
 dwICC As Long
 End Type
@@ -51,7 +92,7 @@ Time As Long
 PT As POINTAPI
 End Type
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
-Private Declare Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TagInitCommonControlsEx) As Long
+Private Declare Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TINITCOMMONCONTROLSEX) As Long
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageW" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByRef lParam As Any) As Long
 Private Declare Function PeekMessage Lib "user32" Alias "PeekMessageW" (ByRef lpMsg As TMSG, ByVal hWnd As Long, ByVal wMsgFilterMin As Long, ByVal wMsgFilterMax As Long, ByVal wRemoveMsg As Long) As Long
 Private Declare Function SetWindowsHookEx Lib "user32" Alias "SetWindowsHookExW" (ByVal IDHook As Long, ByVal lpfn As Long, ByVal hMod As Long, ByVal dwThreadID As Long) As Long
@@ -183,7 +224,7 @@ End If
 End Sub
 
 Public Sub ComCtlsInitCC(ByVal ICC As Long)
-Dim ICCEX As TagInitCommonControlsEx
+Dim ICCEX As TINITCOMMONCONTROLSEX
 With ICCEX
 .dwSize = LenB(ICCEX)
 .dwICC = ICC
@@ -237,6 +278,10 @@ Select Case Value
 End Select
 SetWindowLong hWnd, GWL_STYLE, dwStyle
 SetWindowLong hWnd, GWL_EXSTYLE, dwExStyle
+Call ComCtlsFrameChanged(hWnd)
+End Sub
+
+Public Sub ComCtlsFrameChanged(ByVal hWnd As Long)
 Const SWP_FRAMECHANGED As Long = &H20, SWP_NOMOVE As Long = &H2, SWP_NOOWNERZORDER As Long = &H200, SWP_NOSIZE As Long = &H1, SWP_NOZORDER As Long = &H4
 SetWindowPos hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE Or SWP_NOSIZE Or SWP_NOOWNERZORDER Or SWP_NOZORDER Or SWP_FRAMECHANGED
 End Sub
@@ -884,15 +929,11 @@ Dim AppForm As Form, CurrControl As Control
 For Each AppForm In Forms
     For Each CurrControl In AppForm.Controls
         Select Case TypeName(CurrControl)
-            Case "Animation", "DTPicker", "MonthView", "Slider", "TabStrip", "ListView", "TreeView", "IPAddress", "ToolBar", "UpDown", "SpinBox", "Pager", "OptionButtonW", "CheckBoxW", "CommandButtonW", "TextBoxW", "HotKey", "CoolBar", "LinkLabel", "CommandLink"
+            Case "Animation", "DTPicker", "MonthView", "Slider", "StatusBar", "TabStrip", "ListBoxW", "ListView", "TreeView", "IPAddress", "ToolBar", "UpDown", "SpinBox", "Pager", "OptionButtonW", "CheckBoxW", "ComboBoxW", "CommandButtonW", "TextBoxW", "HotKey", "CoolBar", "LinkLabel", "CommandLink"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
                 Call ComCtlsRemoveSubclass(CurrControl.hWndUserControl)
             Case "ProgressBar", "FrameW"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
-            Case "StatusBar"
-                Call ComCtlsRemoveSubclass(CurrControl.hWnd)
-                Call ComCtlsRemoveSubclass(CurrControl.hWndUserControl)
-                Call ComCtlsRemoveSubclass(AppForm.hWnd, ProperControlName(CurrControl))
             Case "ImageCombo"
                 Call ComCtlsRemoveSubclass(CurrControl.hWnd)
                 Call ComCtlsRemoveSubclass(CurrControl.hWndCombo)

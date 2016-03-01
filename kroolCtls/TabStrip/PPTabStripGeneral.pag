@@ -9,6 +9,14 @@ Begin VB.PropertyPage PPTabStripGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   4350
    ScaleWidth      =   6075
+   Begin VB.CheckBox CheckTabScrollWheel 
+      Caption         =   "TabScrollWheel"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   27
+      Top             =   2280
+      Width           =   1770
+   End
    Begin VB.ComboBox ComboTabAlignment 
       Height          =   315
       Left            =   1800
@@ -304,6 +312,7 @@ With PropertyPage.SelectedControls(0)
 .HotTracking = CBool(CheckHotTracking.Value = vbChecked)
 .Separators = CBool(CheckSeparators.Value = vbChecked)
 .ShowTips = CBool(CheckShowTips.Value = vbChecked)
+.TabScrollWheel = CBool(CheckTabScrollWheel.Value = vbChecked)
 End With
 Call PropertyPage_SelectionChanged
 End Sub
@@ -373,6 +382,7 @@ CheckMultiSelect.Value = IIf(.MultiSelect = True, vbChecked, vbUnchecked)
 CheckHotTracking.Value = IIf(.HotTracking = True, vbChecked, vbUnchecked)
 CheckSeparators.Value = IIf(.Separators = True, vbChecked, vbUnchecked)
 CheckShowTips.Value = IIf(.ShowTips = True, vbChecked, vbUnchecked)
+CheckTabScrollWheel.Value = IIf(.TabScrollWheel = True, vbChecked, vbUnchecked)
 End With
 FreezeChanged = False
 End Sub
@@ -569,6 +579,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckShowTips_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckTabScrollWheel_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

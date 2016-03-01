@@ -272,17 +272,19 @@ End Sub
 Private Sub UserControl_Resize()
 Static InProc As Boolean
 If InProc = True Then Exit Sub
+InProc = True
 With UserControl
+If (1440! \ Screen.TwipsPerPixelX) < (1440! / Screen.TwipsPerPixelX) Then
+    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
+    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
+End If
 If IPAddressHandle <> 0 Then
     Dim RC As RECT
     GetWindowRect IPAddressHandle, RC
-    If (RC.Right - RC.Left) <> .ScaleWidth Or (RC.Bottom - RC.Top) <> .ScaleHeight Then
-        InProc = True
-        Call ReCreateIPAddress
-        InProc = False
-    End If
+    If (RC.Right - RC.Left) <> .ScaleWidth Or (RC.Bottom - RC.Top) <> .ScaleHeight Then Call ReCreateIPAddress
 End If
 End With
+InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
@@ -365,6 +367,11 @@ Public Property Let Visible(ByVal Value As Boolean)
 Extender.Visible = Value
 End Property
 
+Public Sub ZOrder(Optional ByRef Position As Variant)
+Attribute ZOrder.VB_Description = "Places a specified object at the front or back of the z-order within its graphical level."
+If IsMissing(Position) Then Extender.ZOrder Else Extender.ZOrder Position
+End Sub
+
 Public Property Get hWnd() As Long
 Attribute hWnd.VB_Description = "Returns a handle to a control."
 Attribute hWnd.VB_UserMemId = -515
@@ -393,10 +400,11 @@ Set Me.Font = NewFont
 End Property
 
 Public Property Set Font(ByVal NewFont As StdFont)
+If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As Long
 Set PropFont = NewFont
 OldFontHandle = IPAddressFontHandle
-IPAddressFontHandle = CreateFontFromOLEFont(PropFont)
+IPAddressFontHandle = CreateGDIFontFromOLEFont(PropFont)
 If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, WM_SETFONT, IPAddressFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
@@ -405,7 +413,7 @@ End Property
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As Long
 OldFontHandle = IPAddressFontHandle
-IPAddressFontHandle = CreateFontFromOLEFont(PropFont)
+IPAddressFontHandle = CreateGDIFontFromOLEFont(PropFont)
 If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, WM_SETFONT, IPAddressFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
@@ -704,8 +712,8 @@ Cancel:
 Err.Raise 380
 End Property
 
-Public Sub SetFocusAPIField(ByVal Field As Long)
-Attribute SetFocusAPIField.VB_Description = "Sets the keyboard focus to the specified field in the IP address control. All of the text in that field will be selected."
+Public Sub SetFocusToField(ByVal Field As Long)
+Attribute SetFocusToField.VB_Description = "Sets the keyboard focus to the specified field in the IP address control. All of the text in that field will be selected."
 If Field > 4 Or Field < 1 Then Err.Raise Number:=35600, Description:="Field out of bounds"
 UserControl.SetFocus
 If IPAddressHandle <> 0 Then SendMessage IPAddressHandle, IPM_SETFOCUS, Field - 1, ByVal 0&
@@ -772,6 +780,17 @@ Select Case wMsg
                 End If
             End If
         End If
+    Case WM_COMMAND
+        Const EN_CHANGE As Long = &H300
+        If HiWord(wParam) = EN_CHANGE Then RaiseEvent Change
+    Case WM_CTLCOLOREDIT
+        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+        SetBkMode wParam, 1
+        SetTextColor wParam, WinColor(PropForeColor)
+        Exit Function
+End Select
+WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim X As Single
         Dim Y As Single
@@ -796,16 +815,7 @@ Select Case wMsg
                         RaiseEvent MouseUp(vbRightButton, GetShiftState(), X, Y)
                 End Select
         End Select
-    Case WM_COMMAND
-        Const EN_CHANGE As Long = &H300
-        If HiWord(wParam) = EN_CHANGE Then RaiseEvent Change
-    Case WM_CTLCOLOREDIT
-        WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
-        SetBkMode wParam, 1
-        SetTextColor wParam, WinColor(PropForeColor)
-        Exit Function
 End Select
-WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcEdit(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
@@ -867,6 +877,29 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+    Case WM_PASTE
+        If ComCtlsSupportLevel() <= 1 Then
+            If VB.Clipboard.GetFormat(vbCFText) = True Then
+                Dim Text As String
+                Text = VB.Clipboard.GetText(vbCFText)
+                If Not Text = vbNullString Then
+                    Dim i As Long, InvalidText As Boolean
+                    For i = 1 To Len(Text)
+                        If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
+                            InvalidText = True
+                            Exit For
+                        End If
+                    Next i
+                    If InvalidText = True Then
+                        VBA.Interaction.Beep
+                        Exit Function
+                    End If
+                End If
+            End If
+        End If
+End Select
+WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim X As Single
         Dim Y As Single
@@ -891,28 +924,7 @@ Select Case wMsg
                         RaiseEvent MouseUp(vbRightButton, GetShiftState(), X, Y)
                 End Select
         End Select
-    Case WM_PASTE
-        If ComCtlsSupportLevel() <= 1 Then
-            If VB.Clipboard.GetFormat(vbCFText) = True Then
-                Dim Text As String
-                Text = VB.Clipboard.GetText(vbCFText)
-                If Not Text = vbNullString Then
-                    Dim i As Long, InvalidText As Boolean
-                    For i = 1 To Len(Text)
-                        If InStr("0123456789", Mid$(Text, i, 1)) = 0 Then
-                            InvalidText = True
-                            Exit For
-                        End If
-                    Next i
-                    If InvalidText = True Then
-                        VBA.Interaction.Beep
-                        Exit Function
-                    End If
-                End If
-            End If
-        End If
 End Select
-WindowProcEdit = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long

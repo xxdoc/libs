@@ -2,9 +2,14 @@ Attribute VB_Name = "VisualStyles"
 Option Explicit
 Public Declare Function ActivateVisualStyles Lib "uxtheme" Alias "SetWindowTheme" (ByVal hWnd As Long, Optional ByVal pszSubAppName As Long = 0, Optional ByVal pszSubIdList As Long = 0) As Long
 Public Declare Function RemoveVisualStyles Lib "uxtheme" Alias "SetWindowTheme" (ByVal hWnd As Long, Optional ByRef pszSubAppName As String = " ", Optional ByRef pszSubIdList As String = " ") As Long
-Private Type TagInitCommonControlsEx
+Private Type TINITCOMMONCONTROLSEX
 dwSize As Long
 dwICC As Long
+End Type
+Private Type TRELEASE
+IUnk As IUnknown
+VTable(0 To 2) As Long
+VTableHeaderPointer As Long
 End Type
 Private Type TRACKMOUSEEVENTSTRUCT
 cbSize As Long
@@ -42,7 +47,7 @@ fErase As Long
 RCPaint As RECT
 fRestore As Long
 fIncUpdate As Long
-RGBReserved(32) As Byte
+RGBReserved(0 To 31) As Byte
 End Type
 Private Type DLLVERSIONINFO
 cbSize As Long
@@ -52,7 +57,7 @@ dwBuildNumber As Long
 dwPlatformID As Long
 End Type
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
-Private Declare Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TagInitCommonControlsEx) As Long
+Private Declare Function InitCommonControlsEx Lib "comctl32" (ByRef ICCEX As TINITCOMMONCONTROLSEX) As Long
 Private Declare Function SetErrorMode Lib "kernel32" (ByVal wMode As Long) As Long
 Private Declare Function DllGetVersion Lib "comctl32" (ByRef pdvi As DLLVERSIONINFO) As Long
 Private Declare Function IsWindowVisible Lib "user32" (ByVal hWnd As Long) As Long
@@ -132,8 +137,8 @@ Private Const DST_BITMAP As Long = &H4
 Private Const DSS_DISABLED As Long = &H20
 
 Public Sub InitVisualStyles()
-Call InitReleaseVisualStyles(AddressOf ReleaseVisualStyles)
-Dim ICCEX As TagInitCommonControlsEx
+If App.LogMode <> 0 Then Call InitReleaseVisualStyles(AddressOf ReleaseVisualStyles)
+Dim ICCEX As TINITCOMMONCONTROLSEX
 With ICCEX
 .dwSize = LenB(ICCEX)
 .dwICC = ICC_STANDARD_CLASSES
@@ -142,20 +147,18 @@ InitCommonControlsEx ICCEX
 End Sub
 
 Private Sub InitReleaseVisualStyles(ByVal Address As Long)
-Static IUnk As IUnknown, VTable(0 To 2) As Long, VTableHeaderPointer As Long
-If VTableHeaderPointer <> 0 Then Exit Sub
+Static Release As TRELEASE
+If Release.VTableHeaderPointer <> 0 Then Exit Sub
 If GetComCtlVersion >= 6 Then
-    VTable(2) = Address
-    VTableHeaderPointer = VarPtr(VTable(0))
-    CopyMemory IUnk, ByVal VTableHeaderPointer, 4
+    Release.VTable(2) = Address
+    Release.VTableHeaderPointer = VarPtr(Release.VTable(0))
+    CopyMemory Release.IUnk, VarPtr(Release.VTableHeaderPointer), 4
 End If
 End Sub
 
 Private Function ReleaseVisualStyles() As Long
-If App.LogMode <> 0 Then
-    Const SEM_NOGPFAULTERRORBOX As Long = &H2
-    SetErrorMode SEM_NOGPFAULTERRORBOX
-End If
+Const SEM_NOGPFAULTERRORBOX As Long = &H2
+SetErrorMode SEM_NOGPFAULTERRORBOX
 End Function
 
 Public Sub SetupVisualStyles(ByVal Form As VB.Form)
@@ -286,7 +289,7 @@ Dim ButtonState As UxThemeButtonStates
 Dim Enabled As Boolean, Checked As Boolean, Default As Boolean, Hot As Boolean, Focused As Boolean, Pushed As Boolean
 Dim hFontOld As Long
 Dim ButtonPicture As IPictureDisp, DisabledPictureAvailable As Boolean, ButtonFont As IFont
-Dim RectClient As RECT, RectText As RECT
+Dim ClientRect As RECT, TextRect As RECT
 Dim RgnClip As Long
 Dim CX As Long, CY As Long, X As Long, Y As Long
 ButtonState = SendMessage(hWnd, BM_GETSTATE, 0, ByVal 0&)
@@ -336,41 +339,41 @@ End If
 If Not ButtonPicture Is Nothing Then
     If ButtonPicture.Handle = 0 Then Set ButtonPicture = Nothing
 End If
-GetClientRect hWnd, RectClient
+GetClientRect hWnd, ClientRect
 Theme = OpenThemeData(hWnd, StrPtr("Button"))
-GetThemeBackgroundRegion Theme, hDC, BP_PUSHBUTTON, ButtonState, RectClient, RgnClip
+GetThemeBackgroundRegion Theme, hDC, BP_PUSHBUTTON, ButtonState, ClientRect, RgnClip
 ExtSelectClipRgn hDC, RgnClip, RGN_DIFF
-If DrawThemeParentBackground(hWnd, hDC, RectClient) <> S_OK Then Call DrawRect(hDC, 0, 0, RectClient.Right, RectClient.Bottom, Button.BackColor)
+If DrawThemeParentBackground(hWnd, hDC, ClientRect) <> S_OK Then Call DrawRect(hDC, 0, 0, ClientRect.Right, ClientRect.Bottom, Button.BackColor)
 ExtSelectClipRgn hDC, 0, RGN_COPY
 DeleteObject RgnClip
-DrawThemeBackground Theme, hDC, BP_PUSHBUTTON, ButtonState, RectClient, RectClient
-GetThemeBackgroundContentRect Theme, hDC, BP_PUSHBUTTON, ButtonState, RectClient, RectClient
-If Focused = True Then DrawFocusRect hDC, RectClient
+DrawThemeBackground Theme, hDC, BP_PUSHBUTTON, ButtonState, ClientRect, ClientRect
+GetThemeBackgroundContentRect Theme, hDC, BP_PUSHBUTTON, ButtonState, ClientRect, ClientRect
+If Focused = True Then DrawFocusRect hDC, ClientRect
 If Not Button.Caption = vbNullString Or Len(Button.Caption) > 0 Then
     Set ButtonFont = Button.Font
     hFontOld = SelectObject(hDC, ButtonFont.hFont)
-    LSet RectText = RectClient
-    DrawText hDC, StrPtr(Button.Caption), -1, RectText, DT_CALCRECT Or DT_WORDBREAK
-    RectText.Left = RectClient.Left
-    RectText.Right = RectClient.Right
+    LSet TextRect = ClientRect
+    DrawText hDC, StrPtr(Button.Caption), -1, TextRect, DT_CALCRECT Or DT_WORDBREAK
+    TextRect.Left = ClientRect.Left
+    TextRect.Right = ClientRect.Right
     If ButtonPicture Is Nothing Then
-        RectText.Top = ((RectClient.Bottom - RectText.Bottom) / 2) + 3
-        RectText.Bottom = RectText.Top + RectText.Bottom
+        TextRect.Top = ((ClientRect.Bottom - TextRect.Bottom) / 2) + 3
+        TextRect.Bottom = TextRect.Top + TextRect.Bottom
     Else
-        RectText.Top = (RectClient.Bottom - RectText.Bottom) + 1
-        RectText.Bottom = RectClient.Bottom
+        TextRect.Top = (ClientRect.Bottom - TextRect.Bottom) + 1
+        TextRect.Bottom = ClientRect.Bottom
     End If
-    DrawThemeText Theme, hDC, BP_PUSHBUTTON, ButtonState, StrPtr(Button.Caption), -1, DT_CENTER Or DT_WORDBREAK, 0, RectText
+    DrawThemeText Theme, hDC, BP_PUSHBUTTON, ButtonState, StrPtr(Button.Caption), -1, DT_CENTER Or DT_WORDBREAK, 0, TextRect
     SelectObject hDC, hFontOld
-    RectClient.Bottom = RectText.Top
-    RectClient.Left = RectText.Left
+    ClientRect.Bottom = TextRect.Top
+    ClientRect.Left = TextRect.Left
 End If
 CloseThemeData Theme
 If Not ButtonPicture Is Nothing Then
     CX = Button.Parent.ScaleX(ButtonPicture.Width, vbHimetric, vbPixels)
     CY = Button.Parent.ScaleY(ButtonPicture.Height, vbHimetric, vbPixels)
-    X = RectClient.Left + ((RectClient.Right - RectClient.Left - CX) / 2)
-    Y = RectClient.Top + ((RectClient.Bottom - RectClient.Top - CY) / 2)
+    X = ClientRect.Left + ((ClientRect.Right - ClientRect.Left - CX) / 2)
+    Y = ClientRect.Top + ((ClientRect.Bottom - ClientRect.Top - CY) / 2)
     If Enabled = True Or DisabledPictureAvailable = True Then
         If ButtonPicture.Type = vbPicTypeBitmap And Button.UseMaskColor = True Then
             Dim hDCScreen As Long

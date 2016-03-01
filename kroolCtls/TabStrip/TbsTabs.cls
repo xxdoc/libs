@@ -8,12 +8,16 @@ BEGIN
 END
 Attribute VB_Name = "TbsTabs"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
-Private ShadowTabStrip As TabStrip
+Private ObjectPointer As Long
 Private PropTab As Collection
+
+Private Function ShadowTabStrip() As TabStrip
+Set ShadowTabStrip = PtrToObj(ObjectPointer)
+End Function
 
 Private Sub Class_Initialize()
 Set PropTab = New Collection
@@ -30,7 +34,7 @@ Set NewEnum = PropTab.[_NewEnum]
 End Function
 
 Friend Sub FInit(ByVal Object As TabStrip)
-Set ShadowTabStrip = Object
+ObjectPointer = ObjPtr(Object)
 End Sub
 
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Caption As String, Optional ByVal Image As Long) As TbsTab

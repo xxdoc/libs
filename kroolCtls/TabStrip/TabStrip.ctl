@@ -192,6 +192,7 @@ Private Const FALT As Long = &H10
 Private Const FVIRTKEY As Long = &H1
 Private Const WS_VISIBLE As Long = &H10000000
 Private Const WS_CHILD As Long = &H40000000
+Private Const WS_CLIPSIBLINGS As Long = &H4000000
 Private Const WS_EX_RTLREADING As Long = &H2000
 Private Const WM_MOUSEACTIVATE As Long = &H21, MA_NOACTIVATE As Long = &H3, MA_NOACTIVATEANDEAT As Long = &H4
 Private Const WM_MOUSEWHEEL As Long = &H20A
@@ -217,7 +218,6 @@ Private Const WM_PAINT As Long = &HF
 Private Const WM_SHOWWINDOW As Long = &H18
 Private Const WM_SETREDRAW As Long = &HB
 Private Const WM_DRAWITEM As Long = &H2B, ODT_TAB As Long = &H65
-Private Const WS_CLIPSIBLINGS As Long = &H4000000
 Private Const TCS_SCROLLOPPOSITE As Long = &H1
 Private Const TCS_BOTTOM As Long = &H2
 Private Const TCS_RIGHT As Long = &H2
@@ -313,7 +313,7 @@ Private TabStripHandle As Long, TabStripToolTipHandle As Long
 Private TabStripAcceleratorHandle As Long
 Private TabStripFontHandle As Long
 Private TabStripCharCodeCache As Long
-Private TabStripInitTabsCount As Long, TabStripWritePropState As Long
+Private TabStripInitTabsCount As Long
 Private TabStripInitTabs() As InitTabStruct
 Private DispIDMousePointer As Long
 Private DispIDImageList As Long, ImageListArray() As String
@@ -336,6 +336,7 @@ Private PropTabAlignment As TbsTabAlignmentConstants
 Private PropSeparators As Boolean
 Private PropShowTips As Boolean
 Private PropDrawMode As TbsDrawModeConstants
+Private PropTabScrollWheel As Boolean
 
 Private Sub IOleInPlaceActiveObjectVB_TranslateAccelerator(ByRef Handled As Boolean, ByRef RetVal As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long, ByVal Shift As Long)
 If wMsg = WM_KEYDOWN Or wMsg = WM_KEYUP Then
@@ -484,18 +485,6 @@ DispIDImageList = GetDispID(Me, "ImageList")
 ReDim ImageListArray(0) As String
 End Sub
 
-Private Sub UserControl_Show()
-If Ambient.UserMode = False Then If (TabStripWritePropState And &H10) = 0 Then TabStripWritePropState = TabStripWritePropState Or &H10
-Static Once As Boolean
-If Once = False Then
-    If TabStripHandle <> 0 Then
-        DoEvents
-        Call SetVisualStylesUpDown
-        Once = True
-    End If
-End If
-End Sub
-
 Private Sub UserControl_InitProperties()
 Set PropFont = Ambient.Font
 PropVisualStyles = True
@@ -515,8 +504,15 @@ PropTabAlignment = TbsTabAlignmentStandard
 PropSeparators = True
 PropShowTips = False
 PropDrawMode = TbsDrawModeNormal
-Call CreateTabStrip
-If TabStripHandle <> 0 Then Me.Tabs.Add
+PropTabScrollWheel = True
+If Ambient.UserMode = True Then
+    TabStripInitTabsCount = 1
+    ReDim TabStripInitTabs(1 To TabStripInitTabsCount) As InitTabStruct
+    Call ComCtlsSetSubclass(UserControl.hWnd, Me, 2)
+Else
+    Call CreateTabStrip
+    Me.Tabs.Add
+End If
 End Sub
 
 Private Sub UserControl_ReadProperties(PropBag As PropertyBag)
@@ -542,6 +538,7 @@ PropTabAlignment = .ReadProperty("TabAlignment", TbsTabAlignmentStandard)
 PropSeparators = .ReadProperty("Separators", True)
 PropShowTips = .ReadProperty("ShowTips", False)
 PropDrawMode = .ReadProperty("DrawMode", TbsDrawModeNormal)
+PropTabScrollWheel = .ReadProperty("TabScrollWheel", True)
 End With
 With New PropertyBag
 On Error Resume Next
@@ -599,6 +596,7 @@ With PropBag
 .WriteProperty "Separators", PropSeparators, True
 .WriteProperty "ShowTips", PropShowTips, False
 .WriteProperty "DrawMode", PropDrawMode, TbsDrawModeNormal
+.WriteProperty "TabScrollWheel", PropTabScrollWheel, True
 End With
 Dim Count As Long
 Count = Me.Tabs.Count
@@ -616,7 +614,6 @@ If Count > 0 Then
 End If
 PropBag.WriteProperty "InitTabs", .Contents, 0
 End With
-If TabStripWritePropState = 0 Then TabStripWritePropState = &H1 Else If (TabStripWritePropState And &H10) = 0 Then Set PropTabs = Nothing
 End Sub
 
 Private Sub UserControl_OLECompleteDrag(Effect As Long)
@@ -649,18 +646,17 @@ UserControl.OLEDrag
 End Sub
 
 Private Sub UserControl_Resize()
-If TabStripHandle = 0 Then Exit Sub
+Static InProc As Boolean
+If InProc = True Then Exit Sub
+InProc = True
 With UserControl
-MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
-End With
-End Sub
-
-Private Sub UserControl_Hide()
-If Not PropTabs Is Nothing Then
-    On Error Resume Next
-    If UserControl.Parent Is Nothing Then Set PropTabs = Nothing
-    On Error GoTo 0
+If (1440! \ Screen.TwipsPerPixelX) < (1440! / Screen.TwipsPerPixelX) Then
+    .Extender.Move .Extender.Left + .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top + .ScaleY(1, vbPixels, vbContainerPosition)
+    .Extender.Move .Extender.Left - .ScaleX(1, vbPixels, vbContainerPosition), .Extender.Top - .ScaleY(1, vbPixels, vbContainerPosition)
 End If
+If TabStripHandle <> 0 Then MoveWindow TabStripHandle, 0, 0, .ScaleWidth, .ScaleHeight, 1
+End With
+InProc = False
 End Sub
 
 Private Sub UserControl_Terminate()
@@ -758,6 +754,11 @@ Public Property Let Visible(ByVal Value As Boolean)
 Extender.Visible = Value
 End Property
 
+Public Sub ZOrder(Optional ByRef Position As Variant)
+Attribute ZOrder.VB_Description = "Places a specified object at the front or back of the z-order within its graphical level."
+If IsMissing(Position) Then Extender.ZOrder Else Extender.ZOrder Position
+End Sub
+
 Public Property Get hWnd() As Long
 Attribute hWnd.VB_Description = "Returns a handle to a control."
 Attribute hWnd.VB_UserMemId = -515
@@ -780,10 +781,11 @@ Set Me.Font = NewFont
 End Property
 
 Public Property Set Font(ByVal NewFont As StdFont)
+If NewFont Is Nothing Then Set NewFont = Ambient.Font
 Dim OldFontHandle As Long
 Set PropFont = NewFont
 OldFontHandle = TabStripFontHandle
-TabStripFontHandle = CreateFontFromOLEFont(PropFont)
+TabStripFontHandle = CreateGDIFontFromOLEFont(PropFont)
 If TabStripHandle <> 0 Then SendMessage TabStripHandle, WM_SETFONT, TabStripFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
@@ -792,7 +794,7 @@ End Property
 Private Sub PropFont_FontChanged(ByVal PropertyName As String)
 Dim OldFontHandle As Long
 OldFontHandle = TabStripFontHandle
-TabStripFontHandle = CreateFontFromOLEFont(PropFont)
+TabStripFontHandle = CreateGDIFontFromOLEFont(PropFont)
 If TabStripHandle <> 0 Then SendMessage TabStripHandle, WM_SETFONT, TabStripFontHandle, ByVal 1&
 If OldFontHandle <> 0 Then DeleteObject OldFontHandle
 UserControl.PropertyChanged "Font"
@@ -948,6 +950,7 @@ If TabStripHandle <> 0 Then
         Set PropImageListControl = Nothing
     End If
 End If
+If PropMultiRow = False Then Call SetVisualStylesUpDown
 UserControl.PropertyChanged "ImageList"
 End Property
 
@@ -1220,12 +1223,22 @@ Select Case Value
             Err.Raise Number:=382, Description:="DrawMode property is read-only at run time"
         Else
             PropDrawMode = Value
-            If TabStripHandle <> 0 Then Call ReCreateTabStrip
         End If
     Case Else
         Err.Raise 380
 End Select
+If TabStripHandle <> 0 Then Call ReCreateTabStrip
 UserControl.PropertyChanged "DrawMode"
+End Property
+
+Public Property Get TabScrollWheel() As Boolean
+Attribute TabScrollWheel.VB_Description = "Returns/sets a value that determines whether or not the selected tab can be switched using the mouse scroll wheel."
+TabScrollWheel = PropTabScrollWheel
+End Property
+
+Public Property Let TabScrollWheel(ByVal Value As Boolean)
+PropTabScrollWheel = Value
+UserControl.PropertyChanged "TabScrollWheel"
 End Property
 
 Public Property Get Tabs() As TbsTabs
@@ -1256,7 +1269,7 @@ If TabStripHandle <> 0 Then
     SendMessage TabStripHandle, TCM_INSERTITEM, TabIndex - 1, ByVal VarPtr(TCI)
     Call OnControlInfoChanged(Me)
 End If
-If Me.MultiRow = False Then Call SetVisualStylesUpDown
+If PropMultiRow = False Then Call SetVisualStylesUpDown
 Me.Refresh
 UserControl.PropertyChanged "InitTabs"
 End Sub
@@ -1549,7 +1562,7 @@ If ReInitTabsCount > 0 Then
         End With
     Next i
 End If
-If .MultiRow = False Then Call SetVisualStylesUpDown
+If PropMultiRow = False Then Call SetVisualStylesUpDown
 If TabStripHandle <> 0 Then If CurrIndex <> 0 Then SendMessage TabStripHandle, TCM_SETCURSEL, CurrIndex - 1, ByVal 0&
 If Visible = True Then SendMessage UserControl.hWnd, WM_SETREDRAW, 1, ByVal 0&
 .Refresh
@@ -1783,18 +1796,20 @@ Select Case wMsg
             End If
         End If
     Case WM_MOUSEWHEEL
-        Static WheelDelta As Long
-        WheelDelta = WheelDelta - HiWord(wParam)
-        If Abs(WheelDelta) >= 120 Then
-            Dim CurrIndex As Long
-            CurrIndex = SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) + 1
-            If (WheelDelta And &H80000000) = &H80000000 Then
-                If CurrIndex > 1 Then Me.Tabs(CurrIndex - 1).Selected = True
-                WheelDelta = WheelDelta + 120
-            Else
-                If CurrIndex < Me.Tabs.Count Then Me.Tabs(CurrIndex + 1).Selected = True
-                WheelDelta = WheelDelta - 120
+        If PropTabScrollWheel = True Then
+            Dim WheelDelta As Long
+            WheelDelta = HiWord(wParam)
+            If Abs(WheelDelta) >= 120 Then
+                Dim CurrIndex As Long
+                CurrIndex = SendMessage(TabStripHandle, TCM_GETCURSEL, 0, ByVal 0&) + 1
+                If Sgn(WheelDelta) = -1 Then
+                    If CurrIndex < Me.Tabs.Count Then Me.Tabs(CurrIndex + 1).Selected = True
+                Else
+                    If CurrIndex > 1 Then Me.Tabs(CurrIndex - 1).Selected = True
+                End If
             End If
+            WindowProcControl = 0
+            Exit Function
         End If
     Case WM_KEYDOWN, WM_KEYUP
         Dim KeyCode As Integer
@@ -1822,6 +1837,9 @@ Select Case wMsg
     Case WM_IME_CHAR
         SendMessage hWnd, WM_CHAR, wParam, ByVal lParam
         Exit Function
+End Select
+WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
+Select Case wMsg
     Case WM_LBUTTONDOWN, WM_MBUTTONDOWN, WM_RBUTTONDOWN, WM_MOUSEMOVE, WM_LBUTTONUP, WM_MBUTTONUP, WM_RBUTTONUP
         Dim X As Single
         Dim Y As Single
@@ -1844,7 +1862,6 @@ Select Case wMsg
                 RaiseEvent MouseUp(vbRightButton, GetShiftState(), X, Y)
         End Select
 End Select
-WindowProcControl = ComCtlsDefaultProc(hWnd, wMsg, wParam, lParam)
 End Function
 
 Private Function WindowProcUserControl(ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long

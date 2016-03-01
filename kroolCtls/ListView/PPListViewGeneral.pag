@@ -9,6 +9,14 @@ Begin VB.PropertyPage PPListViewGeneral
    PaletteMode     =   0  'Halftone
    ScaleHeight     =   6675
    ScaleWidth      =   6450
+   Begin VB.CheckBox CheckUseColumnFilterBar 
+      Caption         =   "UseColumnFilterBar"
+      Height          =   285
+      Left            =   4200
+      TabIndex        =   46
+      Top             =   6240
+      Width           =   2160
+   End
    Begin VB.TextBox TextGroupSubsetCount 
       Height          =   315
       Left            =   1800
@@ -483,6 +491,7 @@ With PropertyPage.SelectedControls(0)
 .GroupView = CBool(CheckGroupView.Value = vbChecked)
 .GroupSubsetCount = CLng(TextGroupSubsetCount.Text)
 .UseColumnChevron = CBool(CheckUseColumnChevron.Value = vbChecked)
+.UseColumnFilterBar = CBool(CheckUseColumnFilterBar.Value = vbChecked)
 End With
 Call PropertyPage_SelectionChanged
 End Sub
@@ -562,6 +571,7 @@ CheckPictureWatermark.Value = IIf(.PictureWatermark = True, vbChecked, vbUncheck
 CheckSnapToGrid.Value = IIf(.SnapToGrid = True, vbChecked, vbUnchecked)
 CheckGroupView.Value = IIf(.GroupView = True, vbChecked, vbUnchecked)
 CheckUseColumnChevron.Value = IIf(.UseColumnChevron = True, vbChecked, vbUnchecked)
+CheckUseColumnFilterBar.Value = IIf(.UseColumnFilterBar = True, vbChecked, vbUnchecked)
 End With
 FreezeChanged = False
 End Sub
@@ -865,6 +875,11 @@ PropertyPage.Changed = True
 End Sub
 
 Private Sub CheckUseColumnChevron_Click()
+If FreezeChanged = True Then Exit Sub
+PropertyPage.Changed = True
+End Sub
+
+Private Sub CheckUseColumnFilterBar_Click()
 If FreezeChanged = True Then Exit Sub
 PropertyPage.Changed = True
 End Sub

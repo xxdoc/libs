@@ -53,3 +53,70 @@ CCIMEModeHangulFull = 9
 CCIMEModeHangul = 10
 End Enum
 
+Public Enum LvwViewConstants
+LvwViewIcon = 0
+LvwViewSmallIcon = 1
+LvwViewList = 2
+LvwViewReport = 3
+LvwViewTile = 4
+End Enum
+Public Enum LvwArrangeConstants
+LvwArrangeNone = 0
+LvwArrangeAutoLeft = 1
+LvwArrangeAutoTop = 2
+LvwArrangeLeft = 3
+LvwArrangeTop = 4
+End Enum
+Public Enum LvwColumnHeaderAlignmentConstants
+LvwColumnHeaderAlignmentLeft = 0
+LvwColumnHeaderAlignmentRight = 1
+LvwColumnHeaderAlignmentCenter = 2
+End Enum
+Public Enum LvwColumnHeaderSortArrowConstants
+LvwColumnHeaderSortArrowNone = 0
+LvwColumnHeaderSortArrowDown = 1
+LvwColumnHeaderSortArrowUp = 2
+End Enum
+Public Enum LvwColumnHeaderAutoSizeConstants
+LvwColumnHeaderAutoSizeToItems = 0
+LvwColumnHeaderAutoSizeToHeader = 1
+End Enum
+Public Enum LvwColumnHeaderFilterTypeConstants
+LvwColumnHeaderFilterTypeText = 0
+LvwColumnHeaderFilterTypeNumber = 1
+End Enum
+Public Enum LvwLabelEditConstants
+LvwLabelEditAutomatic = 0
+LvwLabelEditManual = 1
+LvwLabelEditDisabled = 2
+End Enum
+Public Enum LvwSortOrderConstants
+LvwSortOrderAscending = 0
+LvwSortOrderDescending = 1
+End Enum
+Public Enum LvwSortTypeConstants
+LvwSortTypeBinary = 0
+LvwSortTypeText = 1
+LvwSortTypeNumeric = 2
+LvwSortTypeCurrency = 3
+LvwSortTypeDate = 4
+End Enum
+Public Enum LvwPictureAlignmentConstants
+LvwPictureAlignmentTopLeft = 0
+LvwPictureAlignmentTopRight = 1
+LvwPictureAlignmentBottomLeft = 2
+LvwPictureAlignmentBottomRight = 3
+LvwPictureAlignmentCenter = 4
+LvwPictureAlignmentTile = 5
+End Enum
+Public Enum LvwGroupHeaderAlignmentConstants
+LvwGroupHeaderAlignmentLeft = 0
+LvwGroupHeaderAlignmentRight = 1
+LvwGroupHeaderAlignmentCenter = 2
+End Enum
+Public Enum LvwGroupFooterAlignmentConstants
+LvwGroupFooterAlignmentLeft = 0
+LvwGroupFooterAlignmentRight = 1
+LvwGroupFooterAlignmentCenter = 2
+End Enum
+

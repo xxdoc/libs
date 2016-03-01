@@ -8,30 +8,16 @@ BEGIN
 END
 Attribute VB_Name = "LvwListSubItems"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
 Private ShadowListView As ListView
+Private ShadowListSubItem As Collection
 Private PropIndex As Long
 Private PropPtr As Long
-Private PropListSubItem As Collection
 Private WithEvents PropEnumeration As Enumeration
 Attribute PropEnumeration.VB_VarHelpID = -1
-
-Private Sub Class_Initialize()
-Set PropListSubItem = New Collection
-End Sub
-
-Private Sub Class_Terminate()
-Dim i As Long
-With ShadowListView
-For i = 1 To PropListSubItem.Count
-    .FListSubItemFree PropListSubItem(i)
-Next i
-End With
-Set PropListSubItem = Nothing
-End Sub
 
 Private Sub PropEnumeration_GetNextItem(ByRef Index As Long, ByRef Control As Long, ByRef Data As Long, ByRef VNextItem As Variant, ByRef NoMoreItems As Boolean)
 Dim ListItem As LvwListItem
@@ -56,39 +42,40 @@ Set PropEnumeration = New Enumeration
 Set NewEnum = PropEnumeration.GetEnum(ShadowListView.FListItemsControl())
 End Function
 
-Friend Sub FInit(ByVal Object As ListView, ByVal Ptr As Long, ByVal Index As Long)
+Friend Sub FInit(ByVal Object As ListView, ByVal Coll As Collection, ByVal Ptr As Long, ByVal Index As Long)
 Set ShadowListView = Object
+Set ShadowListSubItem = Coll
 PropPtr = Ptr
 PropIndex = Index
 End Sub
 
 Public Function Add(Optional ByVal Index As Long, Optional ByVal Key As String, Optional ByVal Text As String, Optional ByVal ReportIcon As Long) As LvwListSubItem
 Attribute Add.VB_Description = "Adds a list sub item to the list sub items collection."
-If Index > (PropListSubItem.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
+If Index > (ShadowListSubItem.Count + 1) Or Index < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
 If ReportIcon < 0 Then Err.Raise Number:=35600, Description:="Index out of bounds"
 Dim SubPtr As Long
 SubPtr = ShadowListView.FListSubItemAlloc(Key)
 If Key = vbNullString Then
-    If Index > 0 And Index <= PropListSubItem.Count Then
-        PropListSubItem.Add SubPtr, , Index
+    If Index > 0 And Index <= ShadowListSubItem.Count Then
+        ShadowListSubItem.Add SubPtr, , Index
     Else
-        PropListSubItem.Add SubPtr
+        ShadowListSubItem.Add SubPtr
     End If
 Else
-    If Index > 0 And Index <= PropListSubItem.Count Then
-        PropListSubItem.Add SubPtr, Key, Index
+    If Index > 0 And Index <= ShadowListSubItem.Count Then
+        ShadowListSubItem.Add SubPtr, Key, Index
     Else
-        PropListSubItem.Add SubPtr, Key
+        ShadowListSubItem.Add SubPtr, Key
     End If
 End If
 Dim NewListSubItem As New LvwListSubItem
 NewListSubItem.FInit ShadowListView, PropIndex, PropPtr, SubPtr
 If Index = 0 Then
-    ShadowListView.FListSubItemSubIndex(SubPtr) = PropListSubItem.Count
+    ShadowListView.FListSubItemSubIndex(SubPtr) = ShadowListSubItem.Count
 Else
     Dim i As Long
     With ShadowListView
-    For i = Index To PropListSubItem.Count
+    For i = Index To ShadowListSubItem.Count
         .FListSubItemSubIndex(SubPtr) = i
         If i <> .FListSubItemSubIndex(SubPtr) Then Me.Item(i).Text = Me.Item(i).Text
     Next i
@@ -103,33 +90,33 @@ Public Property Get Item(ByVal Index As Variant) As LvwListSubItem
 Attribute Item.VB_Description = "Returns a list sub item given its index or key."
 Attribute Item.VB_UserMemId = 0
 Set Item = New LvwListSubItem
-Item.FInit ShadowListView, PropIndex, PropPtr, PropListSubItem(Index)
+Item.FInit ShadowListView, PropIndex, PropPtr, ShadowListSubItem(Index)
 End Property
 
 Public Property Get Count() As Long
 Attribute Count.VB_Description = "Returns the number of list sub items in the collection."
-Count = PropListSubItem.Count
+Count = ShadowListSubItem.Count
 End Property
 
 Public Sub Clear()
 Attribute Clear.VB_Description = "Removes all list sub items from the collection."
 Dim i As Long
-For i = 1 To PropListSubItem.Count
+For i = 1 To ShadowListSubItem.Count
     Me.Remove 1
 Next i
-Set PropListSubItem = New Collection
+Set ShadowListSubItem = New Collection
 End Sub
 
 Public Sub Remove(ByVal Index As Variant)
 Attribute Remove.VB_Description = "Removes a list sub item from the collection."
 With ShadowListView
-.FListSubItemFree PropListSubItem(Index)
-PropListSubItem.Remove Index
+.FListSubItemFree ShadowListSubItem(Index)
+ShadowListSubItem.Remove Index
 If .FListItemVerify(PropPtr, PropIndex) = True Then
     Dim i As Long, SubPtr As Long
-    For i = 1 To (PropListSubItem.Count + 1)
-        If i <= PropListSubItem.Count Then
-            SubPtr = PropListSubItem(i)
+    For i = 1 To (ShadowListSubItem.Count + 1)
+        If i <= ShadowListSubItem.Count Then
+            SubPtr = ShadowListSubItem(i)
             .FListSubItemSubIndex(SubPtr) = i
             .FListItemText(PropIndex, i) = .FListSubItemText(SubPtr)
         Else

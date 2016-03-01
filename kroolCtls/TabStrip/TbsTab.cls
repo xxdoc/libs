@@ -12,13 +12,17 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
-Private ShadowTabStrip As TabStrip
+Private ObjectPointer As Long
 Private PropIndex As Long, PropKey As String
 Private PropTag As String
 Private PropToolTipText As String
 
+Private Function ShadowTabStrip() As TabStrip
+Set ShadowTabStrip = PtrToObj(ObjectPointer)
+End Function
+
 Friend Sub FInit(ByVal Object As TabStrip, ByVal Key As String)
-Set ShadowTabStrip = Object
+ObjectPointer = ObjPtr(Object)
 PropKey = Key
 End Sub
 
