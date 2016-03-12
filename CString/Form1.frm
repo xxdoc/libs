@@ -58,11 +58,17 @@ Private Sub Form_Load()
         cs.LoadFromBytes b()
         .AddItem cs
         
+        Debug.Print cs.HexDump
         .AddItem cs.HexDump(b(), True)
         .AddItem cs.HexDump("test", True)
         
+        Debug.Print cs.HexDump("1234567890", , 4, 4)
+        
+        Debug.Print cs.toHexString("test")
+        Debug.Print cs.toHexString
+        
         cs = "myTest('arg0');"
-        pos = cs.findNextOf("',(,|,{,},.,),"",", marker)
+        pos = cs.findNextChar("'(|{}.)""", marker)
         .AddItem "first marker is " & marker & " at pos: " & pos
         
         cs = String(1000, "A")

@@ -161,14 +161,19 @@ Function extract(marker1, marker2, Optional start As Long = 1, Optional ByRef la
     
 End Function
 
-Function toHexString()
+Function toHexString(Optional str)
     Dim b() As Byte
     Dim ret() As String
     Dim t As String
     
-    If Len(base) = 0 Then Exit Function
+    If IsMissing(str) Then
+        If Len(base) = 0 Then Exit Function
+        t = base
+    Else
+        t = str
+    End If
     
-    b() = StrConv(base, vbFromUnicode, LANG_US)
+    b() = StrConv(t, vbFromUnicode, LANG_US)
      
     For i = 0 To UBound(b)
         If b(i) < &H10 Then
@@ -178,7 +183,7 @@ Function toHexString()
         End If
     Next
     
-    toHexString = join(ret, "")
+    toHexString = VBA.join(ret, "")
         
 End Function
 
@@ -283,37 +288,49 @@ nope:
     isHexChar = False
 End Function
 
-Function HexDump(Optional val, Optional hexOnly As Boolean = False) As String
+Function HexDump(Optional val, Optional hexOnly As Boolean = False, Optional start As Long = 1, Optional leng As Long = -1) As String
     Dim tmp As String
     
     If IsMissing(val) Then
-        HexDump = internal_HexDump(base, hexOnly)
+        HexDump = internal_HexDump(base, hexOnly, start, leng)
     Else
         If IsArray(val) Then
             If TypeName(val) = "Byte()" Then
                 tmp = StrConv(val, vbUnicode, LANG_US)
-                HexDump = internal_HexDump(tmp, hexOnly)
+                HexDump = internal_HexDump(tmp, hexOnly, start, leng)
             End If
         Else
-            HexDump = internal_HexDump(CStr(val), hexOnly)
+            HexDump = internal_HexDump(CStr(val), hexOnly, start, leng)
         End If
     End If
     
 End Function
 
 
-Private Function internal_HexDump(str As String, Optional hexOnly As Boolean = False) As String
-    Dim s() As String, chars As String, tmp As String
+Private Function internal_HexDump(str As String, Optional hexOnly As Boolean = False, Optional start As Long = 0, Optional leng As Long = -1) As String
+    
     On Error Resume Next
+    
     Dim ary() As Byte
     Dim offset As Long
+    Dim s() As String, chars As String, tmp As String
     
     offset = 0
     str = " " & str
     ary = StrConv(str, vbFromUnicode, LANG_US)
     
+    If start < 0 Then start = 0
+    If start > UBound(ary) Then Exit Function
+    
+    If leng = -1 Then
+        leng = UBound(ary)
+    Else
+        leng = start + leng - 1
+        If leng > UBound(ary) Then leng = UBound(ary)
+    End If
+    
     chars = "   "
-    For i = 1 To UBound(ary)
+    For i = start To leng
         tt = Hex(ary(i))
         If Len(tt) = 1 Then tt = "0" & tt
         tmp = tmp & tt & " "
@@ -409,9 +426,15 @@ hell:
      
 End Function
 
-'csv will exclude comma, but allow multichar strings..
-'so if you want to use a literal comma use \comma
-Function findNextOf(csvTokens As String, Optional ByRef whichFound As String, Optional ByRef startAt As Long = 1) As Long
+Function findNextChar(charList, Optional ByRef whichFound As String, Optional ByRef startAt As Long = 1) As Long
+    Dim tmp() As String
+    For i = 1 To Len(charList)
+        push tmp, Mid(charList, i, 1)
+    Next
+    findNextChar = findNextOf(tmp, whichFound, startAt)
+End Function
+
+Function findNextOf(strArray() As String, Optional ByRef whichFound As String, Optional ByRef startAt As Long = 1) As Long
     
     Dim m() As Long
     Dim i As Long
@@ -421,11 +444,10 @@ Function findNextOf(csvTokens As String, Optional ByRef whichFound As String, Op
     whichFound = Empty
     If startAt = 0 Then startAt = 1
     
-    tmp = VBA.split(csvTokens, ",")
+    tmp = strArray()
     
     For i = 0 To UBound(tmp)
         If Len(tmp(i)) > 0 Then
-            If tmp(i) = "\comma" Then tmp(i) = ","
             push m, InStr(startAt, base, tmp(i))
         End If
     Next
