@@ -16,13 +16,14 @@ Private Const LANG_US = &H409
 Private Const MAX_LONG As Long = 2147483647
 Private selIndex As Long 'used in setLowest
 
-'Private Declare Function RtlGetCompressionWorkSpaceSize Lib "NTDLL" (ByVal flags As Integer, WorkSpaceSize As Long, UNKNOWN_PARAMETER As Long) As Long
-'Private Declare Function NtAllocateVirtualMemory Lib "ntdll.dll" (ByVal ProcHandle As Long, BaseAddress As Long, ByVal NumBits As Long, regionsize As Long, ByVal flags As Long, ByVal ProtectMode As Long) As Long
-'Private Declare Function RtlCompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, ByVal UNKNOWN_PARAMETER As Long, OutputSize As Long, ByVal WorkSpace As Long) As Long
-'Private Declare Function RtlDecompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, OutputSize As Long) As Long
-'Private Declare Function NtFreeVirtualMemory Lib "ntdll.dll" (ByVal ProcHandle As Long, BaseAddress As Long, regionsize As Long, ByVal flags As Long) As Long
-'
- 
+Private Declare Function URLDownloadToFile Lib "urlmon" Alias _
+    "URLDownloadToFileA" (ByVal pCaller As Long, _
+    ByVal szURL As String, _
+    ByVal szFileName As String, _
+    ByVal dwReserved As Long, _
+    ByVal lpfnCB As Long) As Long
+
+
 'this property is the default method..get and let
 Property Get text() As String
 Attribute text.VB_UserMemId = 0
@@ -49,6 +50,33 @@ End Function
 Function lastIndexOf(find As String, Optional index As Long = -1, Optional method As VbCompareMethod = vbBinaryCompare) As Long
     lastIndexOf = InStrRev(base, find, index, method)
 End Function
+
+Function endsWith(ByVal char As String, Optional method As VbCompareMethod = vbBinaryCompare) As Boolean
+    
+    On Error GoTo hell
+    Dim tmp As String
+    
+    If Len(base) < Len(char) Then Exit Function
+    
+    tmp = Right(base, Len(char))
+    
+    If method <> vbBinaryCompare Then
+        tmp = LCase(tmp)
+        char = LCase(char)
+    End If
+    
+    If tmp = char Then endsWith = True
+hell:
+    
+End Function
+
+Sub stripFromEnd(Optional char As String = vbCrLf, Optional method As VbCompareMethod = vbBinaryCompare)
+        
+        While endsWith(char)
+            base = Mid(base, 1, Len(base) - Len(char))
+        Wend
+        
+End Sub
 
 Function substr(start As Long, Optional endat As Long) As String
     If IsMissing(endat) Then
@@ -94,12 +122,30 @@ Function startsWith(str As String) As Boolean
     startsWith = (LCase(str) = LCase(Left(base, Len(str))))
 End Function
 
-Function endsWith(str As String) As Boolean
-    endsWith = (LCase(str) = LCase(Right(base, Len(str))))
-End Function
-
 Function concat(str As String)
     concat = base & str
+End Function
+
+Function getLine(Optional lNo As Long = 0) As String
+    
+    Dim lineEnd As Long
+    Dim lineStart As Long
+    Dim cnt As Long
+    
+    lineStart = 1
+    lineEnd = InStr(base, vbCrLf)
+    While cnt < lNo
+        If lineEnd < 1 Then Exit Function
+        lineStart = lineEnd + 2
+        lineEnd = InStr(lineEnd + 1, base, vbCrLf)
+        cnt = cnt + 1
+    Wend
+    
+    If lineEnd < 1 Then Exit Function
+    If lineStart > lineEnd Then Exit Function
+    
+    getLine = Mid(base, lineStart, lineEnd - lineStart)
+    
 End Function
 
 '--------------- [ extras ] -------------------------------
@@ -248,6 +294,18 @@ Public Function LoadFromHexString(str As String) As Boolean
     base = StrConv(r(), vbUnicode, LANG_US)
     If Err.Number = 0 Then LoadFromHexString = True
     
+End Function
+
+Function LoadFromWeb(url) As Boolean
+    On Error Resume Next
+    Dim tmp As String
+    tmp = Environ("temp") & "\cstring_dl.tmp"
+    If FileExists(tmp) Then Kill tmp
+    If DownloadFile(url, tmp) Then
+        base = ReadFile(tmp)
+        LoadFromWeb = True
+        Kill tmp
+    End If
 End Function
 
 Public Function LoadFromFile(path As String) As Boolean
@@ -519,7 +577,7 @@ End Function
 
 Private Function ReadFile(filename) As String
   Dim f As Long
-  Dim b() As String
+  Dim b() As Byte
   f = FreeFile
   Open filename For Binary As f
   ReDim b(LOF(f))
@@ -614,45 +672,9 @@ Private Function AryIsEmpty(ary) As Boolean
 oops: AryIsEmpty = True
 End Function
 
-'Public Function Compress() As Byte()
-'   Dim WorkSpaceSize As Long
-'   Dim WorkSpace As Long
-'   Dim compSz As Long
-'   Dim b() As Byte
-'   Dim Data() As Byte
-'
-'   Data() = Me.toBytes()
-'
-'   Dim bSz As Long
-'   bSz = UBound(Data) * 1.13 + 4
-'   ReDim b(bSz)
-'
-'   RtlGetCompressionWorkSpaceSize 2, WorkSpaceSize, 0
-'   NtAllocateVirtualMemory -1, WorkSpace, 0, WorkSpaceSize, 4096, 64
-'   RtlCompressBuffer 2, VarPtr(Data(0)), UBound(Data) + 1, VarPtr(b(0)), bSz, 0, compSz, WorkSpace
-'   NtFreeVirtualMemory -1, WorkSpace, 0, 16384
-'   ReDim Preserve b(compSz)
-'
-'   Compress = b()
-'
-'End Function
-'
-'Public Function DeCompress(Data() As Byte) As String
-'
-'   Dim lBufferSize As Long
-'   Dim bSz As Long
-'   Dim dest() As Byte
-'
-'   If AryIsEmpty(Data) Then Exit Function
-'
-'   bSz = UBound(Data) * 12.5
-'   ReDim dest(bSz)
-'   RtlDecompressBuffer 2, VarPtr(dest(0)), bSz, VarPtr(Data(0)), UBound(Data), lBufferSize
-'   If lBufferSize Then
-'        ReDim Preserve dest(lBufferSize - 1)
-'        DeCompress = StrConv(dest(), vbUnicode, LANG_US)
-'   End If
-'
-'End Function
-'
-'
+Public Function DownloadFile(url, LocalFilename) As Boolean
+    Dim lngRetVal As Long
+    lngRetVal = URLDownloadToFile(0, CStr(url), CStr(LocalFilename), 0, 0)
+    If lngRetVal = 0 Then DownloadFile = True
+End Function
+

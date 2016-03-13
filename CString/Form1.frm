@@ -76,6 +76,23 @@ Private Sub Form_Load()
         cs.LoadFromFile pth
         .AddItem "Loaded " & cs.length & " bytes from file"
         
+        cs = "test" & Chr(5) & Chr(5)
+        .AddItem cs
+        .AddItem cs.endsWith(Chr(5))
+        cs.stripFromEnd Chr(5)
+        .AddItem cs
+        .AddItem cs.endsWith("est")
+        
+        If cs.LoadFromWeb("http://sandsprite.com/tools.php") Then
+            .AddItem cs
+        End If
+        
+        cs = "line0 \n line1 \n line2 \n line3"
+        cs = cs.replace("\n", vbCrLf)
+        .AddItem cs.getLine(0)
+        .AddItem cs.getLine(2)
+        .AddItem cs.getLine(7)
+        
 '        b() = cs.Compress()
 '        marker = cs.DeCompress(b())
 '        .AddItem "Compressed 1000 bytes to " & UBound(b) & " decompressed to: " & Len(marker)
