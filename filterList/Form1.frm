@@ -123,6 +123,7 @@ Private Sub Form_Load()
     mnuPopup.Visible = False
     lvFilter.HideSelection = False
     lvFilter.MultiSelect = True
+    lvFilter.setFont "tahoma", 9
     
     'you can set the filtercolumn either with the property manually, or by adding an * in the column header..
     'lvFilter.FilterColumn = 2

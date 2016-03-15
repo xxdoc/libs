@@ -81,17 +81,38 @@ End Sub
 Sub stripAnyFromEnd(ParamArray chars())
         
         Dim hadResult As Boolean
-
+        Dim cnt As Long
+        Dim index As Long
+        Dim b As String
+        
+        index = Len(base) - 1
         Do
             hadResult = False
             For Each c In chars
-                If LCase(Right(base, 1)) = LCase(c) Then
-                    base = Mid(base, 1, Len(base) - Len(c))
+                b = Mid(base, index, 1)
+                If LCase(b) = LCase(c) Then
+                    index = index - 1
+                    If index < 1 Then Exit Do
                     hadResult = True
+                    Exit For 'we found the char, move to next
                 End If
             Next
         Loop While hadResult
         
+        If index = Len(base) - 1 Then Exit Sub 'nothing to do
+        
+        If index < 1 Then
+            base = Empty
+        Else
+            base = Mid(base, 1, index)
+        End If
+
+    'much simplier but very inefficient for long strings..
+    'If LCase(Right(base, 1)) = LCase(c) Then
+    '    base = Mid(base, 1, Len(base) - Len(c))
+    '    hadResult = True
+    'End If
+    
 End Sub
 
 Function readX(start As Long, length As Long) As String
