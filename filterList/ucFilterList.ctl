@@ -137,6 +137,8 @@ Event Click()
 Event DblClick()
 Event ItemClick(ByVal Item As MSComctlLib.ListItem)
 Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Event ItemDeleted(Item As MSComctlLib.ListItem, ByRef cancel As Boolean)
+Event BeforeDelete(ByRef cancel As Boolean)
 
 #If 0 Then
     Dim x, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
@@ -225,6 +227,19 @@ End Property
 Property Let GridLines(x As Boolean)
     lv.GridLines = x
     lvFilter.GridLines = x
+End Property
+
+Property Get selCount() As Long
+    Dim clv As ListView
+    Dim x As Long
+    
+    Set clv = currentLV
+    For i = 1 To clv.ListItems.Count
+        If clv.ListItems(i).Selected Then x = x + 1
+    Next
+    
+    selCount = x
+    
 End Property
 
 'which ever one is currently displayed
@@ -333,35 +348,60 @@ End Sub
 Private Sub lv_KeyDown(KeyCode As Integer, Shift As Integer)
 
     Dim i As Long
+    Dim cancel As Boolean
     
     On Error Resume Next
     
     If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
+    
+        RaiseEvent BeforeDelete(cancel)
+        If cancel Then Exit Sub
+        
         For i = lv.ListItems.Count To 1 Step -1
-            If lv.ListItems(i).Selected Then lv.ListItems.Remove i
+            If lv.ListItems(i).Selected Then
+                cancel = False
+                RaiseEvent ItemDeleted(lv.ListItems(i), cancel)
+                If Not cancel Then lv.ListItems.Remove i
+            End If
         Next
+        
     End If
              
 End Sub
 
 Private Sub lvFilter_KeyDown(KeyCode As Integer, Shift As Integer)
+
     Dim i As Long
     Dim liMain As ListItem
+    Dim cancel As Boolean
     
     On Error Resume Next
     
     If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
+        
+        RaiseEvent BeforeDelete(cancel)
+        If cancel Then Exit Sub
+        
         For i = lvFilter.ListItems.Count To 1 Step -1
             If lvFilter.ListItems(i).Selected Then
                 Set liMain = getMainListItemFor(lvFilter.ListItems(i))
-                If Not liMain Is Nothing Then lv.ListItems.Remove liMain.Index
-                lvFilter.ListItems.Remove i
+                If Not liMain Is Nothing Then
+                    cancel = False
+                    RaiseEvent ItemDeleted(liMain, cancel)
+                    If Not cancel Then
+                        lv.ListItems.Remove liMain.Index
+                        lvFilter.ListItems.Remove i
+                    End If
+                Else
+                    'this should not happen...just error checking..
+                End If
             End If
         Next
+        
     End If
              
 End Sub

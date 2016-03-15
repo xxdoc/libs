@@ -9,12 +9,27 @@ Begin VB.Form Form1
    ScaleHeight     =   8730
    ScaleWidth      =   9540
    StartUpPosition =   3  'Windows Default
+   Begin VB.CheckBox chkCencelDelete 
+      Caption         =   "Cancel Delete in event"
+      Height          =   285
+      Left            =   1035
+      TabIndex        =   7
+      Top             =   5445
+      Width           =   2175
+   End
+   Begin VB.ListBox List1 
+      Height          =   1815
+      Left            =   495
+      TabIndex        =   6
+      Top             =   6435
+      Width           =   8610
+   End
    Begin VB.CheckBox chkAllowDelete 
       Caption         =   "Allow Delete"
       Height          =   285
       Left            =   1035
       TabIndex        =   5
-      Top             =   5220
+      Top             =   4995
       Width           =   1770
    End
    Begin VB.CommandButton Command3 
@@ -52,10 +67,10 @@ Begin VB.Form Form1
    End
    Begin VB.Label Label1 
       Caption         =   "You can also change the filter column from the filter textbox by entering /[index] and hitting return."
-      Height          =   1410
-      Left            =   540
+      Height          =   285
+      Left            =   450
       TabIndex        =   4
-      Top             =   6300
+      Top             =   5850
       Width           =   8250
    End
    Begin VB.Menu mnuPopup 
@@ -86,6 +101,7 @@ End Sub
 
 Private Sub Command1_Click()
     lvFilter.ListItems.Clear
+    List1.Clear
 End Sub
 
 Private Sub Command2_Click()
@@ -105,7 +121,7 @@ End Sub
 Private Sub Form_Load()
     
     mnuPopup.Visible = False
-    lvFilter.HideSelection = True
+    lvFilter.HideSelection = False
     lvFilter.MultiSelect = True
     
     'you can set the filtercolumn either with the property manually, or by adding an * in the column header..
@@ -139,6 +155,12 @@ Private Sub Form_Resize()
     lvFilter.Width = Me.Width - lvFilter.Left - 300
 End Sub
 
+Private Sub lvFilter_BeforeDelete(cancel As Boolean)
+    If MsgBox("Are you sure you want to delete these " & lvFilter.selCount & " items?", vbYesNo) = vbNo Then
+        cancel = True
+    End If
+End Sub
+
 Private Sub lvFilter_Click()
     Me.Caption = "lvFilter_Click"
 End Sub
@@ -149,6 +171,15 @@ End Sub
 
 Private Sub lvFilter_DblClick()
     Me.Caption = "lvFilter_DblClick"
+End Sub
+
+Private Sub lvFilter_ItemDeleted(Item As MSComctlLib.ListItem, cancel As Boolean)
+    If chkCencelDelete.value = 1 Then
+        List1.AddItem "Blocking Delete of: " & Item.Text
+        cancel = True
+    Else
+        List1.AddItem "Deleting: " & Item.Text
+    End If
 End Sub
 
 Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)

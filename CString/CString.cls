@@ -72,11 +72,31 @@ End Function
 
 Sub stripFromEnd(Optional char As String = vbCrLf, Optional method As VbCompareMethod = vbBinaryCompare)
         
-        While endsWith(char)
+        While endsWith(char, method)
             base = Mid(base, 1, Len(base) - Len(char))
         Wend
         
 End Sub
+
+Sub stripAnyFromEnd(ParamArray chars())
+        
+        Dim hadResult As Boolean
+
+        Do
+            hadResult = False
+            For Each c In chars
+                If LCase(Right(base, 1)) = LCase(c) Then
+                    base = Mid(base, 1, Len(base) - Len(c))
+                    hadResult = True
+                End If
+            Next
+        Loop While hadResult
+        
+End Sub
+
+Function readX(start As Long, length As Long) As String
+    readX = Mid(base, start, length)
+End Function
 
 Function substr(start As Long, Optional endat As Long) As String
     If IsMissing(endat) Then

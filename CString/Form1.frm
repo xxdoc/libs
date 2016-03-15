@@ -1,19 +1,19 @@
 VERSION 5.00
 Begin VB.Form Form1 
    Caption         =   "Form1"
-   ClientHeight    =   4950
+   ClientHeight    =   6270
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   4680
+   ClientWidth     =   4110
    LinkTopic       =   "Form1"
-   ScaleHeight     =   4950
-   ScaleWidth      =   4680
-   StartUpPosition =   3  'Windows Default
+   ScaleHeight     =   6270
+   ScaleWidth      =   4110
+   StartUpPosition =   2  'CenterScreen
    Begin VB.ListBox List1 
-      Height          =   2400
-      Left            =   270
+      Height          =   6105
+      Left            =   0
       TabIndex        =   0
-      Top             =   405
+      Top             =   45
       Width           =   4020
    End
 End
@@ -92,12 +92,10 @@ Private Sub Form_Load()
         .AddItem cs.getLine(0)
         .AddItem cs.getLine(2)
         .AddItem cs.getLine(7)
-        
-'        b() = cs.Compress()
-'        marker = cs.DeCompress(b())
-'        .AddItem "Compressed 1000 bytes to " & UBound(b) & " decompressed to: " & Len(marker)
-        
-        
+              
+        cs = "test " & vbCr & vbLf & vbLf & " " & Chr(0)
+        cs.stripAnyFromEnd vbLf, vbCr, " ", Chr(0)
+        .AddItem cs & " (len: " & cs.length & ")"
         
     End With
 
