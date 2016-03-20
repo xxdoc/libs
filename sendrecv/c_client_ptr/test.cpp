@@ -13,7 +13,7 @@ extern "C"
 }*/
 
 //but typedefs dont show protptype in intellisense? 
-typedef	int( __stdcall *QuickSend)(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout);
+typedef	int( __stdcall *QuickSend)(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout, short partialOk);
 typedef int( __stdcall *LastError)(char* buffer, int buflen);	
 
 QuickSend quickSend = NULL;
@@ -47,7 +47,7 @@ void main(void){
 	char* server = "sandsprite.com";
 	//char* server = "192.168.0.10";
 
-	int sz = (*quickSend)(server,80,http,strlen(http), buf, sizeof(buf), 12000);
+	int sz = (*quickSend)(server,80,http,strlen(http), buf, sizeof(buf), 12000, 1);
 	
 	if(sz > 0){
 		printf("%s",buf);

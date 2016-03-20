@@ -11,6 +11,7 @@ int bufSz=0;
 #define SD_SEND 1
 //bool debug = false;
 bool initilized = false;
+bool allowPartial = true;
 char errBuf[2048];
 
 //cant use this since I also have a c client which needs a correct lib, this will wack the lib file..
@@ -97,9 +98,10 @@ int dorecv(int ms_timeout) {
 		n = recv(sockfd, &buffer[offset], bufSz-offset-2 , 0); 
 		offset+=n;
 		if(n==0) break;
-		if((bufSz-offset) < 5){
+		if((bufSz-offset) < 2){
 			strcpy(errBuf,"Buffer to small");
-			break; //leave this one as a soft error because I may use it as a feature..
+			if(allowPartial) break; //leave this one as a soft error because I may use it as a feature..
+			return -5;
 		}
 		if(GetTickCount() - startTime > ms_timeout){
 			strcpy(errBuf,"Timeout");
@@ -127,7 +129,7 @@ int sendRecv(char* server, int port, char* msg, int msgLen, int ms_timeout){
 
 }
 
-int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout){
+int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout, short partialRespOk){
 //#pragma EXPORT
 
 	if(response_buffer ==0) return -6;
@@ -136,6 +138,7 @@ int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char*
 	errBuf[0] = 0;
 	buffer = response_buffer;
 	bufSz = response_buflen;
+	allowPartial = partialRespOk == 0 ? false : true;
 
 	if(!initilized) init();
 	if(!initilized){

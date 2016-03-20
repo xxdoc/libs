@@ -5,7 +5,7 @@
 
 #pragma comment(lib,"./../sendrecv.lib")
 
-__declspec(dllimport) int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout);
+__declspec(dllimport) int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout=12000, short partialOk=1);
 __declspec(dllimport) int __stdcall LastError(char* buffer, int buflen);
  
 
@@ -37,7 +37,7 @@ void main(void){
 	server = "sandsprite.com";
 	//char* server = "192.168.0.10";
 
-	sz = QuickSend(server,80,http,strlen(http), buf, sizeof(buf), 12000);
+	sz = QuickSend(server,80,http,strlen(http), buf, sizeof(buf));
 	
 	if(sz > 0){
 		printf("%s",buf);

@@ -53,7 +53,14 @@ Private Declare Function CLastError Lib "sendrecv.dll" Alias "LastError" ( _
 
 'int __stdcall QuickSend(
 '   char* server, int port, char* request,
-'   int reqLen, char* response_buffer, int response_buflen){
+'   int reqLen, char* response_buffer, int response_buflen, short allowPartial){
+
+'allowPartial=true lets you specify a small buffer and have it return ok
+'without an error. You can still determine if the buffer was full based on
+'the size returned, or if no error was returned by lastErr has data in it.
+'alternativly to reject any non-complete response set allowPartial = false
+'and CQuickSend will return false unless it gets the full reply back.
+'not to over complicate it, but its sufficiently useful both ways..
 
 Private Declare Function CQuickSend Lib "sendrecv.dll" Alias "QuickSend" ( _
             ByVal server As String, _
@@ -62,13 +69,18 @@ Private Declare Function CQuickSend Lib "sendrecv.dll" Alias "QuickSend" ( _
             ByVal reqLen As Long, _
             ByVal response_buffer As String, _
             ByVal respBufLen As Long, _
-            Optional ByVal msTimeout As Long = 12000 _
-            ) As Long
+            Optional ByVal msTimeout As Long = 12000, _
+            Optional ByVal allowPartial As Boolean = True _
+        ) As Long
 
 Dim hLib As Long
 
 
-Function QuickSend(server, port, msg, ByRef response, Optional maxSize As Long = 4096) As Boolean
+Function QuickSend(server, port, msg, _
+            Optional ByRef response, _
+            Optional maxSize As Long = 4096, _
+            Optional allowPartial As Boolean = True _
+        ) As Boolean
     
     Dim buf As String
     Dim sz As Long
@@ -85,7 +97,7 @@ Function QuickSend(server, port, msg, ByRef response, Optional maxSize As Long =
     End If
     
     buf = String(maxSize, Chr(0))
-    sz = CQuickSend(server, port, msg, Len(msg), buf, Len(buf))
+    sz = CQuickSend(server, port, msg, Len(msg), buf, Len(buf), , allowPartial)
     
     If sz < 1 Then 'we had an error
         sz = CLastError(buf, Len(buf))
@@ -120,9 +132,8 @@ Private Sub Form_Load()
     server = "sandsprite.com"
     'server = "192.168.0.10"
     
-    ok = QuickSend(server, 80, http, buf, maxSz)
+    ok = QuickSend(server, 80, http, buf, maxSz, True)
     Me.Caption = IIf(ok, "Success!", "Failed!")
-    Text1 = buf
     
     If ok Then
         If Len(buf) = maxSz - 2 Then
@@ -130,6 +141,9 @@ Private Sub Form_Load()
         Else
             Me.Caption = Me.Caption & " Size: " & Len(buf)
         End If
+        Text1 = buf
+    Else
+        Text1 = "Error: " & buf
     End If
     
 

@@ -1,9 +1,9 @@
 *.exp
-*.lib
-*.exp
 *.obj
 *.ncb
 vbDevKit/
 Subclass*/
-
-
+*.pdb
+*.manifest
+*.idb
+*Log.htm
