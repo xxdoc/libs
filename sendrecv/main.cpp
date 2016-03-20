@@ -5,11 +5,11 @@
 #pragma comment(lib, "ws2_32.lib")
 
 SOCKET sockfd; 
-char *buffer;//[4096];
+char *buffer;//[4096]; //client supplied buffer now...
 int bufSz=0;
 
 #define SD_SEND 1
-bool debug = false;
+//bool debug = false;
 bool initilized = false;
 char errBuf[2048];
 
@@ -99,13 +99,12 @@ int dorecv(int ms_timeout) {
 		if(n==0) break;
 		if((bufSz-offset) < 5){
 			strcpy(errBuf,"Buffer to small");
-			break;
-			//return -5; //i dont want these to be hard errors..design toss up, check lasterr after for soft error..
+			break; //leave this one as a soft error because I may use it as a feature..
 		}
 		if(GetTickCount() - startTime > ms_timeout){
 			strcpy(errBuf,"Timeout");
-			break;
-			//return -6;
+			//break;
+			return -6; //this one we will consider an error, buffer may be partially full though..
 		}
    }while(n > 0);
    //if(debug && offset == 0) printf("no data received?\n");	
@@ -130,6 +129,9 @@ int sendRecv(char* server, int port, char* msg, int msgLen, int ms_timeout){
 
 int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout){
 //#pragma EXPORT
+
+	if(response_buffer ==0) return -6;
+	if(response_buflen < 1) return -7;
 
 	errBuf[0] = 0;
 	buffer = response_buffer;

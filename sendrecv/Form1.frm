@@ -92,10 +92,10 @@ Function QuickSend(server, port, msg, ByRef response, Optional maxSize As Long =
         If sz < 1 Then
             response = "Unknown error"
         Else
-            response = Mid(buf, 1, sz - 1)
+            response = Mid(buf, 1, sz)
         End If
     Else
-        response = Mid(buf, 1, sz + 1)
+        response = Mid(buf, 1, sz)
         QuickSend = True
     End If
     
@@ -105,6 +105,7 @@ Private Sub Form_Load()
     
     Dim buf As String
     Dim ok As Boolean
+    Dim server As String
     
     Const http = "GET /tools.php HTTP/1.0" & vbCrLf & _
                 "Host: sandsprite.com" & vbCrLf & _
@@ -114,15 +115,18 @@ Private Sub Form_Load()
                 "" & vbCrLf & _
                 "" & vbCrLf
     
-    Const maxSz = 40096
+    Const maxSz = 300
     
-    ok = QuickSend("sandsprite.com", 80, http, buf, maxSz)
+    server = "sandsprite.com"
+    'server = "192.168.0.10"
+    
+    ok = QuickSend(server, 80, http, buf, maxSz)
     Me.Caption = IIf(ok, "Success!", "Failed!")
     Text1 = buf
     
     If ok Then
-        If Len(buf) = maxSz Then
-            Me.Caption = Me.Caption & " Buffer full"
+        If Len(buf) = maxSz - 2 Then
+            Me.Caption = Me.Caption & " - Partial content - Buffer full"
         Else
             Me.Caption = Me.Caption & " Size: " & Len(buf)
         End If
