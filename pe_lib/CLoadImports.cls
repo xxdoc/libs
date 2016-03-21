@@ -25,11 +25,12 @@ Friend Sub LoadImports(fhand As Long, rvaImportDir As Long, parent As CPEEditor)
     Dim fOffsetIDT As Long
        
     Set mParent = parent
+    If rvaImportDir = 0 Then Exit Sub
     
     fOffsetIDT = mParent.RvaToOffset(rvaImportDir)
     
     If fOffsetIDT < 1 Then
-        MsgBox "Error getting file offset from rva? rva=" & rvaImportDir & " offset=" & fOffsetIDT, vbExclamation
+        MsgBox "Error loading imports getting file offset from rva? rva=" & rvaImportDir & " offset=" & fOffsetIDT, vbExclamation
         Exit Sub
     End If
     
@@ -121,12 +122,12 @@ Private Function ScanString(offset As Long, Optional getHint As Boolean = False)
 End Function
 
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub

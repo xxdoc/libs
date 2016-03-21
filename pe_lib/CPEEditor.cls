@@ -16,6 +16,7 @@ Option Explicit
 'http://sandsprite.com
 '
 'These pe editor classes are v 0.21
+'todo support x64 I have it somewhere?
 
 Public OptionalHeader As COptionalHeader
 Public Imports As CLoadImports
@@ -29,10 +30,13 @@ Private DOSHEADER As IMAGEDOSHEADER
 Private NTHEADER As IMAGE_NT_HEADERS
 
 Private myFile As String
+ 
 
 Sub ShowOffsetCalculator(Optional modal As Boolean = False)
     frmOffsets.Initilize Me, modal
 End Sub
+
+ 
 
 Property Get CompiledDate() As String
 
@@ -72,9 +76,12 @@ Function LoadFile(fpath As String) As Boolean
         OptionalHeader.LoadStruc NTHEADER.OptionalHeader
         LoadSections f, NTHEADER
         Imports.LoadImports f, OptionalHeader.ddVirtualAddress(Import_Table), Me
-        Exports.LoadExports f, OptionalHeader.ddVirtualAddress(Export_Table), Me
         
+        'If InStr(1, fpath, "mswstr") > 0 Then Stop
+        Exports.LoadExports f, OptionalHeader.ddVirtualAddress(Export_Table), Me
         Close f
+        
+
         LoadFile = True
         myFile = fpath
         
