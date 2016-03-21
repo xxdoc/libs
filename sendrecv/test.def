@@ -1,0 +1,4 @@
+LIBRARY sendrecv
+EXPORTS
+   QuickSend
+   LastError

@@ -13,7 +13,8 @@ bool debug = false;
 bool initilized = false;
 char errBuf[2048];
 
-#define EXPORT comment(linker, "/EXPORT:"__FUNCTION__"="__FUNCDNAME__)
+//cant use this since I also have a c client which needs a correct lib, this will wack the lib file..
+//#define EXPORT comment(linker, "/EXPORT:"__FUNCTION__"="__FUNCDNAME__)
 
 //most of this was utilized from a post by arcomber Aug4 2012
 //http://codereview.stackexchange.com/questions/14340/how-to-fix-retrieval-of-receive-data-very-basic-socket-library-in-c
@@ -96,13 +97,15 @@ int dorecv(int ms_timeout) {
 		n = recv(sockfd, &buffer[offset], bufSz-offset-2 , 0); 
 		offset+=n;
 		if(n==0) break;
-		if((bufSz-offset) < 10){
-			strcpy(errBuf,"Buffer full");
+		if((bufSz-offset) < 5){
+			strcpy(errBuf,"Buffer to small");
 			break;
+			//return -5; //i dont want these to be hard errors..design toss up, check lasterr after for soft error..
 		}
 		if(GetTickCount() - startTime > ms_timeout){
 			strcpy(errBuf,"Timeout");
 			break;
+			//return -6;
 		}
    }while(n > 0);
    //if(debug && offset == 0) printf("no data received?\n");	
@@ -126,7 +129,7 @@ int sendRecv(char* server, int port, char* msg, int msgLen, int ms_timeout){
 }
 
 int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout){
-#pragma EXPORT
+//#pragma EXPORT
 
 	errBuf[0] = 0;
 	buffer = response_buffer;
@@ -142,7 +145,7 @@ int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char*
 }
 
 int __stdcall LastError(char* buffer, int buflen){
-#pragma EXPORT
+//#pragma EXPORT
 	
 	int eLen = strlen(errBuf);
 	if(buflen < 1) return 0;
