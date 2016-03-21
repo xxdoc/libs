@@ -13,11 +13,13 @@ extern "C"
 }*/
 
 //but typedefs dont show protptype in intellisense? 
-typedef	int( __stdcall *QuickSend)(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout, short partialOk);
+typedef	int( __stdcall *QuickSend)(char* request, int reqLen, char* response_buffer, int response_buflen);
 typedef int( __stdcall *LastError)(char* buffer, int buflen);	
+typedef void(__stdcall *qsConfig)(char* _server, int _port, int _timeout, short partialRespOk);
 
 QuickSend quickSend = NULL;
 LastError lastError = NULL;
+qsConfig  qsconfig = NULL;
 
 void main(void){
 
@@ -41,13 +43,20 @@ void main(void){
 		return;
 	}
 
+	qsconfig = (qsConfig)GetProcAddress((HMODULE)h,"qsConfig");
 	quickSend = (QuickSend)GetProcAddress((HMODULE)h,"QuickSend");
 	lastError = (LastError)GetProcAddress((HMODULE)h,"LastError");
+	
+	if( (int)qsconfig == 0 || (int)quickSend == 0 || (int)lastError == 0){
+		MessageBox(0,"Could not locate imports from sendrecv.dll","",0);
+		return;
+	}
 
 	char* server = "sandsprite.com";
 	//char* server = "192.168.0.10";
 
-	int sz = (*quickSend)(server,80,http,strlen(http), buf, sizeof(buf), 12000, 1);
+	(*qsconfig)(server,80,12000,1);
+	int sz = (*quickSend)(http,strlen(http), buf, sizeof(buf));
 	
 	if(sz > 0){
 		printf("%s",buf);

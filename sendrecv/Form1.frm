@@ -45,15 +45,21 @@ Attribute VB_Exposed = False
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 
+'void __stdcall qsCfg(char* _server, int _port, int _timeout, short partialRespOk){
+Private Declare Sub qsConfig Lib "sendrecv.dll" ( _
+            ByVal server As String, _
+            ByVal port As Long, _
+            Optional ByVal msTimeout As Long = 12000, _
+            Optional ByVal allowPartial As Boolean = True _
+        )
+
 'int __stdcall LastError(char* buffer, int buflen){
 Private Declare Function CLastError Lib "sendrecv.dll" Alias "LastError" ( _
             ByVal buffer As String, _
             ByVal bufLen As Long) As Long
 
 
-'int __stdcall QuickSend(
-'   char* server, int port, char* request,
-'   int reqLen, char* response_buffer, int response_buflen, short allowPartial){
+'int __stdcall QuickSend(char* request,int reqLen, char* response_buffer, int response_buflen ){
 
 'allowPartial=true lets you specify a small buffer and have it return ok
 'without an error. You can still determine if the buffer was full based on
@@ -63,41 +69,37 @@ Private Declare Function CLastError Lib "sendrecv.dll" Alias "LastError" ( _
 'not to over complicate it, but its sufficiently useful both ways..
 
 Private Declare Function CQuickSend Lib "sendrecv.dll" Alias "QuickSend" ( _
-            ByVal server As String, _
-            ByVal port As Long, _
             ByVal request As String, _
             ByVal reqLen As Long, _
             ByVal response_buffer As String, _
-            ByVal respBufLen As Long, _
-            Optional ByVal msTimeout As Long = 12000, _
-            Optional ByVal allowPartial As Boolean = True _
+            ByVal respBufLen As Long _
         ) As Long
 
 Dim hLib As Long
 
+'only needed in teh ide or if dll is in different directory..
+Function ide_ensure_dll_loaded(Optional ByRef msg, Optional dllName = "sendrecv.dll") As Boolean
 
-Function QuickSend(server, port, msg, _
-            Optional ByRef response, _
-            Optional maxSize As Long = 4096, _
-            Optional allowPartial As Boolean = True _
-        ) As Boolean
-    
-    Dim buf As String
-    Dim sz As Long
-    Const dllName = "sendrecv.dll"
-    
     If hLib = 0 Then hLib = LoadLibrary(dllName)
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\" & dllName)
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\Release\" & dllName)
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\Debug\" & dllName)
     
-    If hLib = 0 Then
-        response = "Could not find library " & dllName
-        Exit Function
+    If hLib <> 0 Then
+        ide_ensure_dll_loaded = True
+    Else
+        msg = "Could not find library " & dllName
     End If
+
+End Function
+
+Function QuickSend(msg, Optional ByRef response, Optional maxSize As Long = 4096) As Boolean
+    
+    Dim buf As String
+    Dim sz As Long
     
     buf = String(maxSize, Chr(0))
-    sz = CQuickSend(server, port, msg, Len(msg), buf, Len(buf), , allowPartial)
+    sz = CQuickSend(msg, Len(msg), buf, Len(buf))
     
     If sz < 1 Then 'we had an error
         sz = CLastError(buf, Len(buf))
@@ -132,7 +134,13 @@ Private Sub Form_Load()
     server = "sandsprite.com"
     'server = "192.168.0.10"
     
-    ok = QuickSend(server, 80, http, buf, maxSz, True)
+    If Not ide_ensure_dll_loaded(buf) Then
+        MsgBox buf
+        Exit Sub
+    End If
+    
+    qsConfig server, 80
+    ok = QuickSend(http, buf, maxSz)
     Me.Caption = IIf(ok, "Success!", "Failed!")
     
     If ok Then

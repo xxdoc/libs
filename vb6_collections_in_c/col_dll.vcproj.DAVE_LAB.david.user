@@ -9,7 +9,7 @@
 			Name="Debug|Win32"
 			>
 			<DebugSettings
-				Command="D:\_code\libs\sendrecv\test.exe"
+				Command="D:\_code\libs\vb6_collections_in_c\Project1.exe"
 				WorkingDirectory=""
 				CommandArguments=""
 				Attach="false"
@@ -37,7 +37,7 @@
 			Name="Release|Win32"
 			>
 			<DebugSettings
-				Command="D:\_code\libs\sendrecv\c_client\c_client.exe"
+				Command=""
 				WorkingDirectory=""
 				CommandArguments=""
 				Attach="false"

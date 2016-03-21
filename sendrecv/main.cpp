@@ -4,6 +4,10 @@
 
 #pragma comment(lib, "ws2_32.lib")
 
+char* server=0;
+int port=0;
+int ms_timeout=0;
+
 SOCKET sockfd; 
 char *buffer;//[4096]; //client supplied buffer now...
 int bufSz=0;
@@ -98,7 +102,7 @@ int dorecv(int ms_timeout) {
 		n = recv(sockfd, &buffer[offset], bufSz-offset-2 , 0); 
 		offset+=n;
 		if(n==0) break;
-		if((bufSz-offset) < 2){
+		if((bufSz-offset) <= 2){
 			strcpy(errBuf,"Buffer to small");
 			if(allowPartial) break; //leave this one as a soft error because I may use it as a feature..
 			return -5;
@@ -129,8 +133,25 @@ int sendRecv(char* server, int port, char* msg, int msgLen, int ms_timeout){
 
 }
 
-int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char* response_buffer, int response_buflen, int ms_timeout, short partialRespOk){
+void __stdcall qsConfig(char* _server, int _port, int _timeout, short partialRespOk){
 //#pragma EXPORT
+	
+	if(_server==0) return;
+	if(server!=0) free(server);
+	
+	server= strdup(_server);
+	port = _port;
+	ms_timeout = _timeout;
+	allowPartial = partialRespOk == 0 ? false : true;
+}
+
+int __stdcall QuickSend(char* request, int reqLen, char* response_buffer, int response_buflen){
+//#pragma EXPORT
+
+	if(server==0){
+		strcpy(errBuf,"You must call qsConfig to set server first");
+		return -8;
+	}
 
 	if(response_buffer ==0) return -6;
 	if(response_buflen < 1) return -7;
@@ -138,8 +159,7 @@ int __stdcall QuickSend(char* server, int port, char* request, int reqLen, char*
 	errBuf[0] = 0;
 	buffer = response_buffer;
 	bufSz = response_buflen;
-	allowPartial = partialRespOk == 0 ? false : true;
-
+	
 	if(!initilized) init();
 	if(!initilized){
 		strcpy(errBuf,"Failed to initilize winsock");

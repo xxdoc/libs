@@ -1,0 +1,115 @@
+
+VBA.Collection In C++
+
+Working between C/C++ and VB for simple types
+is fairly easy. VB6 was designed to interact with
+the WinAPI which is just a bunch of C functions
+in libraries.
+<br><br>
+
+For simple native types like numbers or strings
+its pretty easy. But what happens if your C function
+needs to return a variable sized list of strings?
+<br><br>
+
+Now you cant use simple C types anymore and have to
+start using COM types which is more complex and takes
+more background to deal with.
+<br><br>
+
+There are also a couple inbetween steps you can use.
+You C code can write the results to a file. VB6 then reads
+the results from the temp file when the C function returns.
+<br><br>
+
+You can also use callbacks. The vb app registers a callback
+procedure with the C function. Every time it generates a 
+result entry it calls back the vb module function and feeds
+it data. The vb module pushs the string into an array or collection
+and then when the C function returns it reads this module level
+array/collection as the return result. Its ugly, but its not that 
+hard.
+<br><br>
+
+What i really wanted was a way for the C code to dynamically
+add items to an array or collection. Using SafeArrays from C
+is fairly well documented, but they seem pretty bulky and can be
+locked etc. Adding items to a vb6 collection object was what I 
+really wanted, but I was not able to find any working code online
+about it. 
+<br><br>
+
+So here is one way to make it work. Its actually surprising how 
+little it boils down to. Thankfully there is allot of complexity 
+being hidden and done automatically for us. 
+<br><br>
+
+<b>C++ code:</b>
+<!-- HTML generated using hilite.me --><div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #557799">#include &quot;msvbvm60.tlh&quot; </span>
+
+<span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">addStr</span>(_CollectionPtr p , <span style="color: #333399; font-weight: bold">char</span><span style="color: #333333">*</span> str){
+	<span style="color: #333399; font-weight: bold">_variant_t</span> vv;
+	vv.SetString(str);
+	p<span style="color: #333333">-&gt;</span>Add(<span style="color: #333333">&amp;</span>vv.GetVARIANT());
+}
+
+<span style="color: #333399; font-weight: bold">void</span> <span style="color: #008800; font-weight: bold">__stdcall</span> <span style="color: #0066BB; font-weight: bold">addItems</span>(_CollectionPtr <span style="color: #333333">*</span>pColl)
+{
+<span style="color: #557799">#pragma EXPORT</span>
+	
+	addStr(<span style="color: #333333">*</span>pColl, <span style="background-color: #fff0f0">&quot;this is my string1&quot;</span>);
+	addStr(<span style="color: #333333">*</span>pColl, <span style="background-color: #fff0f0">&quot;this is my string2&quot;</span>);
+	addStr(<span style="color: #333333">*</span>pColl, <span style="background-color: #fff0f0">&quot;this is my string3&quot;</span>);
+	addStr(<span style="color: #333333">*</span>pColl, <span style="background-color: #fff0f0">&quot;this is my string4&quot;</span>);
+}
+</pre></div>
+<br><br>
+<br><br>
+
+<b>VB6 Code:</b>
+<!-- HTML generated using hilite.me --><div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #888888">&#39;we cant create a vba.collection in C, so we use a reference passed in from vb</span>
+<span style="color: #008800; font-weight: bold">Private</span> <span style="color: #008800; font-weight: bold">Declare</span> <span style="color: #008800; font-weight: bold">Sub</span> <span style="color: #0066BB; font-weight: bold">addItems</span> <span style="color: #008800; font-weight: bold">Lib</span> <span style="background-color: #fff0f0">&quot;col_dll&quot;</span> (<span style="color: #008800; font-weight: bold">ByRef</span> col <span style="color: #000000; font-weight: bold">As</span> Collection)
+
+<span style="color: #008800; font-weight: bold">Private</span> <span style="color: #008800; font-weight: bold">Sub</span> <span style="color: #0066BB; font-weight: bold">Command1_Click</span>()
+
+    <span style="color: #008800; font-weight: bold">Dim</span> c <span style="color: #000000; font-weight: bold">As</span> <span style="color: #008800; font-weight: bold">New</span> Collection
+    <span style="color: #008800; font-weight: bold">Dim</span> x, tmp
+    
+    addItems c
+    <span style="color: #008800; font-weight: bold">Me</span>.Caption <span style="color: #333333">=</span> c.Count <span style="color: #333333">&amp;</span> <span style="background-color: #fff0f0">&quot; items returned&quot;</span>
+    
+    <span style="color: #008800; font-weight: bold">For</span> <span style="color: #008800; font-weight: bold">Each</span> x <span style="color: #000000; font-weight: bold">In</span> c
+        tmp <span style="color: #333333">=</span> tmp <span style="color: #333333">&amp;</span> x <span style="color: #333333">&amp;</span> vbCrLf
+    <span style="color: #008800; font-weight: bold">Next</span>
+    
+    Text1 <span style="color: #333333">=</span> tmp
+    
+<span style="color: #008800; font-weight: bold">End</span> <span style="color: #008800; font-weight: bold">Sub</span>
+</pre></div>
+<br><br>
+
+So for the C portion, the tlh and tli files were generated by 
+
+<pre>
+#import <msvbvm60.dll> no_namespace
+</pre>
+
+we then manually modified them to only include the collection object
+and we now import them manually. (they gave compile error as auto generated)
+<br><br>
+
+These files give us the smart pointer definition for the VB6 _CollectionPtr object.
+The VBA.Collection type can not be created by C++ code. So in order to use it
+we just pass in a live collection instance from our VB6 caller. 
+<br><br>
+
+Its actually surprisingly easy to use this mechanism to transfer arbitrary amounts
+and types of data back from C++ to VB6.
+<br><br>
+
+I will try to include an example of walking data from an existing collection in C++
+a little bit latter on. For now you can download the sample files here.
+<br><br>
+
+
+

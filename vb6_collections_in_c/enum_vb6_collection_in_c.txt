@@ -1,0 +1,44 @@
+How can I write a VC6 client app which iterates thru a VB collection class
+residing in a DLL written VB6? In VB it would read
+
+For Each elem in elems
+    ' Do something with this elem of the coellection elems.
+Next
+
+How can I do that in a VC app?
+
+I wrapped the DLL and its classes in VC as advised in KB article Q194873. I
+can see all the methods exported and among them is GetNewEnum(). GetNewEnum
+returns an LPUNKNOWN. What do I have to do with this pointer?
+
+Any hint is appreciated.
+
+Regards
+Franz GEIGER 
+
+
+Here is how it works:
+
+   // Get the names of all the libs
+   IEnumVARIANT *pEnum = 0;
+   LPUNKNOWN pUnk = m_rwLibsOfConn.GetNewEnum();
+   _ASSERTE(pUnk);
+   HRESULT hr = pUnk->QueryInterface(IID_IEnumVARIANT, (void **)&pEnum);
+   pUnk->Release();
+   VARIANT varRWLib;
+   unsigned long ulNumElems;
+   CStringArray astrRWLibName;
+   while (0 == (hr = pEnum->Next(1, &varRWLib, &ulNumElems)) && 1 ==
+ulNumElems)
+   {
+      _RWLib rwLib;
+      rwLib.AttachDispatch(varRWLib.pdispVal);
+      astrRWLibName.Add(rwLib.GetItsName());
+   }
+   pEnum->Release();
+
+Thanks to all who contributed!
+
+Best regards
+Franz GEIGER 
+
