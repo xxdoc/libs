@@ -15,6 +15,9 @@ char errBuf[2048];
 
 #define EXPORT comment(linker, "/EXPORT:"__FUNCTION__"="__FUNCDNAME__)
 
+//most of this was utilized from a post by arcomber Aug4 2012
+//http://codereview.stackexchange.com/questions/14340/how-to-fix-retrieval-of-receive-data-very-basic-socket-library-in-c
+
 /* helper function to connect to server */
 SOCKET establish_connection(u_long nRemoteAddr, u_short nPort)
 {
@@ -90,7 +93,7 @@ int dorecv(int ms_timeout) {
    int n = 0, offset=0;
    unsigned int startTime = GetTickCount();
    do{
-		n = recv(sockfd, &buffer[offset], bufSz-offset-1 , 0); 
+		n = recv(sockfd, &buffer[offset], bufSz-offset-2 , 0); 
 		offset+=n;
 		if(n==0) break;
 		if((bufSz-offset) < 10){
@@ -143,12 +146,13 @@ int __stdcall LastError(char* buffer, int buflen){
 	
 	int eLen = strlen(errBuf);
 	if(buflen < 1) return 0;
-	if(eLen > buflen) eLen = buflen -1;
+	if(eLen > buflen) eLen = buflen-1;
 
 	if(eLen==0){
 		buffer[0]=0;
 	}else{
-		strncpy(buffer,errBuf,eLen);
+		strcpy(buffer,errBuf);
+		buffer[eLen] = 0;
 	}
 
 	return eLen;
