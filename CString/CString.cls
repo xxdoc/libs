@@ -719,3 +719,115 @@ Public Function DownloadFile(url, LocalFilename) As Boolean
     If lngRetVal = 0 Then DownloadFile = True
 End Function
 
+'Examples:
+' ("number 0x%x", 16)
+' ("number  %08x", &HCC)
+' ("number '%8X'", &HCC)
+' ("this is %s and can also be %S", "my string", "upper case")
+' ("%s", "string with no prefix")
+' ("0xCC in decimal = %d", &HCC)
+' ("chr(&h41) = %c", &H41)
+' ("chr(&h61) = %c it is my %s", &H61, "favorite letter")
+' ("this is\n\ta test of \n\t\tnew lines tabs \t and %% escapes")
+
+Function sprintf(ByVal msg As String, ParamArray vars()) As String
+'supports %x, %c, %s, %d, %10d \t \n %%
+
+    Dim t
+    Dim ret As String
+    Dim i As Long
+    Dim base As String
+    Dim marker As String
+    
+    msg = VBA.replace(msg, Chr(0), Empty)
+    msg = VBA.replace(msg, "\t", vbTab)
+    msg = VBA.replace(msg, "\n", vbCrLf) 'simplified
+    msg = VBA.replace(msg, "%%", Chr(0))
+    
+    t = VBA.split(msg, "%")
+    If UBound(t) <> UBound(vars) + 1 Then
+        MsgBox "Format string mismatch.."
+        Exit Function
+    End If
+    
+    ret = t(0)
+    For i = 1 To UBound(t)
+        base = t(i)
+        marker = ExtractSpecifier(base)
+        If Len(marker) > 0 Then
+            ret = ret & HandleMarker(base, marker, vars(i - 1))
+        Else
+            ret = ret & base
+        End If
+    Next
+    
+    ret = VBA.replace(ret, Chr(0), "%")
+    sprintf = ret
+    
+End Function
+
+Private Function HandleMarker(base, ByVal marker, var) As String
+    Dim newBase As String
+    Dim mType As Integer
+    Dim nVal As String
+    Dim spacer As String
+    Dim prefix As String
+    Dim count As Long
+    
+    If Len(base) > Len(marker) Then
+        newBase = Mid(base, Len(marker) + 1) 'remove the marker..
+    End If
+    
+    mType = Asc(Mid(marker, Len(marker), 1))  'last character
+    
+    Select Case mType
+        Case Asc("x"): nVal = Hex(var)
+        Case Asc("X"): nVal = UCase(Hex(var))
+        Case Asc("s"): nVal = var
+        Case Asc("S"): nVal = UCase(var)
+        Case Asc("c"): nVal = Chr(var)
+        Case Asc("d"): nVal = var
+        
+        Case Else: nVal = var
+    End Select
+    
+    If Len(marker) > 1 Then 'it has some more formatting involved..
+        marker = Mid(marker, 1, Len(marker) - 1) 'trim off type
+        If Left(marker, 1) = "0" Then
+            spacer = "0"
+            marker = Mid(marker, 2)
+        Else
+            spacer = " "
+        End If
+        count = CLng(marker) - Len(nVal)
+        If count > 0 Then prefix = VBA.String(count, spacer)
+    End If
+    
+    HandleMarker = prefix & nVal & newBase
+            
+End Function
+
+Private Function ExtractSpecifier(v)
+    
+    Dim ret As String
+    Dim b() As Byte
+    Const LANG_US = &H409
+    If Len(v) = 0 Then Exit Function
+    
+    b() = StrConv(v, vbFromUnicode, LANG_US)
+    
+    For i = 0 To UBound(b)
+        ret = ret & Chr(b(i))
+        If b(i) = Asc("x") Then Exit For
+        If b(i) = Asc("X") Then Exit For
+        If b(i) = Asc("c") Then Exit For
+        If b(i) = Asc("s") Then Exit For
+        If b(i) = Asc("S") Then Exit For
+        If b(i) = Asc("d") Then Exit For
+    Next
+    
+    ExtractSpecifier = ret
+    
+End Function
+
+

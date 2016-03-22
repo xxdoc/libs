@@ -97,6 +97,8 @@ Private Sub Form_Load()
         cs.stripAnyFromEnd vbLf, vbCr, " ", Chr(0)
         .AddItem cs & " (len: " & cs.length & ")"
         
+        .AddItem cs.sprintf("number  %08x", &HCC)
+        
     End With
 
 End Sub
