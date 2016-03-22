@@ -19,9 +19,17 @@ Function getCol() As Collection
 End Function
 
 Function test()
+    On Error Resume Next
+    
     Dim c
     MsgBox "Count: " & myCol.Count
+    
     For Each c In myCol
-        MsgBox TypeName(c) & "=" & c
+        MsgBox TypeName(c) & " = " & CStr(c)
+        If Err.Number <> 0 Then
+            MsgBox Err.Description
+            Err.Clear
+        End If
     Next
+    
 End Function

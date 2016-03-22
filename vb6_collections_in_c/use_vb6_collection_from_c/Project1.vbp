@@ -1,5 +1,4 @@
 Type=OleDll
-Form=C:\Documents and Settings\david\Desktop\Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
 Class=Class1; Class1.cls
 Startup="(None)"
@@ -9,7 +8,7 @@ Command32=""
 Name="Project1"
 HelpContextID="0"
 CompatibleMode="2"
-CompatibleEXE32="..\..\..\Project1.dll"
+CompatibleEXE32="Project1.dll"
 VersionCompatible32="1"
 MajorVer=1
 MinorVer=0
