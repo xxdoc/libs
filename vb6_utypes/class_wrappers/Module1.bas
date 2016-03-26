@@ -12,6 +12,8 @@ Enum op
     op_lsh = 9
     op_gt = 10
     op_lt = 11
+    op_gteq = 12
+    op_lteq = 13
 End Enum
 
 Enum modes

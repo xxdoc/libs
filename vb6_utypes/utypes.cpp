@@ -13,7 +13,9 @@ enum op{
 	op_rsh = 8,
 	op_lsh = 9,
 	op_gt  = 10,
-	op_lt  = 11
+	op_lt  = 11,
+	op_gteq = 12,
+	op_lteq = 13
 };
 
 enum modes{
@@ -42,6 +44,8 @@ unsigned int __stdcall ULong(unsigned int v1, unsigned int v2, int operation){
 		case op_lsh: return v1 << v2;
 		case op_gt: return (v1 > v2 ? 1 : 0);
 		case op_lt: return (v1 < v2 ? 1 : 0);
+		case op_gteq: return (v1 >= v2 ? 1 : 0);
+		case op_lteq: return (v1 <= v2 ? 1 : 0);
 	}
 
 	return -1;
@@ -63,6 +67,8 @@ unsigned short __stdcall UInt(unsigned short v1, unsigned short v2, int operatio
 		case op_lsh: return v1 << v2;
 		case op_gt: return (v1 > v2 ? 1 : 0);
 		case op_lt: return (v1 < v2 ? 1 : 0);
+		case op_gteq: return (v1 >= v2 ? 1 : 0);
+		case op_lteq: return (v1 <= v2 ? 1 : 0);
 	}
 
 	return -1;
@@ -85,6 +91,8 @@ unsigned char __stdcall UByte(unsigned char v1, unsigned char v2, int operation)
 		case op_lsh: return v1 << v2;
 		case op_gt: return (v1 > v2 ? 1 : 0);
 		case op_lt: return (v1 < v2 ? 1 : 0);
+		case op_gteq: return (v1 >= v2 ? 1 : 0);
+		case op_lteq: return (v1 <= v2 ? 1 : 0);
 	}
 
 	return -1;
@@ -106,7 +114,8 @@ unsigned __int64 __stdcall U64(unsigned __int64 v1, unsigned __int64 v2, int ope
 		case op_lsh: return v1 << v2;
 		case op_gt: return (v1 > v2 ? 1 : 0);
 		case op_lt: return (v1 < v2 ? 1 : 0);
-
+		case op_gteq: return (v1 >= v2 ? 1 : 0);
+		case op_lteq: return (v1 <= v2 ? 1 : 0);
 	}
 
 	return -1;
@@ -128,6 +137,8 @@ __int64 __stdcall S64(__int64 v1, __int64 v2, int operation){
 		case op_lsh: return v1 << v2;
 		case op_gt: return (v1 > v2 ? 1 : 0);
 		case op_lt: return (v1 < v2 ? 1 : 0);
+		case op_gteq: return (v1 >= v2 ? 1 : 0);
+		case op_lteq: return (v1 <= v2 ? 1 : 0);
 	}
 
 	return -1;
