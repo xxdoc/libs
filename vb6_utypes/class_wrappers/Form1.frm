@@ -97,6 +97,12 @@ Private Sub cmdx64Test_Click()
     
     List1.Clear
     
+    a.SetLongs &H11223344, &H55667788
+    List1.AddItem Hex(a.hi) & " " & Hex(a.lo)
+    a.hi = &H88776655
+    a.lo = &H44332211
+    List1.AddItem Hex(a.hi) & " " & Hex(a.lo)
+    
     a.SetLongs 0, 1
     Set b = a.DoOp(60, op_lsh)
     List1.AddItem "1 << 60 = " & b.sValue

@@ -101,6 +101,27 @@ Property Get isNegAsSigned() As Boolean
     isNegAsSigned = (Left(sValue(mSigned), 1) = "-")
 End Property
 
+Property Get hi() As Long
+    GetLongs hi
+End Property
+
+Property Let hi(x As Long)
+    Dim a As Long, b As Long
+    GetLongs a, b
+    SetLongs x, b
+End Property
+
+Property Get lo() As Long
+    GetLongs , lo
+End Property
+
+Property Let lo(x As Long)
+    Dim a As Long, b As Long
+    GetLongs a, b
+    SetLongs a, x
+End Property
+
+
 'as a property, the IDE can show it results as a tooltip when debugging
 Property Get sValue(Optional m As modes = mHex) As String
     Dim tmp As String, i As Long, lo As String, hi As String, a As Long
@@ -136,11 +157,11 @@ Property Let sValue(Optional m As modes = mHex, ByVal s As String)
     value = Str264(s, IIf(m = mHex, 16, 10))
 End Property
 
-Sub SetLongs(hi As Long, lo As Long)
+Sub SetLongs(Optional hi As Long, Optional lo As Long)
     value = toU64(hi, lo)
 End Sub
 
-Sub GetLongs(ByRef hi As Long, ByRef lo As Long)
+Sub GetLongs(Optional ByRef hi As Long, Optional ByRef lo As Long)
     fromU64 value, hi, lo
 End Sub
 
