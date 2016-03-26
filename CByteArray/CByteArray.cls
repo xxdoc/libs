@@ -137,6 +137,7 @@ End Function
 
 Function ReadLong(index As Long, Optional ByRef hadErr As Boolean) As Long
     hadErr = True
+    If isEmpty Then Exit Function
     If index < LBound(base) Then Exit Function
     If index + 3 > UBound(base) Then Exit Function
     Dim retval As Long
@@ -147,6 +148,7 @@ End Function
 
 Function ReadShort(index As Long, Optional ByRef hadErr As Long) As Integer
     hadErr = True
+    If isEmpty Then Exit Function
     If index < LBound(base) Then Exit Function
     If index + 1 > UBound(base) Then Exit Function
     Dim retval As Integer
@@ -156,6 +158,7 @@ Function ReadShort(index As Long, Optional ByRef hadErr As Long) As Integer
 End Function
 
 Function WriteLong(index As Long, value As Long) As Boolean
+    If isEmpty Then Exit Function
     If index < LBound(base) Then Exit Function
     If index + 3 > UBound(base) Then Exit Function
     CopyMemory VarPtr(base(index)), VarPtr(value), 4
@@ -163,6 +166,7 @@ Function WriteLong(index As Long, value As Long) As Boolean
 End Function
 
 Function WriteShort(index As Long, value As Integer) As Boolean
+    If isEmpty Then Exit Function
     If index < LBound(base) Then Exit Function
     If index + 1 > UBound(base) Then Exit Function
     CopyMemory VarPtr(base(index)), VarPtr(value), 2
@@ -235,12 +239,12 @@ Function pushBlock(b() As Byte)
     End If
 End Function
 
-Function copyBlock(index As Long, size As Long) As Byte()
+Function readBlock(index As Long, size As Long) As Byte()
     Dim b() As Byte
     If index + size > UBound(base) + 1 Then Exit Function
     ReDim b(size - 1)
     CopyMemory VarPtr(b(0)), VarPtr(base(index)), size
-    copyBlock = b()
+    readBlock = b()
 End Function
 
 Function popBlock(size As Long) As Byte()
@@ -249,7 +253,7 @@ Function popBlock(size As Long) As Byte()
     
     If isEmpty Then Exit Function
     
-    b() = copyBlock(UBound(base) + 1 - size, size)
+    b() = readBlock(UBound(base) + 1 - size, size)
     
     If UBound(base) = size Then
         Erase base
