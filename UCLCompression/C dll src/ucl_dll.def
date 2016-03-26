@@ -1,0 +1,10 @@
+LIBRARY ucl_dll
+      DESCRIPTION 'UCL Compression Library Wrapper for VB'
+      EXPORTS
+		 LastError
+		 CalcBufSize
+		 SetLevel
+		 Init
+		 Compress
+		 DeCompress
+	
