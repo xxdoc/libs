@@ -44,7 +44,18 @@ Private Sub cmdUlong_Click()
     Dim b As New Ulong
     
     List1.Clear
+    a.value = 60
+    Set b = a.DoOp(1, op_rsh)
+    List1.AddItem "60 >> 1 = " & b.value
     
+    a.value = 60
+    a.value = a.DoOp(2, op_rsh).value
+    List1.AddItem "60 >> 2 = " & a.value
+        
+    a.value = 7
+    a.value = a.DoOp(3, op_lsh).value
+    List1.AddItem "7 << 3 = " & a.value
+
     a.sValue = "0x11223344"
     List1.AddItem a.sValue
     
@@ -65,6 +76,16 @@ Private Sub cmdUlong_Click()
     a.sValue = a.MAX_UNSIGNED
     List1.AddItem a.DoOp(1, op_add).sValue
     
+    a.sValue = a.MAX_SIGNED
+    a.value = a.DoOp(1, op_add).value
+    b.value = 0
+    List1.AddItem "MAX_SIGNED+1 = " & a.value & " (native signed value)"
+    List1.AddItem "MAX_SIGNED+1 > 0 signed ? " & (a.value > b.value) & " (native cmp)"
+    
+    List1.AddItem "MAX_SIGNED+1 unsigned = " & a.sValue(False)
+    List1.AddItem "MAX_SIGNED+1 > 0 unsigned ? " & CBool(a.DoOp(b, op_gt).value)
+    
+    
     
     
 End Sub
@@ -76,7 +97,9 @@ Private Sub cmdx64Test_Click()
     
     List1.Clear
     
-    
+    a.SetLongs 0, 1
+    Set b = a.DoOp(60, op_lsh)
+    List1.AddItem "1 << 60 = " & b.sValue
     
     a.sValue = a.MAX_UNSIGNED64
     Set b = a.DoOp(1, op_add)

@@ -20,6 +20,10 @@ Attribute VB_Exposed = False
 '    op_xor = 5
 '    op_and = 6
 '    op_or = 7
+'    op_rsh = 8
+'    op_lsh = 9
+'    op_gt = 10
+'    op_lt = 11
 'End Enum
 '
 'Enum modes
@@ -142,10 +146,12 @@ Function DoOp(operand2, operation As op) As ULong64
     Dim ret As New ULong64
     Dim tmp As New ULong64
     
-    If TypeName(operand2) <> "ULong64" Then
-        tmp.SetLongs 0, CLng(operand2)
-    Else
+    If TypeName(operand2) = "ULong64" Then
         Set tmp = operand2
+    ElseIf TypeName(operand2) = "ULong" Then
+        tmp.SetLongs 0, operand2.value
+    Else
+        tmp.SetLongs 0, CLng(operand2)
     End If
     
     If mode = mSigned Then

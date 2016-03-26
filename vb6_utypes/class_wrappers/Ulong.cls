@@ -20,6 +20,10 @@ Attribute VB_Exposed = False
 '    op_xor = 5
 '    op_and = 6
 '    op_or = 7
+'    op_rsh = 8
+'    op_lsh = 9
+'    op_gt = 10
+'    op_lt = 11
 'End Enum
 '
 'Enum modes
@@ -68,7 +72,7 @@ Property Get sValue(Optional isHex As Boolean = True) As String
     If Not isHex Then
         sValue = GetUnsigned(value)
     Else
-        tmp = hex(value)
+        tmp = Hex(value)
          
         If padLeft Then
             tmp = Right("00000000" & tmp, 8)

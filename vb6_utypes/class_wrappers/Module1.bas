@@ -8,6 +8,10 @@ Enum op
     op_xor = 5
     op_and = 6
     op_or = 7
+    op_rsh = 8
+    op_lsh = 9
+    op_gt = 10
+    op_lt = 11
 End Enum
 
 Enum modes
