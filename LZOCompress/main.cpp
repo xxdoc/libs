@@ -2,26 +2,12 @@
 #include "minilzo.h"
 #include <stdio.h>
 #include <Windows.h>
-#include <comutil.h>
 
-#pragma comment(lib, "comsuppw.lib")
+//#include <comutil.h>
+//#pragma comment(lib, "comsuppw.lib")
 
 bool initilized = false;
 char* lastError[500];
-
-/* We want to compress the data block at 'in' with length 'IN_LEN' to
- * the block at 'out'. Because the input block may be incompressible,
- * we must provide a little more output space in case that compression
- * is not possible.
- */
-
-
-#define IN_LEN      (128*1024ul)
-#define OUT_LEN     (IN_LEN + IN_LEN / 16 + 64 + 3)
-
-static unsigned char __LZO_MMODEL in  [ IN_LEN ];
-static unsigned char __LZO_MMODEL out [ OUT_LEN ];
-
 
 /* Work-memory needed for compression. Allocate memory in units
  * of 'lzo_align_t' (instead of 'char') to make sure it is properly aligned.
@@ -84,13 +70,13 @@ int __stdcall Compress(unsigned char* buf, int bInSz , unsigned char* bOut, int 
     if (r != LZO_E_OK)
     {
         /* this should NEVER happen */
-        sprintf(b, "internal error - compression failed: %d\n", r);
+        sprintf(b, "internal error - compression failed: %d", r);
         return -3;
     }
     /* check for an incompressible block */
     if (out_len >= in_len)
     {
-        sprintf(b,"This block contains incompressible data.\n");
+        sprintf(b,"This block contains incompressible data.");
         return -4;
     }
 
@@ -124,10 +110,10 @@ int __stdcall DeCompress(unsigned char* buf, int bInSz , unsigned char* bOut, in
 		return -2;
 	}
 
-    r = lzo1x_decompress(buf,in_len,bOut,&out_len,NULL);
+    r = lzo1x_decompress_safe(buf,in_len,bOut,&out_len,NULL);
     if (r != LZO_E_OK)
     {
-        sprintf(b,"internal error - decompression failed: %d\n", r);
+        sprintf(b,"internal error - decompression failed: %d", r);
         return -3;
     }
 

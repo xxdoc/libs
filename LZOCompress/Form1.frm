@@ -1,16 +1,16 @@
 VERSION 5.00
 Begin VB.Form Form1 
    Caption         =   "Form1"
-   ClientHeight    =   8055
+   ClientHeight    =   8415
    ClientLeft      =   60
    ClientTop       =   345
    ClientWidth     =   12780
    LinkTopic       =   "Form1"
-   ScaleHeight     =   8055
+   ScaleHeight     =   8415
    ScaleWidth      =   12780
    StartUpPosition =   3  'Windows Default
    Begin VB.ListBox List1 
-      Height          =   1620
+      Height          =   2010
       Left            =   135
       TabIndex        =   4
       Top             =   6165
@@ -116,6 +116,12 @@ Private Sub Form_Load()
     txtCompressed = hexdump(compressed)
     List1.AddItem Len(a) & " bytes compressed down to " & Len(compressed)
     
+    List1.AddItem "Trying to decompress with to small a buffer!"
+    If Not LZO(compressed, decompressed, 500) Then
+        List1.AddItem "decompress failed but did not crash"
+    End If
+        
+    List1.AddItem "Now trying to decompress properly.."
     If Not LZO(compressed, decompressed, Len(a)) Then Exit Sub
     txtDecomp = hexdump(decompressed)
     List1.AddItem "Decompressed size is now " & Len(decompressed)
