@@ -111,12 +111,12 @@ Private Sub Form_Load()
     Dim compressed As String
     Dim decompressed As String
     
-    a = String(1000, "A")
+    a = String(100000, "A")
     If Not LZO(a, compressed) Then Exit Sub
     txtCompressed = hexdump(compressed)
     List1.AddItem Len(a) & " bytes compressed down to " & Len(compressed)
     
-    If Not LZO(compressed, decompressed, False) Then Exit Sub
+    If Not LZO(compressed, decompressed, Len(a)) Then Exit Sub
     txtDecomp = hexdump(decompressed)
     List1.AddItem "Decompressed size is now " & Len(decompressed)
     
@@ -136,7 +136,9 @@ End Sub
 'for decompression, it would probably be better to pass in the original size to get an idea
 'of the buffer size to allocate. in practice I would include a header in comporessed data
 'that included original size and original md5
-Function LZO(buf As String, ByRef retVal As String, Optional doCompress As Boolean = True) As Boolean
+'
+'note: passing in orgCompressedSize tells it you want to decompress the data..
+Function LZO(buf As String, ByRef retVal As String, Optional orgCompressedSize As Long = 0) As Boolean
     
     Dim bOut As String
     Dim inSz As Long
@@ -149,17 +151,22 @@ Function LZO(buf As String, ByRef retVal As String, Optional doCompress As Boole
     '*/
     
     inSz = Len(buf)
-    outlen = inSz * IIf(doCompress, 2, 100)
+    If orgCompressedSize = 0 Then
+        outlen = inSz * 2
+    Else
+        outlen = orgCompressedSize * 2
+    End If
+    
     bOut = String(outlen, Chr(0))
     
-    If doCompress Then
+    If orgCompressedSize = 0 Then
         sz = Compress(buf, inSz, bOut, outlen)
     Else
         sz = DeCompress(buf, inSz, bOut, outlen)
     End If
     
     If sz < 1 Then
-        List1.AddItem IIf(doCompress, "De", "") & "Compression failed: " & LZOMsg()
+        List1.AddItem IIf(orgCompressedSize = 0, "De", "") & "Compression failed: " & LZOMsg()
         Exit Function
     End If
     
