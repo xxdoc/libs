@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   8415
    ScaleWidth      =   12780
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command1 
+      Caption         =   "ByteArray Test"
+      Height          =   285
+      Left            =   4365
+      TabIndex        =   6
+      Top             =   0
+      Width           =   1770
+   End
    Begin VB.CommandButton cmdFile 
       Caption         =   "File Test"
       Height          =   285
@@ -85,7 +93,10 @@ Attribute VB_Exposed = False
 'note if you hit stop in the ide without closing the form, you probably
 'wont be able to recompile the dll without closing out the ide.
 'thats what the freelibrary call in form_unload is for..
-
+'
+'the same dll can actually operate on either byte arrays or strings
+'its just in how you define the declare..I have included both examples below
+'
 Dim hLib As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
@@ -104,7 +115,7 @@ Private Declare Function LZOGetMsg Lib "minilzo.dll" ( _
             Optional ByVal msgid As eMsg = em_version _
         ) As Long
 
-'int __stdcall Compress(char* buf, int bufsz, char* bOut, int bOutSz)
+
 Private Declare Function Compress Lib "minilzo.dll" ( _
             ByVal bufIn As String, _
             ByVal inSz As Long, _
@@ -119,6 +130,21 @@ Private Declare Function DeCompress Lib "minilzo.dll" ( _
             ByVal outSz As Long _
         ) As Long
 
+
+'-----------------------------[ redefined declare for byte arrays ]----------------------
+Private Declare Function CompressByteArray Lib "minilzo.dll" Alias "Compress" ( _
+            ByVal bufIn As Long, _
+            ByVal inSz As Long, _
+            ByVal bufOut As Long, _
+            ByVal outSz As Long _
+        ) As Long
+
+Private Declare Function DeCompressByteArray Lib "minilzo.dll" Alias "DeCompress" ( _
+            ByVal bufIn As Long, _
+            ByVal inSz As Long, _
+            ByVal bufOut As Long, _
+            ByVal outSz As Long _
+        ) As Long
 
 
 
@@ -158,6 +184,69 @@ Private Sub cmdFile_Click()
     
 End Sub
 
+Private Sub Command1_Click()
+    
+    Dim f As String
+    Dim comp As String
+    Dim decomp As String
+    Dim b() As Byte
+    Dim bComp() As Byte
+    Dim bDeComp() As Byte
+    Dim orgSize As Long
+    
+    Dim fh As Long
+    
+    f = App.path & "\minilzo.dll"
+    If Not FileExists(f) Then
+        MsgBox "dll not found"
+        Exit Sub
+    End If
+    
+    List1.Clear
+    List1.AddItem "Starting byte array test..."
+    
+    fh = FreeFile
+    Open f For Binary As fh
+    ReDim b(LOF(fh))
+    Get fh, , b()
+    Close fh
+    
+    orgSize = UBound(b)
+    List1.AddItem "Loading file: minilzo.dll  size: " & orgSize
+    
+    StartBenchMark
+    If Not bLZO(b, bComp) Then Exit Sub
+    List1.AddItem orgSize & " bytes compressed down to " & UBound(bComp) & EndBenchMark
+    txtCompressed = hexdump(StrConv(bComp, vbUnicode))
+    
+    StartBenchMark
+    If Not bLZO(bComp, bDeComp, orgSize) Then Exit Sub
+    List1.AddItem "Decompressed size is now " & UBound(bDeComp) & EndBenchMark
+    txtDecomp = hexdump(StrConv(bDeComp, vbUnicode))
+    
+    Dim failed As Boolean
+    
+    For i = 0 To UBound(b)
+        If i > UBound(bDeComp) Then
+            failed = True
+            Exit For
+        End If
+        If b(i) <> bDeComp(i) Then
+            failed = True
+            Exit For
+        End If
+    Next
+    
+    If Not failed Then
+        List1.AddItem "File data matches before and after!"
+    Else
+        List1.AddItem "FAIL! - len(org) = " & orgSize & " len(decomp) = " & UBound(bDeComp)
+    End If
+    
+End Sub
+
+
+'run the string test...
 Private Sub Form_Load()
 
     hLib = LoadLibrary("minilzo.dll")
@@ -261,6 +350,37 @@ Function LZOMsg(Optional m As eMsg = em_lastErr)
         LZOMsg = ver
     End If
     
+End Function
+
+
+Function bLZO(buf() As Byte, ByRef bOut() As Byte, Optional orgSize As Long = 0) As Boolean
+    
+    Dim inSz As Long
+    Dim outlen As Long
+
+    inSz = UBound(buf)
+    If orgSize = 0 Then
+        outlen = inSz * 2
+    Else
+        outlen = orgSize * 2
+    End If
+    
+    ReDim bOut(outlen)
+    
+    If orgSize = 0 Then
+        sz = CompressByteArray(VarPtr(buf(0)), inSz, VarPtr(bOut(0)), outlen)
+    Else
+        sz = DeCompressByteArray(VarPtr(buf(0)), inSz, VarPtr(bOut(0)), outlen)
+    End If
+    
+    If sz < 1 Then
+        List1.AddItem IIf(orgSize <> 0, "De", "") & "Compression failed: " & LZOMsg()
+        Exit Function
+    End If
+    
+    ReDim Preserve bOut(sz)
+    bLZO = True
+        
 End Function
 
 
