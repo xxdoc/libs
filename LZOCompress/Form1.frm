@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   8415
    ScaleWidth      =   12780
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton cmdFile 
+      Caption         =   "File Test"
+      Height          =   285
+      Left            =   3195
+      TabIndex        =   5
+      Top             =   0
+      Width           =   960
+   End
    Begin VB.ListBox List1 
       Height          =   2010
       Left            =   135
@@ -17,6 +25,15 @@ Begin VB.Form Form1
       Width           =   12525
    End
    Begin VB.TextBox txtDecomp 
+      BeginProperty Font 
+         Name            =   "Courier New"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       Height          =   5685
       Left            =   6480
       MultiLine       =   -1  'True
@@ -26,6 +43,15 @@ Begin VB.Form Form1
       Width           =   6225
    End
    Begin VB.TextBox txtCompressed 
+      BeginProperty Font 
+         Name            =   "Courier New"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       Height          =   5685
       Left            =   90
       MultiLine       =   -1  'True
@@ -97,12 +123,47 @@ Private Declare Function DeCompress Lib "minilzo.dll" ( _
 
 
 
+Private Sub cmdFile_Click()
+    
+    Dim f As String
+    Dim comp As String
+    Dim decomp As String
+    
+    f = App.path & "\minilzo.dll"
+    If Not FileExists(f) Then
+        MsgBox "dll not found"
+        Exit Sub
+    End If
+    
+    List1.Clear
+    
+    f = ReadFile(f)
+    List1.AddItem "Loading file: minilzo.dll  size: " & Len(f)
+    
+    StartBenchMark
+    If Not LZO(f, comp) Then Exit Sub
+    List1.AddItem Len(f) & " bytes compressed down to " & Len(comp) & EndBenchMark
+    txtCompressed = hexdump(comp)
+    
+    StartBenchMark
+    If Not LZO(comp, decomp, Len(f)) Then Exit Sub
+    List1.AddItem "Decompressed size is now " & Len(decomp) & EndBenchMark
+    txtDecomp = hexdump(decomp)
+    
+    If decomp = f Then
+        List1.AddItem "File data matches before and after!"
+    Else
+        List1.AddItem "FAIL! - len(org) = " & Len(f) & " len(decomp) = " & Len(decomp)
+    End If
+    
+End Sub
+
 Private Sub Form_Load()
 
     hLib = LoadLibrary("minilzo.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\minilzo.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\minilzo.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\minilzo.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\minilzo.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\minilzo.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\..\minilzo.dll")
     
     If hLib = 0 Then
         MsgBox "We could not find the dll? or its corrupt?"
@@ -119,9 +180,9 @@ Private Sub Form_Load()
     a = String(100000, "A") '100kb
     StartBenchMark
     If Not LZO(a, compressed) Then Exit Sub
-    txtCompressed = hexdump(compressed)
     List1.AddItem Len(a) & " bytes compressed down to " & Len(compressed) & EndBenchMark
-    
+    txtCompressed = hexdump(compressed)
+        
     List1.AddItem "Trying to decompress with to small a buffer!"
     StartBenchMark
     If Not LZO(compressed, decompressed, Len(compressed) + 1) Then
@@ -131,8 +192,8 @@ Private Sub Form_Load()
     List1.AddItem "Now trying to decompress properly.."
     StartBenchMark
     If Not LZO(compressed, decompressed, Len(a)) Then Exit Sub
-    txtDecomp = hexdump(decompressed)
     List1.AddItem "Decompressed size is now " & Len(decompressed) & EndBenchMark
+    txtDecomp = hexdump(decompressed)
     
     If decompressed = a Then
         List1.AddItem "Success original and decompressed strings match!"
@@ -216,7 +277,7 @@ Function hexdump(it)
         c = Hex(a)
         c = IIf(Len(c) = 1, "0" & c, c)
         b = b & IIf(a > 65 And a < 120, Chr(a), ".")
-        my = my & c & " "
+        my = my & c '& " "
         If i Mod 16 = 0 Then
             push lines(), my & "  [" & b & "]"
             my = Empty
@@ -265,3 +326,25 @@ Function EndBenchMark() As String
     EndBenchMark = "  Time: " & Round(loadTime / 1000, 3) & " seconds"
 End Function
 
+
+
+
+Function FileExists(path As String) As Boolean
+  On Error GoTo hell
+    
+  If Len(path) = 0 Then Exit Function
+  If Right(path, 1) = "\" Then Exit Function
+  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+  
+  Exit Function
+hell: FileExists = False
+End Function
+
+Function ReadFile(filename)
+  f = FreeFile
+  temp = ""
+   Open filename For Binary As #f        ' Open file.(can be text or image)
+     temp = Input(FileLen(filename), #f) ' Get entire Files data
+   Close #f
+   ReadFile = temp
+End Function
