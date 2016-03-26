@@ -7,6 +7,6 @@ vs2008 was used to compile the dll
 'of the buffer size to allocate. in practice I would include a header in comporessed data
 'that included original size and original md5
 
-any updates will be here:
+any updates will be here: 
 
 https://github.com/dzzie/libs/tree/master/LZOCompress

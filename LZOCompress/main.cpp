@@ -36,7 +36,7 @@ int __stdcall LZOGetMsg(char* buf, int bufsz, int msgID)
 	
 	int sz = strlen(b);
 	if(sz==0) return 0;
-	if(sz > bufsz-1) return 0;
+	if(sz >= bufsz-2) return 0;
 	strcpy(buf,b);
 
 }

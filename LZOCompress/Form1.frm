@@ -64,16 +64,19 @@ Dim hLib As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
+Private startTime As Long
+Private Declare Function GetTickCount Lib "kernel32" () As Long
+
 Enum eMsg
     em_version = 0
     em_lastErr = 1
 End Enum
     
 Private Declare Function LZOGetMsg Lib "minilzo.dll" ( _
-                    ByVal buf As String, _
-                    ByVal sz As Long, _
-                    Optional ByVal msgid As eMsg = em_version _
-                ) As Long
+            ByVal buf As String, _
+            ByVal sz As Long, _
+            Optional ByVal msgid As eMsg = em_version _
+        ) As Long
 
 'int __stdcall Compress(char* buf, int bufsz, char* bOut, int bOutSz)
 Private Declare Function Compress Lib "minilzo.dll" ( _
@@ -89,6 +92,8 @@ Private Declare Function DeCompress Lib "minilzo.dll" ( _
             ByVal bufOut As String, _
             ByVal outSz As Long _
         ) As Long
+
+
 
 
 
@@ -111,20 +116,23 @@ Private Sub Form_Load()
     Dim compressed As String
     Dim decompressed As String
     
-    a = String(100000, "A")
+    a = String(100000, "A") '100kb
+    StartBenchMark
     If Not LZO(a, compressed) Then Exit Sub
     txtCompressed = hexdump(compressed)
-    List1.AddItem Len(a) & " bytes compressed down to " & Len(compressed)
+    List1.AddItem Len(a) & " bytes compressed down to " & Len(compressed) & EndBenchMark
     
     List1.AddItem "Trying to decompress with to small a buffer!"
-    If Not LZO(compressed, decompressed, 500) Then
-        List1.AddItem "decompress failed but did not crash"
+    StartBenchMark
+    If Not LZO(compressed, decompressed, Len(compressed) + 1) Then
+        List1.AddItem "decompress failed but did not crash " & EndBenchMark
     End If
         
     List1.AddItem "Now trying to decompress properly.."
+    StartBenchMark
     If Not LZO(compressed, decompressed, Len(a)) Then Exit Sub
     txtDecomp = hexdump(decompressed)
-    List1.AddItem "Decompressed size is now " & Len(decompressed)
+    List1.AddItem "Decompressed size is now " & Len(decompressed) & EndBenchMark
     
     If decompressed = a Then
         List1.AddItem "Success original and decompressed strings match!"
@@ -143,8 +151,8 @@ End Sub
 'of the buffer size to allocate. in practice I would include a header in comporessed data
 'that included original size and original md5
 '
-'note: passing in orgCompressedSize tells it you want to decompress the data..
-Function LZO(buf As String, ByRef retVal As String, Optional orgCompressedSize As Long = 0) As Boolean
+'note: passing in orgSize tells it you want to decompress the data..
+Function LZO(buf As String, ByRef retVal As String, Optional orgSize As Long = 0) As Boolean
     
     Dim bOut As String
     Dim inSz As Long
@@ -157,22 +165,22 @@ Function LZO(buf As String, ByRef retVal As String, Optional orgCompressedSize A
     '*/
     
     inSz = Len(buf)
-    If orgCompressedSize = 0 Then
+    If orgSize = 0 Then
         outlen = inSz * 2
     Else
-        outlen = orgCompressedSize * 2
+        outlen = orgSize * 2
     End If
     
     bOut = String(outlen, Chr(0))
     
-    If orgCompressedSize = 0 Then
+    If orgSize = 0 Then
         sz = Compress(buf, inSz, bOut, outlen)
     Else
         sz = DeCompress(buf, inSz, bOut, outlen)
     End If
     
     If sz < 1 Then
-        List1.AddItem IIf(orgCompressedSize = 0, "De", "") & "Compression failed: " & LZOMsg()
+        List1.AddItem IIf(orgSize <> 0, "De", "") & "Compression failed: " & LZOMsg()
         Exit Function
     End If
     
@@ -245,4 +253,15 @@ Sub push(ary, value) 'this modifies parent ary object
 init:     ReDim ary(0): ary(0) = value
 End Sub
 
+
+Sub StartBenchMark()
+    startTime = GetTickCount()
+End Sub
+
+Function EndBenchMark() As String
+    Dim endTime As Long, loadTime As Long
+    endTime = GetTickCount()
+    loadTime = endTime - startTime
+    EndBenchMark = "  Time: " & Round(loadTime / 1000, 3) & " seconds"
+End Function
 
