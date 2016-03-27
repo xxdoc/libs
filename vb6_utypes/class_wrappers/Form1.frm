@@ -45,45 +45,45 @@ Private Sub cmdUlong_Click()
     
     List1.Clear
     a.value = 60
-    Set b = a.DoOp(1, op_rsh)
+    Set b = a.rshift(1)
     List1.AddItem "60 >> 1 = " & b.value
     
     a.value = 60
-    a.value = a.DoOp(2, op_rsh).value
+    a.value = a.rshift(2).value
     List1.AddItem "60 >> 2 = " & a.value
         
     a.value = 7
-    a.value = a.DoOp(3, op_lsh).value
+    a.value = a.lshift(3).value
     List1.AddItem "7 << 3 = " & a.value
 
     a.sValue = "0x11223344"
     List1.AddItem a.sValue
     
     a.sValue = a.MAX_SIGNED
-    Set b = a.DoOp(2, op_add)
+    Set b = a.add(2)
     List1.AddItem a.value
     List1.AddItem b.sValue(False)
     List1.AddItem b.value
     
     a.sValue = a.MAX_SIGNED
-    Set b = a.DoOp(b, op_add)
+    Set b = a.add(b)
     List1.AddItem b.value
     
     a.sValue = a.MAX_UNSIGNED
-    Set b = a.DoOp(1, op_add)
+    Set b = a.add(1)
     List1.AddItem b.value
     
     a.sValue = a.MAX_UNSIGNED
-    List1.AddItem a.DoOp(1, op_add).sValue
+    List1.AddItem a.add(1).sValue
     
     a.sValue = a.MAX_SIGNED
-    a.value = a.DoOp(1, op_add).value
+    a.value = a.add(1).value
     b.value = 0
     List1.AddItem "MAX_SIGNED+1 = " & a.value & " (native signed value)"
     List1.AddItem "MAX_SIGNED+1 > 0 signed ? " & (a.value > b.value) & " (native cmp)"
     
     List1.AddItem "MAX_SIGNED+1 unsigned = " & a.sValue(False)
-    List1.AddItem "MAX_SIGNED+1 > 0 unsigned ? " & CBool(a.DoOp(b, op_gt).value)
+    List1.AddItem "MAX_SIGNED+1 > 0 unsigned ? " & a.greaterThan(b)
     
     
     
@@ -104,22 +104,22 @@ Private Sub cmdx64Test_Click()
     List1.AddItem Hex(a.hi) & " " & Hex(a.lo)
     
     a.SetLongs 0, 1
-    Set b = a.DoOp(60, op_lsh)
+    Set b = a.lshift(60)
     List1.AddItem "1 << 60 = " & b.sValue
     
     a.sValue = a.MAX_UNSIGNED64
-    Set b = a.DoOp(1, op_add)
+    Set b = a.add(1)
     List1.AddItem "MAX_UNSIGNED64 + 1 = " & b.sValue(mUnsigned)
 
     a.sValue = a.MAX_SIGNED64
-    Set b = a.DoOp(1, op_add)
+    Set b = a.add(1)
     List1.AddItem "MAX_SIGNED64 + 1 = " & b.sValue(mSigned)
     List1.AddItem "isNegAsSigned = " & b.isNegAsSigned
     List1.AddItem "a > b " & (a.value > b.value)
     List1.AddItem "a < b " & (a.value < b.value)
 
     a.sValue = a.MIN_SIGNED64
-    Set b = a.DoOp(1, op_sub)
+    Set b = a.subtract(1)
     List1.AddItem "MIN_SIGNED64 - 1 = " & b.sValue(mSigned)
     List1.AddItem (a.value > b.value)
     List1.AddItem (a.value < b.value)

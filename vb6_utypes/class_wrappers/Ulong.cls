@@ -108,10 +108,8 @@ Private Function GetUnsigned(v As Long) As String
     If i > 0 Then GetUnsigned = Mid(tmp, 1, i)
 End Function
 
-
-
 'for signed math..you can use native vb6 operations..so mode is omitted..
-Function DoOp(operand2, operation As op) As Ulong
+Function raw_op(operand2, operation As op) As Ulong
     Dim ret As New Ulong
     Dim v2 As Long
     
@@ -123,11 +121,9 @@ Function DoOp(operand2, operation As op) As Ulong
     
     ret.value = Ulong(value, v2, operation)
     
-    Set DoOp = ret
+    Set raw_op = ret
     
 End Function
- 
-
 
 Private Sub Class_Initialize()
     hLib = LoadLibrary("UTypes.dll")
@@ -136,6 +132,72 @@ Private Sub Class_Initialize()
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
     padLeft = True
 End Sub
+
+'these stubs are for readability/ease of use
+Function add(operand2) As Ulong
+    Set add = raw_op(operand2, op_add)
+End Function
+
+Function subtract(operand2) As Ulong
+    Set subtract = raw_op(operand2, op_sub)
+End Function
+
+Function divide(operand2) As Ulong
+    Set divide = raw_op(operand2, op_div)
+End Function
+
+Function multiply(operand2) As Ulong
+    Set multiply = raw_op(operand2, op_mul)
+End Function
+
+Function modulus(operand2) As Ulong
+    Set modulus = raw_op(operand2, op_mod)
+End Function
+
+Function xor_(operand2) As Ulong
+    Set xor_ = raw_op(operand2, op_xor)
+End Function
+
+Function and_(operand2) As Ulong
+    Set and_ = raw_op(operand2, op_and)
+End Function
+
+Function or_(operand2) As Ulong
+    Set or_ = raw_op(operand2, op_or)
+End Function
+
+Function rshift(operand2) As Ulong
+    Set rshift = raw_op(operand2, op_rsh)
+End Function
+
+Function lshift(operand2) As Ulong
+    Set lshift = raw_op(operand2, op_lsh)
+End Function
+
+Function greaterThan(operand2) As Boolean
+    Dim a As Ulong
+    Set a = raw_op(operand2, op_gt)
+    greaterThan = (a.value = 1)
+End Function
+
+Function lessThan(operand2) As Boolean
+    Dim a As Ulong
+    Set a = raw_op(operand2, op_lt)
+    lessThan = (a.value = 1)
+End Function
+
+Function greaterThanEqual(operand2) As Boolean
+    Dim a As Ulong
+    Set a = raw_op(operand2, op_gteq)
+    greaterThanEqual = (a.value = 1)
+End Function
+
+Function lessThanEqual(operand2) As Boolean
+    Dim a As Ulong
+    Set a = raw_op(operand2, op_lteq)
+    lessThanEqual = (a.value = 1)
+End Function
+
 
 
 
