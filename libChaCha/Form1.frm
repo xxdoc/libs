@@ -124,8 +124,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Private Declare Sub chacha_init Lib "libchacha" (ByVal key As String, ByVal klen As Long, ByVal counter As Long)
-Private Declare Function chacha Lib "libchacha" (ByRef buf() As Byte, Optional ByVal encrypt As Boolean = True) As Byte()
+Private Declare Sub chainit Lib "libchacha" (ByVal key As String, ByVal klen As Long, ByVal counter As Long)
+Private Declare Function chacha Lib "libchacha" (ByRef buf() As Byte) As Byte()
 
 Dim hLib As Long
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
@@ -161,7 +161,7 @@ Private Sub Command1_Click()
     
     Me.Caption = "Starting cycle.."
     
-    chacha_init txtPass, Len(txtPass), cnt
+    chainit txtPass, Len(txtPass), cnt
     bOut() = chacha(b)
     
     If AryIsEmpty(bOut) Then
@@ -173,8 +173,8 @@ Private Sub Command1_Click()
     sOut = StrConv(bOut, vbUnicode)
     txtCrypt = hexdump(sOut)
     
-    chacha_init txtPass, Len(txtPass), cnt
-    bDec() = chacha(bOut, False)
+    chainit txtPass, Len(txtPass), cnt
+    bDec() = chacha(bOut)
     
     If AryIsEmpty(bDec) Then
         txtDecrypt = "Decryption Failed!"
@@ -185,7 +185,7 @@ Private Sub Command1_Click()
     txtDecrypt = hexdump(sOut)
     
     If UBound(b) <> UBound(bDec) Then
-        Me.Caption = "Size mismatch: Org:" & UBound(b) & " Decoded: " & UBound(bDec)
+        Me.Caption = "Size mismatch: Org:" & Hex(UBound(b)) & " Decoded: " & Hex(UBound(bDec))
         Exit Sub
     End If
     
@@ -196,15 +196,16 @@ Private Sub Command1_Click()
         End If
     Next
     
-    Me.Caption = "Success in and out matched!"
+    Me.Caption = "Success exact match!"
+    Me.Caption = Me.Caption & "   Sizes: " & Hex(UBound(b)) & "/" & Hex(UBound(bDec))
+    Me.Caption = Me.Caption & "   LastVals: " & Hex(b(UBound(b))) & "/" & Hex(bDec(UBound(bDec)))
     
 End Sub
 
 Private Sub Form_Load()
+    'IDE cant always find dlls not in path on its own..so we control it explicitly..
     hLib = LoadLibrary("libchacha.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.path & "\libchacha.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\libchacha.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\..\libchacha.dll")
     If hLib = 0 Then
         Me.Caption = "Could not find libchacha.dll?"
         Command1.Enabled = False
@@ -212,6 +213,7 @@ Private Sub Form_Load()
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
+    'only needed for working in IDE if need to recompile dll regularly..
     If hLib <> 0 Then FreeLibrary hLib
 End Sub
 
@@ -282,8 +284,6 @@ Function ReadFile(filename)
    Close #f
    ReadFile = temp
 End Function
-
-
 
 Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops

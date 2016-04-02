@@ -1,0 +1,4 @@
+LIBRARY	"libchacha"
+EXPORTS
+	chainit
+	chacha
