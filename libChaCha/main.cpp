@@ -15,7 +15,7 @@ uint8_t nonce[8];
 bool isInit = false;
 
 //for api simplicity I didnt add access to setting nonce, you can if required.
-void __stdcall chainit(char* _key, int kLen, int count)
+void __stdcall chainit(char* _key, uint32_t kLen, uint32_t count)
 {
 	counter = count;
 	memset(nonce,0,sizeof(nonce));

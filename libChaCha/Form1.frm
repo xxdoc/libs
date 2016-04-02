@@ -128,8 +128,10 @@ Private Declare Sub chainit Lib "libchacha" (ByVal key As String, ByVal klen As 
 Private Declare Function chacha Lib "libchacha" (ByRef buf() As Byte) As Byte()
 
 Dim hLib As Long
+Const LANG_US = &H409
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+
 
 Private Sub Command1_Click()
 
@@ -146,7 +148,7 @@ Private Sub Command1_Click()
     End If
     
     If chkisFile.value = 0 Then
-        b() = StrConv(txtMsg, vbFromUnicode)
+        b() = StrConv(txtMsg, vbFromUnicode, LANG_US)
     Else
         If Not FileExists(txtMsg) Then
             MsgBox "File not found!"
@@ -170,7 +172,7 @@ Private Sub Command1_Click()
     End If
     
     Dim sOut As String
-    sOut = StrConv(bOut, vbUnicode)
+    sOut = StrConv(bOut, vbUnicode, LANG_US)
     txtCrypt = hexdump(sOut)
     
     chainit txtPass, Len(txtPass), cnt
@@ -181,7 +183,7 @@ Private Sub Command1_Click()
         Exit Sub
     End If
     
-    sOut = StrConv(bDec, vbUnicode)
+    sOut = StrConv(bDec, vbUnicode, LANG_US)
     txtDecrypt = hexdump(sOut)
     
     If UBound(b) <> UBound(bDec) Then
