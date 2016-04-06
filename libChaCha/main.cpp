@@ -75,3 +75,39 @@ SAFEARRAY* __stdcall chacha(SAFEARRAY** buf, char* _key=0)
   return psa;
 }
 
+//in case you prefer to pass in a string..
+//if your string is binary you must include the optional bufLen
+SAFEARRAY* __stdcall chacha2(uint8_t *buf, char* _key=0, uint32_t bufLen = 0 )
+{
+
+  //we will let key be optional parameter but include for convience. if you need 
+  //to use a binary key or configure other params, use chainit directly.
+  if(_key != 0){
+	uint32_t kLen = strlen(_key);
+	if(kLen > 0) chainit(_key, kLen, 0,0,0);
+  }
+
+  if(!isInit) return 0; 
+  if(buf==0 || *buf==0) return 0;
+  
+  //not binary safe but ok for initial encryption of text.
+  if(bufLen==0) bufLen = strlen((char*)buf); 
+  if(bufLen==0) return 0;
+
+  SAFEARRAYBOUND arrayBounds[1] = { {bufLen, 0}};
+  SAFEARRAY* psa = SafeArrayCreate(VT_I1, 1, arrayBounds);
+  if(psa==0) return 0;
+
+  SafeArrayLock(psa);
+  memset(psa->pvData,0,bufLen); //looks like its actually already zeroed out..
+  
+  chacha20_ctx ctx;
+  chacha20_setup(&ctx, key, sizeof(key), nonce);
+  chacha20_counter_set(&ctx, counter);
+  chacha20_encrypt(&ctx, buf, (uint8_t *)psa->pvData, bufLen);
+   
+  SafeArrayUnlock(psa);
+  isInit = false;
+
+  return psa;
+}

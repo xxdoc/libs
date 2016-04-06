@@ -4,11 +4,19 @@ Begin VB.Form Form1
    ClientHeight    =   7545
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   10350
+   ClientWidth     =   11610
    LinkTopic       =   "Form1"
    ScaleHeight     =   7545
-   ScaleWidth      =   10350
+   ScaleWidth      =   11610
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton cmdStrTest 
+      Caption         =   "String Test"
+      Height          =   330
+      Left            =   10440
+      TabIndex        =   14
+      Top             =   45
+      Width           =   1050
+   End
    Begin VB.CheckBox chkUseNonce 
       Caption         =   "Use Nonce/cnt"
       Height          =   240
@@ -61,10 +69,10 @@ Begin VB.Form Form1
    Begin VB.CommandButton Command1 
       Caption         =   "Encrypt"
       Height          =   375
-      Left            =   9135
+      Left            =   9045
       TabIndex        =   5
       Top             =   360
-      Width           =   1050
+      Width           =   1140
    End
    Begin VB.TextBox txtCrypt 
       BeginProperty Font 
@@ -163,6 +171,15 @@ Private Declare Function chacha Lib "libchacha" ( _
             Optional ByVal key As String = "" _
         ) As Byte()
 
+
+'in case you prefer to pass in a string..
+'if your string is binary you must include the optional dataLen
+Private Declare Function chacha2 Lib "libchacha" ( _
+            ByVal data As String, _
+            Optional ByVal key As String = "", _
+            Optional ByVal dataLen As Long = 0 _
+        ) As Byte()
+
 Dim hLib As Long
 Const LANG_US = &H409
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
@@ -177,6 +194,49 @@ Function expand(s) As String
     sPass = Replace(sPass, "\t", vbTab)
     expand = sPass
 End Function
+
+Private Sub cmdStrTest_Click()
+
+    Dim bOut() As Byte
+    Dim bDec() As Byte
+    Dim cnt As Long
+
+    Me.Caption = "Starting cycle.."
+    bOut() = chacha2(txtMsg, txtPass)
+    
+    If AryIsEmpty(bOut) Then
+        txtCrypt = "Encryption Failed!"
+        Exit Sub
+    End If
+    
+    Dim sOut As String
+    sOut = StrConv(bOut, vbUnicode, LANG_US)
+    txtCrypt = hexdump(sOut)
+    
+    'now our string has binary data in it so we must pass in length.. (or use the byte array version)
+    bDec() = chacha2(sOut, txtPass, Len(sOut))
+    
+    If AryIsEmpty(bDec) Then
+        txtDecrypt = "Decryption Failed!"
+        Exit Sub
+    End If
+    
+    sOut = StrConv(bDec, vbUnicode, LANG_US)
+    txtDecrypt = hexdump(sOut)
+    
+    If txtMsg <> sOut Then
+        Me.Caption = "Size mismatch: Org:" & Hex(Len(txtMsg)) & " Decoded: " & Hex(Len(sOut))
+        Exit Sub
+    End If
+    
+    If txtMsg <> sOut Then
+        Me.Caption = "Decryption Failed!"
+        Exit Sub
+    End If
+    
+    Me.Caption = "Success exact match!"
+    
+End Sub
 
 Private Sub Command1_Click()
 
@@ -355,10 +415,10 @@ End Function
 
  
 
-Private Sub txtMsg_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub txtMsg_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error GoTo hell
-    If FileExists(Data.Files(1)) Then
-        txtMsg = Data.Files(1)
+    If FileExists(data.Files(1)) Then
+        txtMsg = data.Files(1)
         chkisFile.value = 1
     End If
 hell:

@@ -2,3 +2,4 @@ LIBRARY	"libchacha"
 EXPORTS
 	chainit
 	chacha
+	chacha2
