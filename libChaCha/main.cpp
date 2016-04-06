@@ -14,22 +14,38 @@ uint8_t key[32];
 uint8_t nonce[8];
 bool isInit = false;
 
-//for api simplicity I didnt add access to setting nonce, you can if required.
-void __stdcall chainit(char* _key, uint32_t kLen, uint32_t count)
+//you can use this method to explicitly set the parameters, including binary keys..
+void __stdcall chainit(char* _key, uint32_t kLen, char* _nonce, uint32_t nLen, uint32_t count)
 {
 	counter = count;
 	memset(nonce,0,sizeof(nonce));
 	memset(key,0,sizeof(key));
-	if(kLen > 32) kLen = 32;
-	memcpy(key,_key,kLen);
+
+	if(_nonce != 0 && nLen > 0){
+		if(nLen > 8) nLen = 8;
+		memcpy(nonce,_nonce,nLen);
+	}
+
+	if(_key != 0 && kLen > 0){
+		if(kLen > 32) kLen = 32;
+		memcpy(key,_key,kLen);
+	}
+
 	isInit = true;
 }
 
 
 //decrypt is actually just a wrapper for encrypt..
 //its symetric so no need for calling both or an isEncrypt flag..
-SAFEARRAY* __stdcall chacha(SAFEARRAY** buf)
+SAFEARRAY* __stdcall chacha(SAFEARRAY** buf, char* _key=0)
 {
+
+  //we will let key be optional parameter but include for convience. if you need 
+  //to use a binary key or configure other params, use chainit directly.
+  if(_key != 0){
+	uint32_t kLen = strlen(_key);
+	if(kLen > 0) chainit(_key, kLen, 0,0,0);
+  }
 
   if(!isInit) return 0; 
   if(buf==0 || *buf==0) return 0;

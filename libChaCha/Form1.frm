@@ -9,6 +9,21 @@ Begin VB.Form Form1
    ScaleHeight     =   7545
    ScaleWidth      =   10350
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox chkUseNonce 
+      Caption         =   "Use Nonce/cnt"
+      Height          =   240
+      Left            =   8100
+      TabIndex        =   13
+      Top             =   45
+      Width           =   1950
+   End
+   Begin VB.TextBox txtNonce 
+      Height          =   285
+      Left            =   2745
+      TabIndex        =   12
+      Top             =   45
+      Width           =   1365
+   End
    Begin VB.TextBox txtCount 
       Height          =   285
       Left            =   4815
@@ -75,7 +90,7 @@ Begin VB.Form Form1
       TabIndex        =   3
       Text            =   "password1"
       Top             =   45
-      Width           =   3435
+      Width           =   1140
    End
    Begin VB.TextBox txtMsg 
       Height          =   330
@@ -86,12 +101,20 @@ Begin VB.Form Form1
       Top             =   360
       Width           =   7305
    End
+   Begin VB.Label Label5 
+      Caption         =   "Nonce"
+      Height          =   285
+      Left            =   1980
+      TabIndex        =   11
+      Top             =   45
+      Width           =   690
+   End
    Begin VB.Label Label4 
       Caption         =   "input supports file drag and drop"
       Height          =   240
-      Left            =   5670
+      Left            =   5490
       TabIndex        =   10
-      Top             =   90
+      Top             =   45
       Width           =   2265
    End
    Begin VB.Label Label3 
@@ -124,14 +147,36 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Private Declare Sub chainit Lib "libchacha" (ByVal key As String, ByVal klen As Long, ByVal counter As Long)
-Private Declare Function chacha Lib "libchacha" (ByRef buf() As Byte) As Byte()
+
+'use this one for setting all params explicitly or for binary key (even embedded null)
+Private Declare Sub chainit Lib "libchacha" ( _
+            ByVal key As String, _
+            ByVal klen As Long, _
+            Optional ByVal nOnce As String = "", _
+            Optional ByVal nlen As Long = 0, _
+            Optional ByVal counter As Long = 0 _
+        )
+        
+'you can also just include th key here to use simply..
+Private Declare Function chacha Lib "libchacha" ( _
+            ByRef buf() As Byte, _
+            Optional ByVal key As String = "" _
+        ) As Byte()
 
 Dim hLib As Long
 Const LANG_US = &H409
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
+'so we can test binary passwords..
+Function expand(s) As String
+    Dim sPass As String
+    sPass = Replace(s, "\x0", Chr(0))
+    sPass = Replace(sPass, "\n", vbLf)
+    sPass = Replace(sPass, "\r", vbCr)
+    sPass = Replace(sPass, "\t", vbTab)
+    expand = sPass
+End Function
 
 Private Sub Command1_Click()
 
@@ -139,6 +184,11 @@ Private Sub Command1_Click()
     Dim bOut() As Byte
     Dim bDec() As Byte
     Dim cnt As Long
+    Dim sPass As String
+    Dim sNOnce As String
+    
+    sPass = expand(txtPass)
+    sNOnce = expand(txtNonce)
     
     If IsNumeric(txtCount) Then
         cnt = CLng(txtCount)
@@ -163,8 +213,12 @@ Private Sub Command1_Click()
     
     Me.Caption = "Starting cycle.."
     
-    chainit txtPass, Len(txtPass), cnt
-    bOut() = chacha(b)
+    If chkUseNonce.value = 1 Then
+        chainit sPass, Len(sPass), sNOnce, Len(sNOnce), cnt
+        bOut() = chacha(b)
+    Else
+        bOut() = chacha(b, sPass)
+    End If
     
     If AryIsEmpty(bOut) Then
         txtCrypt = "Encryption Failed!"
@@ -175,8 +229,12 @@ Private Sub Command1_Click()
     sOut = StrConv(bOut, vbUnicode, LANG_US)
     txtCrypt = hexdump(sOut)
     
-    chainit txtPass, Len(txtPass), cnt
-    bDec() = chacha(bOut)
+    If chkUseNonce.value = 1 Then
+        chainit sPass, Len(sPass), sNOnce, Len(sNOnce), cnt
+        bDec() = chacha(bOut)
+    Else
+        bDec() = chacha(bOut, sPass)
+    End If
     
     If AryIsEmpty(bDec) Then
         txtDecrypt = "Decryption Failed!"
