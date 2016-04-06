@@ -1,0 +1,314 @@
+<HTML>
+<HEAD>
+<TITLE>clsStrings</TITLE>
+<style>
+.title{ font-family:Arial-black;font-size:16pt;color:#6600cc;font-weight:bolder }
+</style>
+
+</HEAD>
+<BODY>
+<table width=700 style='font-face:arial;font-size=13pt'>
+<tr><td>
+	<center><font class=title>clsStrings</font><br><br></center>
+
+	<p> &nbsp; &nbsp; This class is thrown in as a bonus. It provides many
+	utilities to make your string parsing life <b>much</b> easier. It is built 
+	around a loose Javascript Object model. You set teh string you are parsing once
+	instead of having constantly keep including it in function calls. Also the parsing
+	has been augmented with the ability to set and manipulate a pointer in the string.
+	This allows you do some really neat things, and very effectivly.
+	<br><br>
+	<p> &nbsp; &nbsp; If you ever have to do complex string parsing, I guarantee this class
+	will save you ALOT of typing and ALOT of bugs. I use it every time i am in a stirng parsing 
+	nightmare...and it makes it easy and bearable.
+	<br><br>
+</td></tr>
+</table>
+
+<table width=700 border=1 bordercolor=black cellspacing=0 cellpadding=8 style='font-face:arial;font-size=13pt' >
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Let/Get </FONT>Strng(it)
+</b>
+<br><br>
+This is where you set the default string for the class to parse
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get/Let </FONT>Pointer()<FONT COLOR='#000088'> As</FONT> Integer
+</b>
+<br><br>
+ Let/Get the point position within the string.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>Length()<FONT COLOR='#000088'> As</FONT> Integer
+</b>
+<br><br>
+  Returns the string length.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ReadXChars(startAt, leng)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+	Reads specified length from the startAt position.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>Substring(x, y)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+	Returns the substring starting the position x and ending at position y 
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ToEndOfStr(from)
+</b>
+<br><br>
+	Reads from the position specified to the end of the string .
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>IncrementPointer(inc<FONT COLOR='#000088'> As</FONT> Integer)
+</b>
+<br><br>
+	Increments the pointer by the value specified. (can be negative)
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>IndexOf(it, Optional startAt = 1, Optional advPtrLenIt = <FONT COLOR='#000088'>False)</FONT>
+</b>
+<br><br>
+	Returns the position of the substring "it" in the string to be parsed, optionally starting at the position
+	you provide. If AdvPtrLenIt is true, then the pointer character is set to end of the string found.
+	If false, pointer is still advanced to the IndexOf position for use in subsequent functions.
+	This function also sets an internal variable that records the string you tried to locate for use in functions
+	such as NextIndexOf()
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>NextIndexOf(Optional ChangePtrChrTo = "")
+</b>
+<br><br>
+	Searchs for the character you did an inital IndexOf search on, Allows you to change this pointer character for
+	the search. This could be useful for example if you wanted to search for the opening [ you would do an indexOf("[")
+	then to find the matching ] you could NextIndexOf("]") the search would start at the pointer character, which
+	was set by indexOf to the position of the first [
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>SubstringToChar(startPos, EndChr)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+	Starts at startPos and read up to the next occurance of the character you specify in endChr.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>SubstringToNext(Optional advPtr<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>False)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+	This function will parse out the sub string up to the next occurance of the pointer character. AdvPtr will optionally advance 
+	the pointer index to the end of the substring. If you wanted to retrieve the first double quoted string in 
+	a document. You could say:
+	<pre>
+	s.strng = doctext
+	s.indexOf("""")     <font color=green>'this line finds the first double quote, sets the pointer char, and pointer index to it.</font>
+	msgbox s.SubStringToNext
+	</pre>	
+	
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>CharAt(x)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+	Returns the Character at the x position.
+<br><br>
+
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>GetChar()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+	Returns the next character in the string based on the pointer index
+	increments the pointer automatically.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>CharCodeAt(x, Optional inHex<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>False)</FONT>
+</b>
+<br><br>
+	Returns the ascii charcode of the character at position x. If inHex is true, then the value is returned in
+	hexidecimal
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ReplacePtrChar(ins)
+</b>
+<br><br>
+   Replaces the character the pointer is currently on with the value you pass in. This can be
+   longer than one character.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ReplaceCharAt(xpos, ins)
+</b>
+<br><br>
+	Used to insert a string at xpos
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>ToEndofStrFromChar(StartChar)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+	Returns then string from the start position on.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT><FONT COLOR='#000088'>String</FONT>ToEndMinus(xChars)
+</b>
+<br><br>
+	Returns the last xChars from the end of the string.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>InstrRevtoChar(xChar)
+</b>
+<br><br>
+	Returns the index of the last occurance of the character requested.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>SubstringToLastChar(xChar)
+</b>
+<br><br>
+	Returns the portion of the string up to teh last occurance of the character specified
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>ToEndOfLine(Optional startAt = "")
+</b>
+<br><br>
+	Assumes it is a multiline string parsing. Returns the substring starting at the 
+	startAt position up to the first carriage return. If startAt = "" then it 
+	starts at the current pointer.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>CountOccurancesOf(char)
+</b>
+<br><br>
+	Returns how many times the character (or string) is found in the parent string.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>SubStringToPointer()
+</b>
+<br><br>
+	returns from the beginnign of string to the current pointer position.
+<br><br>
+</td></tr>
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Function </FONT>SubStringFromPointer(Optional IncPtr<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Integer </FONT>= 0)
+</b>
+<br><br>
+	Returns the substring from the pointer position to the end of the string .
+<br><br>
+</td></tr>
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Sub </FONT>SetDelimitedValues(strIn<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, delimiter<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, defaultVal, ParamArray FillVariables())
+</b>
+<br><br>
+	Bonus function, useful in string parsing, but not really related to teh library.
+	strIn is the string to parse, delimiter is the character you want strin broken up at, and the last
+	argument is as many variables as you were expencing to have filled from the string.
+	<br><br>
+	
+	For example, if you were expecing a string of 3 comma seperated variables.
+	and they were age,weight,eyecolor you might do the following.
+	
+	<pre>
+	dim age,weight,eyeColor,s as string 
+	s = "21,150,blue"
+	SetDelimitedValues s, "," , "Not Found", age, weight, eyecolor
+	</pre>
+	
+	<br><br>
+	The default value specifies what value to assign a variable if no value was found in
+	the delimited string for it. This would be used in the case that s="21,150"
+	
+	<br><br>
+	Here it will not throw an error, just assign the default value of "Not Found" as specified
+	above. You can use this to set as many variables as you want all in one line. It is a 
+	special use function...but it does come in very handy at times.
+</td></tr>
+</table>

@@ -1,0 +1,27 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=vbDevKit.chm
+Contents file=TOC.hhc
+Default topic=Introduction.html
+Display compile progress=Yes
+Enhanced decompilation=Yes
+Language=0x409 English (United States)
+Title=VbDevKit - A head Start on Developement !
+
+
+[FILES]
+CHM-Index.htm
+clsCmdLine.html
+clsCmnDlg.html
+clsFileStream.html
+clsFileSystem.html
+clsIniFile.html
+clsRegistry.html
+clsStrings.html
+Introduction.html
+HowTo.html
+Installing.html
+LICENSE.html
+
+[INFOTYPES]
+

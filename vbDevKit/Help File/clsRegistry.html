@@ -1,0 +1,112 @@
+<HTML>
+<HEAD>
+<TITLE>clsRegistry</TITLE>
+<style>
+.title{ font-family:Arial-black;font-size:16pt;color:#6600cc;font-weight:bolder }
+</style>
+
+</HEAD>
+<BODY>
+<table width=700 style='font-face:arial;font-size=13pt'>
+<tr><td>
+	<center><font class=title>clsRegistry</font></center><br><br>
+
+	<p> &nbsp; &nbsp; This class gives you easy access to the registry Functions.
+	The registry is a built in windows database that holds many of the systems configuration
+	settings. The registry is supposed to take the place of the use of INI files. Vb only has
+	built in access to a minute portion of the registry through GetSetting, SaveSetting. This
+	Library will allow you full access to all of the registrys branchs and capabilities.
+	<br><br>
+	<p> &nbsp; &nbsp; Be warned you can really mess up your system if you make delete or 
+	change stuff in the registry. Know what you are doing before you attempt to do it in code
+	or you mayfind yourself reinstalling your system. Dont say i didnt warn you.
+	<br><br>
+	<p> &nbsp; &nbsp; This library includes some built in enums that make registry access a
+	snap. the hkey Enum holds all of the branchs of the registry and lets you specify which you
+	want to write to. The dataType enumeration allows you to specify which type of value to write.
+</td></tr></table>
+
+<table width=700 border=1 bordercolor=black cellspacing=0 cellpadding=8 style='font-face:arial;font-size=13pt' >
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Function </FONT>keyExists(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+	Returns true is the specified path exists.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>DeleteValue(hive<FONT COLOR='#000088'> As</FONT> hKey, path, ValueName)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Deletes the specified value. Returns true if successful.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>DeleteKey(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Deletes the specified key. Returns true if successful.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>CreateKey(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Creates the key specified, returns true if successful.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>SetValue(hive<FONT COLOR='#000088'> As</FONT> hKey, path, KeyName, data, dType<FONT COLOR='#000088'> As</FONT> dataType)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Sets teh specified value, returns true if successful.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>ReadValue(hive<FONT COLOR='#000088'> As</FONT> hKey, path, <FONT COLOR='#000088'>ByVal </FONT>KeyName)
+</b>
+<br><br>
+Returns the value specified from the hive and path.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>EnumKeys(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+</b>
+<br><br>
+Returns a string array of all of the keys in the specified folder.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>EnumValues(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+</b>
+<br><br>
+Returns a string array of all of the values in the specified path.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+
+</td></tr></table>

@@ -1,0 +1,136 @@
+<HTML>
+<HEAD>
+<TITLE>clsIniFile</TITLE>
+<style>
+.title{ font-family:Arial-black;font-size:16pt;color:#6600cc;font-weight:bolder }
+</style>
+
+</HEAD>
+<BODY>
+<table width=700 style='font-face:arial;font-size=13pt'>
+<tr><td>
+	<center><font class=title>clsIniFile</font><br><br></center>
+
+	<p> &nbsp; &nbsp; An Ini File is a windows standard configuration file format. It is
+	a plain text file divided into sections. Each section holds a list of name=value pairs.
+	All entries are single lines of data. Sections are defined by [SectionName] format lines.
+	Each name should be unique per section. 
+	<br><br>
+
+	For consistancy, I am going to define a couple terms and give you a sample INI file
+	format.
+	<br><br>
+	<pre>
+	[Section1]
+	key1=value1_from_section1
+	key2=value2_from_section1
+
+	[section2]
+	key1=value1_from_section2
+	</pre>
+
+	<p> &nbsp; &nbsp; The Windows Api provides built in functions for reading and writing
+	to ini files. However the API lacks some functionality i really want to see included.
+	Namely the ability to load all of the keys into an array automatically, as well as
+	the ability to enumerate sections and section keys. This is where this Class comes in.
+	Below is the function prototypes and descriptions.
+	<br><br>
+</td></tr></table>
+
+<table width=700 border=1 bordercolor=black cellspacing=0 cellpadding=8 style='font-face:arial;font-size=13pt' >
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Sub </FONT>LoadFile(INIFileLoc<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+LoadFile Should be called once jsut before you want to read or manipulate the
+file. It will load the file into memory and make its data available to you. The
+one argument INIFILELoc is the path to the INI file. If the file does not exist
+the function exits. Make sure the file exists first.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Sub </FONT>Save()
+</b>
+<br><br> 
+Once all changes are complete, Save will write them to disk, and release the object from memory.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Sub </FONT>Release()
+</b>
+<br><br>
+Even If you did not make any changes to the file, it is recommended to release its
+memory when you are through with it.
+
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>GetValue(Section, Key)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>	
+Get value will return the value of an entry give the Section that it is in and
+the key that holds it value. In the example ini file at the top of the page, 
+GetValue("Section1","key1") will return the value "value1_from_section1"
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>EnumSections()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+</b>
+<br><br>
+This function will return a string array of all of the section names found in the 
+inifile. Example usage would be:
+<pre>
+dim sects() as string
+sects() = EnumSections()
+msgbox ubound(sects)
+msgbox sects(1) 'contains string "Section1"
+</pre>
+(Note: returns 1 based array)
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>EnumKeys(Section)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+</b>
+<br><br>
+This function will enumerate all of the keys within the defined section and return a string array of thier
+values.(Note: returns 1 based array)
+<br><br>
+
+</td></tr>
+<tr><td>
+the rest of these should be self explainatory...
+<br><br>
+<b>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>AddKey(Section, Key, value)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<br><br>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>AddSection(SectionName)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<br><br>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>DeleteSection(Section)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<br><br>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>DeleteKey(Section, Key)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<br><br>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>SetValue(Section, Key, newVal)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<br><br>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>KeyExists(Section, Key)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<br><br>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>SectionExists(Section)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b></td></tr></table>
+
+
+</BODY>
+</HTML>

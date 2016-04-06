@@ -5,6 +5,7 @@
 #include <malloc.h>
 #include <Windows.h>
 #include <comutil.h>
+#include <Atlconv.h>
 #include "chacha20_simple.h" 
 
 #pragma comment(lib, "comsuppw.lib")
@@ -111,3 +112,5 @@ SAFEARRAY* __stdcall chacha2(uint8_t *buf, char* _key=0, uint32_t bufLen = 0 )
 
   return psa;
 }
+
+

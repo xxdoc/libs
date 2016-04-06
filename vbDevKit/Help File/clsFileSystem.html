@@ -1,0 +1,298 @@
+<HTML>
+<HEAD>
+<TITLE>clsIniFile</TITLE>
+<style>
+.title{ font-family:Arial-black;font-size:16pt;color:#6600cc;font-weight:bolder }
+</style>
+
+</HEAD>
+<BODY>
+<table width=700 style='font-face:arial;font-size=13pt'>
+<tr><td>
+	<center><font class=title>clsFileSystem</font><br><br></center>
+
+	<p> &nbsp; &nbsp; No mater what type of program you are creating, it is very often necessary
+	to have to work with the filesystem. The built in VB Filesystem commands do not have intellisense
+	available and often leave you running for a book or double checkign syntax even if you have been
+	using it for years. This ineviatable leads to bugs and slow developement time. 
+	<br><br>
+	<p> &nbsp; &nbsp; The Vb Developers Kit clsFileSystem wraps all of the file system manipulation
+	functions in a very intutive and easy to use library that will not only cut your developement
+	time, but also your debugging time. This library has been built up over the course of several
+	years, and has everythign you could need for general everyday file writing.
+	<br><br>
+</td></tr>
+</table>
+
+<table width=700 border=1 bordercolor=black cellspacing=0 cellpadding=8 style='font-face:arial;font-size=13pt' >
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Function </FONT>GetFolderFiles(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional filter<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT> = "*", Optional retFullPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>True)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+</b>
+<br><br>
+
+This function will return a string array of the files in the folder you specify. The filter argument allows
+you to define just the file types you want returned, like *.pdf or *.htm* The retFullPath argument defines wether
+you want the file paths returned to be absolute full paths ( c:\folder\file.htm ) or just the file name.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>GetSubFolders(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional retFullPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>True)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+</b>
+<br><br>
+
+This function will return a string array of all of the subfolders contained in the parent folder.
+RetFullpath defines wether it is a full path returned or just the sub folder name.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>FolderExists(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Returns a boolean if the specified folder exists or not
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>FileExists(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Returns a boolean if the specified file exists or not
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>GetParentFolder(path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+Returns a string containing the full path to the parent folder of the path you pass in.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>CreateFolder(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+Creates folder specified. Be sure parent folder exists if several layers deep, or see BuildPath function which will
+build all folders to final path.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>FileNameFromPath(fullpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+Returns just the name of a file given its full path
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>WebFileNameFromPath(fullpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+Same as above but used for web addresses.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>DeleteFile(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Tries to delete teh specified file. Returns true if successful.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>Rename(fullpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, newName<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+Renames specified file. first argument is the full path to teh file. Second argument is the new file name desired (no path included)
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>SetAttribute(fpath, it<FONT COLOR='#000088'> As</FONT> VbFileAttribute)
+</b>
+<br><br>
+Sets the file system attribute for the file given the full path.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>GetExtension(path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+Returns just the file extension for the full path. ex: path="c:\boot.ini" returns ".ini"
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>GetBaseName(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+Returns just the name of the file, ommitting the extension.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>ChangeExt(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, ext<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+Changes teh extension of the file.  Path is the full path to the file, ext is the new extension. If path is just a file 
+name and not the path to a file, then the entension of that string filename will be changed.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>SafeFileName(proposed<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+The file system has some characters that cannot be present in file names. This function will remove these
+characters and will return a safe file name.
+<br><br>
+
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>RandomNum()<FONT COLOR='#000088'> As</FONT> Long
+</b>
+<br><br>
+Returns a random number, used internally to generate freefile names but exposed publically for utility.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>GetFreeFileName(folder<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional extension = ".txt")<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+Given the path to a folder it will generate a numeric filename that is guaranteed to be free in that folder. Ext signifies the extension
+you want for the file. 
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>buildPath(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+This function will try to create the fill folder path you specify even if some of the parent folders
+do not exist. Returns true if successful.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>readFile(filename)<FONT COLOR='#000088'> As</FONT> Variant
+</b>
+<br><br>
+Reads the entire contents of a file and returns it. Retursn variant making this useful for binary
+data as well. Makes no attempts to verify file exists, if not throws error.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>writeFile(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, it<FONT COLOR='#000088'> As</FONT> Variant)
+</b>
+<br><br>
+Writes the file specified with the data passed in in variable it. It is variant and also works with binary data.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>AppendFile(path, it)
+</b>
+<br><br>
+Appends file with specified data.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>Copy(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, toFolder<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+Copies the file specified to the new folder using the same file name.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>Move(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, toFolder<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+Moves teh file specified to the new folder.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>CreateFile(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+</b>
+<br><br>
+Creates a 0 byte file.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>DeleteFolder(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional force<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>True)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Deletes Specified folder. If force parameter is true, it will attempt to recursivly delete all sub file s and folders.
+if successful returns true. (Can fail if files are open or locked in path)
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>FolderName(folderPath)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+Returns just the name of the last folder given a path to a specified folder.
+<br><br>
+

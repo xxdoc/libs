@@ -1,0 +1,71 @@
+
+This is a free, easy to use, Subclass component made in VB6.
+------------------------------------------------------------
+
+Why another subclassing component? 
+
+    Well, I needed one I wrote from scratch to use with my products
+    and that was free from all other Licensing terms. I also wanted
+    a more streamlined interface than some of the others I had used.
+
+    This dll uses a simple single event based interface. To use it,
+    just create a class variable withevents. To specify which messages
+    you want to receive, you just call a function in the class telling it
+    which window you want to subclass and which message to look for.
+
+    When the message is received, it will raise an event that you 
+    will process in your code. In the event handler you can directly modify
+    parameters or cancel the message. 
+
+
+How was this component developed? What are its capabilities?
+
+    you can have an unlimited number of classes, and should be
+    able to subclass an unlimited number of windows. Each class
+    can in turn subclass as many windows as it wants, and it should
+    be able to attach to as many messages per window as it wants.
+
+    You can edit message parameters and cancel them directly in
+    the eventhandler you implement for the clsSubClass in your code.
+
+    One thing you cannot do, is to have multiple classes subclass the
+    same window looking for the same message. (although multiple classes
+    should be able to share the subclass of any hwnd, they just cant
+    receive the same msg.
+
+
+What are the licensing terms on spSubClass ?
+
+   You are free to use it in any personal or commercial applications
+   you create royality free. A brief "This product contains software  
+   written by David Zimmer" would be nice in your copyright info, but  
+   it is definatly not required.
+
+   You are free to distribute the dll with your applications, however you 
+   cannot redistribute my installer, my site shall remain the only to offer   
+   this component for download unless I  either personally submit it to you
+   or you ask my permission before hand.
+
+   This software is provided as is with no warrenty as to merchantability or fitness
+   for any particular use, in no event shall the author be liable for any direct, 
+   indirect, incidental, special, exemplary, or consequential damages, including, 
+   but not limited to, procurement of substitute goods or services; loss of use, data,
+   or profits; or business interruption) however caused and on any theory of liability, 
+   whether in contract, strict liability, or tort (including negligence or otherwise) 
+   arising in any way out of the use of this software, even if advised of the possibility
+   of such damage. 
+
+
+What dependencies does it have?
+
+   Since it is written in VB6, it does require the Vb runtime (msvbvm6.dll )
+   Chances are you too are a VB developer so this will not affect you. There 
+   are no other external dependancies.
+
+
+Is source code available for the Dll?
+
+   The source code to the dll will not be made publically available. 
+
+
+ 

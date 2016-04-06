@@ -1,0 +1,182 @@
+<HTML>
+<HEAD>
+<TITLE>clsIniFile</TITLE>
+<style>
+.title{ font-family:Arial-black;font-size:16pt;color:#6600cc;font-weight:bolder }
+</style>
+
+</HEAD>
+<BODY>
+<table width=700 style='font-face:arial;font-size=13pt'>
+<tr><td>
+	<center><font class=title>clsFileStream</font></center><br><br>
+
+	<p> &nbsp; &nbsp; This class gives you easy access to sequential file operations
+	such as opening a file for reading or writing and processing it libe by line as 
+	opposed to reading the whole file in in one shot. These techniques can be very
+	useful (if not mandatory) for large files that would take up to much memory to 
+	read in all at once.
+	<br><br>
+	<p> &nbsp; &nbsp; This library offers functionality similar to that of the windows
+	script host Scripting.FileSystemObject. There are however some important differences.
+	<ol>
+	<li>It does not have a long nested layout and is easier to use
+	<li>It supports binary functions on files
+	<li>You have to be careful when early binding to the WSH libraries because they are
+	dependant on what version of IE and Windows you have installed and could be an extra 
+	dependancy you have to install on the users computer. Also, some versions of the WSH
+	are not yet ported to XP!
+	<br><br>
+</td></tr></table>
+
+<table width=700 border=1 bordercolor=black cellspacing=0 cellpadding=8 style='font-face:arial;font-size=13pt' >
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>FileHandle()<FONT COLOR='#000088'> As</FONT> Long
+</b>
+<br><br>
+Returns the open file handle
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>EndOfFile()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+</b>
+<br><br>
+Returns true when End of File is reached.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>LengthOfFile()<FONT COLOR='#000088'> As</FONT> Long
+</b>
+<br><br>
+Returns length of opened file
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>fClose()
+</b>
+<br><br>
+Closes the file when you are done with it. (or automatically closes when program exits)
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>fOpen(path, t<FONT COLOR='#000088'> As</FONT> openType)
+</b>
+<br><br>
+Opens a file for read,write, append or binary
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>ReadLine(Optional lineCount = 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+<br><br>
+Reads x Lines from the file. Called with no arguments, it reads on line at a time.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>WriteLine(str)
+</b>
+<br><br>
+Writes a single line to the file. (if your string contains carriage returns can be > 1 line)
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>WriteExpanded<FONT COLOR='#000088'>String</FONT>(<FONT COLOR='#000088'>ByVal </FONT>str)
+</b>
+<br><br>
+Writes to the file and expands \n -> vbcrlf and \t -> vbtab. Useful for writing C style strings.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>WriteDivider(Optional divChar = "-", Optional num = 75)
+</b>
+<br><br>
+Usefull for report writing. Writes a divider to the page using the character and number specified.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>WriteBlankLine(Optional lineCount = 0)
+</b>
+<br><br>
+Writes blank lines to the document.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>BinWriteDump(it, Optional offset = "")
+</b>
+<br><br>
+This will dump the blob you give it to file. If "it" is a userdefined type then it will be
+an object dump (see the article on my site). Will not dump arrays. If offset ="" then it will
+dump it at teh current file offset, otherwise itwill place it at the offset specified.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>BinGetByteArray(buffer()<FONT COLOR='#000088'> As</FONT> Byte, Optional offset = "")
+</b>
+<br><br>
+Fills the byte array you pass in with the contents of the file. offset variable as defined above.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>BinGetStrArray(buffer()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional offset = "")
+</b>
+<br><br>
+Returns a string array of the characters in the file. you set buffer size based on amount of characters to read. offset as defined above.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>BinGetChar()<FONT COLOR='#000088'> As</FONT> Byte
+</b>
+<br><br>
+Returns the next byte to be read in the file.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>BinWriteNChar(b<FONT COLOR='#000088'> As</FONT> Byte, Optional num<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)
+</b>
+<br><br>
+Returns the specified byte value to file n times.
+<br><br>
+</td></tr></table>

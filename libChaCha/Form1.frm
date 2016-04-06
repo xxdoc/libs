@@ -10,7 +10,7 @@ Begin VB.Form Form1
    ScaleWidth      =   11610
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cmdStrTest 
-      Caption         =   "String Test"
+      Caption         =   "Test 2"
       Height          =   330
       Left            =   10440
       TabIndex        =   14
@@ -172,7 +172,7 @@ Private Declare Function chacha Lib "libchacha" ( _
         ) As Byte()
 
 
-'in case you prefer to pass in a string..
+'in case you prefer to pass in a string/byte array..
 'if your string is binary you must include the optional dataLen
 Private Declare Function chacha2 Lib "libchacha" ( _
             ByVal data As String, _

@@ -1,0 +1,117 @@
+<html><body bgcolor=white text=black><pre>
+<FONT COLOR='#000088'>Function </FONT>GetFolderFiles(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional filter<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT> = "*", Optional retFullPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>True)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+<FONT COLOR='#000088'>Function </FONT>GetSubFolders(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional retFullPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>True)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+<FONT COLOR='#000088'>Function </FONT>FolderExists(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>FileExists(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>GetParentFolder(path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Sub </FONT>CreateFolder(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Function </FONT>FileNameFromPath(fullpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT>WebFileNameFromPath(fullpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Function </FONT>DeleteFile(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Sub </FONT>Rename(fullpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, newName<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Sub </FONT>SetAttribute(fpath, it<FONT COLOR='#000088'> As</FONT> VbFileAttribute)
+<FONT COLOR='#000088'>Function </FONT>GetExtension(path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT>GetBaseName(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT>ChangeExt(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, ext<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Function </FONT>SafeFileName(proposed<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT>RandomNum()<FONT COLOR='#000088'> As</FONT> Long
+<FONT COLOR='#000088'>Function </FONT>GetFreeFileName(folder<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional extension = ".txt")<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT>buildPath(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>readFile(filename)<FONT COLOR='#000088'> As</FONT> Variant
+<FONT COLOR='#000088'>Sub </FONT>writeFile(path<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, it<FONT COLOR='#000088'> As</FONT> Variant)
+<FONT COLOR='#000088'>Sub </FONT>AppendFile(path, it)
+<FONT COLOR='#000088'>Function </FONT>Copy(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, toFolder<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Function </FONT>Move(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, toFolder<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Sub </FONT>CreateFile(fpath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Function </FONT>DeleteFolder(folderPath<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional force<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>True)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>FolderName(folderPath)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+
+
+
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>FileHandle()<FONT COLOR='#000088'> As</FONT> Long
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>EndOfFile()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>LengthOfFile()<FONT COLOR='#000088'> As</FONT> Long
+<FONT COLOR='#000088'>Sub </FONT>fClose()
+<FONT COLOR='#000088'>Sub </FONT>fOpen(path, t<FONT COLOR='#000088'> As</FONT> openType)
+<FONT COLOR='#000088'>Function </FONT>ReadLine(Optional lineCount = 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Sub </FONT>WriteLine(str)
+<FONT COLOR='#000088'>Sub </FONT>WriteExpanded<FONT COLOR='#000088'>String</FONT>(<FONT COLOR='#000088'>ByVal </FONT>str)
+<FONT COLOR='#000088'>Sub </FONT>WriteDivider(Optional divChar = "-", Optional num = 75)
+<FONT COLOR='#000088'>Sub </FONT>WriteBlankLine(Optional lineCount = 0)
+<FONT COLOR='#000088'>Sub </FONT>BinWriteDump(it, Optional offset = "")
+<FONT COLOR='#000088'>Sub </FONT>BinGetByteArray(buffer()<FONT COLOR='#000088'> As</FONT> Byte, Optional offset = "")
+<FONT COLOR='#000088'>Sub </FONT>BinGetStrArray(buffer()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional offset = "")
+<FONT COLOR='#000088'>Function </FONT>BinGetChar()<FONT COLOR='#000088'> As</FONT> Byte
+<FONT COLOR='#000088'>Sub </FONT>BinWriteNChar(b<FONT COLOR='#000088'> As</FONT> Byte, Optional num<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)
+
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Enum </FONT>FilterTypes
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Let </FONT>ErrorOnCancel(bln<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>)
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>ErrorOnCancel()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Sub </FONT>SetCustomFilter(displayText<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional wildCardExtMatch = "*.*")
+<FONT COLOR='#000088'>Function </FONT>OpenDialog(filt<FONT COLOR='#000088'> As</FONT> FilterTypes, Optional initDir<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional title<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional pHwnd<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT>SaveDialog(filt<FONT COLOR='#000088'> As</FONT> FilterTypes, Optional initDir<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional title<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT> = "", Optional ConfirmOvewrite<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = True, Optional pHwnd<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT>ColorDialog(Optional pHwnd<FONT COLOR='#000088'> As</FONT> Long)<FONT COLOR='#000088'> As</FONT> Long
+<FONT COLOR='#000088'>Function </FONT>FolderDialog(Optional initDir<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional pHwnd<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+
+
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>CommandLine()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Let </FONT>CommandLine(cmd<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Function </FONT>IsArgPresent(argName<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>GetArgumentsToArray()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+
+
+<FONT COLOR='#000088'>Function </FONT>keyExists(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>DeleteValue(hive<FONT COLOR='#000088'> As</FONT> hKey, path, ValueName)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>DeleteKey(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>CreateKey(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>SetValue(hive<FONT COLOR='#000088'> As</FONT> hKey, path, KeyName, data, dType<FONT COLOR='#000088'> As</FONT> dataType)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Function </FONT>ReadValue(hive<FONT COLOR='#000088'> As</FONT> hKey, path, <FONT COLOR='#000088'>ByVal </FONT>KeyName)
+<FONT COLOR='#000088'>Function </FONT>EnumKeys(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+<FONT COLOR='#000088'>Function </FONT>EnumValues(hive<FONT COLOR='#000088'> As</FONT> hKey, path)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+
+
+<html><body bgcolor=white text=black><pre>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Sub </FONT>LoadFile(INIFileLoc<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>)
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Sub </FONT>Save()
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Sub </FONT>Release()
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>GetValue(Section, Key)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>EnumSections()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>EnumKeys(Section)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>()
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>AddKey(Section, Key, value)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>AddSection(SectionName)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>DeleteSection(Section)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>DeleteKey(Section, Key)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>SetValue(Section, Key, newVal)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>
+
+
+
+
+
+<html><body bgcolor=white text=black><pre>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Let </FONT>Strng(it)
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>Strng()
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>Pointer()<FONT COLOR='#000088'> As</FONT> Integer
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Let </FONT>Pointer(strPointer<FONT COLOR='#000088'> As</FONT> Integer)
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Get </FONT>Length()<FONT COLOR='#000088'> As</FONT> Integer
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ReadXChars(startAt, leng)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>Substring(x, y)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ToEndOfStr(from)
+<FONT COLOR='#000088'>Sub </FONT>IncrementPointer(inc<FONT COLOR='#000088'> As</FONT> Integer)
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>IndexOf(it, Optional startAt = 1, Optional advPtrLenIt = <FONT COLOR='#000088'>False)</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>NextIndexOf(Optional ChangePtrChrTo = "")
+<FONT COLOR='#000088'>Function </FONT>SubstringToChar(startPos, EndChr)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>SubstringToNext(Optional advPtr<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>False)</FONT><FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>CharAt(x)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>GetChar()<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>CharCodeAt(x, Optional inHex<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = <FONT COLOR='#000088'>False)</FONT>
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ReplacePtrChar(ins)
+<FONT COLOR='#000088'>Public </FONT><FONT COLOR='#000088'>Function </FONT>ReplaceCharAt(xpos, ins)
+<FONT COLOR='#000088'>Function </FONT>ToEndofStrFromChar(StartChar)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+<FONT COLOR='#000088'>Function </FONT><FONT COLOR='#000088'>String</FONT>ToEndMinus(xChars)
+<FONT COLOR='#000088'>Function </FONT>InstrRevtoChar(xChar)
+<FONT COLOR='#000088'>Function </FONT>SubstringToLastChar(xChar)
+<FONT COLOR='#000088'>Function </FONT>ToEndOfLine(Optional startAt = "")
+<FONT COLOR='#000088'>Function </FONT>CountOccurancesOf(char)
+<FONT COLOR='#000088'>Function </FONT>Sub<FONT COLOR='#000088'>String</FONT>ToPointer()
+<FONT COLOR='#000088'>Function </FONT>Sub<FONT COLOR='#000088'>String</FONT>FromPointer(Optional IncPtr<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Integer </FONT>= 0)
+<FONT COLOR='#000088'>Sub </FONT>SetDelimitedValues(strIn<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, delimiter<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, defaultVal, ParamArray FillVariables())

@@ -1,0 +1,99 @@
+<HTML>
+<HEAD>
+<TITLE>clsCmnDlg</TITLE>
+<style>
+.title{ font-family:Arial-black;font-size:16pt;color:#6600cc;font-weight:bolder }
+</style>
+
+</HEAD>
+<BODY>
+
+<table width=700 style='font-face:arial;font-size=13pt'>
+<tr><td>
+	<center><font class=title>clsCmnDlg</font></center><br><br>
+
+	<p> &nbsp; &nbsp; Common Dialog functions are forms that windows provides some standard
+	functionality in. Some frequently used common dialogs are the Save File, Open Folder, 
+	Choose Color, and Open File dialogs. Whatever windows program you use, you may have noticed
+	that these dialogs always the same. This is because people usally use the ones provided
+	by Windows. 
+	<br><br>
+	<p> &nbsp; &nbsp; In order to use the Windows provided ones, you have to use the Windows
+	API calls, or reference the microsoft provided cmndlg.ocx control. This class wraps the
+	API functions for you in an easy to use format that wont force you to distribute another
+	bulky control with your project.
+	<br><br>
+</td></tr></table>
+
+<table width=700 border=1 bordercolor=black cellspacing=0 cellpadding=8 style='font-face:arial;font-size=13pt' >
+<tr><td>
+<b>
+<FONT COLOR='#000088'>Property </FONT><FONT COLOR='#000088'>Let/Get </FONT>ErrorOnCancel(bln<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT>)
+</b>
+<br><br>
+<p> &nbsp; &nbsp; This property allows you to set your preference wether to return a zero length string
+if the user presses cancel, or to raise an error. The default is to return a zero length string.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Sub </FONT>SetCustomFilter(displayText<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional wildCardExtMatch = "*.*")
+</b>
+
+<br><br>
+<p> &nbsp; &nbsp; Lets you define a custom file type to show in the open file dialog. Once you set this,
+Just call the OpenDialog function and specify the CustomFilter as the filtertype and this value will be used.
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>OpenDialog(filt<FONT COLOR='#000088'> As</FONT> FilterTypes, Optional initDir<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional title<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional pHwnd<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+
+<br><br>
+<p> &nbsp; &nbsp; This will display the OpenFile Fialog. the filtertype is define from the filterTypes enumeration that holds
+a listing of commonly used file types. If you need to use a custom fule type. That too is available using the SetCustomFilter
+function above. InitDir is the initial directory to start in. Title is the window title, pHwnd is the optional parent window handle
+usally set to me.hwnd 
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>SaveDialog(filt<FONT COLOR='#000088'> As</FONT> FilterTypes, Optional initDir<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional title<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT> = "", Optional ConfirmOvewrite<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Boolean</FONT> = True, Optional pHwnd<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+
+<br><br>
+<p> &nbsp; &nbsp; This displays the file Save Dialog, arguments are the same as above.
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>ColorDialog(Optional pHwnd<FONT COLOR='#000088'> As</FONT> Long)<FONT COLOR='#000088'> As</FONT> Long
+</b>
+
+<br><br>
+<p> &nbsp; &nbsp; Displays the Choose Color dialog. pHwnd is the optional handle of the parent window 
+usally set to me.hwnd
+<br><br>
+
+</td></tr>
+<tr><td>
+
+<b>
+<FONT COLOR='#000088'>Function </FONT>FolderDialog(Optional initDir<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>, Optional pHwnd<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>Long </FONT>= 0)<FONT COLOR='#000088'> As</FONT> <FONT COLOR='#000088'>String</FONT>
+</b>
+
+<br><br>
+<p> &nbsp; &nbsp; Shows the Choose Folder dialog. InitDir allows you set the directory to start in, pHwnd as above.
+<br><br>
+
+</td></tr>
+</table>
+

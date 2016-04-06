@@ -1,0 +1,30 @@
+
+<html>
+<body>
+
+<table width=600 style="font-face:arial;font-size:13pt"><tr><td>
+
+	<center><font size=+2><b>Installing</b></font></center>
+	<br><br>
+
+	<p> &nbsp; &nbsp; When it comes time to deploy your application,
+	all you will have to do is make sure to copy over the VBDevKit.dll
+	as part of the install and register it.
+	<br><br>
+	
+	Most installers have an register function, if you want to do it manually
+	then you can just execute:
+	<br><bR>
+	
+	shell "regsvr32 """ & pathToDLL & """ /s" ,vbhide
+	
+	<br><br>
+	This will register the DLl on their system. If the target system is 
+	Windows 98, 95 or NT you may also have to make sure that they have the 
+	VB 6 runtimes on thier system. Since you are most likly a VB developer,
+	You will need these runtimes anyway. The VB Runtimes come installed by
+	default on Windows ME, XP, and 2000. Only if you plan to support windows
+	98 and lower do you have to worry about this if you are not a VB 6
+	developer.
+	
+</td></tr></table>
