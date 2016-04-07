@@ -4,18 +4,26 @@ Begin VB.Form Form1
    ClientHeight    =   7545
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   11610
+   ClientWidth     =   12735
    LinkTopic       =   "Form1"
    ScaleHeight     =   7545
-   ScaleWidth      =   11610
+   ScaleWidth      =   12735
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox chkChinaSafe 
+      Caption         =   "China safe"
+      Height          =   285
+      Left            =   11610
+      TabIndex        =   16
+      Top             =   90
+      Width           =   1050
+   End
    Begin VB.CommandButton Command2 
-      Caption         =   "Test 3"
+      Caption         =   "Test 4"
       Height          =   375
       Left            =   10440
       TabIndex        =   15
       Top             =   495
-      Width           =   1095
+      Width           =   1050
    End
    Begin VB.CommandButton cmdStrTest 
       Caption         =   "Test 2"
@@ -173,6 +181,7 @@ Private Declare Sub chainit Lib "libchacha" ( _
             Optional ByVal counter As Long = 0 _
         )
         
+'this one uis always safe to use even on non-us systems...
 'you can also just include th key here to use simply..
 Private Declare Function chacha Lib "libchacha" ( _
             ByRef buf() As Byte, _
@@ -181,19 +190,25 @@ Private Declare Function chacha Lib "libchacha" ( _
 
 
 'in case you prefer to pass in a string/byte array..
-'if your string is binary you must include the optional dataLen
+'on US systems data can be a binary string..but this will fail if
+'system is say chinese..still handy for initial encryption though...
 Private Declare Function chacha2 Lib "libchacha" ( _
-            ByVal data As String, _
-            Optional ByVal key As String = "", _
-            Optional ByVal dataLen As Long = 0 _
+            ByRef data As String, _
+            Optional ByVal key As String = "" _
         ) As Byte()
 
-'in case you prefer to just work with strings..
-'if your input string is binary you must include the optional dataLen
-Private Declare Function chacha3 Lib "libchacha" ( _
-            ByVal data As String, _
-            Optional ByVal key As String = "", _
-            Optional ByVal dataLen As Long = 0 _
+'still limited on chinese systems as above, removed as redundant
+'left for testing just in case new idea pops up..
+'Private Declare Function chacha3 Lib "libchacha" ( _
+'            ByVal data As String, _
+'            Optional ByVal key As String = "", _
+'            Optional ByVal dataLen As Long = 0 _
+'        ) As String
+        
+'same notes as chacha2, but only safe on US systems..
+Private Declare Function chacha4 Lib "libchacha" ( _
+            ByRef data As String, _
+            Optional ByVal key As String = "" _
         ) As String
         
 Dim hLib As Long
@@ -231,8 +246,11 @@ Private Sub cmdStrTest_Click()
     sOut = StrConv(bOut, vbUnicode, LANG_US)
     txtCrypt = hexdump(sOut)
     
-    'now our string has binary data in it so we must pass in length.. (or use the byte array version)
-    bDec() = chacha2(sOut, txtPass, Len(sOut))
+    If chkChinaSafe.value = 0 Then
+        bDec() = chacha2(sOut, txtPass) 'only safe for binary data on US systems
+    Else
+        bDec() = chacha(bOut, txtPass)
+    End If
     
     If AryIsEmpty(bDec) Then
         txtDecrypt = "Decryption Failed!"
@@ -241,12 +259,7 @@ Private Sub cmdStrTest_Click()
     
     sOut = StrConv(bDec, vbUnicode, LANG_US)
     txtDecrypt = hexdump(sOut)
-    
-    If txtMsg <> sOut Then
-        Me.Caption = "Size mismatch: Org:" & Hex(Len(txtMsg)) & " Decoded: " & Hex(Len(sOut))
-        Exit Sub
-    End If
-    
+        
     If txtMsg <> sOut Then
         Me.Caption = "Decryption Failed!"
         Exit Sub
@@ -345,6 +358,7 @@ Private Sub Command2_Click()
     Dim enc As String
     Dim dec As String
     Dim bDec() As Byte
+    Dim b() As Byte
     Dim cnt As Long
 
     chkisFile.value = 0
@@ -352,7 +366,7 @@ Private Sub Command2_Click()
     Me.Caption = "Starting cycle.."
     
     'variant ret val auto casts to string for us
-    enc = chacha3(txtMsg, txtPass)
+    enc = chacha4(txtMsg, txtPass)
     
     If Len(enc) = 0 Then
         txtCrypt = "Encryption Failed!"
@@ -362,7 +376,13 @@ Private Sub Command2_Click()
     txtCrypt = hexdump(enc)
     
     'now our string has binary data in it so we must pass in length.. (or use the byte array version)
-    dec = chacha3(enc, txtPass, Len(enc))
+    If chkChinaSafe.value = 0 Then
+        dec = chacha4(enc, txtPass)
+    Else
+        b() = StrConv(enc, vbFromUnicode, LANG_US)
+        bDec() = chacha(b, txtPass)
+        dec = StrConv(bDec, vbUnicode, LANG_US)
+    End If
     
     If Len(dec) = 0 Then
         txtDecrypt = "Decryption Failed!"
