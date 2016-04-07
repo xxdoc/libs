@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   7545
    ScaleWidth      =   11610
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command2 
+      Caption         =   "Test 3"
+      Height          =   375
+      Left            =   10440
+      TabIndex        =   15
+      Top             =   495
+      Width           =   1095
+   End
    Begin VB.CommandButton cmdStrTest 
       Caption         =   "Test 2"
       Height          =   330
@@ -180,6 +188,14 @@ Private Declare Function chacha2 Lib "libchacha" ( _
             Optional ByVal dataLen As Long = 0 _
         ) As Byte()
 
+'in case you prefer to just work with strings..
+'if your input string is binary you must include the optional dataLen
+Private Declare Function chacha3 Lib "libchacha" ( _
+            ByVal data As String, _
+            Optional ByVal key As String = "", _
+            Optional ByVal dataLen As Long = 0 _
+        ) As String
+        
 Dim hLib As Long
 Const LANG_US = &H409
 Private Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
@@ -201,6 +217,8 @@ Private Sub cmdStrTest_Click()
     Dim bDec() As Byte
     Dim cnt As Long
 
+    chkisFile.value = 0
+    chkUseNonce.value = 0
     Me.Caption = "Starting cycle.."
     bOut() = chacha2(txtMsg, txtPass)
     
@@ -319,6 +337,46 @@ Private Sub Command1_Click()
     Me.Caption = "Success exact match!"
     Me.Caption = Me.Caption & "   Sizes: " & Hex(UBound(b)) & "/" & Hex(UBound(bDec))
     Me.Caption = Me.Caption & "   LastVals: " & Hex(b(UBound(b))) & "/" & Hex(bDec(UBound(bDec)))
+    
+End Sub
+
+Private Sub Command2_Click()
+
+    Dim enc As String
+    Dim dec As String
+    Dim bDec() As Byte
+    Dim cnt As Long
+
+    chkisFile.value = 0
+    chkUseNonce.value = 0
+    Me.Caption = "Starting cycle.."
+    
+    'variant ret val auto casts to string for us
+    enc = chacha3(txtMsg, txtPass)
+    
+    If Len(enc) = 0 Then
+        txtCrypt = "Encryption Failed!"
+        Exit Sub
+    End If
+    
+    txtCrypt = hexdump(enc)
+    
+    'now our string has binary data in it so we must pass in length.. (or use the byte array version)
+    dec = chacha3(enc, txtPass, Len(enc))
+    
+    If Len(dec) = 0 Then
+        txtDecrypt = "Decryption Failed!"
+        Exit Sub
+    End If
+    
+    txtDecrypt = hexdump(dec)
+        
+    If txtMsg <> dec Then
+        Me.Caption = "Decryption Failed!"
+        Exit Sub
+    End If
+    
+    Me.Caption = "Success exact match!"
     
 End Sub
 
