@@ -15,21 +15,55 @@ uint8_t key[32];
 uint8_t nonce[8];
 bool isInit = false;
 
+//byval char* _key, or BSTR
+void __stdcall test(char* _key)
+{
+	char buf[1024];
+	if(_key != 0){
+		uint32_t kLen = SysStringByteLen((BSTR)_key);
+		if(kLen > 1000) return; //fu
+		sprintf(buf,"BSTR '%s' Len: %d", _key, kLen);
+		MessageBox(0,buf,"",0);
+		_key[kLen-1] = '?';
+	}
+}
+
+//byref char** or BSTR*
+void __stdcall test2(BSTR* _key)
+{
+	char buf[1024];
+	if(_key != 0){
+		uint32_t kLen = SysStringByteLen(*_key);
+		if(kLen > 1000) return; //fu
+		sprintf(buf,"BSTR '%s' Len: %d", *_key, kLen);
+		MessageBox(0,buf,"",0);
+		char* b = (char*)*_key;
+		b[kLen-1] = '?';
+	}
+}
+
+
 //you can use this method to explicitly set the parameters, including binary keys..
-void __stdcall chainit(char* _key, uint32_t kLen, char* _nonce, uint32_t nLen, uint32_t count)
+void __stdcall chainit(BSTR* _key, BSTR* _nonce, uint32_t count)
 {
 	counter = count;
 	memset(nonce,0,sizeof(nonce));
 	memset(key,0,sizeof(key));
 
-	if(_nonce != 0 && nLen > 0){
-		if(nLen > 8) nLen = 8;
-		memcpy(nonce,_nonce,nLen);
+	if(_nonce != 0){
+		uint32_t nLen = SysStringByteLen(*_nonce);
+		if(nLen > 0){
+			if(nLen > 8) nLen = 8;
+			memcpy(nonce,(uint8_t*)*_nonce,nLen);
+		}
 	}
 
-	if(_key != 0 && kLen > 0){
-		if(kLen > 32) kLen = 32;
-		memcpy(key,_key,kLen);
+	if(_key != 0){
+		uint32_t kLen = SysStringByteLen(*_key);
+		if(kLen > 0){
+			if(kLen > 32) kLen = 32;
+			memcpy(key,(uint8_t*)*_key,kLen);
+		}
 	}
 
 	isInit = true;
@@ -38,14 +72,14 @@ void __stdcall chainit(char* _key, uint32_t kLen, char* _nonce, uint32_t nLen, u
 
 //decrypt is actually just a wrapper for encrypt..
 //its symetric so no need for calling both or an isEncrypt flag..
-SAFEARRAY* __stdcall chacha(SAFEARRAY** buf, char* _key=0)
+SAFEARRAY* __stdcall chacha(SAFEARRAY** buf, BSTR* _key=0)
 {
 
   //we will let key be optional parameter but include for convience. if you need 
   //to use a binary key or configure other params, use chainit directly.
   if(_key != 0){
-	uint32_t kLen = strlen(_key);
-	if(kLen > 0) chainit(_key, kLen, 0,0,0);
+	uint32_t kLen = SysStringByteLen(*_key);
+	if(kLen > 0) chainit(_key,0,0);
   }
 
   if(!isInit) return 0; 
@@ -79,14 +113,14 @@ SAFEARRAY* __stdcall chacha(SAFEARRAY** buf, char* _key=0)
 //in case you prefer to pass in a string..
 //note: this is ok for binary strings on US systems only..
 //for international software only use this as an encryption convience method.
-SAFEARRAY* __stdcall chacha2(BSTR *buf, char* _key=0)
+SAFEARRAY* __stdcall chacha2(BSTR *buf, BSTR* _key=0)
 {
 
   //we will let key be optional parameter but include for convience. if you need 
   //to use a binary key or configure other params, use chainit directly.
   if(_key != 0){
-	uint32_t kLen = strlen(_key);
-	if(kLen > 0) chainit(_key, kLen, 0,0,0);
+	uint32_t kLen = SysStringByteLen(*_key);
+	if(kLen > 0) chainit(_key,0,0);
   }
 
   if(!isInit) return 0; 
@@ -112,49 +146,15 @@ SAFEARRAY* __stdcall chacha2(BSTR *buf, char* _key=0)
 
   return psa;
 }
-/*
-BSTR __stdcall chacha3(uint8_t *buf, char* _key=0, uint32_t bufLen = 0 )
+
+BSTR __stdcall chacha4(BSTR *buf, BSTR* _key=0)
 {
 
   //we will let key be optional parameter but include for convience. if you need 
   //to use a binary key or configure other params, use chainit directly.
   if(_key != 0){
-	uint32_t kLen = strlen(_key);
-	if(kLen > 0) chainit(_key, kLen, 0,0,0);
-  }
-
-  if(!isInit) return 0;
-  if(buf==0 || *buf==0) return 0;
-  
-  //not binary safe but ok for initial encryption of text.
-  if(bufLen==0) bufLen = strlen((char*)buf); 
-  if(bufLen==0) return 0;
-   
-  uint8_t * tmp = (uint8_t *)malloc(bufLen);
-  if(tmp==0) return 0;
-  
-  chacha20_ctx ctx;
-  chacha20_setup(&ctx, key, sizeof(key), nonce);
-  chacha20_counter_set(&ctx, counter);
-  chacha20_encrypt(&ctx, buf, tmp, bufLen);
-
-  //this can contain binary data ok..
-  BSTR b = SysAllocStringByteLen((LPCSTR)tmp,bufLen);
-  isInit = false;
-  free(tmp);
-
-  return b;
-}
-*/
-
-BSTR __stdcall chacha4(BSTR *buf, char* _key=0)
-{
-
-  //we will let key be optional parameter but include for convience. if you need 
-  //to use a binary key or configure other params, use chainit directly.
-  if(_key != 0){
-	uint32_t kLen = strlen(_key);
-	if(kLen > 0) chainit(_key, kLen, 0,0,0);
+	uint32_t kLen = SysStringByteLen(*_key);
+	if(kLen > 0) chainit(_key,0,0);
   }
 
   if(!isInit) return 0;

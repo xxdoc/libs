@@ -172,12 +172,14 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
+Private Declare Sub test Lib "libchacha" (ByVal key As String)
+Private Declare Sub test2 Lib "libchacha" (ByRef key As String)
+        
+        
 'use this one for setting all params explicitly or for binary key (even embedded null)
 Private Declare Sub chainit Lib "libchacha" ( _
-            ByVal key As String, _
-            ByVal klen As Long, _
-            Optional ByVal nOnce As String = "", _
-            Optional ByVal nlen As Long = 0, _
+            ByRef key As String, _
+            Optional ByRef nOnce As String, _
             Optional ByVal counter As Long = 0 _
         )
         
@@ -185,7 +187,7 @@ Private Declare Sub chainit Lib "libchacha" ( _
 'you can also just include th key here to use simply..
 Private Declare Function chacha Lib "libchacha" ( _
             ByRef buf() As Byte, _
-            Optional ByVal key As String = "" _
+            Optional ByRef key As String _
         ) As Byte()
 
 
@@ -194,21 +196,14 @@ Private Declare Function chacha Lib "libchacha" ( _
 'system is say chinese..still handy for initial encryption though...
 Private Declare Function chacha2 Lib "libchacha" ( _
             ByRef data As String, _
-            Optional ByVal key As String = "" _
+            Optional ByRef key As String _
         ) As Byte()
 
-'still limited on chinese systems as above, removed as redundant
-'left for testing just in case new idea pops up..
-'Private Declare Function chacha3 Lib "libchacha" ( _
-'            ByVal data As String, _
-'            Optional ByVal key As String = "", _
-'            Optional ByVal dataLen As Long = 0 _
-'        ) As String
-        
+     
 'same notes as chacha2, but only safe on US systems..
 Private Declare Function chacha4 Lib "libchacha" ( _
             ByRef data As String, _
-            Optional ByVal key As String = "" _
+            Optional ByRef key As String _
         ) As String
         
 Dim hLib As Long
@@ -225,6 +220,14 @@ Function expand(s) As String
     sPass = Replace(sPass, "\t", vbTab)
     expand = sPass
 End Function
+
+Private Sub chkChinaSafe_Click()
+    If chkChinaSafe.value = 1 Then
+        Command2.Caption = Command2.Caption & " !"
+    Else
+        Command2.Caption = Replace(Command2.Caption, " !", Empty)
+    End If
+End Sub
 
 Private Sub cmdStrTest_Click()
 
@@ -305,7 +308,8 @@ Private Sub Command1_Click()
     Me.Caption = "Starting cycle.."
     
     If chkUseNonce.value = 1 Then
-        chainit sPass, Len(sPass), sNOnce, Len(sNOnce), cnt
+        'InputBox "", , StrPtr(sPass)
+        chainit sPass, sNOnce, cnt
         bOut() = chacha(b)
     Else
         bOut() = chacha(b, sPass)
@@ -321,7 +325,7 @@ Private Sub Command1_Click()
     txtCrypt = hexdump(sOut)
     
     If chkUseNonce.value = 1 Then
-        chainit sPass, Len(sPass), sNOnce, Len(sNOnce), cnt
+        chainit sPass, sNOnce, cnt
         bDec() = chacha(bOut)
     Else
         bDec() = chacha(bOut, sPass)
@@ -401,13 +405,19 @@ Private Sub Command2_Click()
 End Sub
 
 Private Sub Form_Load()
-    'IDE cant always find dlls not in path on its own..so we control it explicitly..
+        'IDE cant always find dlls not in path on its own..so we control it explicitly..
     hLib = LoadLibrary("libchacha.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.path & "\libchacha.dll")
     If hLib = 0 Then
         Me.Caption = "Could not find libchacha.dll?"
         Command1.Enabled = False
     End If
+    
+'    Dim a As String
+'    a = "my string!"
+'    test2 a
+'    MsgBox a
+    
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)

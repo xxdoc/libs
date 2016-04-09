@@ -4,3 +4,5 @@ EXPORTS
 	chacha
 	chacha2
 	chacha4
+	test
+	test2
