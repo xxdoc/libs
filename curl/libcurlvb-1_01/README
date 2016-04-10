@@ -1,0 +1,24 @@
+$Id: README,v 1.2 2005/06/25 21:29:55 jeffreyphillips Exp $
+
+libcurl.vb 1.01 (c) 2005 Jeff Phillips, jeff@jeffp.net
+
+This is the second public source code release of this product
+on sourceforge.net.
+
+This is not a COM object, but a very thin API of functions that
+will allow you to use most of libcurl's functionality from Visual
+Basic 6 and VBA with the VB6 engine. Earlier versions of Visual
+Basic will not work. At this point, documentation is somewhat
+sparse, so study the samples closely.
+
+The ideal user of this product is probably someone who has worked
+with libcurl in C in the past and needs to make something work
+with Visual Basic.
+
+Note that libcurl's "share" interface is not implemented right now.
+
+The libcurl.dll file in the bin subdirectory was built with SSL,
+c-ares (asynchronous DNS) and zlib (for compression) linked in. It
+was built with libcurl 7.13.0, and I'm not sure whether I expect
+to keep it up to date with future versions of libcurl.
+

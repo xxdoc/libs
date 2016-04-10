@@ -1,0 +1,17 @@
+$Id: CHANGES,v 1.2 2005/06/25 21:29:55 jeffreyphillips Exp $
+
+libcurl.vb Change Log
+
+Version 1.01 - June 25, 2005
+
+-- Fixed cookie cleanup bug in vbcurl_easy_cleanup(): we now call
+   curl_easy_cleanup() BEFORE deallocating strings, which ensures
+   that cookie strings can be written during curl_easy_cleanup().
+   This was done in easy.c.
+   
+-- Modified slist.c to add to the tail, not the head.
+
+Version 1.0 - February 28, 2005
+
+-- Initial public release of the source code on sourceforge.net. 
+

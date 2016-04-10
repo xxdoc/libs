@@ -1,0 +1,37 @@
+$Id: ReadMe.samples,v 1.1.1.1 2005/02/28 23:58:11 jeffreyphillips Exp $
+
+libcurl.vb 1.0 Samples (c) 2005 Jeff Phillips jeff@jeffp.net
+
+*** BEGIN IMPORTANT NOTE ***
+
+The callback functions in these samples should be studied closely
+to get a sense of how libcurl.vb is implemented. You will see that
+this is a pretty low-level API.
+
+*** END IMPORTANT NOTE ***
+
+These are trivial examples to demonstrate the basic functionality
+of libcurl.vb.
+
+The samples include:
+
+-- Buffer.cls: Trivial VB class used to demonstrate the passing of
+               a class object (IUnknown interface) to a callback
+               via the extra parameter.
+
+-- EasyGet.bas: Retrieve a web page.
+
+-- FTPUpload.bas: Upload a file to an FTP site.
+
+-- Headers.bas: Dump headers, demonstrating HEADERFUNCTION bas.
+
+-- InfoDemo.bas: Dump CURLINFO data received after a download.
+
+-- MultiDemo.bas: Retrieve two URLs using the Multi interface.
+
+-- MultiPartForm.bas: Demonstrate RFC 1867 multi-part upload.
+
+-- SSLGet.bas: Retrive an https web page.
+
+-- VersionData.bas: Dump internal cURL version data.
+

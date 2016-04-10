@@ -1,0 +1,25 @@
+$Id: ReadMe.bin,v 1.1.1.1 2005/02/28 23:58:11 jeffreyphillips Exp $
+
+This is the README file for binaries. Included in the distribution are the
+following four files:
+
+-- libcurl.dll:   This was built with libcurl 7.13.0, openssl-0.9.7e,
+                  c-ares-1.2.1 and zlib-1.2.1. It probably should be
+                  placed in your PATH.
+
+-- ca-bundle.crt: Simple certificate bundle for SSL.
+
+-- vblibcurl.dll: The DLL referenced by your program. It probably should be
+                  placed in your PATH.
+
+-- vblibcurl.tlb: Type library. You must add this to your project's
+                  References in order to use libcurl.vb.
+
+-- VBVM6Lib.tlb:  This type library, developed by Michel Rutten, provides
+                  access to undocumented memory access functions in Visual
+                  Basic 6. It must also be included in your project's
+                  References. For more information on this library, see
+                  http://www.xbeat.net/vbspeed/i_VBVM6Lib.html.
+
+
+
