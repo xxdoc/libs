@@ -176,7 +176,7 @@ Function hexdump(it)
         a = Asc(Mid(it, i, 1))
         c = Hex(a)
         c = IIf(Len(c) = 1, "0" & c, c)
-        b = b & IIf(a > 65 And a < 120, Chr(a), ".")
+        b = b & IIf(a >= 20 And a < 123, Chr(a), ".")
         my = my & c & " "
         If i Mod 16 = 0 Then
             push lines(), my & "  [" & b & "]"

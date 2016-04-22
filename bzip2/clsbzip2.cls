@@ -13,9 +13,9 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-'4.20.2016 - altered by david zimmer <dzzie@yahoo.com> - simplified
+'4.20.2016 - simplified by david zimmer <dzzie@yahoo.com>
 
-'20031124 altered by mario sepulveda and posted at vbforums.com
+'11.24.2003 altered by mario sepulveda and posted at vbforums.com
 'BZIP2 homepage: http://sources.redhat.com/bzip2/
 
 'comments below this line are from the original version found on the web
@@ -40,116 +40,126 @@ Option Explicit
 ' ***
 
 'Constants
-Private Const BZ_OK As Long = 0
-Private Const BZ_RUN_OK As Long = 1
-Private Const BZ_FLUSH_OK As Long = 2
-Private Const BZ_FINISH_OK As Long = 3
-Private Const BZ_STREAM_END As Long = 4
-Private Const BZ_SEQUENCE_ERROR As Long = (-1)
-Private Const BZ_PARAM_ERROR As Long = (-2)
-Private Const BZ_MEM_ERROR As Long = (-3)
-Private Const BZ_DATA_ERROR As Long = (-4)
-Private Const BZ_DATA_ERROR_MAGIC As Long = (-5)
-Private Const BZ_IO_ERROR As Long = (-6)
-Private Const BZ_UNEXPECTED_EOF As Long = (-7)
-Private Const BZ_OUTBUFF_FULL As Long = (-8)
-Private Const BZ_CONFIG_ERROR As Long = (-9)
+Private Enum bzErrorCodes
+    BZ_OK = 0
+    BZ_RUN_OK = 1
+    BZ_FLUSH_OK = 2
+    BZ_FINISH_OK = 3
+    BZ_STREAM_END = 4
+    BZ_SEQUENCE_ERROR = (-1)
+    BZ_PARAM_ERROR = (-2)
+    BZ_MEM_ERROR = (-3)
+    BZ_DATA_ERROR = (-4)
+    BZ_DATA_ERROR_MAGIC = (-5)
+    BZ_IO_ERROR = (-6)
+    BZ_UNEXPECTED_EOF = (-7)
+    BZ_OUTBUFF_FULL = (-8)
+    BZ_CONFIG_ERROR = (-9)
+End Enum
 
 Private Const BZh As String * 3 = "BZh"
 
-'Declares
 Private Declare Function PathFileExists Lib "shlwapi.dll" Alias "PathFileExistsA" (ByVal pszPath As String) As Long
 Private Declare Function PathIsDirectory Lib "shlwapi.dll" Alias "PathIsDirectoryA" (ByVal pszPath As String) As Long
 
-Private Declare Function z2Compress Lib "libbz2.dll" Alias "bzBuffToBuffCompress" (dest As Any, destLen As Long, Source As Any, ByVal sourceLen As Long, ByVal blockSize100k As Long, ByVal Verbosity As Long, ByVal workFactor As Long) As Long
-Private Declare Function z2Decompress Lib "libbz2.dll" Alias "bzBuffToBuffDecompress" (dest As Any, destLen As Long, Source As Any, ByVal sourceLen As Long, ByVal Small As Long, ByVal Verbosity As Long) As Long
 Private Declare Function z2CompressAlt Lib "libbz2.dll" Alias "BZ2_bzBuffToBuffCompress" (dest As Any, destLen As Long, Source As Any, ByVal sourceLen As Long, ByVal blockSize100k As Long, ByVal Verbosity As Long, ByVal workFactor As Long) As Long
 Private Declare Function z2DecompressAlt Lib "libbz2.dll" Alias "BZ2_bzBuffToBuffDecompress" (dest As Any, destLen As Long, Source As Any, ByVal sourceLen As Long, ByVal Small As Long, ByVal Verbosity As Long) As Long
 
-'Enums
+'used for win98 support only
+'Private Declare Function z2Compress Lib "libbz2.dll" Alias "bzBuffToBuffCompress" (dest As Any, destLen As Long, Source As Any, ByVal sourceLen As Long, ByVal blockSize100k As Long, ByVal Verbosity As Long, ByVal workFactor As Long) As Long
+'Private Declare Function z2Decompress Lib "libbz2.dll" Alias "bzBuffToBuffDecompress" (dest As Any, destLen As Long, Source As Any, ByVal sourceLen As Long, ByVal Small As Long, ByVal Verbosity As Long) As Long
+
+
 Public Enum eCompressionLevels
-    cl_Fast = 1
-    cl_1 = 1
-    cl_2 = 2
-    cl_3 = 3
-    cl_4 = 4
-    cl_5 = 5
-    cl_6 = 6
-    cl_7 = 7
-    cl_8 = 8
-    cl_9 = 9
-    cl_Best = 9
+    cl1Fast = 1
+    cl2 = 2
+    cl3 = 3
+    cl4 = 4
+    cl5 = 5
+    cl6 = 6
+    cl7 = 7
+    cl8 = 8
+    clBest = 9
 End Enum
 
-'Properties
- Private m_eCompressionLevel As eCompressionLevels
- Private m_abyInputBuffer() As Byte
- Private m_abyOutputBuffer() As Byte
- Private m_sInputFilePath As String
- Private m_sOutputFilePath As String
- Private m_bOverwrite As Boolean
- Private m_bKeep As Boolean
- Private m_lDecompressedSize As Long '-In Bytes
- Private m_lCompressedSize As Long   '-In Bytes
- Private m_bClearBuffer As Boolean
- Private m_bIsCompressed As Boolean
- 
+Private m_lDecompressedSize As Long '-In Bytes
+Private m_lCompressedSize As Long   '-In Bytes
 
-Public Function CompressData(bin() As Byte, bout() As Byte) As Boolean
-    Reset
-    CompressData = internal_CompressData(bin, bout)
+Public LastError As String
+ 
+Private Function BZErrorCodeToString(ec As bzErrorCodes)
+
+    Select Case ec
+        Case 0: BZErrorCodeToString = "BZ_OK"
+        Case 1: BZErrorCodeToString = "BZ_RUN_OK"
+        Case 2: BZErrorCodeToString = "BZ_FLUSH_OK"
+        Case 3: BZErrorCodeToString = "BZ_FINISH_OK"
+        Case 4: BZErrorCodeToString = "BZ_STREAM_END"
+        Case (-1): BZErrorCodeToString = "BZ_SEQUENCE_ERROR"
+        Case (-2): BZErrorCodeToString = "BZ_PARAM_ERROR"
+        Case (-3): BZErrorCodeToString = "BZ_MEM_ERROR"
+        Case (-4): BZErrorCodeToString = "BZ_DATA_ERROR"
+        Case (-5): BZErrorCodeToString = "BZ_DATA_ERROR_MAGIC"
+        Case (-6): BZErrorCodeToString = "BZ_IO_ERROR"
+        Case (-7): BZErrorCodeToString = "BZ_UNEXPECTED_EOF"
+        Case (-8): BZErrorCodeToString = "BZ_OUTBUFF_FULL"
+        Case (-9): BZErrorCodeToString = "BZ_CONFIG_ERROR"
+        Case Default: BZErrorCodeToString = "Unknown: " & ec
+    End Select
+    
 End Function
 
-Private Function internal_CompressData(bin() As Byte, bout() As Byte) As Boolean
+Public Function CompressData(bin() As Byte, bout() As Byte, Optional compLevel As eCompressionLevels = clBest) As Boolean
+    Reset
+    CompressData = internal_CompressData(bin, bout, compLevel)
+End Function
+
+Private Function internal_CompressData(bin() As Byte, bout() As Byte, Optional compLevel As eCompressionLevels = clBest) As Boolean
     
+    On Error Resume Next
     Dim ret As Long
     
     If m_lDecompressedSize = 0 Then m_lDecompressedSize = UBound(bin) + 1
-    m_lCompressedSize = m_lDecompressedSize + (m_lDecompressedSize * 0.01) + (100 * m_eCompressionLevel)
+    m_lCompressedSize = m_lDecompressedSize + (m_lDecompressedSize * 0.01) + (100 * compLevel)
     
     Erase bout
     ReDim bout(m_lCompressedSize)
-  
- On Error Resume Next
- 
-    ret = z2CompressAlt(bout(0), m_lCompressedSize, bin(0), m_lDecompressedSize, m_eCompressionLevel, 0, 0)
+
+    ret = z2CompressAlt(bout(0), m_lCompressedSize, bin(0), m_lDecompressedSize, compLevel, 0, 0)
     
-    If Err.Number Then
-        Err.Clear
-        ret = z2Compress(bout(0), m_lCompressedSize, bin(0), m_lDecompressedSize, m_eCompressionLevel, 0, 0)
-        If Err.Number Then Err.Clear
-    End If
-    
- On Error GoTo 0
-    
+'    If Err.Number Then
+'        'win98 support
+'        Err.Clear
+'        ret = z2Compress(bout(0), m_lCompressedSize, bin(0), m_lDecompressedSize, compLevel, 0, 0)
+'        If Err.Number Then Err.Clear
+'    End If
+     
     If ret = 0 Then
         'NO ERRORS OCCURED DURING COMPRESSION
         ReDim Preserve bout(m_lCompressedSize)
         internal_CompressData = True
+    Else
+        LastError = "Error compressing data: " & BZErrorCodeToString(ret)
     End If
     
 End Function
 
-Public Function CompressFile(infile As String, outfile As String) As Boolean
+Public Function CompressFile(infile As String, outfile As String, Optional compLevel As eCompressionLevels = clBest) As Boolean
+    Dim bin() As Byte, bout() As Byte
+    Dim ret As Long, compressionLevel As Long
     
     Reset
-    m_sInputFilePath = infile
-    m_sOutputFilePath = outfile
     
-    Dim ret As Long
+    If Not OpenFile(infile, bin, compressionLevel) Then Exit Function
     
-    If OpenFile(infile) Then
-        If m_bIsCompressed Then
-            'ALREADY COMPRESSED WITH BZIP2
-            'CompressFile = 2
-        Else
-            'THIS IS WHERE THE DATA IS COMPRESSED
-            If internal_CompressData(m_abyInputBuffer, m_abyOutputBuffer) Then
-                If WriteToFile Then CompressFile = True
-            End If
-        End If
+    If compressionLevel <> 0 Then
+        LastError = "File is already compressed"
+        Exit Function
     End If
-    
+
+    If Not internal_CompressData(bin, bout, compLevel) Then Exit Function
+    If Not WriteToFile(outfile, bout) Then Exit Function
+    CompressFile = True
     
 End Function
 
@@ -177,14 +187,14 @@ Private Function internal_DecompressData(bin() As Byte, bout() As Byte) As Boole
     ReDim bout(m_lDecompressedSize)
   
     'DECOMPRESS
- On Error Resume Next
+    On Error Resume Next
     ret = z2DecompressAlt(bout(0), m_lDecompressedSize, bin(0), m_lCompressedSize, lSmall, lVerbosity)
     
-    If Err.Number Then
-        'ERROR OCCURED
-        Err.Clear
-        ret = z2Decompress(bout(0), m_lDecompressedSize, bin(0), m_lCompressedSize, lSmall, lVerbosity)
-    End If
+'    If Err.Number Then
+'        'win98 support
+'        Err.Clear
+'        ret = z2Decompress(bout(0), m_lDecompressedSize, bin(0), m_lCompressedSize, lSmall, lVerbosity)
+'    End If
     
     If Err.Number Then
         'ERROR OCCURED
@@ -194,46 +204,112 @@ Private Function internal_DecompressData(bin() As Byte, bout() As Byte) As Boole
         If ret = 0 Then
             ReDim Preserve bout(m_lDecompressedSize - 1)
             internal_DecompressData = True
+        Else
+            LastError = "Error decompressing: " & BZErrorCodeToString(ret)
         End If
-        
     End If
- On Error GoTo 0
+    
+
 End Function
 
-'opens a file
-'fills the buffer
-'decompresses data
-'writes the decompressed file
-'returns 0 if succesfull
+
 Public Function DecompressFile(infile As String, outfile As String) As Boolean
 
+    Dim bin() As Byte, bout() As Byte, compressionLevel As Long
+    
     Reset
-    m_sInputFilePath = infile
-    m_sOutputFilePath = outfile
+    If Not OpenFile(infile, bin, compressionLevel) Then Exit Function
+        
+    If compressionLevel = 0 Then
+        LastError = "File is not compressed"
+        Exit Function
+    End If
+    
+    If Not internal_DecompressData(bin, bout) Then Exit Function
+    If Not WriteToFile(outfile, bout) Then Exit Function
+        
+    DecompressFile = True
 
-    If OpenFile(infile) Then
-        If LenB(m_sOutputFilePath) Then
-            'OUTPUT PATH HAS BEEN SPECIFIED
-            If m_bIsCompressed Then
-                'THIS WHERE THE DATA IS ACTUALLY COMPRESSED
-                If internal_DecompressData(m_abyInputBuffer, m_abyOutputBuffer) Then
-                    'NO ERRORS DECOMPRESSING
-                    If WriteToFile Then DecompressFile = True
-                End If
-            Else
-                'THIS FILE WAS NOT COMPRESSED WITH BZIP2
-                'DecompressFile = 9
-            End If
-        End If
+End Function
+
+'Fills the input buffer: m_abyInputBuffer
+Private Function OpenFile(sFilePath, bin() As Byte, Optional ByRef compLevel As Long) As Boolean
+ Dim iFileHandle As Integer
+ Dim sCheck As String * 3
+ Dim sBlockSize As String * 1
+ 
+ On Error GoTo OpenFile_Exit
+ 
+    If Not FileExists(sFilePath) Then
+        LastError = "File does not exist: " & sFilePath
+        Exit Function
+    End If
+
+    'OPEN THE FILE
+    compLevel = 0
+    iFileHandle = FreeFile
+    Open sFilePath For Binary As iFileHandle Len = 32767
+    
+    'PREPARE THE BUFFER
+    m_lCompressedSize = LOF(iFileHandle)
+    m_lDecompressedSize = m_lCompressedSize
+    ReDim bin(m_lCompressedSize)
+    
+    'DETERMINE IF THE HEADER HAS THE WORD BZh IN IT
+    Get #iFileHandle, , sCheck
+
+    If sCheck = BZh Then
+        Get #iFileHandle, , sBlockSize
+        compLevel = CByte(sBlockSize)
+        
+        Get #iFileHandle, , m_lDecompressedSize
+        m_lDecompressedSize = m_lDecompressedSize / 1000
+    End If
+    
+    'FILL THE BUFFER
+    Seek #iFileHandle, 1
+    Get #iFileHandle, , bin()
+    OpenFile = True
+    
+        
+OpenFile_Exit:
+    Close iFileHandle
+    
+    If Err.Number <> 0 Then
+        LastError = "Error in openFile: " & Err.Description
     End If
     
 End Function
 
-Public Function DirectoryExists(ByVal sPath As String) As Boolean
-    If LenB(sPath) Then
-        If PathIsDirectory(sPath) Then DirectoryExists = True
-    End If
+Private Sub Reset()
+    m_lDecompressedSize = 0
+    m_lCompressedSize = 0
+    LastError = Empty
+End Sub
+
+Private Function WriteToFile(fpath As String, b() As Byte) As Boolean
+ Dim fOUT As Integer
+ 
+    On Error GoTo WriteToFile_Exit
+ 
+    If FileExists(fpath) Then Kill fpath
+
+    fOUT = FreeFile
+    Open fpath For Binary As fOUT Len = 32767
+    Put #fOUT, , b()
+    
+    WriteToFile = True
+    
+WriteToFile_Exit:
+    On Error Resume Next
+    Close fOUT
 End Function
+
+'Public Function DirectoryExists(ByVal sPath As String) As Boolean
+'    If LenB(sPath) Then
+'        If PathIsDirectory(sPath) Then DirectoryExists = True
+'    End If
+'End Function
 
 Public Function FileExists(ByVal sPath As String) As Boolean
     If LenB(sPath) Then
@@ -241,111 +317,6 @@ Public Function FileExists(ByVal sPath As String) As Boolean
     End If
 End Function
 
-Friend Function GetFolder(ByVal sPath As String) As String
-    GetFolder = Left$(sPath, InStrRev(sPath, "\"))
-End Function
-
-'Opens a file
-'Fills the input buffer: m_abyInputBuffer
-Private Function OpenFile(Optional ByVal sFilePath As String = vbNullString) As Boolean
- Dim iFileHandle As Integer
- Dim sCheck As String * 3
- Dim sBlockSize As String * 1
- Dim bContinue As Boolean
- 
- On Error GoTo OpenFile_Exit
-    If FileExists(sFilePath) Then
-        m_sInputFilePath = sFilePath
-        bContinue = True
-    Else
-        If FileExists(m_sInputFilePath) Then bContinue = True
-    End If
-    
-    If bContinue Then
-        'FILE EXISTS
-        Erase m_abyInputBuffer
-        Erase m_abyOutputBuffer
-    
-        'OPEN THE FILE
-        iFileHandle = FreeFile
-        Open m_sInputFilePath For Binary As iFileHandle Len = 32767
-        
-        'PREPARE THE BUFFER
-        m_lCompressedSize = LOF(iFileHandle)
-        ReDim m_abyInputBuffer(m_lCompressedSize)
-        
-        'DETERMINE IF THE HEADER HAS THE WORD "BZh IN IT
-        Get #iFileHandle, , sCheck
-        m_bIsCompressed = (sCheck = BZh)
-    
-        If m_bIsCompressed Then
-            'ALREADY COMPRESSED WITH BZIP2
-            If LenB(m_sOutputFilePath) = 0 Then
-                'm_sOutputFilePath is empty
-                If Right$(m_sInputFilePath, 4) = ".bz2" Then
-                    m_sOutputFilePath = Left$(m_sInputFilePath, Len(m_sInputFilePath) - 4)
-                    If Len(m_sOutputFilePath) <= 3 Then m_sOutputFilePath = vbNullString 'not a real path
-                End If
-            End If
-                    
-            Get #iFileHandle, , sBlockSize
-            m_eCompressionLevel = CByte(sBlockSize)
-            
-            Get #iFileHandle, , m_lDecompressedSize
-            m_lDecompressedSize = m_lDecompressedSize / 1000
-        Else
-            'NOT COMPRESSED YET
-            If LenB(m_sOutputFilePath) = 0 Then m_sOutputFilePath = m_sInputFilePath & ".bz2"
-        
-            m_lDecompressedSize = m_lCompressedSize
-        End If
-        
-        'FILL THE BUFFER
-        Seek #iFileHandle, 1
-        Get #iFileHandle, , m_abyInputBuffer
-        OpenFile = True
-    Else
-        Err.Raise 75
-    End If
-        
-OpenFile_Exit:
-    Close iFileHandle
-End Function
-
-Private Sub Reset()
-    m_eCompressionLevel = cl_Best
-    Erase m_abyInputBuffer
-    Erase m_abyOutputBuffer
-    m_sInputFilePath = vbNullString
-    m_sOutputFilePath = vbNullString
-    m_bOverwrite = True
-    m_bKeep = False
-    m_lDecompressedSize = 0
-    m_lCompressedSize = 0
-    m_bClearBuffer = True
-    m_bIsCompressed = False
-End Sub
-
-Private Function WriteToFile() As Boolean
- Dim fOUT As Integer
- 
- 
-    On Error GoTo WriteToFile_Exit
- 
-    If FileExists(m_sOutputFilePath) Then Kill m_sOutputFilePath
-
-    fOUT = FreeFile
-    Open m_sOutputFilePath For Binary As fOUT Len = 32767
-    Put #fOUT, , m_abyOutputBuffer
-    
-    If m_bClearBuffer Then Erase m_abyOutputBuffer
-    WriteToFile = True
-    
-WriteToFile_Exit:
-    On Error Resume Next
-    Close fOUT
-End Function
-'
-'Public Property Get InputFileIsCompessed() As Boolean
-'    InputFileIsCompessed = m_bIsCompressed
-'End Property
+'Function GetFolder(ByVal sPath As String) As String
+'    GetFolder = Left$(sPath, InStrRev(sPath, "\"))
+'End Function
