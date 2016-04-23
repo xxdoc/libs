@@ -25,11 +25,9 @@
 		I want any trivial information.
 		If you use this file, please report me.
 */
+#include "stdafx.h"
 #include "tar32dll.h"
 #include "tar32api.h"
-#include <time.h>	// localtime
-#include <sys/stat.h>
-#include <winbase.h>
 
 static CRITICAL_SECTION g_tar32_critsec;
 void Tar32InitializeCriticalSection()
@@ -71,15 +69,19 @@ WORD GetARCTime(time_t ti)
 	tmptr = localtime(&ti);
 	return ((tmptr->tm_hour)<<11)+((tmptr->tm_min)<<5)+((tmptr->tm_sec)/2);
 }
-void GetARCAttribute(int st_mode, char *buf, int buflen)
+DWORD GetARCAttribute(int st_mode)
 {
-	int attr
-		= ((st_mode & S_IWRITE)==0)*FA_RDONLY /* Read Only */
+	return ((st_mode & S_IWRITE)==0)*FA_RDONLY /* Read Only */
 		+((st_mode & S_IREAD)==0)*FA_HIDDEN /* Hidden */
 		+ 0 *FA_SYSTEM						/* System File */
 		+ 0 *FA_LABEL						/* volume label */
 		+((st_mode & S_IFDIR)!=0)*FA_DIREC /* Directory */
 		+0*FA_ARCH;							/* Archive Attribute */
+}
+
+void GetARCAttribute(int st_mode, char *buf, int buflen)
+{
+	int attr=GetARCAttribute(st_mode);
 
 	buf[0]= (attr & FA_ARCH)	? 'A' : '-'; /* Archive */
 	buf[1]= (attr & FA_SYSTEM)	? 'S' : '-'; /* System */
@@ -107,6 +109,14 @@ bool GetARCMethod(int archive_type, char *buf, int buf_len)
 		strncpy(buf, "-tbz-",buf_len);break;
 	case ARCHIVETYPE_BZ2:
 		strncpy(buf, "-bz2-",buf_len);break;
+	case ARCHIVETYPE_TARLZMA:
+		strncpy(buf, "-tlz-",buf_len);break;
+	case ARCHIVETYPE_LZMA:
+		strncpy(buf, "-lzm-",buf_len);break;
+	case ARCHIVETYPE_TARXZ:
+		strncpy(buf, "-txz-",buf_len);break;
+	case ARCHIVETYPE_XZ:
+		strncpy(buf, "- xz-",buf_len);break;
 
 
 	case ARCHIVETYPE_CPIO:
@@ -117,6 +127,10 @@ bool GetARCMethod(int archive_type, char *buf, int buf_len)
 		strncpy(buf, "cpio.z",buf_len);break;
 	case ARCHIVETYPE_CPIOBZ2:
 		strncpy(buf, "cpiobz2",buf_len);break;
+	case ARCHIVETYPE_CPIOLZMA:
+		strncpy(buf, "cpiolzm",buf_len);break;
+	case ARCHIVETYPE_CPIOXZ:
+		strncpy(buf, "cpio.xz",buf_len);break;
 
 	case ARCHIVETYPE_AR:
 		strncpy(buf, "ar",buf_len);break;
@@ -126,6 +140,10 @@ bool GetARCMethod(int archive_type, char *buf, int buf_len)
 		strncpy(buf, "ar.z",buf_len);break;
 	case ARCHIVETYPE_ARBZ2:
 		strncpy(buf, "ar.bz2",buf_len);break;
+	case ARCHIVETYPE_ARLZMA:
+		strncpy(buf, "ar.lzma",buf_len);break;
+	case ARCHIVETYPE_ARXZ:
+		strncpy(buf, "ar.xz",buf_len);break;
 
 		
 	default:

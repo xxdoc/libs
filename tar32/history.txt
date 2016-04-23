@@ -283,3 +283,116 @@
 2006/08/04 Ver2.30
 	・"--"オプションを追加。"-"ではじまるファイルを指定できるように改善。
       (Special Thanks to  新山(へろぱ) さん)
+
+2009/08/16
+	・コンパイラをVisual C++ 2005に変更。
+	  MSDNによれば、この変更により一部の古いWindowsは動作対象外となります。
+	・fopen()に指定するモードがzlib/bzip2用だったので、本来のものに修正。
+	・細かなバグをいくつか修正。
+	・進捗ダイアログにプログレスバーを実装。
+	・入出力バッファサイズを拡大。
+	・4GB以上のファイルを扱えるように改善。
+	  zlibを4GB対応とするために、zlibソース内のz_off_tを__int64に、
+	  fseekを_fseeki64に変更しました。
+	・"--confirm-overwrite"オプションを展開時の上書き確認用に導入。明示的に
+	  指定しない限りは従来と同様、確認無しでの上書きとなります。
+	・zlibを1.2.3に、bzip2を1.0.5に更新。
+	by Claybird(claybird.without.wing@gmail.com)
+
+2009/08/30
+	・--inverse_procresultスイッチを追加しました。
+	・処理ダイアログを表示していない場合、WM_ARCEXTRACTやARCHIVERPROCに
+	  ARCEXTRACT_INPROCESSが送信されない(恐らく)不具合を修正。
+	・ARCEXTRACT_ENDが誤って使用されている個所でモードを6に変更。
+	Special Thanks to Silkyさん
+
+2009/08/31 Ver.2.31
+	・ARCEXTRACT_BEGINが誤って使用されている個所でモードをARCEXTRACT_OPENに変更。
+	Special Thanks to Silkyさん
+	commit by Claybird
+
+2009/11/13 Ver.2.32
+	・compress 圧縮されたファイルの終端近くにあるデータを展開できない問題を
+	  修正 (Ver.2.31での m_strstream の実装変更が原因)
+	Special Thanks to 佐川さん
+
+2009/12/6 Ver.2.33
+	・POSIX形式のtarアーカイブ展開に対応
+	・長いファイル名を含むtarアーカイブを作成する際、ファイルヘッダと実際の
+	  記録方式が矛盾していた問題を修正
+	by Claybird(claybird.without.wing@gmail.com)
+
+2010/01/17 Ver.2.34
+	・進捗ダイアログにて、ファイル名が長くなりすぎたときは省略表示するようにした
+	・--convert-charsetスイッチをファイル名文字コード変換のために追加。
+	  デフォルトで文字コード変換を行います。
+	・TarOpenArchive2() APIを追加
+	Special Thanks to 鬼束さん
+	by Claybird(claybird.without.wing@gmail.com)
+
+2010/11/4
+	・XZ Utils 対応パッチの取り込み(oopsさん及びSilkyさんによる)
+	    -J,--lzma,--xzオプションの追加
+	    xzおよびlzmaの圧縮と展開に対応
+	・setvbuf()/gzbuffer()によりファイル入出力バッファを拡大
+	・zlibを1.2.5に更新
+	・bzip2を1.0.6に更新
+
+	Special Thanks to oopsさん、Siklyさん
+	by Claybird(claybird.without.wing@gmail.com)
+
+2010/11/6 Ver.2.35
+	・ar形式アーカイブにてファイル名取得に失敗していた問題を修正
+
+	by Claybird(claybird.without.wing@gmail.com)
+
+2011/ 1/19 Ver.2.36
+	・互換性のため、一部のプログラムで生成される誤ったチェックサム
+	  (signed charで計算されたもの)を受け入れるようにした
+
+	by Claybird(claybird.without.wing@gmail.com)
+
+2011/04/02 Ver.2.37
+	・cpio.xz形式のRPMアーカイブの展開に対応
+	・XZ Utilsを5.0.2に更新
+	Special Thanks to Silkyさん
+
+	commit by Claybird
+
+2011/08/13 Ver.2.38
+	・展開後ファイルサイズが取得できない場合に異常終了することがある
+	  問題を修正
+	・展開後ファイルサイズが取得できない場合は進捗をマーキー表示する
+	  ようにした
+
+	by Claybird(claybird.without.wing@gmail.com)
+
+2011/09/26
+	・2GBを超える.gzファイルが展開できなかった問題を修正
+
+	by Claybird(claybird.without.wing@gmail.com)
+
+2011/10/12 Ver.2.39
+	・オリジナルが4GBを超える.gzファイルが展開できなかった問題を修正
+
+	by Claybird(claybird.without.wing@gmail.com)
+
+2011/12/02 Ver.2.40
+	・PAX Interchange Formatで作成されたtarアーカイブの展開に対応
+	・アーカイブ作成時に、拡張子およびパスによるソート(--sort-by-ext/--sort-by-path)を実装
+	・展開時、ディレクトリ作成についても上書き確認が行われていた問題を修正
+	・展開時、上書き確認ダイアログ上で長いファイル名の表示が途中で切れていた問題を修正
+
+	by Claybird(claybird.without.wing@gmail.com)
+
+2012/07/03 Ver.2.41
+	・ディレクトリ構造を無視してアーカイブを作成する際ファイル名が空白になる問題を修正
+
+	by Claybird(claybird.without.wing@gmail.com)
+
+2012/09/29 Ver.2.42
+	・文字コード自動検出が正しく動作しないことがあった問題を修正
+	・ドキュメントの誤表記"--inverse_procresult"を"--inverse-procresult"に訂正
+
+	by Claybird(claybird.without.wing@gmail.com)
+

@@ -18,7 +18,11 @@ Attribute VB_Exposed = False
 '
 'homepage:
 '   http://openlab.ring.gr.jp/tsuneo/tar32/index-e.html
-
+'
+'CTarFile class by David Zimmer <dzzie@yahoo.com>
+'repo: https://github.com/dzzie/libs/tree/master/tar32
+'
+'we use byval so client can specify variants as well
 
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function TarGetVersion Lib "tar32" () As Integer
@@ -115,10 +119,11 @@ Function ExtractTo(ByVal archive As String, ByVal targetDir As String) As Boolea
     
 End Function
 
-'library is not honoring toDir...always extracts to app.path..chdir() no help
+'library is not honoring toDir...always extracts to app.path..chdir() no help, must manually rename..
 Function ExtractFile(ByVal archive As String, ByVal file As String, ByVal toDir As String) As Boolean
         
         Dim buf As String
+        Dim dst As String
         
         If Not isValidArchive(archive) Then Exit Function
         
@@ -127,13 +132,21 @@ Function ExtractFile(ByVal archive As String, ByVal file As String, ByVal toDir 
             Exit Function
         End If
         
-        cmd = "-xvf """ & archive & """ """ & file & """ -o """ & toDir & """"
+        If Right(toDir, 1) <> "\" Then toDir = toDir & "\"
+        
+        cmd = "-xvf """ & archive & """ """ & file & """" ' -o """ & toDir & """"
         If Not ShowDialog Then cmd = cmd & " --display-dialog=0"
         If Not KeepDirectoryStructure Then cmd = cmd & " --use-directory=0"
         
         buf = String(1000, Chr(0))
         If tar(0, cmd, buf, LenB(buf)) = 0 Then
-            ExtractFile = True
+            buf = FileNameFromPath(file)
+            dst = toDir & "\" & buf
+            If FileExists(buf) Then
+                 If FileExists(dst) Then Kill dst
+                 Name buf As dst
+                 ExtractFile = True
+            End If
         Else
             LastError = Replace(buf, vbLf, vbCrLf)
         End If
@@ -216,12 +229,31 @@ Function ArchiveFromFolder(ByVal folder As String, ByVal toArchive As String, Op
     
 End Function
 
-Function ArchiveFromFiles(files() As String, ByVal toArchive As String, Optional aType As ArchiveTypes = atTgz) As Boolean
+Function ArchiveFromFiles(fileAryorCol, ByVal toArchive As String, Optional aType As ArchiveTypes = atTgz) As Boolean
 
     Dim buf As String, cmd As String
-    Dim flags(), f
+    Dim flags(), files(), f
     
     flags = Array("-cvf", "-cvfz", "-cvfB")
+    
+    If TypeName(fileAryorCol) = "Collection" Or IsArray(fileAryorCol) Then
+        For Each f In fileAryorCol
+            If Not FileExists(f) Then
+                LastError = "File not found: " & f
+                Exit Function
+            End If
+            push files, f
+        Next
+    ElseIf TypeName(fileAryorCol) = "String" Or TypeName(fileAryorCol) = "Variant" Then
+        If Not FileExists(fileAryorCol) Then
+            LastError = "File not found: " & fileAryorCol
+            Exit Function
+        End If
+        push files, fileAryorCol
+    Else
+        LastError = "Unsupported argument must specify single file path, array, or collection"
+        Exit Function
+    End If
     
     If FileExists(toArchive) Then Kill toArchive
     
@@ -231,7 +263,7 @@ Function ArchiveFromFiles(files() As String, ByVal toArchive As String, Optional
     End If
     
     If AryIsEmpty(files) Then
-        LastError = "Must specify files to compress"
+        LastError = "Must specify files to compress, this can be a single file path, array, or collection"
         Exit Function
     End If
         
@@ -255,7 +287,7 @@ Function ArchiveFromFiles(files() As String, ByVal toArchive As String, Optional
 End Function
 
 
-Function FileExists(path As String) As Boolean
+Function FileExists(ByVal path As String) As Boolean
   On Error GoTo hell
     
   If Len(path) = 0 Then Exit Function
@@ -276,7 +308,7 @@ Private Function AryIsEmpty(ary) As Boolean
 oops: AryIsEmpty = True
 End Function
 
-Function FolderExists(path As String) As Boolean
+Function FolderExists(ByVal path As String) As Boolean
   On Error GoTo hell
   Dim tmp As String
   tmp = path & "\"
@@ -286,6 +318,25 @@ Function FolderExists(path As String) As Boolean
 hell:
     FolderExists = False
 End Function
+
+Private Function FileNameFromPath(ByVal fullpath) As String
+    fullpath = Replace(fullpath, "/", "\")
+    If InStr(fullpath, "\") > 0 Then
+        tmp = Split(fullpath, "\")
+        FileNameFromPath = CStr(tmp(UBound(tmp)))
+    Else
+        FileNameFromPath = fullpath
+    End If
+End Function
+
+Private Sub push(ary, value) 'this modifies parent ary object
+    On Error GoTo init
+    x = UBound(ary) '<-throws Error If Not initalized
+    ReDim Preserve ary(UBound(ary) + 1)
+    ary(UBound(ary)) = value
+    Exit Sub
+init:     ReDim ary(0): ary(0) = value
+End Sub
 
 Private Sub Class_Initialize()
 
