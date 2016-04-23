@@ -9,6 +9,13 @@ Begin VB.Form Form1
    ScaleHeight     =   5550
    ScaleWidth      =   9300
    StartUpPosition =   2  'CenterScreen
+   Begin VB.TextBox Text3 
+      Height          =   330
+      Left            =   765
+      TabIndex        =   5
+      Top             =   450
+      Width           =   6135
+   End
    Begin VB.TextBox Text2 
       Height          =   2805
       Left            =   45
@@ -20,10 +27,10 @@ Begin VB.Form Form1
       Width           =   9240
    End
    Begin VB.ListBox List1 
-      Height          =   1815
+      Height          =   1425
       Left            =   765
       TabIndex        =   3
-      Top             =   585
+      Top             =   900
       Width           =   6180
    End
    Begin VB.CommandButton Command2 
@@ -31,7 +38,7 @@ Begin VB.Form Form1
       Height          =   375
       Left            =   7065
       TabIndex        =   2
-      Top             =   630
+      Top             =   900
       Width           =   1950
    End
    Begin VB.CommandButton Command1 
@@ -50,6 +57,22 @@ Begin VB.Form Form1
       Text            =   "Drag and drop file "
       Top             =   45
       Width           =   6135
+   End
+   Begin VB.Label Label2 
+      Caption         =   "Input"
+      Height          =   240
+      Left            =   45
+      TabIndex        =   7
+      Top             =   90
+      Width           =   600
+   End
+   Begin VB.Label Label1 
+      Caption         =   "Output"
+      Height          =   240
+      Left            =   45
+      TabIndex        =   6
+      Top             =   495
+      Width           =   645
    End
 End
 Attribute VB_Name = "Form1"
@@ -79,8 +102,12 @@ Private Sub Command1_Click()
         List1.AddItem "Input file Sz: " & FileLen(Text1)
     End If
     
-    comp = "c:\compressed.txt"
-    dec = "c:\decompressed.txt"
+    comp = Text1 & ".bz2"
+    dec = Text1 & ".decomp"
+    Text3 = comp
+    
+    If bzip.FileExists(comp) Then Kill comp
+    If bzip.FileExists(dec) Then Kill dec
     
     If Not bzip.CompressFile(Text1, comp) Then
         List1.AddItem "Compress failed"
