@@ -143,9 +143,9 @@ Function ExtractFile(ByVal archive As String, ByVal file As String, ByVal toDir 
             buf = FileNameFromPath(file)
             dst = toDir & "\" & buf
             If FileExists(buf) Then
-                 If FileExists(dst) Then Kill dst
-                 Name buf As dst
-                 ExtractFile = True
+                If FileExists(dst) Then Kill dst
+                Name buf As dst
+                ExtractFile = True
             End If
         Else
             LastError = Replace(buf, vbLf, vbCrLf)
@@ -158,6 +158,8 @@ Function EnumFiles(ByVal archive As String, Optional ByVal match As String = "*.
     Dim ii As INDIVIDUALINFO
     Dim h As Long, ret As Long, f As String
     Dim c As New Collection
+    
+    Set EnumFiles = c
     
     If Not isValidArchive(archive) Then Exit Function
     
@@ -179,7 +181,6 @@ Function EnumFiles(ByVal archive As String, Optional ByVal match As String = "*.
     Wend
     
     TarCloseArchive h
-    Set EnumFiles = c
     
 End Function
 
@@ -197,6 +198,8 @@ Function ArchiveFromFolder(ByVal folder As String, ByVal toArchive As String, Op
 
     Dim buf As String, cmd As String
     Dim flags()
+    
+    If hLib = 0 Then Exit Function
     
     flags = Array("-cvf", "-cvfz", "-cvfB")
     
@@ -233,6 +236,8 @@ Function ArchiveFromFiles(fileAryorCol, ByVal toArchive As String, Optional aTyp
 
     Dim buf As String, cmd As String
     Dim flags(), files(), f
+    
+    If hLib = 0 Then Exit Function
     
     flags = Array("-cvf", "-cvfz", "-cvfB")
     
@@ -341,8 +346,8 @@ End Sub
 Private Sub Class_Initialize()
 
     hLib = LoadLibrary("tar32.dll")
-    If hLib = 0 Then h = LoadLibrary(App.path & "\tar32.dll")
-    If hLib = 0 Then h = LoadLibrary(App.path & "\..\tar32.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\tar32.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\tar32.dll")
     If hLib = 0 Then LastError = "tar32.dll not found?"
     
     KeepDirectoryStructure = True
