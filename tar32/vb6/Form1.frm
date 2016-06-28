@@ -51,6 +51,7 @@ Private Sub Form_Load()
     
     List1.AddItem "Tar32.dll Version: " & tar.Version()
     List1.AddItem "Check Archive: " & tar.isValidArchive(f)
+    List1.AddItem "Archive Type: " & tar.ArchiveType(f)
     List1.AddItem "File count: " & tar.FileCount(f)
     
     Set c = tar.EnumFiles(f, "*.php")

@@ -33,6 +33,7 @@ Private Declare Function TarCloseArchive Lib "tar32" (ByVal handle As Long) As L
 Private Declare Function TarFindFirst Lib "tar32" (ByVal hwnd As Long, ByVal wildCard_NOT_IMPLEMENTED As String, ByRef ii As INDIVIDUALINFO) As Long
 Private Declare Function TarFindNext Lib "tar32" (ByVal hwnd As Long, ByRef ii As INDIVIDUALINFO) As Long
 Private Declare Function TarGetFileCount Lib "tar32" (ByVal szArcFile As String) As Long
+Private Declare Function TarGetMethod Lib "tar32" (ByVal hArc As Long, ByVal buf As String, ByVal bufSz As Long) As Long
 
 Private Type INDIVIDUALINFO
     dwOriginalSize As Long
@@ -55,6 +56,7 @@ Public Enum ArchiveTypes
     atTgz = 1
     atTarBZ2 = 2
 End Enum
+
 
 Dim hLib As Long
 Public LastError As String
@@ -83,6 +85,30 @@ Property Get isValidArchive(ByVal archive As String) As Boolean
     
 End Property
 
+Property Get ArchiveType(ByVal archive As String) As String
+    Dim h As Long, buf As String
+    
+    If Not isValidArchive(archive) Then Exit Function
+    
+    h = TarOpenArchive(0, archive, 0)
+    
+    If h = 0 Then
+        LastError = "Failed to open archive"
+        Exit Property
+    End If
+    
+    buf = String(10, Chr(0))
+
+    If TarGetMethod(h, buf, Len(buf)) = 0 Then
+        buf = chomp(buf)
+        buf = Replace(buf, "-", Empty)
+        ArchiveType = Replace(buf, " ", Empty)
+    End If
+    
+    TarCloseArchive h
+        
+End Property
+
 Property Get FileCount(ByVal pth As String) As Long
     If hLib = 0 Then Exit Property
     FileCount = TarGetFileCount(pth)
@@ -96,7 +122,7 @@ End Property
 Function RawCmd(ByVal cmd As String, ByRef outputBuffer) As Long
     If hLib = 0 Then Exit Function
     outputBuffer = String(1000, Chr(0))
-    RawCmd = tar(0, cmd, outputBuffer, LenB(outputBuffer))
+    RawCmd = tar(0, cmd, outputBuffer, Len(outputBuffer))
 End Function
 
 Function ExtractTo(ByVal archive As String, ByVal targetDir As String) As Boolean
@@ -111,7 +137,7 @@ Function ExtractTo(ByVal archive As String, ByVal targetDir As String) As Boolea
     If Not KeepDirectoryStructure Then cmd = cmd & " --use-directory=0"
     
     buf = String(1000, Chr(0))
-    If tar(0, cmd, buf, LenB(buf)) = 0 Then
+    If tar(0, cmd, buf, Len(buf)) = 0 Then
         ExtractTo = True
     Else
         LastError = Replace(buf, vbLf, vbCrLf)
@@ -139,7 +165,7 @@ Function ExtractFile(ByVal archive As String, ByVal file As String, ByVal toDir 
         If Not KeepDirectoryStructure Then cmd = cmd & " --use-directory=0"
         
         buf = String(1000, Chr(0))
-        If tar(0, cmd, buf, LenB(buf)) = 0 Then
+        If tar(0, cmd, buf, Len(buf)) = 0 Then
             buf = FileNameFromPath(file)
             dst = toDir & "\" & buf
             If FileExists(buf) Then
@@ -224,7 +250,7 @@ Function ArchiveFromFolder(ByVal folder As String, ByVal toArchive As String, Op
     If Not KeepDirectoryStructure Then cmd = cmd & " --use-directory=0"
 
     buf = String(1000, Chr(0))
-    If tar(0, cmd, buf, LenB(buf)) = 0 Then
+    If tar(0, cmd, buf, Len(buf)) = 0 Then
         ArchiveFromFolder = True
     Else
         LastError = Replace(buf, vbLf, vbCrLf)
@@ -283,7 +309,7 @@ Function ArchiveFromFiles(fileAryorCol, ByVal toArchive As String, Optional aTyp
     If Not KeepDirectoryStructure Then cmd = cmd & " --use-directory=0"
 
     buf = String(1000, Chr(0))
-    If tar(0, cmd, buf, LenB(buf)) = 0 Then
+    If tar(0, cmd, buf, Len(buf)) = 0 Then
         ArchiveFromFiles = True
     Else
         LastError = Replace(buf, vbLf, vbCrLf)
