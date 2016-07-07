@@ -11,14 +11,14 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
-Private Declare Function GetProcAddress Lib "Kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
-Private Declare Function GetModuleHandle Lib "Kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long '()
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long '()
 
 'min build Windows XP
-Private Declare Sub GetNativeSystemInfo Lib "Kernel32" (lpSystemInfo As SYSTEM_INFO)
+Private Declare Sub GetNativeSystemInfo Lib "kernel32" (lpSystemInfo As SYSTEM_INFO)
 
 'min build xp sp2
-Private Declare Function IsWow64Process Lib "Kernel32" (ByVal hProcess As Long, ByRef Wow64Process As Long) As Long
+Private Declare Function IsWow64Process Lib "kernel32" (ByVal hProcess As Long, ByRef Wow64Process As Long) As Long
 
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
@@ -26,9 +26,9 @@ Private Declare Function GetCurrentProcess Lib "kernel32.dll" () As Long
 Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" Alias "LookupPrivilegeValueA" (ByVal lpSystemName As String, ByVal lpName As String, lpLuid As LUID) As Long
 Private Declare Function GetLastError Lib "kernel32.dll" () As Long
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
-Private Declare Function CloseHandle Lib "Kernel32" (ByVal hObject As Long) As Long
-Private Declare Function OpenProcess Lib "Kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
-Private Declare Function GetShortPathName Lib "Kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
+Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
+Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
+Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 
 Private Type LUID
     LowPart As Long
@@ -64,7 +64,7 @@ End Enum
 
 Private Declare Function Wow64DisableWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
 Private Declare Function Wow64RevertWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
-Private Declare Function LoadLibrary Lib "Kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 'Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
 'Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 
@@ -155,6 +155,7 @@ End Function
 
 Private Function FindHelper() As String
     Dim f As String, e As String
+    Dim Data() As Byte, fhand As Long
     On Error Resume Next
     
     e = "\x64Helper.exe"
@@ -167,6 +168,17 @@ Private Function FindHelper() As String
         End If
         f = GetParentFolder(f)
     Next
+    
+    f = App.path & e
+    Data = LoadResData("x64helper.exe", "CUSTOM")
+    If AryIsEmpty(Data) Then Exit Function
+    
+    fhand = FreeFile
+    Open f For Binary As fhand
+    Put fhand, , Data()
+    Close fhand
+    
+    If FileExists(f) Then FindHelper = f
     
 End Function
 
@@ -245,6 +257,19 @@ Function IsProcess_x64(pid As Long) As results
     
 End Function
 
+Function WillRunAsx64Process(fpath As String) As Boolean
+        Dim r As results
+        r = isExe_x64(fpath)
+        If r = r_64bit Then WillRunAsx64Process = True
+        If r = r_32bit Then
+            If isExeDotNetAnyCpu(fpath) And isWindows64Bit Then WillRunAsx64Process = True
+        End If
+End Function
+
+Function isExeDotNetAnyCpu(fpath As String) As Boolean
+    Dim pe As New CPEEditor
+    If pe.LoadFile(fpath) Then isExeDotNetAnyCpu = pe.isDotNetAnyCpu
+End Function
 
 Function isExe_x64(fpath As String) As results
     On Error GoTo hell
@@ -261,7 +286,7 @@ Function isExe_x64(fpath As String) As results
     DisableRedir
     h = FreeFile
     Open fpath For Binary Access Read As h
-    RevertRedir
+    
     
     Get h, , b
     Get h, , b2
@@ -290,7 +315,8 @@ Function isExe_x64(fpath As String) As results
     End If
     
     Close h
-
+    RevertRedir
+    
     Exit Function
 hell:
     On Error Resume Next
@@ -298,6 +324,41 @@ hell:
     isExe_x64 = r_error
     Err.Clear
 End Function
+
+Public Sub x64LoadLib(ByVal dll As String, out_injLog As String) ', Optional UserName As String = "", Optional password As String = "")
+    
+    If Not FileExists(dll) Then
+        out_injLog = "dll not found: " & dll
+        Exit Sub
+    End If
+    
+    If isExe_x64(dll) <> r_64bit Then
+        out_injLog = "target dll is not x64"
+        Exit Sub
+    End If
+    
+    If Not HelperEnabled Then
+        out_injLog = "x64Helper not found: " & exe
+        Exit Sub
+    End If
+    
+    If Not isWindows64Bit Then
+        out_injLog = "x64Helper can not run on 32bit windows."
+        Exit Sub
+    End If
+    
+    
+    dll = GetShortName(dll)
+    
+    'If Len(UserName) > 0 Then
+    '    If Not RunAsUser(UserName, password, "", helperPath & " /loadlib " & dll, fso.GetParentFolder(helperPath)) Then
+    '        Err.Raise "x64LoadLib Failed to start as user Error: " & modUserAccounts.RunAsUserError
+    '    End If
+    'Else
+        Shell helperPath & " /loadlib " & dll
+    'End If
+    
+End Sub
 
 Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String) As Boolean
     
@@ -311,14 +372,23 @@ Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String
         Exit Function
     End If
     
+    If Not isWindows64Bit Then
+        out_injLog = "x64Helper can not run on 32bit windows."
+        Exit Function
+    End If
+
     If Not FileExists(dll) Then
         out_injLog = "dll not found: " & dll
         Exit Function
     End If
-    
+        
     If isExe_x64(dll) <> r_64bit Then
-        out_injLog = "dll is not 64 bit"
-        Exit Function
+        If isExeDotNetAnyCpu(dll) Then
+            out_injLog = "dll is AnyCpu .NET can load in 64 bit process"
+        Else
+            out_injLog = "dll is not 64 bit"
+            Exit Function
+        End If
     End If
     
     dll = GetShortName(dll)
@@ -345,17 +415,26 @@ Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injL
         Exit Function
     End If
     
+    If Not isWindows64Bit Then
+        out_injLog = "x64Helper can not run on 32bit windows."
+        Exit Function
+    End If
+
     If Not FileExists(dll) Then
         out_injLog = "dll not found: " & dll
         Exit Function
     End If
     
     If isExe_x64(dll) <> r_64bit Then
-        out_injLog = "dll is not 64 bit"
-        Exit Function
+        If isExeDotNetAnyCpu(dll) Then
+            out_injLog = "dll is AnyCpu .NET can load in 64 bit process"
+        Else
+            out_injLog = "dll is not 64 bit"
+            Exit Function
+        End If
     End If
     
-    If isExe_x64(exePath) <> r_64bit Then
+    If Not WillRunAsx64Process(exePath) Then
         out_injLog = "Executable is not 64 bit"
         Exit Function
     End If
@@ -398,20 +477,29 @@ cleanup:
 End Function
 
 Private Function GetShortName(sFile As String) As String
-    Dim sShortFile As String * 67
+    Dim sShortFile As String * 500
     Dim lResult As Long
+    Dim iCreated As Boolean
     
     'the path must actually exist to get the short path name !!
-    If Not FileExists(sFile) Then writeFile sFile, " "
+    If Not FileExists(sFile) Then
+        iCreated = True
+        writeFile sFile, " "
+    End If
     
     'Make a call to the GetShortPathName API
     DisableRedir
     lResult = GetShortPathName(sFile, sShortFile, Len(sShortFile))
     RevertRedir
     
-    'Trim out unused characters from the string.
-    GetShortName = Left$(sShortFile, lResult)
+    If lResult > 500 Then
+        GetShortName = sFile 'we failed return original?
+    Else
+        'Trim out unused characters from the string.
+        GetShortName = Left$(sShortFile, lResult)
+    End If
     
+    If iCreated Then Kill GetShortName
     'If Len(GetShortName) = 0 Then GetShortName = sFile
 
 End Function
@@ -436,12 +524,12 @@ Private Function GetSeDebug() As Boolean
 
 End Function
 
-Function ReadFile(fileName) As String 'this one should be binary safe...
+Function ReadFile(filename) As String 'this one should be binary safe...
   On Error GoTo hell
   f = FreeFile
   Dim b() As Byte
   DisableRedir
-  Open fileName For Binary As #f
+  Open filename For Binary As #f
   RevertRedir
   ReDim b(LOF(f) - 1)
   Get f, , b()
@@ -449,6 +537,64 @@ Function ReadFile(fileName) As String 'this one should be binary safe...
   ReadFile = StrConv(b(), vbUnicode, LANG_US)
   Exit Function
 hell:   ReadFile = ""
+End Function
+
+Function GetMemoryMap(pid As Long) As Collection 'of Cmemory
+
+    On Error Resume Next
+     
+    Dim mCol As New Collection
+    Dim cMem As CMemory
+    Dim a, b
+    Dim mem, x, parts
+    Dim tmp As String
+    
+    If Not HelperEnabled Then GoTo hell
+    
+    tmp = GetFreeFileName(Environ("temp"))
+    x = GetCommandOutput(helperPath & " /memmap " & pid & " " & tmp)
+    'x = ReadFile("c:\x64_memmap.txt")
+    
+    If InStr(1, x, "Error:", vbTextCompare) > 0 Then
+        GoTo hell
+    End If
+    
+    x = ReadFile(tmp)
+    mem = Split(x, vbCrLf)
+     
+    For i = 1 To UBound(mem)
+        x = mem(i)
+        '"%llX,%llX,%llX,%lX,%lX,%lX,%lX,%s\r\n",
+        'va, mbi.AllocationBase, mbi.RegionSize, mbi.AllocationProtect, mbi.Type, mbi.Protect, mbi.State, mod);
+        parts = Split(x, ",")
+        If UBound(parts) = 7 Then
+            Set cMem = New CMemory
+            With cMem
+                .pid = pid
+                .isx64 = True
+                .base = parts(0)
+                .AllocBase = parts(1)
+                If Len(.AllocBase) > 8 Then
+                    .AllocBase = Mid(.AllocBase, 1, Len(.AllocBase) - 8) & "`" & VBA.Right(.AllocBase, 8)
+                End If
+                If Len(.base) > 8 Then
+                    .base = Mid(.base, 1, Len(.base) - 8) & "`" & VBA.Right(.base, 8)
+                End If
+                .size = CLng("&h" & parts(2))
+                .InitialProtection = CLng("&h" & parts(3))
+                .MemType = CLng("&h" & parts(4))
+                .Protection = CLng("&h" & parts(5))
+                .State = CLng("&h" & parts(6))
+                .ModuleName = parts(7)
+            End With
+            mCol.Add cMem
+        End If
+        
+    Next
+    
+hell:
+    Set GetMemoryMap = mCol
+        
 End Function
 
 Function GetProcessModules(pid As Long) As Collection
@@ -479,7 +625,7 @@ Function GetProcessModules(pid As Long) As Collection
             cmod.path = parts(2)
             cmod.x64Base = parts(0)
             cmod.x64Size = parts(1)
-            cmod.isX64 = True
+            cmod.isx64 = True
             mCol.Add cmod, cmod.path
         End If
         
@@ -510,10 +656,10 @@ Function DumpProcess(pid As Long, ByVal fpath As String) As Boolean
     
     If Not HelperEnabled Then Exit Function
     
-    fpath = GetShortName(fpath)
+    'fpath = GetShortName(fpath)
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " " & fpath)
+    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " """ & fpath & """")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -528,16 +674,18 @@ Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal 
     
     If Not HelperEnabled Then Exit Function
     
-    fpath = GetShortName(fpath)
+    'fpath = GetShortName(fpath) 'x64helper seems to have a problem with short paths?
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " " & fpath)
+    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fpath & """")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function
     End If
     
-    DumpMemory = True
+    If InStr(1, x, "Dump saved to", vbTextCompare) > 0 Then
+        DumpMemory = True
+    End If
     
 End Function
 
