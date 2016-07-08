@@ -6,11 +6,11 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "CVariantFileSystem"
+Attribute VB_Name = "CFileSystem3"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
+Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = True
+Attribute VB_Exposed = False
 'Revision 3 <- Incompatiable with all previous..simplified & streamlined
 '
 'Info:     These are basically macros for VB's built in file processes
@@ -28,6 +28,7 @@ Attribute VB_Exposed = True
 
 Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
+Public dlg As New CCmnDlg
 
 Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath = True, Optional recursive = False) As Variant()
    Dim fnames()
@@ -115,7 +116,7 @@ Function GetSubFolders(folderPath, Optional retFullPath = True) As Variant()
    GetSubFolders = fnames()
 End Function
 
-Function FolderExists(path) As Boolean
+Function FolderExists(path)
   On Error GoTo hell
   Dim tmp As String
   tmp = path & "\"
@@ -126,7 +127,7 @@ hell:
     FolderExists = False
 End Function
 
-Function FileExists(path) As Boolean
+Function FileExists(path)
   On Error GoTo hell
     
   If Len(path) = 0 Then Exit Function
@@ -188,7 +189,7 @@ Function WebFileNameFromPath(fullpath)
     End If
 End Function
 
-Function DeleteFile(fpath) As Boolean
+Function DeleteFile(fpath)
  On Error GoTo hadErr
     
     Dim attributes As VbFileAttribute
@@ -341,7 +342,7 @@ handler:
     
 End Function
 
-Function buildPath(folderPath) As Boolean
+Function buildPath(folderPath)
     On Error GoTo oops
     
     If FolderExists(folderPath) Then buildPath = True: Exit Function
@@ -414,19 +415,19 @@ Function Move(fpath, toFolder)
     
 End Function
 
-Sub CreateFile(fpath)
+Function CreateFile(fpath)
     On Error GoTo hell
     Dim f As Long
     f = FreeFile
-    If FileExists(fpath) Then Exit Sub
+    If FileExists(fpath) Then Exit Function
     Open fpath For Binary As f
     Close f
-    'If FileExists(fpath) Then CreateFile = True
+    If FileExists(fpath) Then CreateFile = True
 hell:
-End Sub
+End Function
 
 
-Function DeleteFolder(folderPath, Optional force = True) As Boolean
+Function DeleteFolder(folderPath, Optional force = True)
  On Error GoTo failed
    Call delTree(folderPath, force)
    Call RmDir(folderPath)
@@ -486,3 +487,5 @@ End Function
 Private Sub Class_Initialize()
     'If Not isRegistered And Not isInitalized Then TellThemAllAboutIt
 End Sub
+
+
