@@ -31,8 +31,8 @@ Private Const HWND_NOTOPMOST = -2
 Private Declare Sub DebugBreak Lib "kernel32" ()
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
-Private Declare Function CallAsm Lib "user32" Alias "CallWindowProcA" (ByRef lpBytes As Any, ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Private Declare Function CallAsmAddr Lib "user32" Alias "CallWindowProcA" (ByVal lpCode As Long, ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function CallAsm Lib "user32" Alias "CallWindowProcA" (ByRef lpBytes As Any, ByVal hWnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function CallAsmAddr Lib "user32" Alias "CallWindowProcA" (ByVal lpCode As Long, ByVal hWnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function VirtualAlloc Lib "kernel32" (ByVal lpAddress As Long, ByVal dwSize As Long, ByVal flAllocationType As Long, ByVal flProtect As Long) As Long
 Private Declare Function VirtualFree Lib "kernel32" (ByVal lpAddress As Long, ByVal dwSize As Long, ByVal dwFreeType As Long) As Long
 Private Declare Sub RtlMoveMemory Lib "kernel32" (ByVal Destination As Long, ByVal Source As Long, ByVal length As Long)
@@ -420,18 +420,18 @@ hell:
 End Function
 
 'supports %x, %c, %s, %d, %10d \t \n %%
-Function printf(ByVal Msg As String, ParamArray vars()) As String
+Function printf(ByVal msg As String, ParamArray vars()) As String
 
     Dim t
     Dim ret As String
     Dim i As Long
     
-    Msg = Replace(Msg, Chr(0), Empty)
-    Msg = Replace(Msg, "\t", vbTab)
-    Msg = Replace(Msg, "\n", vbCrLf) 'simplified
-    Msg = Replace(Msg, "%%", Chr(0))
+    msg = Replace(msg, Chr(0), Empty)
+    msg = Replace(msg, "\t", vbTab)
+    msg = Replace(msg, "\n", vbCrLf) 'simplified
+    msg = Replace(msg, "%%", Chr(0))
     
-    t = Split(Msg, "%")
+    t = Split(msg, "%")
     If UBound(t) <> UBound(vars) + 1 Then
         MsgBox "Format string mismatch.."
         Exit Function
@@ -677,3 +677,11 @@ Function isBinaryChar(b As Byte) As Boolean
     End If
  
 End Function
+
+Function CountOccurances(it, find) As Integer
+    Dim tmp() As String
+    If InStr(1, it, find, vbTextCompare) < 1 Then CountOccurances = 0: Exit Function
+    tmp = Split(it, find, , vbTextCompare)
+    CountOccurances = UBound(tmp)
+End Function
+

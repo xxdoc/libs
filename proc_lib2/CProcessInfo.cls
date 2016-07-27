@@ -216,6 +216,7 @@ Private Declare Function GetCurrentProcess Lib "kernel32.dll" () As Long
 Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" Alias "LookupPrivilegeValueA" (ByVal lpSystemName As String, ByVal lpName As String, lpLuid As LUID) As Long
 Private Declare Function GetLastError Lib "kernel32.dll" () As Long
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
 
 'Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
@@ -688,35 +689,79 @@ Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, 
     
 End Function
 
+'7.26.16: now large allocs are dumped in chunks...
 Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String) As Boolean
-   
+
     Dim pHandle As Long
     Dim b() As Byte
-    Dim f As Long
+    Dim f As Long, i As Long
     On Error GoTo hell
     
-    f = FreeFile
+    Dim maxSz As Long, cnt As Long, m As Long, bufsz As Long, curBase As Long, readLen As Long
     
-    ReDim b(Length + 1)
-        
+    bufsz = Length + 1
+    curBase = start
+    
+    maxSz = 1000000 '10mb
+    cnt = 1 'loop iter
+    m = 0 'modulus / remainder
+    
+    If bufsz > maxSz Then
+        cnt = bufsz / maxSz
+        m = bufsz Mod maxSz
+        bufsz = maxSz
+    End If
+    
+    f = FreeFile
+    ReDim b(1 To bufsz)
     pHandle = OpenProcess(PROCESS_VM_READ, False, pid)
     If pHandle = 0 Then Exit Function
-    
-    ReadProcessMemory pHandle, start, b(0), Length, Length
-    CloseHandle pHandle
-    
+
     If Dir(fpath) <> "" Then Kill fpath
-    
     Open fpath For Binary As f
-    Put f, , b()
+    
+    For i = 1 To cnt
+        If ReadProcessMemory(pHandle, curBase, b(1), bufsz, readLen) = 0 Then
+            GoTo cleanup
+        End If
+        
+        If readLen <> bufsz Then
+            GoTo cleanup
+        End If
+        
+        curBase = curBase + bufsz
+        Put f, , b()
+    Next
+    
+    If m <> 0 Then
+        
+        ReDim b(1 To m)
+        
+        If ReadProcessMemory(pHandle, curBase, b(1), m, readLen) = 0 Then
+            GoTo cleanup
+        End If
+        
+        If readLen <> m Then
+            GoTo cleanup
+        End If
+
+        Put f, , b()
+    End If
+    
+    
+    CloseHandle pHandle
     Close f
     DumpProcessMemory = True
-    
     Exit Function
+
+cleanup:
+    CloseHandle pHandle
+    Close f
 hell:
     DumpProcessMemory = False
-    
+
 End Function
+
 
 'for x64 processes assumes start is hex string, length can be hexstring or long..
 Function ReadMemory2(pid As Long, ByVal start As Variant, ByVal Length As Variant) As String
@@ -904,7 +949,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
         Exit Function
     End If
 
-    hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ), False, pid)
+    hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ Or SYNCHRONIZE), False, pid)
     If hProc = 0 Then
         Set GetMemoryMap = ret
         x = GetLastError
@@ -912,6 +957,8 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     End If
            
     Do While cur < &H7FFEFFFF
+        
+         If Not IsProcHandleValid(hProc) Then Exit Do
          x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
          If meminfo.State <> MEM_FREE Then
@@ -1010,6 +1057,23 @@ Function GetProcess(pid As Long, cp As CProcess) As Boolean
     
     Set cp = Nothing
     
+End Function
+
+Function isProcessRunning(pid As Long) As Boolean
+    Dim cp As CProcess
+    isProcessRunning = GetProcess(pid, cp)
+End Function
+
+'Just check signaled state of the process handle, it will become signaled whenever the process exits
+'handle must have SYNCHRONIZE rights...
+Private Function IsProcHandleValid(hProc As Long) As Boolean
+   If hProc = 0 Then Exit Function
+   Dim rv As Long
+   Const WAIT_FAILED = &HFFFFFFFF
+   Const WAIT_TIMEOUT = &H102
+   rv = WaitForSingleObject(hProc, 0)
+   If rv = WAIT_FAILED Then Exit Function
+   If rv = WAIT_TIMEOUT Then IsProcHandleValid = True
 End Function
 
 'x64 NOT supported yet..
