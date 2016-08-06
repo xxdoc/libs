@@ -1044,20 +1044,65 @@ Public Function GetParentProcessId(ByVal pid As Long) As Long
 End Function
 
 Function GetProcess(pid As Long, cp As CProcess) As Boolean
-    Dim c As Collection
     
-    Set c = GetRunningProcesses()
+    Dim m_col As New Collection
+    Dim myProcess As PROCESSENTRY32
+    Dim mySnapshot As Long
+    Dim proc As CProcess
+    Dim n As Long
     
-    For Each cp In c
-        If cp.pid = pid Then
-            GetProcess = True
-            Exit Function
-        End If
-    Next
-    
+    Dim retVal As Long
+    Dim count As Long
+    Dim i As Integer
+    Dim lpBuffer As Long
+    Dim p As Long
+    Dim udtProcessInfo As WTS_PROCESS_INFO
+
     Set cp = Nothing
+    retVal = WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0&, 1, lpBuffer, count)
+   
+    If retVal Then
+          p = lpBuffer
+          For i = 1 To count
+                CopyMemory udtProcessInfo, ByVal p, LenB(udtProcessInfo)
+                
+                If udtProcessInfo.ProcessID = pid Then
+                    Set proc = New CProcess
+                    With proc
+                        .sessionID = udtProcessInfo.sessionID
+                        .pid = udtProcessInfo.ProcessID
+                        .path = GetStringFromLP(udtProcessInfo.pProcessName)
+                        .fullpath = GetProcessPath(.pid)
+                        .ParentPID = GetParentProcessId(.pid)
+                        .CmdLine = GetProcessCmdLine(.pid, .fullpath)
+                        GetUserName udtProcessInfo.pUserSid, proc
+                        .is64Bit = (x64.IsProcess_x64(.pid) = r_64bit)
+                    End With
+                    Set cp = proc
+                    WTSFreeMemory lpBuffer
+                    GetProcess = True
+                    Exit Function
+                End If
+                         
+                p = p + LenB(udtProcessInfo)
+          Next i
+    
+          WTSFreeMemory lpBuffer   'not found: Free your memory buffer
+   Else
+        Set m_col = Legacy_GetRunningProcesses() 'win2k we still do full lookups didnt optimize, anyone using this still?
+        For Each proc In m_col
+            If proc.pid = pid Then
+                Set cp = proc
+                GetProcess = True
+                Exit Function
+            End If
+        Next
+   End If
+   
+
     
 End Function
+
 
 Function isProcessRunning(pid As Long) As Boolean
     Dim cp As CProcess
