@@ -27,6 +27,7 @@ Public OptionalHeader As New COptionalHeader
 Public Imports As New CLoadImports
 Public Exports As New CLoadExports
 Public Sections As New Collection
+'Public Relocations As CLoadRelocs
 
 Public CanAddSection As Boolean
 Public errMessage As String
@@ -46,7 +47,7 @@ Private res As CResources
 Public LoadedFile As String
 
 Private Type MungeCurr
-    Value As Double
+    value As Double
 End Type
 
 Private Type Munge2Long
@@ -80,7 +81,7 @@ End Enum
 Function x64ToHex(v As Double, Optional pad As Boolean = False, Optional x64Tick As Boolean = False) As String
     Dim c As MungeCurr
     Dim l As Munge2Long
-    c.Value = v
+    c.value = v
     LSet l = c
     If l.HiValue = 0 Then
         If pad Then
@@ -149,7 +150,8 @@ Function LoadFile(fpath As String) As Boolean
         Set Imports = New CLoadImports
         Set Exports = New CLoadExports
         Set Sections = New Collection
-
+        'Set Relocations = New CLoadRelocs
+        
         f = FreeFile
         
         Open fpath For Binary Access Read As f
@@ -164,6 +166,7 @@ Function LoadFile(fpath As String) As Boolean
         LoadSections f, NTHEADER
         Imports.LoadImports f, OptionalHeader.ddVirtualAddress(Import_Table), Me
         Exports.LoadExports f, OptionalHeader.ddVirtualAddress(Export_Table), Me
+        'Relocations.LoadRelocs f, OptionalHeader.ddVirtualAddress(Relocation_Table), Me
         
         Close f
         LoadFile = True

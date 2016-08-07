@@ -31,18 +31,18 @@ Function Report() As String
     If ID = 0 Then
         push tmp, "Named Entry offset: " & Hex(NameOffset) & " " & Name
     Else
-        push tmp, "ID Entry: " & ID & "  ( " & ResourceIDtoType() & " )"
+        push tmp, "ID Entry: " & ID
     End If
     
     If SubDirOffset <> 0 Then
         push tmp, "Directory Offset: " & Hex(SubDirOffset)
     Else
         push tmp, "DataEntry offset: " & Hex(DataEntryOffset)
-        push tmp, "Data_RVA:" & Hex(Data_RVA)
-        push tmp, "Size:" & Hex(size)
+        push tmp, "Data_RVA: " & Hex(Data_RVA)
+        push tmp, "Size: " & Hex(size)
     End If
         
-    push tmp, "Path:" & path
+    push tmp, "Path: " & path
     push tmp, ""
     Report = Join(tmp, vbCrLf)
     
@@ -58,17 +58,15 @@ Friend Sub setSubDirOffset(DataEntry_orSubDir_Offset As Long)
         
 End Sub
 
-Property Get NameOrType() As String
+Property Get NameOrID() As String
     If Len(Name) > 0 Then
-        NameOrType = Name
-    ElseIf Data_RVA <> 0 Then
-        NameOrType = ID
+        NameOrID = Name
     Else
-        NameOrType = ResourceIDtoType()
+        NameOrID = ID
     End If
 End Property
 
-Property Get ResourceIDtoType() As String
+Property Get DirectoryToName() As String
     Dim v As String
     
     If ID = 0 Then Exit Property
@@ -94,7 +92,7 @@ Property Get ResourceIDtoType() As String
     If ID = 23 Then v = "HTML"
     If Len(v) = 0 Then v = ID
     
-    ResourceIDtoType = v
+    DirectoryToName = v
 
 End Property
 
@@ -103,7 +101,7 @@ Friend Sub LoadSelf(fHandle As Long, base As Long)
     On Error Resume Next
     
     If NameOffset <> 0 Then
-        'todo load name
+        Name = "offset: " & Hex(NameOffset) 'todo load name
     End If
     
     If DataEntryOffset = 0 Then Exit Sub
@@ -115,6 +113,16 @@ Friend Sub LoadSelf(fHandle As Long, base As Long)
     Data_RVA = rde.Data_RVA   'we will let the user load the data on demand to save memory..they only want what they want..
     size = rde.size
     Reserved = rde.Reserved
+    
+    path = path & "\" & NameOrID()
+    
+'    'our path is actually wrong at this point because only now is the data loaded..so fix it..
+'    Dim a As Long
+'    a = InStrRev(path, "\")
+'    If a > 0 Then
+'        path = Mid(path, 1, a)
+'        path = path & NameOrType()
+'    End If
             
 End Sub
 

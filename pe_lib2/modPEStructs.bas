@@ -206,14 +206,14 @@ End Function
 
 
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 Function GetHextxt(t As TextBox, v As Long) As Boolean
@@ -306,51 +306,65 @@ Sub FilloutListView(lv As Object, Sections As Collection)
     
 End Sub
 
+Function HexDump2(b() As Byte, Optional hexOnly = 0) As String
+    Dim tmp As String
+    tmp = StrConv(b, vbUnicode)
+    HexDump2 = HexDump(tmp, hexOnly)
+End Function
 
-
-Function hexdump(it)
-    Dim my, i, c, s, a, b
-    Dim lines() As String
+Function HexDump(ByVal str, Optional hexOnly = 0) As String
+    Dim s() As String, chars As String, tmp As String
+    On Error Resume Next
+    Dim ary() As Byte
+    Dim offset As Long
+    Const LANG_US = &H409
+    Dim i As Long, tt, h, x
     
-    my = ""
-    For i = 1 To Len(it)
-        a = Asc(Mid(it, i, 1))
-        c = Hex(a)
-        c = IIf(Len(c) = 1, "0" & c, c)
-        b = b & IIf(a > 65 And a < 120, Chr(a), ".")
-        my = my & c & " "
-        If i Mod 16 = 0 Then
-            push lines(), my & "  [" & b & "]"
-            my = Empty
-            b = Empty
+    offset = 0
+    str = " " & str
+    ary = StrConv(str, vbFromUnicode, LANG_US)
+    
+    chars = "   "
+    For i = 1 To UBound(ary)
+        tt = Hex(ary(i))
+        If Len(tt) = 1 Then tt = "0" & tt
+        tmp = tmp & tt & " "
+        x = ary(i)
+        'chars = chars & IIf((x > 32 And x < 127) Or x > 191, Chr(x), ".") 'x > 191 causes \x0 problems on non us systems... asc(chr(x)) = 0
+        chars = chars & IIf((x > 32 And x < 127), Chr(x), ".")
+        If i > 1 And i Mod 16 = 0 Then
+            h = Hex(offset)
+            While Len(h) < 6: h = "0" & h: Wend
+            If hexOnly = 0 Then
+                push s, h & "   " & tmp & chars
+            Else
+                push s, tmp
+            End If
+            offset = offset + 16
+            tmp = Empty
+            chars = "   "
         End If
     Next
-    
-    If Len(b) > 0 Then
-        If Len(my) < 48 Then
-            my = my & String(48 - Len(my), " ")
+    'if read length was not mod 16=0 then
+    'we have part of line to account for
+    If tmp <> Empty Then
+        If hexOnly = 0 Then
+            h = Hex(offset)
+            While Len(h) < 6: h = "0" & h: Wend
+            h = h & "   " & tmp
+            While Len(h) <= 56: h = h & " ": Wend
+            push s, h & chars
+        Else
+            push s, tmp
         End If
-        If Len(b) < 16 Then
-             b = b & String(16 - Len(b), " ")
-        End If
-        push lines(), my & "  [" & b & "]"
-    End If
-        
-    If Len(it) < 16 Then
-        hexdump = my & "  [" & b & "]" & vbCrLf
-    Else
-        hexdump = Join(lines, vbCrLf)
     End If
     
+    HexDump = Join(s, vbCrLf)
+    
+    If hexOnly <> 0 Then
+        HexDump = Replace(HexDump, " ", "")
+        HexDump = Replace(HexDump, vbCrLf, "")
+    End If
     
 End Function
 
-'Sub push(ary, value) 'this modifies parent ary object
-'    On Error GoTo init
-'    Dim x As Long
-'    x = UBound(ary) '<-throws Error If Not initalized
-'    ReDim Preserve ary(UBound(ary) + 1)
-'    ary(UBound(ary)) = value
-'    Exit Sub
-'init:     ReDim ary(0): ary(0) = value
-'End Sub

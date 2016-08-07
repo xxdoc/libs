@@ -13,6 +13,8 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 'do not hang onto a ref of this class and reload the pe editor with something else
 
+'example paths: \ICON\30001\0
+'               \VERSION\1\1033
 
 Private parent As CPEEditor
 
@@ -86,6 +88,7 @@ Private Sub LoadSubDir(hfile As Long, resDir As RESDIRECTORY, Optional path As S
     Dim childDir As RESDIRECTORY
     Dim resDirEntry As RESOURCE_DIRECTORY_ENTRY
     Dim childOffset As Long
+    Dim childPath As String
     
     'all of these structures are sequential in the file..
     'so load them one after another, no need to track file pointer..
@@ -148,7 +151,14 @@ Private Sub LoadSubDir(hfile As Long, resDir As RESDIRECTORY, Optional path As S
         childOffset = fileOffset + cre.SubDirOffset
         'DumpFile hfile, childOffset
         Get hfile, childOffset, childDir
-        LoadSubDir hfile, childDir, path & "\" & cre.NameOrType
+        
+        If Len(path) = 0 Then
+            childPath = "\" & cre.DirectoryToName()
+        Else
+            childPath = path & "\" & cre.NameOrID
+        End If
+        
+        LoadSubDir hfile, childDir, childPath
     Next
     
     
@@ -173,7 +183,54 @@ Private Sub DumpFile(hfile As Long, offset As Long, Optional size As Long = 16)
     Get hfile, offset, b()
     Seek hfile, curPos
     
-    Debug.Print Right("00000000" & Hex(offset), 8) & hexdump(StrConv(b, vbUnicode))
+    Debug.Print Right("00000000" & Hex(offset), 8) & HexDump(StrConv(b, vbUnicode))
     
 End Sub
 
+Public Function GetResource(path As String, ByRef outRetVal As CResourceEntry) As Boolean
+    Set outRetVal = Nothing
+    For Each outRetVal In Entries
+        If LCase(outRetVal.path) = LCase(path) Then
+            GetResource = True
+            Exit Function
+        End If
+    Next
+    Set outRetVal = Nothing
+End Function
+
+Public Function GetResourceData(path As String, ByRef bArray) As Boolean
+    Dim cre As CResourceEntry
+    Dim f As Long
+    Dim b() As Byte
+    Dim fOffset As Long
+    
+    Erase bArray
+    If Not FileExists(parent.LoadedFile) Then Exit Function
+    If Not GetResource(path, cre) Then Exit Function
+    
+    fOffset = parent.RvaToOffset(cre.Data_RVA)
+    If cre.size = 0 Or cre.Data_RVA = 0 Or fOffset = 0 Then Exit Function
+    
+    ReDim b(cre.size - 1)
+    f = FreeFile
+    Open parent.LoadedFile For Binary As f
+    Get f, fOffset + 1, b
+    Close f
+    
+    bArray = b()
+    GetResourceData = True
+    
+End Function
+
+Public Function SaveResource(filePath As String, resPath As String) As Boolean
+    Dim b() As Byte, f As Long
+    If FileExists(filePath) Then Kill filePath
+    If Not GetResourceData(resPath, b) Then Exit Function
+    
+    f = FreeFile
+    Open filePath For Binary As f
+    Put f, , b()
+    Close f
+    
+    If FileLen(filePath) = UBound(b) + 1 Then SaveResource = True
+End Function
