@@ -16,7 +16,7 @@ Attribute VB_Exposed = True
 Public RType As Long
 Public rva As Long
 Public CurValue As Long
-Public Length As Long
+Public length As Long
 Public CurBase As Long
 Public index As Long
 Public ErrLog As String
@@ -30,7 +30,7 @@ Public Function Recalc(newBase As Long) As Double
     
     Select Case RType
         Case 3: 'HIGHLOW
-            Recalc = (CurValue - CurBase) - newBase     'RelocCalc(CurValue, CurBase, newBase)
+            Recalc = RelocCalc(CurValue, CurBase, newBase) '(CurValue - CurBase) - newBase
         Case Default:
             ErrLog = ErrLog & "Unsupported reloc type: " & RType & " offset: " & rva & vbCrLf
     End Select

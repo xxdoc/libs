@@ -213,7 +213,7 @@ Attribute VB_Exposed = False
 'http://sandsprite.com
  
 
-Public pe As New sppe2.CPEEditor
+Public pe As New CPEEditor
 Dim isLoaded As Boolean
 
 

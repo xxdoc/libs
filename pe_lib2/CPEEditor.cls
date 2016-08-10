@@ -27,7 +27,10 @@ Public OptionalHeader As New COptionalHeader
 Public Imports As New CLoadImports
 Public Exports As New CLoadExports
 Public Sections As New Collection
-'Public Relocations As CLoadRelocs
+
+'loaded on demand
+Private relocs As CRelocations
+Private res As CResources
 
 Public CanAddSection As Boolean
 Public errMessage As String
@@ -42,7 +45,6 @@ Public dotNetVersion As String
 
 Private DOSHEADER As IMAGEDOSHEADER
 Private NTHEADER As IMAGE_NT_HEADERS
-Private res As CResources
 
 Public LoadedFile As String
 
@@ -118,6 +120,26 @@ Property Get Resources() As CResources
     
 End Property
 
+'we load it on demand..
+Property Get Relocations() As CRelocations
+
+    If Not isLoaded Then
+        Set Relocations = New CRelocations
+        Exit Property
+    End If
+    
+    'If Not relocs Is Nothing Then
+    '    Set Relocations = relocs
+    '    Exit Property
+    'End If
+    
+    Set relocs = New CRelocations
+    
+    If isLoaded Then relocs.LoadRelocs OptionalHeader.ddVirtualAddress(Relocation_Table), Me
+    Set Relocations = relocs
+    
+End Property
+
 Sub ShowOffsetCalculator(Optional modal As Boolean = False)
     frmOffsets.Initilize Me, modal
 End Sub
@@ -142,7 +164,7 @@ Function LoadFile(fpath As String) As Boolean
         Dim udtSH As IMAGE_SECTION_HEADER
         Dim cli As Long
 
-        Set res = Nothing
+        
         errMessage = Empty
         If Not FileExists(fpath) Then Err.Raise 1
             
@@ -150,7 +172,8 @@ Function LoadFile(fpath As String) As Boolean
         Set Imports = New CLoadImports
         Set Exports = New CLoadExports
         Set Sections = New Collection
-        'Set Relocations = New CLoadRelocs
+        Set res = Nothing
+        Set relocs = Nothing
         
         f = FreeFile
         
@@ -166,7 +189,6 @@ Function LoadFile(fpath As String) As Boolean
         LoadSections f, NTHEADER
         Imports.LoadImports f, OptionalHeader.ddVirtualAddress(Import_Table), Me
         Exports.LoadExports f, OptionalHeader.ddVirtualAddress(Export_Table), Me
-        'Relocations.LoadRelocs f, OptionalHeader.ddVirtualAddress(Relocation_Table), Me
         
         Close f
         LoadFile = True
