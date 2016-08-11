@@ -196,7 +196,6 @@ Attribute VB_Exposed = False
 Dim md5 As New MD5Hash
 Dim vt As New CVirusTotal
 Dim scan As CScan
-Public abort As Boolean
 
 Public Function StartFromFile(fpath As String)
 
@@ -258,6 +257,14 @@ Private Sub cmdLookup_Click()
             MsgBox "Must enter either file or md5 hash to lookup!", vbInformation
         End If
     End If
+    
+    'if we dont set it to a listbox for live logging, then it will default to being a collection
+    If TypeName(vt.debugLog) = "Collection" Then
+        List1.Clear
+        For Each X In vt.debugLog
+            List1.AddItem X
+        Next
+    End If
         
 End Sub
 
@@ -300,7 +307,7 @@ Private Sub cmdSubmit_Click()
 Private Sub Form_Load()
     Me.Show
     mnuPopup.Visible = False
-    Set vt.owner = Me 'this is used for the abort button on this form
+    Set vt.debugLog = List1
     vt.TimerObj = Timer1
 End Sub
 
@@ -313,7 +320,7 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     On Error Resume Next
-    abort = True
+    vt.abort = True
     DoEvents
     Timer1.Enabled = False
     End
