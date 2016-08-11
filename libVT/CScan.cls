@@ -95,6 +95,28 @@ Public Function GetReport() As String
     
 End Function
 
+Public Function BriefReport() As String
+    Dim tmp As String
+    
+    If response_code <> 1 Then
+        tmp = verbose_msg
+    Else
+        tmp = "Scan Date:   " & Me.scan_date & vbCrLf
+        If Len(first_seen) > 0 Then tmp = tmp & "First Seen:  " & first_seen & vbCrLf
+        tmp = tmp & "Detections:  " & Me.positives & "/" & Me.total
+    End If
+    
+    BriefReport = tmp
+    
+End Function
+
+Public Sub VisitPage()
+    On Error Resume Next
+    If Len(permalink) > 0 And LCase(VBA.Left(permalink, 4)) = "http" Then
+        Shell "cmd /c start " & permalink, vbNormalFocus
+    End If
+End Sub
+
 Private Function FileNameFromPath(fullpath) As String
     If InStr(fullpath, "\") > 0 Then
         tmp = Split(fullpath, "\")
@@ -104,7 +126,7 @@ Private Function FileNameFromPath(fullpath) As String
     End If
 End Function
 
-Public Function setbyname(name As Variant, value As Variant)
+Private Function setbyname(name As Variant, value As Variant)
     
     If InStr(name, "{") > 0 Then name = Replace(name, "{", Empty)
     If InStr(name, "}") > 0 Then name = Replace(name, "}", Empty)
@@ -131,7 +153,7 @@ Public Function setbyname(name As Variant, value As Variant)
     
 End Function
 
-Public Sub ParseResponse(json As String)
+Friend Sub ParseResponse(json As String)
 
     On Error Resume Next
     Dim a As Long, b As Long
@@ -160,7 +182,7 @@ Public Sub ParseResponse(json As String)
         If b < 2 Then GoTo nextone
         name = Mid(entry, 1, b - 1)
         value = Mid(entry, b + 1)
-        CallByName Me, "setbyname", VbMethod, name, value
+        setbyname name, value
 nextone:
     Next
     

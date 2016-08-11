@@ -17,7 +17,7 @@ Public version
 Public result
 Public update
 
-Public Function PaddedScanner(Optional bufSz As Long = 20) As String
+Friend Function PaddedScanner(Optional bufSz As Long = 20) As String
     Dim tmp As String
     tmp = scanner
     While Len(tmp) < bufSz
@@ -26,7 +26,7 @@ Public Function PaddedScanner(Optional bufSz As Long = 20) As String
     PaddedScanner = tmp
 End Function
 
-Public Function setbyname(name As Variant, value As Variant)
+Private Function setbyname(name As Variant, value As Variant)
     
     name = Trim(Replace(name, """", Empty))
     value = Trim(Replace(value, """", Empty))
@@ -53,7 +53,7 @@ Public Function setbyname(name As Variant, value As Variant)
 End Function
 
 
-Public Sub ParseResponse(scanner_name, json)
+Friend Sub ParseResponse(scanner_name, json)
 
     scanner = scanner_name
     
@@ -72,7 +72,7 @@ Public Sub ParseResponse(scanner_name, json)
         name = Mid(entry, 1, b - 1)
         value = Mid(entry, b + 1)
         If name = "result" And detected = True Then Stop
-        CallByName Me, "setbyname", VbMethod, name, value
+         setbyname name, value
         'If detected = True Then Stop
 nextone:
     Next

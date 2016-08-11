@@ -5,7 +5,6 @@ Class=CVirusTotal; CVirusTotal.cls
 Class=CResult; CResult.cls
 Class=CScan; CScan.cls
 Class=MD5Hash; MD5Hash.cls
-Class=CFile; CFile.cls
 Startup="(None)"
 HelpFile=""
 Title="Project1"
@@ -45,3 +44,4 @@ AutoRefresh=1
 
 [fastBuild]
 fullPath=%ap%\libVT.dll
+PostBuild=.update_projects.bat

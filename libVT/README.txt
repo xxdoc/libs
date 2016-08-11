@@ -4,4 +4,6 @@ and compiled as an ActiveX dll
 
 depends on msxml3.dll
 
-must set TimerObj, setting owner variable is optional
+must set TimerObj
+
+used in MAP.ShellExt
