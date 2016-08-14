@@ -654,10 +654,10 @@ Function GetProcessUser(pid As Long) As String
     
 End Function
 
-Function DumpProcess(pid As Long, fpath As String) As Boolean
+Function DumpProcess(pid As Long, fPath As String) As Boolean
     
     If x64.IsProcess_x64(pid) = r_64bit Then
-        DumpProcess = x64.DumpProcess(pid, fpath)
+        DumpProcess = x64.DumpProcess(pid, fPath)
         Exit Function
     End If
     
@@ -667,20 +667,20 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.Size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.Size, fPath)
     
 End Function
 
-Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
+Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal fPath As String) As Boolean
     
     Dim s As Long, l As Long
     
     If x64.IsProcess_x64(pid) = r_64bit Then
-        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fpath)
+        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fPath)
     Else
         s = CLng("&h" & Trim(hex_start))
         l = CLng("&h" & Trim(hex_size))
-        DumpMemory = DumpProcessMemory(pid, s, l, fpath)
+        DumpMemory = DumpProcessMemory(pid, s, l, fPath)
     End If
     
 End Function
@@ -716,7 +716,7 @@ End Function
 'End Function
 
 '7.26.16: now large allocs are dumped in chunks...
-Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String) As Boolean
+Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fPath As String) As Boolean
 
     Dim pHandle As Long
     Dim b() As Byte
@@ -725,7 +725,7 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
     
     Dim maxSz As Long, cnt As Long, m As Long, bufsz As Long, curBase As Long, readLen As Long
     
-    bufsz = Length + 1
+    bufsz = Length
     curBase = start
     
     maxSz = 1000000 '10mb
@@ -738,16 +738,18 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
         bufsz = maxSz
     End If
     
-    f = FreeFile
-    ReDim b(1 To bufsz)
+    ReDim b(bufsz - 1)
     pHandle = OpenProcess(PROCESS_VM_READ, False, pid)
     If pHandle = 0 Then Exit Function
 
-    If Dir(fpath) <> "" Then Kill fpath
-    Open fpath For Binary As f
+    If FileExists(fPath) Then Kill fPath
     
+    f = FreeFile
+    Open fPath For Binary As f
+    
+    'ERROR_PARTIAL_COPY 299 (0x12B)
     For i = 1 To cnt
-        If ReadProcessMemory(pHandle, curBase, b(1), bufsz, readLen) = 0 Then
+        If ReadProcessMemory(pHandle, curBase, b(0), bufsz, readLen) = 0 Then
             GoTo cleanup
         End If
         
@@ -761,9 +763,9 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
     
     If m <> 0 Then
         
-        ReDim b(1 To m)
+        ReDim b(m - 1)
         
-        If ReadProcessMemory(pHandle, curBase, b(1), m, readLen) = 0 Then
+        If ReadProcessMemory(pHandle, curBase, b(0), m, readLen) = 0 Then
             GoTo cleanup
         End If
         
@@ -787,7 +789,6 @@ hell:
     DumpProcessMemory = False
 
 End Function
-
 
 
 Function ReadMemory(pid As Long, start As Long, Length As Long) As String

@@ -46,7 +46,7 @@ Option Explicit
 '
 ' x64 unsafe: ReadMemory
 
-Private Declare Function GetTickCount Lib "kernel32" () As Long
+Private Declare Function GetTickCount Lib "Kernel32" () As Long
 
 Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
     ByVal dwInfoType As Long, _
@@ -58,7 +58,7 @@ Private Type SYSTEM_MODULE_INFORMATION
     Reserved(1) As Long                'ULONG reserved[2];
     base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
-    flags As Long                      'ULONG Flags;
+    Flags As Long                      'ULONG Flags;
     index As Integer                   'USHORT Index;
     unkn As Integer                    'USHORT Unknown;
     lcount As Integer                  'USHORT LoadCount;
@@ -182,44 +182,44 @@ Private Const SPARE_LEN = 512
 'Private Const MEM_PHYSICAL = &H400000
 'Private Const PROCESS_TERMINATE = 1
 
-Private Declare Function ProcessFirst Lib "kernel32" Alias "Process32First" (ByVal hSnapshot As Long, uProcess As PROCESSENTRY32) As Long
-Private Declare Function ProcessNext Lib "kernel32" Alias "Process32Next" (ByVal hSnapshot As Long, uProcess As PROCESSENTRY32) As Long
-Private Declare Function CreateToolhelpSnapshot Lib "kernel32" Alias "CreateToolhelp32Snapshot" (ByVal lFlags As Long, lProcessID As Long) As Long
-Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
-Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
-Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
-Private Declare Function WriteProcessMemory Lib "kernel32" (ByVal hProcess As Long, ByVal lpBaseAddress As Any, ByVal lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
-Private Declare Function ReadProcessMemory Lib "kernel32" (ByVal hProcess As Long, ByVal lpBaseAddress As Any, lpBuffer As Byte, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
-Private Declare Function WriteProcessBytes Lib "kernel32" Alias "WriteProcessMemory" (ByVal hProcess As Long, lpBaseAddress As Long, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+Private Declare Function ProcessFirst Lib "Kernel32" Alias "Process32First" (ByVal hSnapshot As Long, uProcess As PROCESSENTRY32) As Long
+Private Declare Function ProcessNext Lib "Kernel32" Alias "Process32Next" (ByVal hSnapshot As Long, uProcess As PROCESSENTRY32) As Long
+Private Declare Function CreateToolhelpSnapshot Lib "Kernel32" Alias "CreateToolhelp32Snapshot" (ByVal lFlags As Long, lProcessID As Long) As Long
+Private Declare Function GetModuleFileName Lib "Kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
+Private Declare Function CloseHandle Lib "Kernel32" (ByVal hObject As Long) As Long
+Private Declare Sub CopyMemory Lib "Kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
+Private Declare Function OpenProcess Lib "Kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
+Private Declare Function WriteProcessMemory Lib "Kernel32" (ByVal hProcess As Long, ByVal lpBaseAddress As Any, ByVal lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+Private Declare Function ReadProcessMemory Lib "Kernel32" (ByVal hProcess As Long, ByVal lpBaseAddress As Any, lpBuffer As Byte, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+Private Declare Function WriteProcessBytes Lib "Kernel32" Alias "WriteProcessMemory" (ByVal hProcess As Long, lpBaseAddress As Long, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
 
 Private Declare Function EnumProcessModules Lib "PSAPI.DLL" (ByVal hProcess As Long, ByRef lphModule As Long, ByVal cb As Long, ByRef cbNeeded As Long) As Long
 Private Declare Function GetModuleInformation Lib "PSAPI.DLL" (ByVal hProcess As Long, ByVal hModule As Long, ByRef lpmodinfo As LPMODULEINFO, ByVal cb As Long) As Long
 Private Declare Function GetModuleFileNameExA Lib "PSAPI.DLL" (ByVal hProcess As Long, ByVal hModule As Long, ByVal ModuleName As String, ByVal nSize As Long) As Long
-Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-Private Declare Function ResumeThread Lib "kernel32" (ByVal hThread As Long) As Long
+Private Declare Sub Sleep Lib "Kernel32" (ByVal dwMilliseconds As Long)
+Private Declare Function ResumeThread Lib "Kernel32" (ByVal hThread As Long) As Long
 
 Private Declare Function OpenProcessToken Lib "advapi32.dll" (ByVal ProcessHandle As Long, ByVal DesiredAccess As Long, TokenHandle As Long) As Long
 Private Declare Function GetTokenInformation Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal TokenInformationClass As Integer, TokenInformation As Any, ByVal TokenInformationLength As Long, ReturnLength As Long) As Long
 Private Declare Function LookupAccountSid Lib "advapi32.dll" Alias "LookupAccountSidA" (ByVal lpSystemName As String, ByVal sID As Long, ByVal name As String, cbName As Long, ByVal ReferencedDomainName As String, cbReferencedDomainName As Long, peUse As Integer) As Long
 'Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
-Private Declare Function VirtualQueryEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
+Private Declare Function VirtualQueryEx Lib "Kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, lpBuffer As MEMORY_BASIC_INFORMATION, ByVal dwLength As Long) As Long
 
-Private Declare Function CreateRemoteThread Lib "kernel32" (ByVal ProcessHandle As Long, lpThreadAttributes As Long, ByVal dwStackSize As Long, ByVal lpStartAddress As Any, ByVal lpParameter As Any, ByVal dwCreationFlags As Long, lpThreadID As Long) As Long
-Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
-Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
-Private Declare Function VirtualAllocEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, ByVal dwSize As Long, ByVal fAllocType As Long, FlProtect As Long) As Long
-Private Declare Function CreateProcess Lib "kernel32" Alias "CreateProcessA" (ByVal lpApplicationName As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDriectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
+Private Declare Function CreateRemoteThread Lib "Kernel32" (ByVal ProcessHandle As Long, lpThreadAttributes As Long, ByVal dwStackSize As Long, ByVal lpStartAddress As Any, ByVal lpParameter As Any, ByVal dwCreationFlags As Long, lpThreadID As Long) As Long
+Private Declare Function GetModuleHandle Lib "Kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
+Private Declare Function GetProcAddress Lib "Kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function VirtualAllocEx Lib "Kernel32" (ByVal hProcess As Long, lpAddress As Any, ByVal dwSize As Long, ByVal fAllocType As Long, FlProtect As Long) As Long
+Private Declare Function CreateProcess Lib "Kernel32" Alias "CreateProcessA" (ByVal lpApplicationName As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDriectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
 
-Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
+Private Declare Function TerminateProcess Lib "Kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
 Private Declare Function GetCurrentProcess Lib "kernel32.dll" () As Long
 Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" Alias "LookupPrivilegeValueA" (ByVal lpSystemName As String, ByVal lpName As String, lpLuid As LUID) As Long
 Private Declare Function GetLastError Lib "kernel32.dll" () As Long
 Private Declare Function AdjustTokenPrivileges Lib "advapi32.dll" (ByVal TokenHandle As Long, ByVal DisableAllPrivileges As Long, ByRef NewState As TOKEN_PRIVILEGES, ByVal BufferLength As Long, ByRef PreviousState As TOKEN_PRIVILEGES, ByRef ReturnLength As Long) As Long
-Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Function WaitForSingleObject Lib "Kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
 
 'Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
-Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function LoadLibrary Lib "Kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
 Private Declare Function GetProcessImageFileNameA Lib "PSAPI.DLL" _
         (ByVal hProcess As Long, _
@@ -261,7 +261,7 @@ Private Declare Function QueryDosDeviceW Lib "kernel32.dll" ( _
     ) As Long
 Private Const MAX_PATH = 260
 
-Private Declare Function GetLogicalDriveStringsA Lib "kernel32" ( _
+Private Declare Function GetLogicalDriveStringsA Lib "Kernel32" ( _
     ByVal nBufferLength As Long, lpBuffer As Any) As Long
 
 
@@ -284,7 +284,7 @@ Private Declare Sub WTSFreeMemory Lib "wtsapi32.dll" _
 
 Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
 Private Declare Function EnumTasksDll Lib "EnumMutex.dll" Alias "EnumTasks" (ByVal dirPath As String) As Long
-Private Declare Function GetVersion Lib "kernel32" () As Long
+Private Declare Function GetVersion Lib "Kernel32" () As Long
 
 'Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
 '   (Destination As Any, Source As Any, ByVal length As Long)
@@ -657,10 +657,10 @@ Function GetProcessUser(pid As Long) As String
     
 End Function
 
-Function DumpProcess(pid As Long, fpath As String) As Boolean
+Function DumpProcess(pid As Long, fPath As String) As Boolean
     
     If x64.IsProcess_x64(pid) = r_64bit Then
-        DumpProcess = x64.DumpProcess(pid, fpath)
+        DumpProcess = x64.DumpProcess(pid, fPath)
         Exit Function
     End If
     
@@ -670,27 +670,27 @@ Function DumpProcess(pid As Long, fpath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fpath)
+    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fPath)
     
 End Function
 
-Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
+Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fPath As String) As Boolean
     
     Dim s As Long, l As Long
     
     If x64.IsProcess_x64(pid) = r_64bit Then
         hex_start = Replace(hex_start, "`", Empty)
-        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fpath)
+        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fPath)
     Else
         s = CLng("&h" & Trim(hex_start))
         l = CLng("&h" & Trim(hex_size))
-        DumpMemory = DumpProcessMemory(pid, s, l, fpath)
+        DumpMemory = DumpProcessMemory(pid, s, l, fPath)
     End If
     
 End Function
 
 '7.26.16: now large allocs are dumped in chunks...
-Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String) As Boolean
+Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fPath As String) As Boolean
 
     Dim pHandle As Long
     Dim b() As Byte
@@ -699,7 +699,7 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
     
     Dim maxSz As Long, cnt As Long, m As Long, bufsz As Long, curBase As Long, readLen As Long
     
-    bufsz = Length + 1
+    bufsz = Length
     curBase = start
     
     maxSz = 1000000 '10mb
@@ -712,16 +712,18 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
         bufsz = maxSz
     End If
     
-    f = FreeFile
-    ReDim b(1 To bufsz)
+    ReDim b(bufsz - 1)
     pHandle = OpenProcess(PROCESS_VM_READ, False, pid)
     If pHandle = 0 Then Exit Function
 
-    If Dir(fpath) <> "" Then Kill fpath
-    Open fpath For Binary As f
+    If FileExists(fPath) Then Kill fPath
     
+    f = FreeFile
+    Open fPath For Binary As f
+    
+    'ERROR_PARTIAL_COPY 299 (0x12B)
     For i = 1 To cnt
-        If ReadProcessMemory(pHandle, curBase, b(1), bufsz, readLen) = 0 Then
+        If ReadProcessMemory(pHandle, curBase, b(0), bufsz, readLen) = 0 Then
             GoTo cleanup
         End If
         
@@ -735,9 +737,9 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As 
     
     If m <> 0 Then
         
-        ReDim b(1 To m)
+        ReDim b(m - 1)
         
-        If ReadProcessMemory(pHandle, curBase, b(1), m, readLen) = 0 Then
+        If ReadProcessMemory(pHandle, curBase, b(0), m, readLen) = 0 Then
             GoTo cleanup
         End If
         
