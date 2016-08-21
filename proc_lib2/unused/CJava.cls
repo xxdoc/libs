@@ -11,8 +11,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
-'requires vbdevkit for registry checks in Class_Initialize
-'switched over to use a modified version of CCmdOutput 8.21.16 - not tested yet !
+'requires vbdevkit
 
 Public isInstalled As Boolean
 Public homeDir As String
@@ -48,10 +47,10 @@ Function CompileSource(jfile, Optional classPath = "", Optional ByRef exitCode A
     'c = c & "javac.exe """ & jfile & """"
     c = c & " "" & jfile & """""
     
-    cmd.hideWindow = True
-    failed = cmd.GetCommandOutput(exe, c)
-    exitCode = cmd.exitCode
-    CompileSource = IIf(failed, "Failed to compile", cmd.result)
+    If Not cmd.GetCommandOutput(exe, c, CompileSource, exitCode) Then
+        CompileSource = "Failed to compile"
+        Exit Function
+    End If
     
 End Function
 
@@ -67,27 +66,23 @@ Function RunClassFile(classFile, Optional args = "", Optional ByRef sOutput As S
         Exit Function
     End If
     
-    Dim c As String, exe As String, failed As Boolean
+    Dim c As String, exe As String
     
-    cmd.hideWindow = hideWindow
     exe = homeDir & "java.exe"
     c = c & " -cp """ & GetParentFolder(classFile) & """ """ & GetBaseName(CStr(classFile)) & """"
     If Len(args) > 0 Then c = c & " " & args
     
     If wait Then
-        If Not cmd.GetCommandOutput(exe, c) Then
+        If Not cmd.GetCommandOutput(exe, c, sOutput, exitCode, hideWindow) Then
             sOutput = "Failed to launch java"
             Exit Function
         End If
-        sOutput = cmd.result
-        exitCode = cmd.exitCode
         RunClassFile = True
     Else
-        If Not cmd.LaunchProcess(exe, c, False) Then
+        If Not cmd.LaunchProcess(exe, c, False, hideWindow, exitCode) Then
             sOutput = "Failed to launch java"
             Exit Function
         End If
-        exitCode = 0
         RunClassFile = True
         Exit Function
     End If
@@ -139,15 +134,11 @@ Private Sub Class_Initialize()
     If Not FileExists(homeDir & "\java.exe") Then Exit Sub
     
     isInstalled = True
-    cmd.hideWindow = True
-    
-    If cmd.GetCommandOutput(, "java -version") Then
-        fullVersion = cmd.result
+    If cmd.GetCommandOutput(, "java -version", fullVersion, , True, True) Then
         inPath = True
     Else
         exe = home & "java.exe"
-        If Not cmd.GetCommandOutput(exe, " -version") Then Exit Sub
-        fullVersion = cmd.result
+        If Not cmd.GetCommandOutput(exe, " -version", fullVersion, , , True) Then Exit Sub
     End If
     
     a = InStr(fullVersion, """")
@@ -171,18 +162,14 @@ Function GetJarOutput(jar As String, args As String, Optional ByRef sOutput As S
         Exit Function
     End If
         
-    cmd.hideWindow = True
     exe = homeDir & "java.exe"
     c = " -jar """ & jar & """"
     If Len(args) > 0 Then c = c & " """ & args & """"
     
-    If Not cmd.GetCommandOutput(exe, c) Then
-        exitCode = cmd.exitCode
-        sOutput = "Failed to launch Jar" & vbCrLf & cmd.result
+    If Not cmd.GetCommandOutput(exe, c, sOutput, exitCode) Then
+        sOutput = "Failed to launch Jar" & vbCrLf & sOutput
     Else
         GetJarOutput = True
-        exitCode = cmd.exitCode
-        sOutput = cmd.result
         sOutput = Replace(sOutput, vbCrLf, Chr(5))
         sOutput = Replace(sOutput, vbLf, vbCrLf)
         sOutput = Replace(sOutput, Chr(5), vbCrLf)

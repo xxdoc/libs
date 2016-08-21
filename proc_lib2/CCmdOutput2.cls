@@ -6,7 +6,7 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "CCmdOutput2"
+Attribute VB_Name = "CCmdOutput"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
@@ -17,7 +17,7 @@ Option Explicit
 'either manually call flush or setvbuf(stdout, NULL, _IONBF, 0) once at beginning of app..
 Event OutPutAvailable(Data As String)
 
-Public sOutput As String
+Public result As String
 Public exitCode As Long
 Public hideWindow As Boolean
 Public blnStdOut As Boolean
@@ -161,15 +161,6 @@ Sub CfgOpts(Optional hideWin As Boolean = True, Optional maxExecTimeSecs As Long
     maxExecSecs = maxExecTimeSecs
 End Sub
 
-' Function GetCommandOutput
-'
-' sCommandLine:  [in] Command line to launch
-' blnStdOut        [in,opt] True (defualt) to capture output to STDOUT
-' blnStdErr        [in,opt] True to capture output to STDERR. False is default.
-' blnOEMConvert:   [in,opt] True (default) to convert DOS characters to Windows, False to skip conversion
-'
-' Returns:       String with STDOUT and/or STDERR output
-'
 
 'you can specify executable or command line or both.
 'if the executable path has any spaces in it you must specify exe path
@@ -198,7 +189,7 @@ Public Function GetCommandOutput( _
     
     Const BUFSIZE = 1024      ' pipe buffer size
     exitCode = 0
-    sOutput = Empty
+    result = Empty
     startTime = Now
     
     'see comment above..
@@ -297,7 +288,7 @@ Public Function GetCommandOutput( _
                 sNewOutput = Left$(StrConv(baOutput(), vbUnicode), lBytesRead)
             End If
 
-            sOutput = sOutput & sNewOutput
+            result = result & sNewOutput
 
             ' If you are executing an application that outputs data during a long time,
             ' and don't want to lock up your application, it might be a better idea to
@@ -328,7 +319,7 @@ Public Function GetCommandOutput( _
         Call CloseHandle(pi.hProcess)
         success = True
     Else
-        sOutput = "Failed to create process, check the path of the command line."
+        result = "Failed to create process, check the path of the command line."
     End If
 
     ' clean up
@@ -363,7 +354,7 @@ Public Function LaunchProcess( _
     Const BUFSIZE = 1024      ' pipe buffer size
     
     exitCode = 0
-    sOutput = Empty
+    result = Empty
     startTime = Now
     
     'see comment above..

@@ -11,6 +11,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
+'switched over to use a modified version of CCmdOutput 8.21.16 - not tested yet !
+
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
 Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long '()
 
@@ -75,6 +77,7 @@ Dim RedirCapable As Boolean
 Private m_WindowsIs64Bit As Boolean
 Private m_SeDebugEnabled As Boolean
 Private helperPath As String
+Private cmd As New CCmdOutput
 
 Function DisableRedir()
 
@@ -183,6 +186,8 @@ Private Function FindHelper() As String
 End Function
 
 Private Sub Class_Initialize()
+
+    cmd.maxExecSecs = 15
     m_SeDebugEnabled = GetSeDebug()   'some x64 bit processes require this access to check..
     m_WindowsIs64Bit = Is64BitProcessor()
     helperPath = FindHelper()
@@ -211,8 +216,7 @@ Private Function Is64BitProcessor() As Boolean
     GetNativeSystemInfo si
    
     Is64BitProcessor = (si.wProcessorArchitecture = PROCESSOR_ARCHITECTURE_AMD64 _
-        Or _
-            si.wProcessorArchitecture = PROCESSOR_ARCHITECTURE_IA64)
+        Or si.wProcessorArchitecture = PROCESSOR_ARCHITECTURE_IA64)
             
 End Function
 
@@ -392,7 +396,7 @@ Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String
     End If
     
     dll = GetShortName(dll)
-    out_injLog = GetCommandOutput(helperPath & " /inject " & pid & " " & dll, 15)
+    out_injLog = cmd.GetCommandOutput(, helperPath & " /inject " & pid & " " & dll)
     
     If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -442,7 +446,7 @@ Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injL
     dll = GetShortName(dll)
     exePath = GetShortName(exePath)
     
-    out_injLog = GetCommandOutput(helperPath & " /startwdll " & exePath & " " & dll, 15)
+    out_injLog = cmd.GetCommandOutput(, helperPath & " /startwdll " & exePath & " " & dll)
     
     If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -552,7 +556,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of Cmemory
     If Not HelperEnabled Then GoTo hell
     
     tmp = GetFreeFileName(Environ("temp"))
-    x = GetCommandOutput(helperPath & " /memmap " & pid & " " & tmp, 15)
+    x = cmd.GetCommandOutput(, helperPath & " /memmap " & pid & " " & tmp)
     'x = ReadFile("c:\x64_memmap.txt")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
@@ -608,7 +612,7 @@ Function GetProcessModules(pid As Long) As Collection
     
     If Not HelperEnabled Then GoTo hell
  
-    x = GetCommandOutput(helperPath & " /dlls " & pid, 15)
+    x = cmd.GetCommandOutput(, helperPath & " /dlls " & pid)
     'dlls = ReadFile("D:\__share\sample.txt")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
@@ -659,7 +663,7 @@ Function DumpProcess(pid As Long, ByVal fpath As String) As Boolean
     'fpath = GetShortName(fpath)
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " """ & fpath & """", 15)
+    x = cmd.GetCommandOutput(, helperPath & " /dumpprocess " & pid & " """ & fpath & """")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -677,7 +681,7 @@ Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal 
     'fpath = GetShortName(fpath) 'x64helper seems to have a problem with short paths?
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fpath & """", 15)
+    x = cmd.GetCommandOutput(, helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fpath & """")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function

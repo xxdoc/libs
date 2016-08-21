@@ -15,3 +15,6 @@ be dropped to disk first time they are required.
 source and binary can be found here: 
 
   https://github.com/dzzie/SysAnalyzer
+
+
+CCmdOutput has been reworked and simplified. This dll will soon replace proc_lib

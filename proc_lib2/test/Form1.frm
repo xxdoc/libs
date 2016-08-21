@@ -17,19 +17,20 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Private Sub Form_Load()
     
-    'testing the auto drop of the dependancy dll/exe from resource file...works ok
     
     Dim p As New CProcessLib
     Dim c As Collection
     
+    'testing the auto drop of the dependancy dll/exe from resource file...works ok
     'Set c = p.EnumMutexes
-    '
+    
+    
     'Dim x As New Cx64
     'x.isExe_x64 App.Path & "\" & App.EXEName
     
     Me.Visible = True
     
-    Dim cmd As New CCmdOutput2
+    Dim cmd As New CCmdOutput
     cmd.CfgOpts False, 10
     a = cmd.LaunchProcess("c:\windows\system32\notepad.exe")
     Me.Caption = a & "Exit code: " & cmd.exitCode
