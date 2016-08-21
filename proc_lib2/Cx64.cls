@@ -392,7 +392,7 @@ Public Function x64Inject(pid As Long, ByVal dll As String, out_injLog As String
     End If
     
     dll = GetShortName(dll)
-    out_injLog = GetCommandOutput(helperPath & " /inject " & pid & " " & dll)
+    out_injLog = GetCommandOutput(helperPath & " /inject " & pid & " " & dll, 15)
     
     If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -442,7 +442,7 @@ Public Function x64StartWithDll(exePath As String, ByVal dll As String, out_injL
     dll = GetShortName(dll)
     exePath = GetShortName(exePath)
     
-    out_injLog = GetCommandOutput(helperPath & " /startwdll " & exePath & " " & dll)
+    out_injLog = GetCommandOutput(helperPath & " /startwdll " & exePath & " " & dll, 15)
     
     If InStr(1, out_injLog, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -552,7 +552,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of Cmemory
     If Not HelperEnabled Then GoTo hell
     
     tmp = GetFreeFileName(Environ("temp"))
-    x = GetCommandOutput(helperPath & " /memmap " & pid & " " & tmp)
+    x = GetCommandOutput(helperPath & " /memmap " & pid & " " & tmp, 15)
     'x = ReadFile("c:\x64_memmap.txt")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
@@ -608,7 +608,7 @@ Function GetProcessModules(pid As Long) As Collection
     
     If Not HelperEnabled Then GoTo hell
  
-    x = GetCommandOutput(helperPath & " /dlls " & pid)
+    x = GetCommandOutput(helperPath & " /dlls " & pid, 15)
     'dlls = ReadFile("D:\__share\sample.txt")
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
@@ -659,7 +659,7 @@ Function DumpProcess(pid As Long, ByVal fpath As String) As Boolean
     'fpath = GetShortName(fpath)
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " """ & fpath & """")
+    x = GetCommandOutput(helperPath & " /dumpprocess " & pid & " """ & fpath & """", 15)
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function
@@ -677,7 +677,7 @@ Function DumpMemory(pid As Long, hex_start As String, hex_size As String, ByVal 
     'fpath = GetShortName(fpath) 'x64helper seems to have a problem with short paths?
     If FileExists(fpath) Then Kill fpath
     
-    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fpath & """")
+    x = GetCommandOutput(helperPath & " /dumpmodule " & pid & " " & hex_start & " " & hex_size & " """ & fpath & """", 15)
     
     If InStr(1, x, "Error:", vbTextCompare) > 0 Then
         Exit Function

@@ -122,6 +122,9 @@ Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Lo
 Private Declare Function GetExitCodeProcess Lib "kernel32" (ByVal hProcess As Long, lpExitCode As Long) As Long
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
+Private Declare Function PeekNamedPipe Lib "kernel32" (ByVal hNamedPipe As Long, lpBuffer As Any, ByVal nBufferSize As Long, lpBytesRead As Long, lpTotalBytesAvail As Long, lpBytesLeftThisMessage As Long) As Long
+
+Private Const WAIT_TIMEOUT = &H102
 
 'NOTE: to use the async data out event the console app you are reading from will have to
 'either manually call flush or setvbuf(stdout, NULL, _IONBF, 0) once at beginning of app..
@@ -243,8 +246,19 @@ Public Function GetCommandOutput( _
             ' This results in fewer, larger chunks to be read.
             'DoEvents
 
-            If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
+            'on win7 x64, if the process has exited, a readFile of hPipeRead will cause complete hang..
+            'so we must check is process is still active..
+            If WaitForSingleObject(pi.hProcess, 0) <> WAIT_TIMEOUT Then 'process has terminated..
                 Exit Do
+            End If
+            
+            Dim avail As Long, bleft As Long
+            If PeekNamedPipe(hPipeRead, ByVal 0&, 0, lBytesRead, avail, bleft) <> 0 Then
+                If avail > 0 Then
+                    If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
+                        Exit Do
+                    End If
+                End If
             End If
 
             If blnOEMConvert Then

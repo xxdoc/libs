@@ -83,14 +83,14 @@ Private Type PROCESS_INFORMATION
 End Type
 
 Private Declare Function CreatePipe _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  phReadPipe As Long, _
  phWritePipe As Long, _
  lpPipeAttributes As Any, _
  ByVal nSize As Long) As Long
 
 Private Declare Function ReadFile _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  ByVal hFile As Long, _
  lpBuffer As Any, _
  ByVal nNumberOfBytesToRead As Long, _
@@ -98,7 +98,7 @@ Private Declare Function ReadFile _
  lpOverlapped As Any) As Long
 
 Private Declare Function CreateProcess _
- Lib "Kernel32" Alias "CreateProcessA" ( _
+ Lib "kernel32" Alias "CreateProcessA" ( _
  ByVal lpApplicationName As String, _
  ByVal lpCommandLine As String, _
  lpProcessAttributes As Any, _
@@ -111,10 +111,10 @@ Private Declare Function CreateProcess _
  lpProcessInformation As PROCESS_INFORMATION) As Long
 
 Private Declare Function GetCurrentProcess _
- Lib "Kernel32" () As Long
+ Lib "kernel32" () As Long
 
 Private Declare Function DuplicateHandle _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  ByVal hSourceProcessHandle As Long, _
  ByVal hSourceHandle As Long, _
  ByVal hTargetProcessHandle As Long, _
@@ -124,7 +124,7 @@ Private Declare Function DuplicateHandle _
  ByVal dwOptions As Long) As Long
 
 Private Declare Function CloseHandle _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  ByVal hObject As Long) As Long
 
 Private Declare Function OemToCharBuff _
@@ -133,10 +133,13 @@ Private Declare Function OemToCharBuff _
  ByVal lpszDst As String, _
  ByVal cchDstLength As Long) As Long
 
-Private Declare Function WaitForSingleObject Lib "Kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
-Private Declare Function GetExitCodeProcess Lib "Kernel32" (ByVal hProcess As Long, lpExitCode As Long) As Long
-Private Declare Sub Sleep Lib "Kernel32" (ByVal dwMilliseconds As Long)
-Private Declare Function TerminateProcess Lib "Kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Function GetExitCodeProcess Lib "kernel32" (ByVal hProcess As Long, lpExitCode As Long) As Long
+Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
+Private Declare Function PeekNamedPipe Lib "kernel32" (ByVal hNamedPipe As Long, lpBuffer As Any, ByVal nBufferSize As Long, lpBytesRead As Long, lpTotalBytesAvail As Long, lpBytesLeftThisMessage As Long) As Long
+
+Private Const WAIT_TIMEOUT = &H102
 
 
 
@@ -249,7 +252,7 @@ Public Function GetCommandOutput( _
             .hStdError = hPipeWrite1
         End If
     End With
-'vbNullString
+
     If CreateProcess(executable, sCommandLine, ByVal 0&, ByVal 0&, 1, 0&, ByVal 0&, vbNullString, si, pi) Then
 
         ' Close thread handle - we don't need it
@@ -269,10 +272,20 @@ Public Function GetCommandOutput( _
             ' Add a DoEvents to allow more data to be written to the buffer for each call.
             ' This results in fewer, larger chunks to be read.
             'DoEvents
-
-            'todo: peeknamed pipe this would just hang until process dies..
-            If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
+            
+            'on win7 x64, if the process has exited, a readFile of hPipeRead will cause complete hang..
+            'so we must check is process is still active..
+            If WaitForSingleObject(pi.hProcess, 0) <> WAIT_TIMEOUT Then 'process has terminated..
                 Exit Do
+            End If
+            
+            Dim avail As Long, bleft As Long
+            If PeekNamedPipe(hPipeRead, ByVal 0&, 0, lBytesRead, avail, bleft) <> 0 Then
+                If avail > 0 Then
+                    If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
+                        Exit Do
+                    End If
+                End If
             End If
 
             If blnOEMConvert Then
