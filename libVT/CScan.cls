@@ -113,7 +113,7 @@ End Function
 Public Sub VisitPage()
     On Error Resume Next
     If Len(permalink) > 0 And LCase(VBA.Left(permalink, 4)) = "http" Then
-        Shell "cmd /c start " & permalink, vbNormalFocus
+        Shell "cmd /c start " & permalink, vbHide
     End If
 End Sub
 

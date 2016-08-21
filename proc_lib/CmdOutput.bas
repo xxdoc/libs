@@ -1,7 +1,5 @@
 Attribute VB_Name = "CmdOutput"
 Option Explicit
-Global Const LANG_US = &H409
-
 ''''''''''''''''''''''''''''''''''''''''
 ' Joacim Andersson, Brixoft Software
 ' http://www.brixoft.net
@@ -56,14 +54,14 @@ Private Type PROCESS_INFORMATION
 End Type
 
 Private Declare Function CreatePipe _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  phReadPipe As Long, _
  phWritePipe As Long, _
  lpPipeAttributes As Any, _
  ByVal nSize As Long) As Long
 
 Private Declare Function ReadFile _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  ByVal hFile As Long, _
  lpBuffer As Any, _
  ByVal nNumberOfBytesToRead As Long, _
@@ -71,7 +69,7 @@ Private Declare Function ReadFile _
  lpOverlapped As Any) As Long
 
 Private Declare Function CreateProcess _
- Lib "Kernel32" Alias "CreateProcessA" ( _
+ Lib "kernel32" Alias "CreateProcessA" ( _
  ByVal lpApplicationName As String, _
  ByVal lpCommandLine As String, _
  lpProcessAttributes As Any, _
@@ -84,10 +82,10 @@ Private Declare Function CreateProcess _
  lpProcessInformation As PROCESS_INFORMATION) As Long
 
 Private Declare Function GetCurrentProcess _
- Lib "Kernel32" () As Long
+ Lib "kernel32" () As Long
 
 Private Declare Function DuplicateHandle _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  ByVal hSourceProcessHandle As Long, _
  ByVal hSourceHandle As Long, _
  ByVal hTargetProcessHandle As Long, _
@@ -97,7 +95,7 @@ Private Declare Function DuplicateHandle _
  ByVal dwOptions As Long) As Long
 
 Private Declare Function CloseHandle _
- Lib "Kernel32" ( _
+ Lib "kernel32" ( _
  ByVal hObject As Long) As Long
 
 Private Declare Function OemToCharBuff _
@@ -105,6 +103,28 @@ Private Declare Function OemToCharBuff _
  lpszSrc As Any, _
  ByVal lpszDst As String, _
  ByVal cchDstLength As Long) As Long
+
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
+Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Function PeekNamedPipe Lib "kernel32" (ByVal hNamedPipe As Long, lpBuffer As Any, ByVal nBufferSize As Long, lpBytesRead As Long, lpTotalBytesAvail As Long, lpBytesLeftThisMessage As Long) As Long
+
+Private Const WAIT_TIMEOUT = &H102
+Global Const LANG_US = &H409
+
+Public blnStdOut As Boolean
+Public blnStdErr As Boolean
+Public blnOEMConvert As Boolean
+Private optsInit As Boolean
+
+Private Sub init()
+    blnStdOut = True
+    blnStdErr = False
+    blnOEMConvert = True
+    optsInit = True
+End Sub
 
 ' Function GetCommandOutput
 '
@@ -115,12 +135,7 @@ Private Declare Function OemToCharBuff _
 '
 ' Returns:       String with STDOUT and/or STDERR output
 '
-Public Function GetCommandOutput( _
- sCommandLine As String, _
- Optional blnStdOut As Boolean = True, _
- Optional blnStdErr As Boolean = False, _
- Optional blnOEMConvert As Boolean = True _
-) As String
+Public Function GetCommandOutput(sCommandLine As String, Optional maxExecTime As Long = 0) As String
 
     Dim hPipeRead As Long, hPipeWrite1 As Long, hPipeWrite2 As Long
     Dim hCurProcess As Long
@@ -131,11 +146,13 @@ Public Function GetCommandOutput( _
     Dim sNewOutput As String
     Dim lBytesRead As Long
     Dim fTwoHandles As Boolean
-
+    Dim t1 As Date
     Dim lRet As Long
 
+    t1 = Now
     Const BUFSIZE = 1024      ' pipe buffer size
-
+    If Not optsInit Then init
+    
     ' At least one of them should be True, otherwise there's no point in calling the function
     If (Not blnStdOut) And (Not blnStdErr) Then
         Err.Raise 5         ' Invalid Procedure call or Argument
@@ -171,7 +188,7 @@ Public Function GetCommandOutput( _
     With si
         .cb = Len(si)
         .dwFlags = STARTF_USESHOWWINDOW Or STARTF_USESTDHANDLES
-        .wShowWindow = SW_HIDE          ' hide the window
+        .wShowWindow = SW_HIDE           ' hide the window
 
         If fTwoHandles Then
             .hStdOutput = hPipeWrite1
@@ -183,8 +200,7 @@ Public Function GetCommandOutput( _
         End If
     End With
 
-    If CreateProcess(vbNullString, sCommandLine, ByVal 0&, ByVal 0&, 1, 0&, _
-     ByVal 0&, vbNullString, si, pi) Then
+    If CreateProcess(vbNullString, sCommandLine, ByVal 0&, ByVal 0&, 1, 0&, ByVal 0&, vbNullString, si, pi) Then
 
         ' Close thread handle - we don't need it
         Call CloseHandle(pi.hThread)
@@ -201,10 +217,21 @@ Public Function GetCommandOutput( _
         Do
             ' Add a DoEvents to allow more data to be written to the buffer for each call.
             ' This results in fewer, larger chunks to be read.
-            'DoEvents
+            DoEvents
 
-            If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
+            'on win7 x64, if the process has exited, a readFile of hPipeRead will cause complete hang..
+            'so we must check is process is still active..
+            If WaitForSingleObject(pi.hProcess, 0) <> WAIT_TIMEOUT Then 'process has terminated..
                 Exit Do
+            End If
+            
+            Dim avail As Long, bleft As Long
+            If PeekNamedPipe(hPipeRead, ByVal 0&, 0, lBytesRead, avail, bleft) <> 0 Then
+                If avail > 0 Then
+                    If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
+                        Exit Do
+                    End If
+                End If
             End If
 
             If blnOEMConvert Then
@@ -218,11 +245,13 @@ Public Function GetCommandOutput( _
 
             GetCommandOutput = GetCommandOutput & sNewOutput
 
-            ' If you are executing an application that outputs data during a long time,
-            ' and don't want to lock up your application, it might be a better idea to
-            ' wrap this code in a class module in an ActiveX EXE and execute it asynchronously.
-            ' Then you can raise an event here each time more data is available.
-            'RaiseEvent OutputAvailabele(sNewOutput)
+            If maxExecTime > 0 Then
+                If DateDiff("s", t1, Now) > maxExecTime Then
+                    TerminateProcess pi.hProcess, -1
+                    Exit Do
+                End If
+            End If
+            
         Loop
 
         ' When the process terminates successfully, Err.LastDllError will be
@@ -242,3 +271,10 @@ Public Function GetCommandOutput( _
         Call CloseHandle(hPipeWrite2)
     End If
 End Function
+
+'Function isProcessRunning(hProcess As Long) As Boolean
+'
+'
+'End Function
+
+

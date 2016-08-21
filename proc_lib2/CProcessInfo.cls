@@ -40,6 +40,11 @@ Option Explicit
 '  fixed GetProcessCmdLine
 '  Fixed GetUsername to work across more privledge levels/os
 '  added is64Bit, domain, fullpath, sessionID to CProcess
+'
+'8.21.16
+'  synced with current SysAnalyzer CProcessInfo
+
+
 
 ' x64 safe functions..
 '    DumpProcess, DumpMemory, GetProcessModules, EnumDrivers, GetRunningProcesses,  GetMemoryMap, ReadMemory2
@@ -56,7 +61,7 @@ Private Declare Function NtQuerySystemInformation Lib "ntdll.dll" ( _
 
 Private Type SYSTEM_MODULE_INFORMATION
     Reserved(1) As Long                'ULONG reserved[2];
-    base As Long                       'PVOID Base;
+    Base As Long                       'PVOID Base;
     size As Long                       'ULONG Size;
     Flags As Long                      'ULONG Flags;
     index As Integer                   'USHORT Index;
@@ -282,6 +287,8 @@ Private Declare Function WTSEnumerateProcesses _
 Private Declare Sub WTSFreeMemory Lib "wtsapi32.dll" _
    (ByVal pMemory As Long)
 
+Private Declare Function EnumTasks2 Lib "EnumMutex.dll" (ByRef col As Collection) As Long
+Private Declare Function EnumMutex2 Lib "EnumMutex.dll" (ByRef col As Collection, Optional ByVal doEventsCallBack As Long = 0) As Long
 Private Declare Function EnumMutex Lib "EnumMutex.dll" (ByVal dirPath As String) As Long
 Private Declare Function EnumTasksDll Lib "EnumMutex.dll" Alias "EnumTasks" (ByVal dirPath As String) As Long
 Private Declare Function GetVersion Lib "Kernel32" () As Long
@@ -586,7 +593,7 @@ Function GetProcessModules(pid As Long) As Collection
          
         Set cmod = New CModule
         cmod.path = mfn
-        cmod.base = lmi.lpBaseOfDll
+        cmod.Base = lmi.lpBaseOfDll
         cmod.size = lmi.SizeOfImage
          
         On Error Resume Next
@@ -657,10 +664,10 @@ Function GetProcessUser(pid As Long) As String
     
 End Function
 
-Function DumpProcess(pid As Long, fPath As String) As Boolean
+Function DumpProcess(pid As Long, fpath As String) As Boolean
     
     If x64.IsProcess_x64(pid) = r_64bit Then
-        DumpProcess = x64.DumpProcess(pid, fPath)
+        DumpProcess = x64.DumpProcess(pid, fpath)
         Exit Function
     End If
     
@@ -670,27 +677,27 @@ Function DumpProcess(pid As Long, fPath As String) As Boolean
     Set col = GetProcessModules(pid)
     Set cmod = col(1)
 
-    DumpProcess = DumpProcessMemory(pid, cmod.base, cmod.size, fPath)
+    DumpProcess = DumpProcessMemory(pid, cmod.Base, cmod.size, fpath)
     
 End Function
 
-Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fPath As String) As Boolean
+Function DumpMemory(pid As Long, ByVal hex_start As String, hex_size As String, ByVal fpath As String) As Boolean
     
     Dim s As Long, l As Long
     
     If x64.IsProcess_x64(pid) = r_64bit Then
         hex_start = Replace(hex_start, "`", Empty)
-        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fPath)
+        DumpMemory = x64.DumpMemory(pid, Trim(hex_start), Trim(hex_size), fpath)
     Else
         s = CLng("&h" & Trim(hex_start))
         l = CLng("&h" & Trim(hex_size))
-        DumpMemory = DumpProcessMemory(pid, s, l, fPath)
+        DumpMemory = DumpProcessMemory(pid, s, l, fpath)
     End If
     
 End Function
 
 '7.26.16: now large allocs are dumped in chunks...
-Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fPath As String) As Boolean
+Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fpath As String) As Boolean
 
     Dim pHandle As Long
     Dim b() As Byte
@@ -716,10 +723,10 @@ Function DumpProcessMemory(pid As Long, start As Long, Length As Long, fPath As 
     pHandle = OpenProcess(PROCESS_VM_READ, False, pid)
     If pHandle = 0 Then Exit Function
 
-    If FileExists(fPath) Then Kill fPath
+    If FileExists(fpath) Then Kill fpath
     
     f = FreeFile
-    Open fPath For Binary As f
+    Open fpath For Binary As f
     
     'ERROR_PARTIAL_COPY 299 (0x12B)
     For i = 1 To cnt
@@ -967,7 +974,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
             Set cMem = New CMemory
             cMem.pid = pid
             cMem.size = meminfo.RegionSize
-            cMem.base = cur
+            cMem.Base = cur
             cMem.AllocBase = meminfo.AllocationBase
             cMem.InitialProtection = meminfo.InitialProtect
             cMem.MemType = meminfo.Type
@@ -1222,6 +1229,10 @@ Public Function InjectDLL(pid As Long, dllPath As String, Optional injLog As Str
     Const MEM_COMMIT = &H1000
     
     injLog = Empty
+    If Not FileExists(dllPath) Then
+        injLog = "DllPath not found: " & dllPath
+        GoTo hell
+    End If
     
     If Not GetProcess(pid, cp) Then
         injLog = "pid " & pid & " not found"
@@ -1298,6 +1309,16 @@ Public Function StartProcessWithDLL(exePath As String, dllPath As String, Option
     Const MEM_COMMIT = &H1000
     
     injLog = Empty
+    If Not FileExists(dllPath) Then
+        injLog = "DllPath not found: " & dllPath
+        GoTo hell
+    End If
+    
+    If Not FileExists(exePath) Then
+        injLog = "exePath not found: " & exePath
+        GoTo hell
+    End If
+    
     Set cp = New CProcess
     cp.fullpath = exePath
     cp.path = exePath
@@ -1367,7 +1388,7 @@ Private Function FindEnumMutexDll() As Boolean
     On Error Resume Next
     
     Dim dllPath As String
-    Dim Data() As Byte
+    Dim data() As Byte
     Dim f As Long
     
     Const dllName As String = "\enumMutex.dll"
@@ -1386,12 +1407,12 @@ Private Function FindEnumMutexDll() As Boolean
     dllPath = dllPath & dllName
     
     If Not FileExists(dllPath) Then
-        Data = LoadResData("enummutex.dll", "CUSTOM")
-        If AryIsEmpty(Data) Then Exit Function
+        data = LoadResData("enummutex.dll", "CUSTOM")
+        If AryIsEmpty(data) Then Exit Function
         dllPath = App.path & "\" & dllName
         f = FreeFile
         Open dllPath For Binary As f
-        Put f, , Data()
+        Put f, , data()
         Close f
     End If
     
@@ -1407,7 +1428,7 @@ Public Function EnumMutexes() As Collection
     Dim m As CMutexElem
     Dim dups As Long, cnt As Long
     Dim pth As String
-    Dim tmp() As String
+    Dim tmp As New Collection
     Dim x
      
     On Error Resume Next
@@ -1416,17 +1437,13 @@ Public Function EnumMutexes() As Collection
         GoTo retNow
     End If
     
-    pth = Environ("temp") & "\enumMutex.txt"
-    pth = Replace(pth, "\\", "\")
+    cnt = EnumMutex2(tmp)
     
-    If FileExists(pth) Then Kill pth
+    If cnt < 1 Then
+        c.Add "EnumMutex2 had error: " & cnt
+        GoTo retNow
+    End If
     
-    cnt = EnumMutex(pth)
-    'If cnt < 1 Then 'it had an error...
-        
-    If Not FileExists(pth) Then GoTo retNow
-        
-    tmp = Split(ReadFile(pth), vbCrLf)
     For Each x In tmp
         Set m = New CMutexElem
         If m.parseEntry(x) Then
@@ -1464,59 +1481,6 @@ Public Function EnumNamedPipes(Optional addTo As Collection) As Collection
 
 End Function
 
-Function EnumTasks() As Collection
-    
-    Dim c As New Collection
-    Dim pth As String, cnt As Long
-    Dim objTaskService, objTaskFolder
-    
-    On Error Resume Next
-    
-    'Vista+ use Scheduled Tasks API v2
-    Set objTaskService = CreateObject("Schedule.Service")
-    If Not objTaskService Is Nothing Then
-        Call objTaskService.Connect
-        Set objTaskFolder = objTaskService.GetFolder("\")
-        VistaEnumTasks objTaskFolder, c
-    Else
-        'xp and lower use use Scheduled Tasks API v1
-        If FindEnumMutexDll() Then
-            pth = GetFreeFileName(Environ("temp"))
-            cnt = EnumTasksDll(pth)
-            XPEnumTasks ReadFile(pth), c
-            Kill pth
-        End If
-    End If
-    
-    Set EnumTasks = c
-    
-End Function
-
-Private Function XPEnumTasks(Data As String, ByRef c As Collection)
-    
-    Dim t As CTaskElem
-    Dim tmp() As String
-    Dim x, y
-    
-    'data = Replace(data, vbLf, vbCrLf)
-    tmp = Split(Data, Chr(5))
-    
-    For Each x In tmp
-        If Len(x) > 0 Then
-            y = Split(x, vbCrLf)
-            If UBound(y) >= 2 Then
-                Set t = New CTaskElem
-                t.name = y(0)
-                t.path = y(0)
-                t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
-                t.args = Replace(y(2), vbTab & "-Params: ", Empty)
-                t.genHashCode
-                If Not objKeyExistsInCollection(c, t.hashCode) Then c.Add t, t.hashCode
-            End If
-        End If
-    Next
-    
-End Function
 
 Private Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
 
@@ -1534,7 +1498,7 @@ Private Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
                 Select Case objTaskAction.Type
                     Case 0: t.args = objTaskAction.Arguments
                             t.exe = objTaskAction.path
-                    Case 5: t.args = objTaskAction.Data
+                    Case 5: t.args = objTaskAction.data
                             t.exe = objTaskAction.ClassId
                     Case Default:
                             t.exe = "UnkType: " & objTaskAction.Type
@@ -1552,6 +1516,65 @@ Private Function VistaEnumTasks(objTaskFolder, ByRef c As Collection)
 
 End Function
 
+Function EnumTasks() As Collection
+    
+    Dim c As New Collection
+    Dim pth As String, cnt As Long
+    Dim objTaskService, objTaskFolder
+    Dim tmp As New Collection
+    Dim x
+    
+    On Error Resume Next
+    
+    'Vista+ use Scheduled Tasks API v2
+    Set objTaskService = CreateObject("Schedule.Service")
+    
+    If Not IsObject(objTaskService) Then
+        'xp and lower use use Scheduled Tasks API v1
+        If FindEnumMutexDll() Then
+            
+            cnt = EnumTasks2(tmp)
+            For Each x In tmp
+                ParseXPTaskEntry x, c
+            Next
+        
+'            'old way using temp file...
+'            pth = Environ("temp") & "\enumTasks.txt"
+'            If fso.FileExists(pth) Then Kill pth
+'            cnt = EnumTasksDll(pth)
+'            XPEnumTasks fso.ReadFile(pth), c
+'            Kill pth
+             
+        End If
+    Else
+        Call objTaskService.Connect
+        Set objTaskFolder = objTaskService.GetFolder("\")
+        VistaEnumTasks objTaskFolder, c
+    End If
+    
+    Set EnumTasks = c
+    
+End Function
+
+Private Function ParseXPTaskEntry(x, ByRef c As Collection)
+    
+    Dim t As CTaskElem
+    Dim y
+    
+    If Len(x) > 0 Then
+        y = Split(x, vbLf)
+        If UBound(y) >= 2 Then
+            Set t = New CTaskElem
+            t.name = y(0)
+            t.path = y(0)
+            t.exe = Replace(y(1), vbTab & "-Exe: ", Empty)
+            t.args = Replace(y(2), vbTab & "-Params: ", Empty)
+            t.genHashCode
+            c.Add t
+        End If
+    End If
+        
+End Function
 
 
 Private Function parsePid(injLog As String) As Long
@@ -1738,3 +1761,91 @@ End Function
 '    RandomNum = GetTickCount
 '
 'End Function
+
+
+Public Function InjectData(pid As Long, data As String, Optional Base As Long = 0, Optional injLog As String, Optional cp As CProcess) As Boolean
+
+    Dim hProcess As Long
+    Dim lpfnLoadLib As Long
+    Dim ret As Long
+    Dim lpdllPath As Long
+    Dim pi As PROCESS_INFORMATION
+    Dim si As STARTUPINFO
+    Dim hThread As Long
+    Dim writeLen As Long
+    Dim b() As Byte
+    Dim bufLen As Long
+    Dim c As Collection
+    Dim found As Boolean
+    Dim rv As Boolean
+    
+    Const PAGE_READWRITE = 4
+    Const CREATE_SUSPENDED = &H4
+    Const MEM_COMMIT = &H1000
+    
+    injLog = Empty
+    
+    If Not GetProcess(pid, cp) Then
+        injLog = "pid " & pid & " not found"
+        GoTo hell
+    End If
+    
+    If cp.is64Bit Then
+        injLog = "Not implemented for x64 Processes"
+        GoTo hell
+    End If
+    
+    b() = StrConv(data, vbFromUnicode, LANG_US)
+    bufLen = UBound(b) + 1
+ 
+    hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+    injLog = injLog & "Opening PID: " & pid & " Process Handle=" & hProcess & vbCrLf
+    If hProcess = -1 Then GoTo hell
+     
+    lpdllPath = VirtualAllocEx(hProcess, ByVal Base, bufLen, MEM_COMMIT, ByVal PAGE_EXECUTE_READWRITE)
+    injLog = injLog & "Remote Allocation base: " & Hex(lpdllPath) & vbCrLf
+    If lpdllPath = 0 Then GoTo hell
+    
+    ret = WriteProcessBytes(hProcess, ByVal lpdllPath, b(0), bufLen, writeLen)
+    injLog = injLog & "WriteProcessMemory=" & ret & " BufLen=" & bufLen & " Bytes Written: " & writeLen & vbCrLf
+    If ret = 0 Then GoTo hell
+     
+    rv = True
+    
+hell:
+   CloseHandle hProcess
+   InjectData = rv
+    
+End Function
+
+Function OpenProcessHandle(pid As Long) As Long
+    OpenProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+End Function
+
+Function CloseProcessHandle(h As Long)
+    CloseHandle h
+End Function
+
+Public Function WriteProcessLong(ByVal hProcess As Long, ByVal lpBaseAddress As Long, ByVal sValue As Long) As Boolean
+    Dim ret As Long
+    If WriteProcessMemory(hProcess, lpBaseAddress, ByVal VarPtr(sValue), 4, ret) <> 0 Then WriteProcessLong = True
+End Function
+
+Function WriteProcessByte(hProc As Long, val As Byte, address As Long) As Boolean
+    Dim ret As Long, written As Long
+    If WriteProcessBytes(hProc, ByVal address, ByVal val, 1, written) <> 0 Then WriteProcessByte = True
+End Function
+
+Function ReadProcessLng(hProc As Long, address As Long, outVal As Long) As Boolean
+   
+    Dim b(4) As Byte, tmp As Long
+    outVal = 0
+    
+    If ReadProcessMemory(hProc, address, b(0), 4, 0) > 0 Then
+        CopyMemory tmp, b(0), 4
+        outVal = tmp
+        ReadProcessLng = True
+    End If
+ 
+End Function
+

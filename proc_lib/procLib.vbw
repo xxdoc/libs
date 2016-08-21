@@ -1,11 +1,13 @@
 CProcess = 106, 238, 978, 774, 
 CProcessLib = 44, 44, 1233, 833, 
 CModule = 110, 110, 982, 646, 
-CMemory = 88, 88, 1130, 857, 
 CProcessPort = 176, 176, 1013, 712, 
 CProcessPorts = 154, 154, 991, 690, 
-Cx64 = 66, 66, 938, 602, 
-CmdOutput = 22, 22, 894, 558, 
+CmdOutput = 22, 22, 1203, 947, 
 frmListProcess = 198, 198, 1010, 734, , 242, 242, 1054, 778, C
 frmDlls = 220, 220, 1032, 756, , 264, 264, 1076, 800, C
 clsCmnDlg = 242, 242, 1054, 778, C
+Cx64 = 308, 308, 1237, 969, 
+CPEEditor = 0, 0, 929, 661, 
+CSection = 0, 0, 0, 0, C
+CMemory = 0, 0, 0, 0, C

@@ -6,12 +6,27 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "CCmdOutput"
+Attribute VB_Name = "CCmdOutput2"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
+
+'NOTE: to use the async data out event the console app you are reading from will have to
+'either manually call flush or setvbuf(stdout, NULL, _IONBF, 0) once at beginning of app..
+Event OutPutAvailable(Data As String)
+
+Public sOutput As String
+Public exitCode As Long
+Public hideWindow As Boolean
+Public blnStdOut As Boolean
+Public blnStdErr As Boolean
+Public blnOEMConvert As Boolean
+Public maxExecSecs As Long
+
+
+
 ''''''''''''''''''''''''''''''''''''''''
 ' Joacim Andersson, Brixoft Software
 ' http://www.brixoft.net
@@ -68,14 +83,14 @@ Private Type PROCESS_INFORMATION
 End Type
 
 Private Declare Function CreatePipe _
- Lib "kernel32" ( _
+ Lib "Kernel32" ( _
  phReadPipe As Long, _
  phWritePipe As Long, _
  lpPipeAttributes As Any, _
  ByVal nSize As Long) As Long
 
 Private Declare Function ReadFile _
- Lib "kernel32" ( _
+ Lib "Kernel32" ( _
  ByVal hFile As Long, _
  lpBuffer As Any, _
  ByVal nNumberOfBytesToRead As Long, _
@@ -83,7 +98,7 @@ Private Declare Function ReadFile _
  lpOverlapped As Any) As Long
 
 Private Declare Function CreateProcess _
- Lib "kernel32" Alias "CreateProcessA" ( _
+ Lib "Kernel32" Alias "CreateProcessA" ( _
  ByVal lpApplicationName As String, _
  ByVal lpCommandLine As String, _
  lpProcessAttributes As Any, _
@@ -96,10 +111,10 @@ Private Declare Function CreateProcess _
  lpProcessInformation As PROCESS_INFORMATION) As Long
 
 Private Declare Function GetCurrentProcess _
- Lib "kernel32" () As Long
+ Lib "Kernel32" () As Long
 
 Private Declare Function DuplicateHandle _
- Lib "kernel32" ( _
+ Lib "Kernel32" ( _
  ByVal hSourceProcessHandle As Long, _
  ByVal hSourceHandle As Long, _
  ByVal hTargetProcessHandle As Long, _
@@ -109,7 +124,7 @@ Private Declare Function DuplicateHandle _
  ByVal dwOptions As Long) As Long
 
 Private Declare Function CloseHandle _
- Lib "kernel32" ( _
+ Lib "Kernel32" ( _
  ByVal hObject As Long) As Long
 
 Private Declare Function OemToCharBuff _
@@ -118,14 +133,30 @@ Private Declare Function OemToCharBuff _
  ByVal lpszDst As String, _
  ByVal cchDstLength As Long) As Long
 
-Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
-Private Declare Function GetExitCodeProcess Lib "kernel32" (ByVal hProcess As Long, lpExitCode As Long) As Long
-Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-Private Declare Function TerminateProcess Lib "kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
+Private Declare Function WaitForSingleObject Lib "Kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Function GetExitCodeProcess Lib "Kernel32" (ByVal hProcess As Long, lpExitCode As Long) As Long
+Private Declare Sub Sleep Lib "Kernel32" (ByVal dwMilliseconds As Long)
+Private Declare Function TerminateProcess Lib "Kernel32" (ByVal hProcess As Long, ByVal uExitCode As Long) As Long
 
-'NOTE: to use the async data out event the console app you are reading from will have to
-'either manually call flush or setvbuf(stdout, NULL, _IONBF, 0) once at beginning of app..
-Event OutPutAvailable(Data As String)
+
+
+Private Sub Class_Initialize()
+    hideWindow = True
+    blnStdOut = True
+    blnStdErr = True
+    blnOEMConvert = True
+End Sub
+
+Sub CfgHandles(Optional stdOut As Boolean = True, Optional stdErr As Boolean = True, Optional oemConvert As Boolean = True)
+    blnStdOut = stdOut
+    blnStdErr = stdErr
+    blnOEMConvert = oemConvert
+End Sub
+
+Sub CfgOpts(Optional hideWin As Boolean = True, Optional maxExecTimeSecs As Long = 0)
+    hideWindow = hideWin
+    maxExecSecs = maxExecTimeSecs
+End Sub
 
 ' Function GetCommandOutput
 '
@@ -146,13 +177,7 @@ Event OutPutAvailable(Data As String)
 
 Public Function GetCommandOutput( _
     Optional executable As String = vbNullString, _
-    Optional sCommandLine As String = vbNullString, _
-    Optional ByRef sOutput As String, _
-    Optional ByRef exitCode As Long, _
-    Optional hideWindow As Boolean = True, _
-    Optional blnStdOut As Boolean = True, _
-    Optional blnStdErr As Boolean = True, _
-    Optional blnOEMConvert As Boolean = True _
+    Optional sCommandLine As String = vbNullString _
 ) As Boolean
 
     Dim hPipeRead As Long, hPipeWrite1 As Long, hPipeWrite2 As Long
@@ -166,10 +191,12 @@ Public Function GetCommandOutput( _
     Dim fTwoHandles As Boolean
     Dim success As Boolean
     Dim lRet As Long
+    Dim startTime As Date
     
     Const BUFSIZE = 1024      ' pipe buffer size
     exitCode = 0
     sOutput = Empty
+    startTime = Now
     
     'see comment above..
     If Len(executable) > 0 And Len(sCommandLine) > 0 Then
@@ -243,6 +270,7 @@ Public Function GetCommandOutput( _
             ' This results in fewer, larger chunks to be read.
             'DoEvents
 
+            'todo: peeknamed pipe this would just hang until process dies..
             If ReadFile(hPipeRead, baOutput(0), BUFSIZE, lBytesRead, ByVal 0&) = 0 Then
                 Exit Do
             End If
@@ -265,9 +293,17 @@ Public Function GetCommandOutput( _
             RaiseEvent OutPutAvailable(sNewOutput)
             
             i = i + 1
-            If i = 100 Then
+            If i = 50 Then
                 DoEvents
                 i = 0
+            End If
+            
+            If i Mod 3 = 0 Then
+                If maxExecSecs > 0 Then
+                    If DateDiff("s", startTime, Now) >= maxExecSecs Then
+                        If TerminateProcess(pi.hProcess, -22) <> 0 Then Exit Do
+                    End If
+                End If
             End If
                 
         Loop
@@ -294,7 +330,11 @@ End Function
 
 
 
-Public Function LaunchProcess(Optional executable As String = vbNullString, Optional sCommandLine As String = vbNullString, Optional wait As Boolean = True, Optional hideWindow As Boolean = False, Optional ByRef exitCode As Long = 0) As Boolean
+Public Function LaunchProcess( _
+        Optional executable As String = vbNullString, _
+        Optional sCommandLine As String = vbNullString, _
+        Optional wait As Boolean = True _
+) As Boolean
 
     Dim hPipeRead As Long, hPipeWrite1 As Long, hPipeWrite2 As Long
     Dim hCurProcess As Long
@@ -302,10 +342,17 @@ Public Function LaunchProcess(Optional executable As String = vbNullString, Opti
     Dim si As STARTUPINFO
     Dim pi As PROCESS_INFORMATION
     Dim lRet As Long
+    Dim startTime As Date
+    Dim i As Long
+    
     Const STILL_ACTIVE = 259
  
     Const BUFSIZE = 1024      ' pipe buffer size
-
+    
+    exitCode = 0
+    sOutput = Empty
+    startTime = Now
+    
     'see comment above..
     If Len(executable) > 0 And Len(sCommandLine) > 0 Then
         sCommandLine = """" & executable & """ " & sCommandLine
@@ -329,14 +376,25 @@ Public Function LaunchProcess(Optional executable As String = vbNullString, Opti
 
         If wait Then
             Do
-                WaitForSingleObject pi.hProcess, 300
+                i = i + 1
+                WaitForSingleObject pi.hProcess, 100
                 If GetExitCodeProcess(pi.hProcess, exitCode) = 0 Then Exit Do
                 If exitCode <> STILL_ACTIVE Then Exit Do
-                Sleep 100
+                
+                If i Mod 3 = 0 Then
+                    If maxExecSecs > 0 Then
+                        If DateDiff("s", startTime, Now) >= maxExecSecs Then
+                            If TerminateProcess(pi.hProcess, -22) <> 0 Then Exit Do
+                        End If
+                    End If
+                End If
+                
+                Sleep 10
                 DoEvents
             Loop
         End If
 
+         If GetExitCodeProcess(pi.hProcess, exitCode) = 0 Then exitCode = -1
         Call CloseHandle(pi.hProcess)
         LaunchProcess = True
     
@@ -345,6 +403,7 @@ Public Function LaunchProcess(Optional executable As String = vbNullString, Opti
     
     
 End Function
+
 
 
 

@@ -22,10 +22,18 @@ Private Sub Form_Load()
     Dim p As New CProcessLib
     Dim c As Collection
     
-    Set c = p.EnumMutexes
+    'Set c = p.EnumMutexes
+    '
+    'Dim x As New Cx64
+    'x.isExe_x64 App.Path & "\" & App.EXEName
     
-    Dim x As New Cx64
-    x.isExe_x64 App.Path & "\" & App.EXEName
+    Me.Visible = True
+    
+    Dim cmd As New CCmdOutput2
+    cmd.CfgOpts False, 10
+    a = cmd.LaunchProcess("c:\windows\system32\notepad.exe")
+    Me.Caption = a & "Exit code: " & cmd.exitCode
+    
     
     
 End Sub
