@@ -122,12 +122,13 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Declare Function SHAutoComplete Lib "shlwapi.dll" (ByVal hwndEdit As Long, ByVal dwFlags As Long) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
 Private Declare Sub mouse_event Lib "user32" (ByVal dwFlags As Long, ByVal dX As Long, ByVal dY As Long, ByVal cButtons As Long, ByVal dwExtraInfo As Long)
 Private Const LEFTDOWN = &H2, LEFTUP = &H4, MIDDLEDOWN = &H20, MIDDLEUP = &H40, RIGHTDOWN = &H8, RIGHTUP = &H10
-
+Private Const SHACF_FILESYS_DIRS = &H20
 
 Private Enum vButtons
     vRightClick = 2
@@ -157,7 +158,7 @@ Public Enum SpecialFolders
     sf_MYMUSIC = &HD '"My Music" folder
     sf_MYVIDEO = &HE '"My Videos" folder
     sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
-    'sf_DRIVES = &H11'My Computer
+    sf_DRIVES = &H11 'My Computer
     'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
 '    sf_NETHOOD = &H13'<user name>\nethood
     sf_FONTS = &H14 'windows\fonts
@@ -267,6 +268,7 @@ End Sub
 
 Private Sub Form_Load()
     Text1 = GetSpecialFolder(sf_DESKTOP)
+    SHAutoComplete Text1.hWnd, SHACF_FILESYS_DIRS
 End Sub
 
 Function BrowseForFolder(Optional initDir As String, Optional specialFolder As SpecialFolders = -1, Optional owner As Form = Nothing) As String
