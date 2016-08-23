@@ -9,6 +9,45 @@ Begin VB.Form frmDlg
    ScaleHeight     =   3975
    ScaleWidth      =   6675
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Frame Frame3 
+      BorderStyle     =   0  'None
+      Caption         =   "Frame3"
+      Height          =   405
+      Left            =   5070
+      TabIndex        =   10
+      Top             =   60
+      Width           =   1455
+      Begin VB.CommandButton Command4 
+         Appearance      =   0  'Flat
+         Height          =   375
+         Left            =   480
+         Picture         =   "frmDlg.frx":0000
+         Style           =   1  'Graphical
+         TabIndex        =   13
+         Top             =   0
+         Width           =   390
+      End
+      Begin VB.CommandButton Command3 
+         Appearance      =   0  'Flat
+         Height          =   375
+         Left            =   0
+         Picture         =   "frmDlg.frx":0440
+         Style           =   1  'Graphical
+         TabIndex        =   12
+         Top             =   0
+         Width           =   390
+      End
+      Begin VB.CommandButton cmdNewFolder 
+         Appearance      =   0  'Flat
+         Height          =   375
+         Left            =   990
+         Picture         =   "frmDlg.frx":0880
+         Style           =   1  'Graphical
+         TabIndex        =   11
+         Top             =   0
+         Width           =   390
+      End
+   End
    Begin VB.Frame Frame1 
       BorderStyle     =   0  'None
       Caption         =   "Frame1"
@@ -22,14 +61,14 @@ Begin VB.Form frmDlg
          Caption         =   "Frame2"
          Height          =   465
          Left            =   3870
-         TabIndex        =   8
+         TabIndex        =   7
          Top             =   495
          Width           =   2580
          Begin VB.CommandButton Command1 
-            Caption         =   "Save"
+            Caption         =   "Select"
             Height          =   405
             Left            =   1305
-            TabIndex        =   10
+            TabIndex        =   9
             Top             =   0
             Width           =   1125
          End
@@ -37,7 +76,7 @@ Begin VB.Form frmDlg
             Caption         =   "Cancel"
             Height          =   405
             Left            =   0
-            TabIndex        =   9
+            TabIndex        =   8
             Top             =   0
             Width           =   1185
          End
@@ -46,24 +85,16 @@ Begin VB.Form frmDlg
          Height          =   345
          Left            =   1395
          OLEDropMode     =   1  'Manual
-         TabIndex        =   6
+         TabIndex        =   5
          Text            =   "supports drag and drop"
          Top             =   0
          Width           =   5040
-      End
-      Begin VB.CommandButton cmdNewFolder 
-         Caption         =   "New Folder"
-         Height          =   375
-         Left            =   0
-         TabIndex        =   5
-         Top             =   495
-         Width           =   1230
       End
       Begin VB.Label Label1 
          Caption         =   "Path"
          Height          =   255
          Left            =   765
-         TabIndex        =   7
+         TabIndex        =   6
          Top             =   90
          Width           =   435
       End
@@ -73,7 +104,7 @@ Begin VB.Form frmDlg
       Left            =   1485
       TabIndex        =   3
       Top             =   90
-      Width           =   5055
+      Width           =   3495
    End
    Begin VB.PictureBox Picture1 
       BackColor       =   &H00808080&
@@ -87,14 +118,14 @@ Begin VB.Form frmDlg
       Begin VB.Image imgMyDocs 
          Height          =   810
          Left            =   45
-         Picture         =   "frmDlg.frx":0000
+         Picture         =   "frmDlg.frx":0CC0
          Top             =   1215
          Width           =   1170
       End
       Begin VB.Image imgDesktop 
          Height          =   750
          Left            =   0
-         Picture         =   "frmDlg.frx":320C
+         Picture         =   "frmDlg.frx":3ECC
          Top             =   135
          Width           =   1185
       End
@@ -122,12 +153,13 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Declare Function SHAutoComplete Lib "shlwapi.dll" (ByVal hwndEdit As Long, ByVal dwFlags As Long) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
 Private Declare Sub mouse_event Lib "user32" (ByVal dwFlags As Long, ByVal dX As Long, ByVal dY As Long, ByVal cButtons As Long, ByVal dwExtraInfo As Long)
 Private Const LEFTDOWN = &H2, LEFTUP = &H4, MIDDLEDOWN = &H20, MIDDLEUP = &H40, RIGHTDOWN = &H8, RIGHTUP = &H10
-
+Private Const SHACF_FILESYS_DIRS = &H20
 
 Private Enum vButtons
     vRightClick = 2
@@ -138,87 +170,89 @@ End Enum
 
 Private FolderName As String
 Private ignoreAutomation As Boolean
+Private history() As String
+Private ignoreDriveChange As Boolean
 
-'Public Enum SpecialFolders
-'
-'    sf_DESKTOP = &H0 '<desktop>
-'    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
-'    sf_PROGRAMS = &H2 'Start Menu\Programs
-'    'sf_CONTROLS = &H3'My Computer\Control Panel
-'    'sf_PRINTERS = &H4'My Computer\Printers
-'    sf_PERSONAL = &H5 'My Documents
-'    sf_FAVORITES = &H6 '<user name>\Favourites
-'    sf_STARTUP = &H7 'Start Menu\Programs\Startup
-'    sf_RECENT = &H8 '<user name>\Recent
-'    sf_SENDTO = &H9 '<user name>\SendTo
-'    sf_BITBUCKET = &HA '<desktop>\Recycle Bin
-'    sf_STARTMENU = &HB '<user name>\Start Menu
-''    sf_MYDOCUMENTS = &HC'logical "My Documents" desktop icon
-'    sf_MYMUSIC = &HD '"My Music" folder
-'    sf_MYVIDEO = &HE '"My Videos" folder
-'    sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
-'    'sf_DRIVES = &H11'My Computer
-'    'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
-''    sf_NETHOOD = &H13'<user name>\nethood
-'    sf_FONTS = &H14 'windows\fonts
-''    sf_TEMPLATES = &H15'templates
-'    sf_COMMON_STARTMENU = &H16 'All Users\Start Menu
-''    sf_COMMON_PROGRAMS = &H17 'All Users\Start Menu\Programs
-'    sf_COMMON_STARTUP = &H18 'All Users\Startup
-'    sf_COMMON_DESKTOPDIRECTORY = &H19 'All Users\Desktop
-'    sf_APPDATA = &H1A '<user name>\Application Data
-''    sf_PRINTHOOD = &H1B'<user name>\PrintHood
-'    sf_LOCAL_APPDATA = &H1C '<user name>\Local Settings\Application Data (non roaming)
-' '   sf_ALTSTARTUP = &H1D'non localized startup
-'    'non localized common startup
-''    sf_COMMON_ALTSTARTUP = &H1E
-''    sf_COMMON_FAVORITES = &H1F
-''    sf_INTERNET_CACHE = &H20
-''    sf_COOKIES = &H21
-''    sf_HISTORY = &H22
-'    'All Users\Application Data
-''    sf_COMMON_APPDATA = &H23
-'    sf_WINDOWS = &H24 'GetWindowsDirectory()
-'    sf_SYSTEM = &H25 'GetSystemDirectory()
-'    sf_PROGRAM_FILES = &H26 'C:\Program Files
-'    sf_MYPICTURES = &H27 'C:\Program Files\My Pictures
-'    sf_PROFILE = &H28 'USERPROFILE
-''    'x86 system directory on RISC
-''    sf_SYSTEMX86 = &H29
-''    'x86 C:\Program Files on RISC
-''    sf_PROGRAM_FILESX86 = &H2A
-''    'C:\Program Files\Common
-''    sf_PROGRAM_FILES_COMMON = &H2B
-''    'x86 Program Files\Common on RISC
-''    sf_PROGRAM_FILES_COMMONX86 = &H2C
-''     'All Users\Templates
-''    sf_COMMON_TEMPLATES = &H2D
-''     'All Users\Documents
-''    sf_COMMON_DOCUMENTS = &H2E
-''    'All Users\Start Menu\Programs\Administrative Tools
-''    sf_COMMON_ADMINTOOLS = &H2F
-''    '<user name>\Start Menu\Programs\Administrative Tools
-''    sf_ADMINTOOLS = &H30
-''    'Network and Dial-up Connections
-''    sf_CONNECTIONS = &H31
-''    'All Users\My Music
-''    sf_COMMON_MUSIC = &H35
-''    'All Users\My Pictures
-''    sf_COMMON_PICTURES = &H36
-''    'All Users\My Video
-''    sf_COMMON_VIDEO = &H37
-''    'Resource Directory
-''    sf_RESOURCES = &H38
-''    'Localized Resource Directory
-''    sf_RESOURCES_LOCALIZED = &H39
-''    'Links to All Users OEM specific apps
-''    sf_COMMON_OEM_LINKS = &H3A
-''    'USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
-''    sf_CDBURN_AREA = &H3B
-''    'unused                                      = &H3C
-''    'Computers Near Me (computered from Workgroup membership)
-''    sf_COMPUTERSNEARME = &H3D
-'End Enum
+Public Enum SpecialFolders
+    
+    sf_DESKTOP = &H0 '<desktop>
+    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
+    sf_PROGRAMS = &H2 'Start Menu\Programs
+    'sf_CONTROLS = &H3'My Computer\Control Panel
+    'sf_PRINTERS = &H4'My Computer\Printers
+    sf_PERSONAL = &H5 'My Documents
+    sf_FAVORITES = &H6 '<user name>\Favourites
+    sf_STARTUP = &H7 'Start Menu\Programs\Startup
+    sf_RECENT = &H8 '<user name>\Recent
+    sf_SENDTO = &H9 '<user name>\SendTo
+    sf_BITBUCKET = &HA '<desktop>\Recycle Bin
+    sf_STARTMENU = &HB '<user name>\Start Menu
+'    sf_MYDOCUMENTS = &HC'logical "My Documents" desktop icon
+    sf_MYMUSIC = &HD '"My Music" folder
+    sf_MYVIDEO = &HE '"My Videos" folder
+    sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
+    sf_DRIVES = &H11 'My Computer
+    'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
+'    sf_NETHOOD = &H13'<user name>\nethood
+    sf_FONTS = &H14 'windows\fonts
+'    sf_TEMPLATES = &H15'templates
+    sf_COMMON_STARTMENU = &H16 'All Users\Start Menu
+'    sf_COMMON_PROGRAMS = &H17 'All Users\Start Menu\Programs
+    sf_COMMON_STARTUP = &H18 'All Users\Startup
+    sf_COMMON_DESKTOPDIRECTORY = &H19 'All Users\Desktop
+    sf_APPDATA = &H1A '<user name>\Application Data
+'    sf_PRINTHOOD = &H1B'<user name>\PrintHood
+    sf_LOCAL_APPDATA = &H1C '<user name>\Local Settings\Application Data (non roaming)
+ '   sf_ALTSTARTUP = &H1D'non localized startup
+    'non localized common startup
+'    sf_COMMON_ALTSTARTUP = &H1E
+'    sf_COMMON_FAVORITES = &H1F
+'    sf_INTERNET_CACHE = &H20
+'    sf_COOKIES = &H21
+'    sf_HISTORY = &H22
+    'All Users\Application Data
+'    sf_COMMON_APPDATA = &H23
+    sf_WINDOWS = &H24 'GetWindowsDirectory()
+    sf_SYSTEM = &H25 'GetSystemDirectory()
+    sf_PROGRAM_FILES = &H26 'C:\Program Files
+    sf_MYPICTURES = &H27 'C:\Program Files\My Pictures
+    sf_PROFILE = &H28 'USERPROFILE
+'    'x86 system directory on RISC
+'    sf_SYSTEMX86 = &H29
+'    'x86 C:\Program Files on RISC
+'    sf_PROGRAM_FILESX86 = &H2A
+'    'C:\Program Files\Common
+'    sf_PROGRAM_FILES_COMMON = &H2B
+'    'x86 Program Files\Common on RISC
+'    sf_PROGRAM_FILES_COMMONX86 = &H2C
+'     'All Users\Templates
+'    sf_COMMON_TEMPLATES = &H2D
+'     'All Users\Documents
+'    sf_COMMON_DOCUMENTS = &H2E
+'    'All Users\Start Menu\Programs\Administrative Tools
+'    sf_COMMON_ADMINTOOLS = &H2F
+'    '<user name>\Start Menu\Programs\Administrative Tools
+'    sf_ADMINTOOLS = &H30
+'    'Network and Dial-up Connections
+'    sf_CONNECTIONS = &H31
+'    'All Users\My Music
+'    sf_COMMON_MUSIC = &H35
+'    'All Users\My Pictures
+'    sf_COMMON_PICTURES = &H36
+'    'All Users\My Video
+'    sf_COMMON_VIDEO = &H37
+'    'Resource Directory
+'    sf_RESOURCES = &H38
+'    'Localized Resource Directory
+'    sf_RESOURCES_LOCALIZED = &H39
+'    'Links to All Users OEM specific apps
+'    sf_COMMON_OEM_LINKS = &H3A
+'    'USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
+'    sf_CDBURN_AREA = &H3B
+'    'unused                                      = &H3C
+'    'Computers Near Me (computered from Workgroup membership)
+'    sf_COMPUTERSNEARME = &H3D
+End Enum
 
 
 Private Sub cmdNewFolder_Click()
@@ -230,7 +264,8 @@ Private Sub cmdNewFolder_Click()
     If Err.Number <> 0 Then
         MsgBox Err.Description
     Else
-        Dir1.Refresh
+        Text1 = Dir1.path & "\" & fName
+        'Dir1.Refresh
     End If
 End Sub
 
@@ -244,8 +279,28 @@ Private Sub Command2_Click()
     Unload Me
 End Sub
 
+Private Sub Command3_Click()
+    On Error Resume Next
+    Dim tmp As String
+    Do
+        tmp = pop(history)
+        If Len(tmp) = 0 Then Exit Do
+    Loop While tmp = Text1
+    If Len(tmp) > 0 Then Text1 = tmp
+End Sub
+
+Private Sub Command4_Click()
+    Dim tmp As String
+    On Error Resume Next
+    tmp = GetParentFolder(Text1)
+    If Len(tmp) > 0 Then Text1 = tmp
+End Sub
+
 Private Sub Dir1_Change()
     Text1 = Dir1.path
+    push history, Text1
+    Debug.Print "Adding: " & Text1
+    SyncDrive
 End Sub
 
 Private Sub Dir1_Click()
@@ -262,11 +317,13 @@ End Sub
 
 Private Sub Drive1_Change()
     On Error Resume Next
+    If ignoreDriveChange Then Exit Sub
     Dir1.path = Drive1.Drive
 End Sub
 
 Private Sub Form_Load()
     Text1 = GetSpecialFolder(sf_DESKTOP)
+    SHAutoComplete Text1.hWnd, SHACF_FILESYS_DIRS
 End Sub
 
 Function BrowseForFolder(Optional initDir As String, Optional specialFolder As SpecialFolders = -1, Optional owner As Form = Nothing) As String
@@ -277,7 +334,7 @@ Function BrowseForFolder(Optional initDir As String, Optional specialFolder As S
         Text1 = initDir
     End If
     
-    Me.Show 1, owner 'modal does not return until cancel or save hit..
+    Me.Show 1, owner  'modal does not return until cancel or save hit..
     BrowseForFolder = FolderName
     Unload Me
     
@@ -288,39 +345,57 @@ Private Sub Form_Resize()
     Frame1.Width = Me.Width
     Frame2.Left = Frame1.Width - Frame2.Width - 200
     Frame1.Top = Me.Height - Frame1.Height - 400
+    Frame3.Left = Me.Width - Frame3.Width - 200
     Dir1.Height = Me.Height - Frame1.Height - 1000
     Dir1.Width = Me.Width - Dir1.Left - 200
     Text1.Width = Dir1.Width
     Picture1.Height = Dir1.Height
-    Drive1.Width = Dir1.Width
+    Drive1.Width = Me.Width - Dir1.Left - Frame3.Width - 400
 End Sub
 
 Private Sub imgDesktop_Click()
     Dir1.path = GetSpecialFolder(sf_DESKTOP)
 End Sub
 
-'Private Sub imgMyComp_Click()
-'    Dir1.path = GetSpecialFolder(sf_DRIVES)
-'End Sub
+Private Sub imgMyComp_Click()
+    Dir1.path = GetSpecialFolder(sf_DRIVES)
+End Sub
 
 Private Sub imgMyDocs_Click()
     Dir1.path = GetSpecialFolder(sf_PERSONAL)
 End Sub
 
 Private Sub Text1_Change()
-    If FolderExists(Text1) And Text1 <> Dir1.path Then Dir1.path = Text1
+    If FolderExists(Text1) And Text1 <> Dir1.path Then
+        Dir1.path = Text1
+    End If
 End Sub
 
 Private Sub Text1_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
     On Error Resume Next
     Dim f As String
-    f = Data.files(1)
+    f = Data.Files(1)
     If FileExists(f) Then Text1 = GetParentFolder(f)
     If FolderExists(f) Then Text1 = f
 End Sub
 
-
-
+Private Function SyncDrive()
+    On Error Resume Next
+    Dim drive_letter As String, i As Long
+    
+    ignoreDriveChange = True
+        
+    drive_letter = LCase(VBA.Left(Text1, 2))
+    For i = 0 To Drive1.ListCount
+        If LCase(Left(Drive1.List(i), 2)) = drive_letter Then
+            If Drive1.ListIndex <> i Then Drive1.ListIndex = i
+            Exit For
+        End If
+    Next
+        
+    ignoreDriveChange = False
+    
+End Function
 
 Private Function FolderExists(path As String) As Boolean
   On Error GoTo hell
@@ -349,6 +424,7 @@ Private Function GetParentFolder(path) As String
     tmp = Split(path, "\")
     ub = tmp(UBound(tmp))
     GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
+    If Right(GetParentFolder, 1) = ":" Then GetParentFolder = GetParentFolder & "\"
 End Function
 
 Private Function GetSpecialFolder(sf As SpecialFolders) As String
@@ -393,3 +469,39 @@ Private Sub MouseClick(Optional b As vButtons)
     
     End Select
 End Sub
+
+
+
+
+Private Sub push(ary, value) 'this modifies parent ary object
+    On Error GoTo init
+    Dim x
+    x = UBound(ary) '<-throws Error If Not initalized
+    ReDim Preserve ary(UBound(ary) + 1)
+    ary(UBound(ary)) = value
+    Exit Sub
+init:     ReDim ary(0): ary(0) = value
+End Sub
+
+Private Function pop(ary) 'this modifies parent ary obj
+        
+    If AryIsEmpty(ary) Then Exit Function
+    
+    pop = ary(UBound(ary))
+    
+    If UBound(ary) = 0 Then
+        Erase ary
+    Else
+        ReDim Preserve ary(UBound(ary) - 1)
+    End If
+
+End Function
+
+Private Function AryIsEmpty(ary) As Boolean
+  On Error GoTo oops
+    Dim i
+    i = UBound(ary)  '<- throws error if not initalized
+    AryIsEmpty = False
+  Exit Function
+oops: AryIsEmpty = True
+End Function

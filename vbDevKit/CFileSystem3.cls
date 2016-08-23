@@ -11,14 +11,14 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Revision 3 <- Incompatiable with all previous..simplified & streamlined
+'Revision 4
 '
 'Info:     These are basically macros for VB's built in file processes
 '            this should streamline your code quite a bit and hopefully
 '            remove alot of redundant coding.
 '
 'Author:   dzzie@yahoo.com
-'Sight:    http://www.geocities.com/dzzie
+'Sight:    http://sandsprite.com
     
 'Variant version of clsFso for scripting languages, added recurse option to getfolderfiles
 ' 5.21.12 - bugfix in RandomNum sporotic overflow time of day related...
@@ -30,90 +30,77 @@ Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Public dlg As New CCmnDlg
 
-Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath = True, Optional recursive = False) As Variant()
-   Dim fnames()
-   Dim folders()
+Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath = True, Optional recursive = False) As Collection
+   Dim fnames As New Collection
+   Dim folders As Collection
+   Dim tmp As New Collection
    Dim i As Long
-   Dim fs
+   Dim fs, f
    
-   If Not FolderExists(folderPath) Then
-        'returns empty array if fails
-        GetFolderFiles = fnames()
-        Exit Function
-   End If
-   
+   Set GetFolderFiles = fnames
+   If Not FolderExists(folderPath) Then Exit Function
    folderPath = IIf(Right(folderPath, 1) = "\", folderPath, folderPath & "\")
    
    fs = Dir(folderPath & Filter, vbHidden Or vbNormal Or vbReadOnly Or vbSystem)
    While fs <> ""
-     If fs <> "" Then push fnames(), IIf(retFullPath = True, folderPath & fs, fs)
+     If fs <> "" Then fnames.Add , IIf(retFullPath, folderPath & fs, fs)
      fs = Dir()
    Wend
    
    If recursive Then
-        folders() = GetSubFolders(folderPath)
-        If Not AryIsEmpty(folders) Then
-            For i = 0 To UBound(folders)
-                FolderEngine folders(i), fnames(), Filter
-            Next
-        End If
+        Set folders = GetSubFolders(folderPath)
+        For Each f In folders
+            FolderEngine f, tmp, Filter
+        Next
         If Not retFullPath Then
-            For i = 0 To UBound(fnames)
-                fnames(i) = Replace(fnames(i), folderPath, Empty) 'make relative path from base
+            For Each f In tmp
+                fnames.Add Replace(f, folderPath, Empty) 'make relative path from base
             Next
         End If
     End If
     
-   GetFolderFiles = fnames()
 End Function
 
-Private Sub FolderEngine(fldrpath, ary(), Optional Filter = "*")
+Private Sub FolderEngine(fldrpath, c As Collection, Optional Filter = "*")
 
-    Dim files()
-    Dim folders()
+    Dim files As Collection
+    Dim folders As Collection
     Dim i As Long
-     
-    files = GetFolderFiles(fldrpath, Filter)
-    folders = GetSubFolders(fldrpath)
-        
-    If Not AryIsEmpty(files) Then
-        For i = 0 To UBound(files)
-            push ary, files(i)
-        Next
-    End If
+    Dim f
     
-    If Not AryIsEmpty(folders) Then
-        For i = 0 To UBound(folders)
-             FolderEngine folders(i), ary, Filter
-        Next
-    End If
+    Set files = GetFolderFiles(fldrpath, Filter)
+    Set folders = GetSubFolders(fldrpath)
+        
+    For Each f In files
+        c.Add f
+    Next
+    
+    For Each f In folders
+        FolderEngine f, c, Filter
+    Next
     
 End Sub
  
     
-Function GetSubFolders(folderPath, Optional retFullPath = True) As Variant()
-    Dim fnames()
-    Dim fd
+Function GetSubFolders(folderPath, Optional retFullPath = True) As Collection
+   Dim fnames As New Collection
+   Dim fd
     
-    If Not FolderExists(folderPath) Then
-        'returns empty array if fails
-        GetSubFolders = fnames()
-        Exit Function
-    End If
+   Set GetSubFolders = fnames
     
+   If Not FolderExists(folderPath) Then Exit Function
    If Right(folderPath, 1) <> "\" Then folderPath = folderPath & "\"
 
    fd = Dir(folderPath, vbDirectory)
    While fd <> ""
      If Left(fd, 1) <> "." Then
         If (GetAttr(folderPath & fd) And vbDirectory) = vbDirectory Then
-           push fnames(), IIf(retFullPath = True, folderPath & fd, fd)
+           fnames.Add IIf(retFullPath = True, folderPath & fd, fd)
         End If
      End If
      fd = Dir()
    Wend
    
-   GetSubFolders = fnames()
 End Function
 
 Function FolderExists(path)
@@ -164,14 +151,14 @@ hell:
     
 End Function
 
-Sub CreateFolder(path)
+Function CreateFolder(path)
    On Error GoTo blah
-   If FolderExists(path) Then Exit Sub
+   If FolderExists(path) Then Exit Function
    MkDir path
-   If Not FolderExists(path) Then Exit Sub
-   'CreateFolder = True
+   If Not FolderExists(path) Then Exit Function
+   CreateFolder = True
 blah:
-End Sub
+End Function
 
 Function FileNameFromPath(fullpath)
     Dim tmp()

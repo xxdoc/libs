@@ -52,7 +52,7 @@ Dim dlg As New CCmnDlg
 Private Sub Command1_Click()
     
     MsgBox dlg.FolderDialog2()
-    MsgBox dlg.FolderDialog2(App.path)
+    'MsgBox dlg.FolderDialog2(App.path)
     
     
 End Sub
