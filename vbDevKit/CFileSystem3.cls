@@ -25,9 +25,12 @@ Attribute VB_Exposed = False
 ' 11.14.13- bugfix in FileExists,FolderExists, GetFolderFiles recursive filter, GetParentFolder trailing \ bugfix
 '  1.21.14- bugfix deletefile detects readonly attribute and removes
 '  7.8.16 - bugfixs synced with current CFileSystem2
+'  8.27.16 - +GetShortName, !breaking change! -> GetFolderFiles/SubFolders now returns a collection
 
 Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
+Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
+
 Public dlg As New CCmnDlg
 
 Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath = True, Optional recursive = False) As Collection
@@ -43,7 +46,7 @@ Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath 
    
    fs = Dir(folderPath & Filter, vbHidden Or vbNormal Or vbReadOnly Or vbSystem)
    While fs <> ""
-     If fs <> "" Then fnames.Add , IIf(retFullPath, folderPath & fs, fs)
+     If fs <> "" Then fnames.Add IIf(retFullPath, folderPath & fs, fs)
      fs = Dir()
    Wend
    
@@ -471,8 +474,24 @@ Function FolderName(folderPath)
     FolderName = ret
 End Function
 
-Private Sub Class_Initialize()
-    'If Not isRegistered And Not isInitalized Then TellThemAllAboutIt
-End Sub
+Public Function GetShortName(sFile As String) As String
+    Dim sShortFile As String * 500
+    Dim lResult As Long
+    Dim iCreated As Boolean
+    
+    'the path must actually exist to get the short path name !!
+    If Not FileExists(sFile) Then
+        WriteFile sFile, ""
+        iCreated = True
+    End If
+    
+    lResult = GetShortPathName(sFile, sShortFile, Len(sShortFile))
+    GetShortName = Left$(sShortFile, lResult)
+    
+    If Len(GetShortName) = 0 Then
+        GetShortName = sFile
+    End If
+    
+    If iCreated Then Kill sFile
 
-
+End Function

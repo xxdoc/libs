@@ -10,7 +10,7 @@ Attribute VB_Name = "CCmnDlg"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = True
+Attribute VB_Exposed = False
 Option Explicit
 
 Const LANG_US = &H409
@@ -61,14 +61,14 @@ Private Type BrowseInfo
     iImage As Long
 End Type
 
-'Public Enum FilterTypes
-'    textFiles = 0
-'    htmlFiles = 1
-'    exeFiles = 2
-'    zipFiles = 3
-'    AllFiles = 4
-'    CustomFilter = 5
-'End Enum
+Public Enum FilterTypes
+    textFiles = 0
+    htmlFiles = 1
+    exeFiles = 2
+    zipFiles = 3
+    AllFiles = 4
+    CustomFilter = 5
+End Enum
 
 Public Enum SpecialFolders
     
@@ -135,9 +135,9 @@ Public Enum SpecialFolders
 '    'All Users\My Music
 '    sf_COMMON_MUSIC = &H35
 '    'All Users\My Pictures
-'    sf_COMMON_PICTURES = &H36
+    sf_COMMON_PICTURES = &H36
 '    'All Users\My Video
-'    sf_COMMON_VIDEO = &H37
+    sf_COMMON_VIDEO = &H37
 '    'Resource Directory
 '    sf_RESOURCES = &H38
 '    'Localized Resource Directory

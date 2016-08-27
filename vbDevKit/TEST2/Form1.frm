@@ -17,15 +17,20 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Private Sub Form_Load()
 
-    Const F = "C:\Documents and Settings\david\Desktop\courses\kav2012_12.0.0.374aEN_2777.exe"
+    Dim fso As New CFileSystem3
+    Dim c As Collection
     
-    Dim h As New CWinHash
+    'Set c = fso.GetFolderFiles("C:\jdksdjsakl\")
+    '
+    'Debug.Print c.Count
+    'For Each f In c
+    '    Debug.Print f
+    'Next
     
-    hh = h.HashFile(F)
-    If Len(hh) = 0 Then
-        MsgBox h.error_message
-    End If
+    'Debug.Print fso.GetShortName("C:\Documents and Settings\david\Desktop\doesnotexistyet.txt")
     
+    Debug.Print fso.dlg.FolderDialog2()
     
+    End
     
 End Sub

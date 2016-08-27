@@ -9,6 +9,12 @@ Begin VB.Form frmDlg
    ScaleHeight     =   3975
    ScaleWidth      =   6675
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Timer Timer1 
+      Enabled         =   0   'False
+      Interval        =   10
+      Left            =   150
+      Top             =   90
+   End
    Begin VB.Frame Frame3 
       BorderStyle     =   0  'None
       Caption         =   "Frame3"
@@ -152,6 +158,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+'8.27.16 - bugfix for visual misselect on automated double click thanks aurel
 
 Private Declare Function SHAutoComplete Lib "shlwapi.dll" (ByVal hwndEdit As Long, ByVal dwFlags As Long) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
@@ -168,10 +175,32 @@ Private Enum vButtons
     vDoubleLeft = 16
 End Enum
 
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
+Private Declare Function SetCursorPos Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, lpPoint As POINTAPI) As Long
+
+Const LB_GETCURSEL = &H188
+Const LB_ERR = -1
+Const LB_GETITEMRECT    As Long = &H198&
+
+Private Type RECT
+    Bottom As Long
+    Left As Long
+    Right As Long
+    Top As Long
+End Type
+
+Private Type POINTAPI
+    X As Long
+    Y As Long
+End Type
+
 Private FolderName As String
 Private ignoreAutomation As Boolean
 Private history() As String
 Private ignoreDriveChange As Boolean
+Private pt As POINTAPI
 
 Public Enum SpecialFolders
     
@@ -304,15 +333,57 @@ Private Sub Dir1_Change()
 End Sub
 
 Private Sub Dir1_Click()
-    On Error Resume Next
-
-    If ignoreAutomation Then
-        ignoreAutomation = False
-    Else
-        ignoreAutomation = True
-        MouseClick vDoubleLeft
-    End If
     
+    On Error Resume Next
+    Dim selitem As Long
+    Dim udtRECT As RECT
+    
+    If ignoreAutomation Then
+        'Debug.Print "ignored"
+        Exit Sub
+    End If
+         
+    ignoreAutomation = True
+    
+    'double click the entry under the mouse
+    MouseClick vDoubleLeft
+
+    'get the selected item index (Dir1.ListIndex control property is not yet set)
+    selitem = SendMessage(Dir1.hWnd, LB_GETCURSEL, ByVal CLng(0), ByVal CLng(0))
+    'Me.Caption = selitem & " " & Dir1.List(selitem) & " index:" & Dir1.ListIndex
+    
+    'save the current mouse position
+    GetCursorPos pt
+    
+    'get rectangle for the selected item..
+    SendMessage Dir1.hWnd, LB_GETITEMRECT, ByVal CLng(selitem - 1), udtRECT
+    'Me.Caption = Me.Caption & " " & udtRECT.Left & " " & udtRECT.Top
+    
+    'now we move the mouse to the selected item and click the item once
+    MoveMouseCursor udtRECT.Left, udtRECT.Top, Dir1.hWnd
+    MouseClick vLeftClick
+    
+    'we use a timer to give it a slight delay and ensure it doesnt become a feedback loop
+    Timer1.Enabled = True
+    
+End Sub
+
+Private Sub Timer1_Timer()
+    Timer1.Enabled = False
+    SetCursorPos pt.X, pt.Y
+    ignoreAutomation = False
+End Sub
+
+Sub MoveMouseCursor(ByVal X As Long, ByVal Y As Long, Optional ByVal hWnd As Long)
+    If hWnd = 0 Then
+        SetCursorPos X, Y
+    Else
+        Dim lpPoint As POINTAPI
+        lpPoint.X = X
+        lpPoint.Y = Y
+        ClientToScreen hWnd, lpPoint
+        SetCursorPos lpPoint.X, lpPoint.Y
+    End If
 End Sub
 
 Private Sub Drive1_Change()
@@ -371,7 +442,7 @@ Private Sub Text1_Change()
     End If
 End Sub
 
-Private Sub Text1_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Text1_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
     On Error Resume Next
     Dim f As String
     f = Data.Files(1)
@@ -475,8 +546,8 @@ End Sub
 
 Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
-    Dim x
-    x = UBound(ary) '<-throws Error If Not initalized
+    Dim X
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub

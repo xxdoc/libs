@@ -56,6 +56,14 @@ Begin VB.Form frmDlg
       TabIndex        =   4
       Top             =   2925
       Width           =   6540
+      Begin VB.CommandButton Command5 
+         Caption         =   "Command5"
+         Height          =   285
+         Left            =   1560
+         TabIndex        =   14
+         Top             =   570
+         Width           =   975
+      End
       Begin VB.Frame Frame2 
          BorderStyle     =   0  'None
          Caption         =   "Frame2"
@@ -161,6 +169,16 @@ Private Declare Sub mouse_event Lib "user32" (ByVal dwFlags As Long, ByVal dX As
 Private Const LEFTDOWN = &H2, LEFTUP = &H4, MIDDLEDOWN = &H20, MIDDLEUP = &H40, RIGHTDOWN = &H8, RIGHTUP = &H10
 Private Const SHACF_FILESYS_DIRS = &H20
 
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Const LB_RESETCONTENT = &H184
+Const LB_GETCURSEL = &H188
+Const LB_GETTEXT = &H189
+Const LB_GETTEXTLEN = &H18A
+Const LB_ERR = -1
+Const LB_SETCARETINDEX = &H19E
+Const LB_SETCURSEL = &H186
+Const LB_SETSEL = &H185
+
 Private Enum vButtons
     vRightClick = 2
     vDoubleRight = 4
@@ -172,87 +190,88 @@ Private FolderName As String
 Private ignoreAutomation As Boolean
 Private history() As String
 Private ignoreDriveChange As Boolean
+Dim selitem As Long
 
-Public Enum SpecialFolders
-    
-    sf_DESKTOP = &H0 '<desktop>
-    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
-    sf_PROGRAMS = &H2 'Start Menu\Programs
-    'sf_CONTROLS = &H3'My Computer\Control Panel
-    'sf_PRINTERS = &H4'My Computer\Printers
-    sf_PERSONAL = &H5 'My Documents
-    sf_FAVORITES = &H6 '<user name>\Favourites
-    sf_STARTUP = &H7 'Start Menu\Programs\Startup
-    sf_RECENT = &H8 '<user name>\Recent
-    sf_SENDTO = &H9 '<user name>\SendTo
-    sf_BITBUCKET = &HA '<desktop>\Recycle Bin
-    sf_STARTMENU = &HB '<user name>\Start Menu
-'    sf_MYDOCUMENTS = &HC'logical "My Documents" desktop icon
-    sf_MYMUSIC = &HD '"My Music" folder
-    sf_MYVIDEO = &HE '"My Videos" folder
-    sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
-    sf_DRIVES = &H11 'My Computer
-    'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
-'    sf_NETHOOD = &H13'<user name>\nethood
-    sf_FONTS = &H14 'windows\fonts
-'    sf_TEMPLATES = &H15'templates
-    sf_COMMON_STARTMENU = &H16 'All Users\Start Menu
-'    sf_COMMON_PROGRAMS = &H17 'All Users\Start Menu\Programs
-    sf_COMMON_STARTUP = &H18 'All Users\Startup
-    sf_COMMON_DESKTOPDIRECTORY = &H19 'All Users\Desktop
-    sf_APPDATA = &H1A '<user name>\Application Data
-'    sf_PRINTHOOD = &H1B'<user name>\PrintHood
-    sf_LOCAL_APPDATA = &H1C '<user name>\Local Settings\Application Data (non roaming)
- '   sf_ALTSTARTUP = &H1D'non localized startup
-    'non localized common startup
-'    sf_COMMON_ALTSTARTUP = &H1E
-'    sf_COMMON_FAVORITES = &H1F
-'    sf_INTERNET_CACHE = &H20
-'    sf_COOKIES = &H21
-'    sf_HISTORY = &H22
-    'All Users\Application Data
-'    sf_COMMON_APPDATA = &H23
-    sf_WINDOWS = &H24 'GetWindowsDirectory()
-    sf_SYSTEM = &H25 'GetSystemDirectory()
-    sf_PROGRAM_FILES = &H26 'C:\Program Files
-    sf_MYPICTURES = &H27 'C:\Program Files\My Pictures
-    sf_PROFILE = &H28 'USERPROFILE
-'    'x86 system directory on RISC
-'    sf_SYSTEMX86 = &H29
-'    'x86 C:\Program Files on RISC
-'    sf_PROGRAM_FILESX86 = &H2A
-'    'C:\Program Files\Common
-'    sf_PROGRAM_FILES_COMMON = &H2B
-'    'x86 Program Files\Common on RISC
-'    sf_PROGRAM_FILES_COMMONX86 = &H2C
-'     'All Users\Templates
-'    sf_COMMON_TEMPLATES = &H2D
-'     'All Users\Documents
-'    sf_COMMON_DOCUMENTS = &H2E
-'    'All Users\Start Menu\Programs\Administrative Tools
-'    sf_COMMON_ADMINTOOLS = &H2F
-'    '<user name>\Start Menu\Programs\Administrative Tools
-'    sf_ADMINTOOLS = &H30
-'    'Network and Dial-up Connections
-'    sf_CONNECTIONS = &H31
-'    'All Users\My Music
-'    sf_COMMON_MUSIC = &H35
-'    'All Users\My Pictures
-'    sf_COMMON_PICTURES = &H36
-'    'All Users\My Video
-'    sf_COMMON_VIDEO = &H37
-'    'Resource Directory
-'    sf_RESOURCES = &H38
-'    'Localized Resource Directory
-'    sf_RESOURCES_LOCALIZED = &H39
-'    'Links to All Users OEM specific apps
-'    sf_COMMON_OEM_LINKS = &H3A
-'    'USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
-'    sf_CDBURN_AREA = &H3B
-'    'unused                                      = &H3C
-'    'Computers Near Me (computered from Workgroup membership)
-'    sf_COMPUTERSNEARME = &H3D
-End Enum
+'Public Enum SpecialFolders
+'
+'    sf_DESKTOP = &H0 '<desktop>
+'    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
+'    sf_PROGRAMS = &H2 'Start Menu\Programs
+'    'sf_CONTROLS = &H3'My Computer\Control Panel
+'    'sf_PRINTERS = &H4'My Computer\Printers
+'    sf_PERSONAL = &H5 'My Documents
+'    sf_FAVORITES = &H6 '<user name>\Favourites
+'    sf_STARTUP = &H7 'Start Menu\Programs\Startup
+'    sf_RECENT = &H8 '<user name>\Recent
+'    sf_SENDTO = &H9 '<user name>\SendTo
+'    sf_BITBUCKET = &HA '<desktop>\Recycle Bin
+'    sf_STARTMENU = &HB '<user name>\Start Menu
+''    sf_MYDOCUMENTS = &HC'logical "My Documents" desktop icon
+'    sf_MYMUSIC = &HD '"My Music" folder
+'    sf_MYVIDEO = &HE '"My Videos" folder
+'    sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
+'    sf_DRIVES = &H11 'My Computer
+'    'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
+''    sf_NETHOOD = &H13'<user name>\nethood
+'    sf_FONTS = &H14 'windows\fonts
+''    sf_TEMPLATES = &H15'templates
+'    sf_COMMON_STARTMENU = &H16 'All Users\Start Menu
+''    sf_COMMON_PROGRAMS = &H17 'All Users\Start Menu\Programs
+'    sf_COMMON_STARTUP = &H18 'All Users\Startup
+'    sf_COMMON_DESKTOPDIRECTORY = &H19 'All Users\Desktop
+'    sf_APPDATA = &H1A '<user name>\Application Data
+''    sf_PRINTHOOD = &H1B'<user name>\PrintHood
+'    sf_LOCAL_APPDATA = &H1C '<user name>\Local Settings\Application Data (non roaming)
+' '   sf_ALTSTARTUP = &H1D'non localized startup
+'    'non localized common startup
+''    sf_COMMON_ALTSTARTUP = &H1E
+''    sf_COMMON_FAVORITES = &H1F
+''    sf_INTERNET_CACHE = &H20
+''    sf_COOKIES = &H21
+''    sf_HISTORY = &H22
+'    'All Users\Application Data
+''    sf_COMMON_APPDATA = &H23
+'    sf_WINDOWS = &H24 'GetWindowsDirectory()
+'    sf_SYSTEM = &H25 'GetSystemDirectory()
+'    sf_PROGRAM_FILES = &H26 'C:\Program Files
+'    sf_MYPICTURES = &H27 'C:\Program Files\My Pictures
+'    sf_PROFILE = &H28 'USERPROFILE
+''    'x86 system directory on RISC
+''    sf_SYSTEMX86 = &H29
+''    'x86 C:\Program Files on RISC
+''    sf_PROGRAM_FILESX86 = &H2A
+''    'C:\Program Files\Common
+''    sf_PROGRAM_FILES_COMMON = &H2B
+''    'x86 Program Files\Common on RISC
+''    sf_PROGRAM_FILES_COMMONX86 = &H2C
+''     'All Users\Templates
+''    sf_COMMON_TEMPLATES = &H2D
+''     'All Users\Documents
+''    sf_COMMON_DOCUMENTS = &H2E
+''    'All Users\Start Menu\Programs\Administrative Tools
+''    sf_COMMON_ADMINTOOLS = &H2F
+''    '<user name>\Start Menu\Programs\Administrative Tools
+''    sf_ADMINTOOLS = &H30
+''    'Network and Dial-up Connections
+''    sf_CONNECTIONS = &H31
+''    'All Users\My Music
+''    sf_COMMON_MUSIC = &H35
+''    'All Users\My Pictures
+''    sf_COMMON_PICTURES = &H36
+''    'All Users\My Video
+''    sf_COMMON_VIDEO = &H37
+''    'Resource Directory
+''    sf_RESOURCES = &H38
+''    'Localized Resource Directory
+''    sf_RESOURCES_LOCALIZED = &H39
+''    'Links to All Users OEM specific apps
+''    sf_COMMON_OEM_LINKS = &H3A
+''    'USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
+''    sf_CDBURN_AREA = &H3B
+''    'unused                                      = &H3C
+''    'Computers Near Me (computered from Workgroup membership)
+''    sf_COMPUTERSNEARME = &H3D
+'End Enum
 
 
 Private Sub cmdNewFolder_Click()
@@ -296,6 +315,10 @@ Private Sub Command4_Click()
     If Len(tmp) > 0 Then Text1 = tmp
 End Sub
 
+Private Sub Command5_Click()
+    Me.Caption = Me.Caption & " " & SendMessage(Dir1.hwnd, LB_SETSEL, ByVal CLng(selitem), ByVal CLng(0))
+End Sub
+
 Private Sub Dir1_Change()
     Text1 = Dir1.path
     push history, Text1
@@ -305,12 +328,24 @@ End Sub
 
 Private Sub Dir1_Click()
     On Error Resume Next
+    Dim selitem As Long
 
     If ignoreAutomation Then
         ignoreAutomation = False
     Else
         ignoreAutomation = True
         MouseClick vDoubleLeft
+
+        selitem = SendMessage(Dir1.hwnd, LB_GETCURSEL, ByVal CLng(0), ByVal CLng(0))
+        Me.Caption = selitem
+        
+        
+        'For i = 0 To Dir1.ListCount - 1
+        '    If Dir1.List(i) = GetParentFolder(Dir1.path) Then
+        '        Dir1.ListIndex = i
+        '        Exit For
+        '    End If
+        'Next
     End If
     
 End Sub
@@ -323,7 +358,7 @@ End Sub
 
 Private Sub Form_Load()
     Text1 = GetSpecialFolder(sf_DESKTOP)
-    SHAutoComplete Text1.hWnd, SHACF_FILESYS_DIRS
+    SHAutoComplete Text1.hwnd, SHACF_FILESYS_DIRS
 End Sub
 
 Function BrowseForFolder(Optional initDir As String, Optional specialFolder As SpecialFolders = -1, Optional owner As Form = Nothing) As String
@@ -374,7 +409,7 @@ End Sub
 Private Sub Text1_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
     On Error Resume Next
     Dim f As String
-    f = Data.Files(1)
+    f = Data.files(1)
     If FileExists(f) Then Text1 = GetParentFolder(f)
     If FolderExists(f) Then Text1 = f
 End Sub
