@@ -158,7 +158,15 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+'
+'Note: we have modified the behavior of the dirlist control so that a single click
+'      on an item selects it. this led to the bug below.
+'
 '8.27.16 - bugfix for visual misselect on automated double click thanks aurel
+'          if you clicked on a subfolder that was half way down the sub folder list, and it contained a bunch
+'          of subfolders, the list would compact to show the newly selected folder, but if the mouse was still over
+'          one of its subfolders, that one would visually highlight (although not be active in .path property)
+'          we fix that through some chicanery in Dir1_click
 
 Private Declare Function SHAutoComplete Lib "shlwapi.dll" (ByVal hwndEdit As Long, ByVal dwFlags As Long) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
@@ -177,7 +185,7 @@ End Enum
 
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
 Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
-Private Declare Function SetCursorPos Lib "user32" (ByVal X As Long, ByVal Y As Long) As Long
+Private Declare Function SetCursorPos Lib "user32" (ByVal x As Long, ByVal Y As Long) As Long
 Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, lpPoint As POINTAPI) As Long
 
 Const LB_GETCURSEL = &H188
@@ -192,7 +200,7 @@ Private Type RECT
 End Type
 
 Private Type POINTAPI
-    X As Long
+    x As Long
     Y As Long
 End Type
 
@@ -370,19 +378,19 @@ End Sub
 
 Private Sub Timer1_Timer()
     Timer1.Enabled = False
-    SetCursorPos pt.X, pt.Y
+    SetCursorPos pt.x, pt.Y
     ignoreAutomation = False
 End Sub
 
-Sub MoveMouseCursor(ByVal X As Long, ByVal Y As Long, Optional ByVal hWnd As Long)
+Sub MoveMouseCursor(ByVal x As Long, ByVal Y As Long, Optional ByVal hWnd As Long)
     If hWnd = 0 Then
-        SetCursorPos X, Y
+        SetCursorPos x, Y
     Else
         Dim lpPoint As POINTAPI
-        lpPoint.X = X
+        lpPoint.x = x
         lpPoint.Y = Y
         ClientToScreen hWnd, lpPoint
-        SetCursorPos lpPoint.X, lpPoint.Y
+        SetCursorPos lpPoint.x, lpPoint.Y
     End If
 End Sub
 
@@ -442,7 +450,7 @@ Private Sub Text1_Change()
     End If
 End Sub
 
-Private Sub Text1_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Text1_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
     On Error Resume Next
     Dim f As String
     f = Data.Files(1)
@@ -546,8 +554,8 @@ End Sub
 
 Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
-    Dim X
-    X = UBound(ary) '<-throws Error If Not initalized
+    Dim x
+    x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub

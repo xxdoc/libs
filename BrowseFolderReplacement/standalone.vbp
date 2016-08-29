@@ -1,12 +1,9 @@
 Type=Exe
-Form=Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Class=CFileSystem3; ..\CFileSystem3.cls
-Class=CCmnDlg; ..\CCmnDlg.cls
-Form=..\frmDlg.frm
-IconForm="Form1"
-Startup="Form1"
-ExeName32="Project1.exe"
+Form=frmDlg.frm
+Form=Form2.frm
+Startup="Form2"
+HelpFile=""
 Command32=""
 Name="Project1"
 HelpContextID="0"

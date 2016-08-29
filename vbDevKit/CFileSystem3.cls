@@ -8,9 +8,9 @@ BEGIN
 END
 Attribute VB_Name = "CFileSystem3"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 'Revision 4
 '
 'Info:     These are basically macros for VB's built in file processes
@@ -25,11 +25,109 @@ Attribute VB_Exposed = False
 ' 11.14.13- bugfix in FileExists,FolderExists, GetFolderFiles recursive filter, GetParentFolder trailing \ bugfix
 '  1.21.14- bugfix deletefile detects readonly attribute and removes
 '  7.8.16 - bugfixs synced with current CFileSystem2
-'  8.27.16 - +GetShortName, !breaking change! -> GetFolderFiles/SubFolders now returns a collection
+'  8.27.16 - !breaking change! -> GetFolderFiles/SubFolders now returns a collection
+'  8.28.16 - GetSubFolders added recursive option, buffix to include hidden and hidden system folders..
+'  8.28.16 - +GetDrives, DriveType, DriveTypeString, GetSpecialFolder, GetShortName,
 
 Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
+Private Declare Function GetLogicalDriveStrings Lib "kernel32" Alias "GetLogicalDriveStringsA" (ByVal nBufferLength As Long, ByVal lpBuffer As String) As Long
+Private Declare Function GetDriveType Lib "kernel32" Alias "GetDriveTypeA" (ByVal nDrive As String) As Long
+Private Declare Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
+Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hMem As Long)
+Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
+
+Enum DriveTypes
+    DRIVE_UNKNOWN = 0
+    DRIVE_NOTFOUND = 1
+    DRIVE_REMOVABLE = 2
+    DRIVE_FIXED = 3
+    DRIVE_REMOTE = 4
+    DRIVE_CDROM = 5
+    DRIVE_RAMDISK = 6
+End Enum
+
+Public Enum SpecialFolders
+    
+    sf_DESKTOP = &H0 '<desktop>
+    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
+    sf_PROGRAMS = &H2 'Start Menu\Programs
+    'sf_CONTROLS = &H3'My Computer\Control Panel
+    'sf_PRINTERS = &H4'My Computer\Printers
+    sf_PERSONAL = &H5 'My Documents
+    sf_FAVORITES = &H6 '<user name>\Favourites
+    sf_STARTUP = &H7 'Start Menu\Programs\Startup
+    sf_RECENT = &H8 '<user name>\Recent
+    sf_SENDTO = &H9 '<user name>\SendTo
+    sf_BITBUCKET = &HA '<desktop>\Recycle Bin
+    sf_STARTMENU = &HB '<user name>\Start Menu
+'    sf_MYDOCUMENTS = &HC'logical "My Documents" desktop icon
+    sf_MYMUSIC = &HD '"My Music" folder
+    sf_MYVIDEO = &HE '"My Videos" folder
+    sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
+    'sf_DRIVES = &H11'My Computer
+    'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
+'    sf_NETHOOD = &H13'<user name>\nethood
+    sf_FONTS = &H14 'windows\fonts
+'    sf_TEMPLATES = &H15'templates
+    sf_COMMON_STARTMENU = &H16 'All Users\Start Menu
+'    sf_COMMON_PROGRAMS = &H17 'All Users\Start Menu\Programs
+    sf_COMMON_STARTUP = &H18 'All Users\Startup
+    sf_COMMON_DESKTOPDIRECTORY = &H19 'All Users\Desktop
+    sf_APPDATA = &H1A '<user name>\Application Data
+'    sf_PRINTHOOD = &H1B'<user name>\PrintHood
+    sf_LOCAL_APPDATA = &H1C '<user name>\Local Settings\Application Data (non roaming)
+ '   sf_ALTSTARTUP = &H1D'non localized startup
+    'non localized common startup
+'    sf_COMMON_ALTSTARTUP = &H1E
+'    sf_COMMON_FAVORITES = &H1F
+'    sf_INTERNET_CACHE = &H20
+'    sf_COOKIES = &H21
+'    sf_HISTORY = &H22
+    'All Users\Application Data
+'    sf_COMMON_APPDATA = &H23
+    sf_WINDOWS = &H24 'GetWindowsDirectory()
+    sf_SYSTEM = &H25 'GetSystemDirectory()
+    sf_PROGRAM_FILES = &H26 'C:\Program Files
+    sf_MYPICTURES = &H27 'C:\Program Files\My Pictures
+    sf_PROFILE = &H28 'USERPROFILE
+'    'x86 system directory on RISC
+'    sf_SYSTEMX86 = &H29
+'    'x86 C:\Program Files on RISC
+'    sf_PROGRAM_FILESX86 = &H2A
+'    'C:\Program Files\Common
+'    sf_PROGRAM_FILES_COMMON = &H2B
+'    'x86 Program Files\Common on RISC
+'    sf_PROGRAM_FILES_COMMONX86 = &H2C
+'     'All Users\Templates
+'    sf_COMMON_TEMPLATES = &H2D
+'     'All Users\Documents
+'    sf_COMMON_DOCUMENTS = &H2E
+'    'All Users\Start Menu\Programs\Administrative Tools
+'    sf_COMMON_ADMINTOOLS = &H2F
+'    '<user name>\Start Menu\Programs\Administrative Tools
+'    sf_ADMINTOOLS = &H30
+'    'Network and Dial-up Connections
+'    sf_CONNECTIONS = &H31
+'    'All Users\My Music
+'    sf_COMMON_MUSIC = &H35
+'    'All Users\My Pictures
+    sf_COMMON_PICTURES = &H36
+'    'All Users\My Video
+    sf_COMMON_VIDEO = &H37
+'    'Resource Directory
+'    sf_RESOURCES = &H38
+'    'Localized Resource Directory
+'    sf_RESOURCES_LOCALIZED = &H39
+'    'Links to All Users OEM specific apps
+'    sf_COMMON_OEM_LINKS = &H3A
+'    'USERPROFILE\Local Settings\Application Data\Microsoft\CD Burning
+'    sf_CDBURN_AREA = &H3B
+'    'unused                                      = &H3C
+'    'Computers Near Me (computered from Workgroup membership)
+'    sf_COMPUTERSNEARME = &H3D
+End Enum
 
 Public dlg As New CCmnDlg
 
@@ -85,26 +183,64 @@ Private Sub FolderEngine(fldrpath, c As Collection, Optional Filter = "*")
 End Sub
  
     
-Function GetSubFolders(folderPath, Optional retFullPath = True) As Collection
+Function GetSubFolders(folderPath, Optional retFullPath = True, Optional recursive = False) As Collection
    Dim fnames As New Collection
-   Dim fd
-    
+   Dim tmp As New Collection
+   Dim tmp2 As New Collection
+   Dim fd, atr
+   Const ATTR_HIDDEN = 2
+   On Error Resume Next
+   
    Set GetSubFolders = fnames
     
    If Not FolderExists(folderPath) Then Exit Function
    If Right(folderPath, 1) <> "\" Then folderPath = folderPath & "\"
 
-   fd = Dir(folderPath, vbDirectory)
+   fd = Dir(folderPath, vbDirectory Or vbHidden Or vbSystem)
    While fd <> ""
-     If Left(fd, 1) <> "." Then
-        If (GetAttr(folderPath & fd) And vbDirectory) = vbDirectory Then
-           fnames.Add IIf(retFullPath = True, folderPath & fd, fd)
+        If Left(fd, 1) <> "." Then
+            atr = GetAttr(folderPath & fd) 'things like pagefile.sys that are locked can throw an error...
+            If (atr And vbDirectory) = vbDirectory Then
+               tmp.Add folderPath & fd 'always add full path we filter latter..(needed for recursive option)
+            End If
         End If
-     End If
-     fd = Dir()
+        fd = Dir()
    Wend
    
+   If recursive Then
+        For Each fd In tmp
+            SubFoldersInternal tmp2, fd
+        Next
+   End If
+
+   For Each fd In tmp
+        If retFullPath = True Then
+            fnames.Add fd
+        Else
+            fnames.Add Replace(fd, folderPath, Empty) 'make relative to parent dir
+        End If
+   Next
+        
+   For Each fd In tmp2
+        If retFullPath = True Then
+            fnames.Add fd
+        Else
+            fnames.Add Replace(fd, folderPath, Empty) 'make relative to parent dir
+        End If
+   Next
+   
 End Function
+
+Private Sub SubFoldersInternal(pc As Collection, parentDir)
+    Dim c As New Collection, d
+    Set c = GetSubFolders(parentDir)
+    For Each d In c
+        pc.Add d
+        SubFoldersInternal pc, d
+        DoEvents
+    Next
+End Sub
+
 
 Function FolderExists(path)
   On Error GoTo hell
@@ -163,19 +299,17 @@ Function CreateFolder(path)
 blah:
 End Function
 
+'web or file path
 Function FileNameFromPath(fullpath)
     Dim tmp()
-    If InStr(fullpath, "\") > 0 Then
-        tmp = Split(fullpath, "\")
+    Dim marker As String
+    marker = "\"
+    If InStr(fullpath, "/") > 0 Then marker = "/"
+    If InStr(fullpath, marker) > 0 Then
+        tmp = Split(fullpath, marker)
         FileNameFromPath = CStr(tmp(UBound(tmp)))
-    End If
-End Function
-
-Function WebFileNameFromPath(fullpath)
-    Dim tmp()
-    If InStr(fullpath, "/") > 0 Then
-        tmp = Split(fullpath, "/")
-        WebFileNameFromPath = CStr(tmp(UBound(tmp)))
+    Else
+        FileNameFromPath = CStr(fullpath) 'maybe its just a file name already..
     End If
 End Function
 
@@ -427,20 +561,23 @@ failed:  DeleteFolder = False
 End Function
 
 Private Sub delTree(folderPath, Optional force = True)
-   Dim sfi(), sfo(), i As Integer
-   sfi() = GetFolderFiles(folderPath)
-   sfo() = GetSubFolders(folderPath)
-   If Not AryIsEmpty(sfi) And force = True Then
-        For i = 0 To UBound(sfi)
-            DeleteFile sfi(i)
+   Dim sfi As Collection, sfo As Collection, i As Integer, f
+   
+   Set sfi = GetFolderFiles(folderPath)
+   Set sfo = GetSubFolders(folderPath)
+   
+   If sfi.Count > 0 And force = True Then
+        For Each f In sfi
+            DeleteFile f
         Next
    End If
    
-   If Not AryIsEmpty(sfo) And force = True Then
-        For i = 0 To UBound(sfo)
-            Call DeleteFolder(sfo(i), True)
+   If sfo.Count > 0 And force = True Then
+        For Each f In sfo
+            Call DeleteFolder(f, True)
         Next
    End If
+   
 End Sub
 
 Private Sub push(ary, value) 'this modifies parent ary object
@@ -494,4 +631,84 @@ Public Function GetShortName(sFile As String) As String
     
     If iCreated Then Kill sFile
 
+End Function
+
+Function GetDrives() As Collection
+    Dim c As New Collection
+    Dim strDrives As String
+    Dim result As Long
+    Dim pos As Long
+    Dim drive As String
+    
+    Set GetDrives = c
+    
+    'get requireed buffer length and create buffer
+    result = GetLogicalDriveStrings(0, strDrives)
+    strDrives = String(result, Chr(0))
+
+    result = GetLogicalDriveStrings(Len(strDrives), strDrives)
+    If result = 0 Then Exit Function
+    
+    ' Walk through the logical drive string and display the drive
+    ' letters. The logical drive string is a null seperated
+    ' double null terminated string.
+    pos = 1
+    Do While Not Mid$(strDrives, pos, 1) = Chr(0)
+        drive = Mid$(strDrives, pos, 3)
+        pos = pos + 4
+        c.Add UCase(drive) & " " & DriveTypeString(drive)
+    Loop
+    
+End Function
+
+'supports c, c:, c:\, and c:\path
+Function DriveType(ByVal drive) As DriveTypes
+    Dim a As Long
+    
+    If Len(drive) = 1 Then drive = drive & ":"
+    
+    a = InStr(drive, "\")
+    If a > 2 And Len(drive) > a Then
+        drive = Mid(drive, 1, a)
+    End If
+    
+    DriveType = GetDriveType(drive)
+    
+End Function
+
+Function DriveTypeString(ByVal drive) As String
+   Dim dt As DriveTypes
+   
+   dt = DriveType(drive)
+   
+   Select Case dt
+      Case 0: DriveTypeString = "cannot be determined"
+      Case 1: DriveTypeString = "does not exist"
+
+      Case DRIVE_REMOVABLE:
+          Select Case Left$(drive, 1)
+              Case "a", "b": DriveTypeString = "Floppy drive"
+              Case Else: DriveTypeString = "Removable drive"
+          End Select
+
+      Case DRIVE_FIXED:   DriveTypeString = "Hard drive"
+      Case DRIVE_REMOTE:  DriveTypeString = "Network drive"
+      Case DRIVE_CDROM:   DriveTypeString = "Optical drive"
+      Case DRIVE_RAMDISK: DriveTypeString = "RAM disk"
+   End Select
+  
+End Function
+
+Function GetSpecialFolder(sf As SpecialFolders) As String
+    Dim idl As Long
+    Dim p As String
+    Const MAX_PATH As Long = 260
+      
+      p = String(MAX_PATH, Chr(0))
+      If SHGetSpecialFolderLocation(0, sf, idl) <> 0 Then Exit Function
+      SHGetPathFromIDList idl, p
+      
+      GetSpecialFolder = Left(p, InStr(p, Chr(0)) - 1)
+      CoTaskMemFree idl
+  
 End Function

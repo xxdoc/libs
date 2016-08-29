@@ -9,6 +9,12 @@ Begin VB.Form frmDlg
    ScaleHeight     =   3975
    ScaleWidth      =   6675
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Timer Timer1 
+      Enabled         =   0   'False
+      Interval        =   10
+      Left            =   150
+      Top             =   90
+   End
    Begin VB.Frame Frame3 
       BorderStyle     =   0  'None
       Caption         =   "Frame3"
@@ -56,14 +62,6 @@ Begin VB.Form frmDlg
       TabIndex        =   4
       Top             =   2925
       Width           =   6540
-      Begin VB.CommandButton Command5 
-         Caption         =   "Command5"
-         Height          =   285
-         Left            =   1560
-         TabIndex        =   14
-         Top             =   570
-         Width           =   975
-      End
       Begin VB.Frame Frame2 
          BorderStyle     =   0  'None
          Caption         =   "Frame2"
@@ -160,6 +158,15 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+'
+'Note: we have modified the behavior of the dirlist control so that a single click
+'      on an item selects it. this led to the bug below.
+'
+'8.27.16 - bugfix for visual misselect on automated double click thanks aurel
+'          if you clicked on a subfolder that was half way down the sub folder list, and it contained a bunch
+'          of subfolders, the list would compact to show the newly selected folder, but if the mouse was still over
+'          one of its subfolders, that one would visually highlight (although not be active in .path property)
+'          we fix that through some chicanery in Dir1_click
 
 Private Declare Function SHAutoComplete Lib "shlwapi.dll" (ByVal hwndEdit As Long, ByVal dwFlags As Long) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
@@ -169,16 +176,6 @@ Private Declare Sub mouse_event Lib "user32" (ByVal dwFlags As Long, ByVal dX As
 Private Const LEFTDOWN = &H2, LEFTUP = &H4, MIDDLEDOWN = &H20, MIDDLEUP = &H40, RIGHTDOWN = &H8, RIGHTUP = &H10
 Private Const SHACF_FILESYS_DIRS = &H20
 
-Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
-Private Const LB_RESETCONTENT = &H184
-Const LB_GETCURSEL = &H188
-Const LB_GETTEXT = &H189
-Const LB_GETTEXTLEN = &H18A
-Const LB_ERR = -1
-Const LB_SETCARETINDEX = &H19E
-Const LB_SETCURSEL = &H186
-Const LB_SETSEL = &H185
-
 Private Enum vButtons
     vRightClick = 2
     vDoubleRight = 4
@@ -186,20 +183,41 @@ Private Enum vButtons
     vDoubleLeft = 16
 End Enum
 
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
+Private Declare Function SetCursorPos Lib "user32" (ByVal x As Long, ByVal Y As Long) As Long
+Private Declare Function ClientToScreen Lib "user32" (ByVal hWnd As Long, lpPoint As POINTAPI) As Long
+
+Const LB_GETCURSEL = &H188
+Const LB_ERR = -1
+Const LB_GETITEMRECT    As Long = &H198&
+
+Private Type RECT
+    Bottom As Long
+    Left As Long
+    Right As Long
+    Top As Long
+End Type
+
+Private Type POINTAPI
+    x As Long
+    Y As Long
+End Type
+
 Private FolderName As String
 Private ignoreAutomation As Boolean
 Private history() As String
 Private ignoreDriveChange As Boolean
-Dim selitem As Long
+Private pt As POINTAPI
 
 'Public Enum SpecialFolders
 '
-'    sf_DESKTOP = &H0 '<desktop>
+Const sf_DESKTOP = &H0     '<desktop>
 '    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
 '    sf_PROGRAMS = &H2 'Start Menu\Programs
 '    'sf_CONTROLS = &H3'My Computer\Control Panel
 '    'sf_PRINTERS = &H4'My Computer\Printers
-'    sf_PERSONAL = &H5 'My Documents
+Const sf_PERSONAL = &H5    'My Documents
 '    sf_FAVORITES = &H6 '<user name>\Favourites
 '    sf_STARTUP = &H7 'Start Menu\Programs\Startup
 '    sf_RECENT = &H8 '<user name>\Recent
@@ -210,7 +228,7 @@ Dim selitem As Long
 '    sf_MYMUSIC = &HD '"My Music" folder
 '    sf_MYVIDEO = &HE '"My Videos" folder
 '    sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
-'    sf_DRIVES = &H11 'My Computer
+Const sf_DRIVES = &H11    'My Computer
 '    'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
 ''    sf_NETHOOD = &H13'<user name>\nethood
 '    sf_FONTS = &H14 'windows\fonts
@@ -315,10 +333,6 @@ Private Sub Command4_Click()
     If Len(tmp) > 0 Then Text1 = tmp
 End Sub
 
-Private Sub Command5_Click()
-    Me.Caption = Me.Caption & " " & SendMessage(Dir1.hwnd, LB_SETSEL, ByVal CLng(selitem), ByVal CLng(0))
-End Sub
-
 Private Sub Dir1_Change()
     Text1 = Dir1.path
     push history, Text1
@@ -327,38 +341,68 @@ Private Sub Dir1_Change()
 End Sub
 
 Private Sub Dir1_Click()
+    
     On Error Resume Next
     Dim selitem As Long
-
-    If ignoreAutomation Then
-        ignoreAutomation = False
-    Else
-        ignoreAutomation = True
-        MouseClick vDoubleLeft
-
-        selitem = SendMessage(Dir1.hwnd, LB_GETCURSEL, ByVal CLng(0), ByVal CLng(0))
-        Me.Caption = selitem
-        
-        
-        'For i = 0 To Dir1.ListCount - 1
-        '    If Dir1.List(i) = GetParentFolder(Dir1.path) Then
-        '        Dir1.ListIndex = i
-        '        Exit For
-        '    End If
-        'Next
-    End If
+    Dim udtRECT As RECT
     
+    If ignoreAutomation Then
+        'Debug.Print "ignored"
+        Exit Sub
+    End If
+         
+    ignoreAutomation = True
+    
+    'double click the entry under the mouse
+    MouseClick vDoubleLeft
+
+    'get the selected item index (Dir1.ListIndex control property is not yet set)
+    selitem = SendMessage(Dir1.hWnd, LB_GETCURSEL, ByVal CLng(0), ByVal CLng(0))
+    'Me.Caption = selitem & " " & Dir1.List(selitem) & " index:" & Dir1.ListIndex
+    
+    'save the current mouse position
+    GetCursorPos pt
+    
+    'get rectangle for the selected item..
+    SendMessage Dir1.hWnd, LB_GETITEMRECT, ByVal CLng(selitem - 1), udtRECT
+    'Me.Caption = Me.Caption & " " & udtRECT.Left & " " & udtRECT.Top
+    
+    'now we move the mouse to the selected item and click the item once
+    MoveMouseCursor udtRECT.Left, udtRECT.Top, Dir1.hWnd
+    MouseClick vLeftClick
+    
+    'we use a timer to give it a slight delay and ensure it doesnt become a feedback loop
+    Timer1.Enabled = True
+    
+End Sub
+
+Private Sub Timer1_Timer()
+    Timer1.Enabled = False
+    SetCursorPos pt.x, pt.Y
+    ignoreAutomation = False
+End Sub
+
+Sub MoveMouseCursor(ByVal x As Long, ByVal Y As Long, Optional ByVal hWnd As Long)
+    If hWnd = 0 Then
+        SetCursorPos x, Y
+    Else
+        Dim lpPoint As POINTAPI
+        lpPoint.x = x
+        lpPoint.Y = Y
+        ClientToScreen hWnd, lpPoint
+        SetCursorPos lpPoint.x, lpPoint.Y
+    End If
 End Sub
 
 Private Sub Drive1_Change()
     On Error Resume Next
     If ignoreDriveChange Then Exit Sub
-    Dir1.path = Drive1.Drive
+    Dir1.path = Drive1.drive
 End Sub
 
 Private Sub Form_Load()
     Text1 = GetSpecialFolder(sf_DESKTOP)
-    SHAutoComplete Text1.hwnd, SHACF_FILESYS_DIRS
+    SHAutoComplete Text1.hWnd, SHACF_FILESYS_DIRS
 End Sub
 
 Function BrowseForFolder(Optional initDir As String, Optional specialFolder As SpecialFolders = -1, Optional owner As Form = Nothing) As String

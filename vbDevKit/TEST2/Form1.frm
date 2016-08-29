@@ -20,16 +20,20 @@ Private Sub Form_Load()
     Dim fso As New CFileSystem3
     Dim c As Collection
     
-    'Set c = fso.GetFolderFiles("C:\jdksdjsakl\")
-    '
-    'Debug.Print c.Count
-    'For Each f In c
-    '    Debug.Print f
-    'Next
+    Set c = fso.GetSubFolders("C:\Program Files", , True)
+    
+    
+    For Each f In c
+        Debug.Print f
+    Next
+    Debug.Print c.Count
     
     'Debug.Print fso.GetShortName("C:\Documents and Settings\david\Desktop\doesnotexistyet.txt")
     
-    Debug.Print fso.dlg.FolderDialog2()
+    'Debug.Print fso.dlg.FolderDialog2()
+    
+    'If fso.FolderExists("c:\windows") Then MsgBox 1
+    
     
     End
     
