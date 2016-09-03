@@ -13,20 +13,20 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Public hWnd As Long
+Public hwnd As Long
 
 
-Private Declare Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hWnd As Long, ByRef hINst As Long) As Long
-Private Declare Function GetWindowText Lib "user32.dll" Alias "GetWindowTextA" (ByVal hWnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
-Private Declare Function GetWindowTextLength Lib "user32.dll" Alias "GetWindowTextLengthA" (ByVal hWnd As Long) As Long
+Private Declare Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hwnd As Long, ByRef hINst As Long) As Long
+Private Declare Function GetWindowText Lib "user32.dll" Alias "GetWindowTextA" (ByVal hwnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
+Private Declare Function GetWindowTextLength Lib "user32.dll" Alias "GetWindowTextLengthA" (ByVal hwnd As Long) As Long
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
 Private Declare Function GetModuleFileNameExA Lib "PSAPI.DLL" (ByVal hProcess As Long, ByVal hModule As Long, ByVal ModuleName As String, ByVal nSize As Long) As Long
-Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+Private Declare Function SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
 
 Private Declare Function EnumProcessModules Lib "PSAPI.DLL" (ByVal hProcess As Long, ByRef lphModule As Long, ByVal cb As Long, ByRef cbNeeded As Long) As Long
-Private Declare Function PostMessage Lib "user32" Alias "PostMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
  
 Private Const WM_SYSCOMMAND  As Long = &H112
 Private Const SC_MINIMIZE As Long = &HF020
@@ -38,7 +38,7 @@ Private Const WPF_ASYNCWINDOWPLACEMENT = 4
 
 Private Type POINTAPI
         x As Long
-        y As Long
+        Y As Long
 End Type
  
 Private Type RECT
@@ -89,9 +89,11 @@ Enum eWindowStates
     SW_SHOWNORMAL = 1
 End Enum
 
-Private Declare Function GetWindowPlacement Lib "user32" (ByVal hWnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
-Private Declare Function SetWindowPlacement Lib "user32" (ByVal hWnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
-Private Declare Function SendMessage Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal Msg As Long, wParam As Any, lParam As Any) As Long
+Private Declare Function GetWindowPlacement Lib "user32" (ByVal hwnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
+Private Declare Function SetWindowPlacement Lib "user32" (ByVal hwnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
+Private Declare Function SendMessage Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal msg As Long, wParam As Any, lParam As Any) As Long
+Private Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
+
 Private Const LB_GETCOUNT = &H18B
 Private Const LB_GETTEXT = &H189
 Private Const LB_GETTEXTLEN = &H18A
@@ -99,14 +101,21 @@ Private Const CB_GETCOUNT = &H146
 Private Const CB_GETLBTEXT = &H148
 Private Const CB_GETLBTEXTLEN = &H149
 
+Property Get isValid() As Boolean
+    isValid = Not (IsWindow(hwnd) = 0)
+End Property
 
-Function CopyRemoteTv(Optional dest As TreeView) As Collection
+Function CopyRemoteListView(Optional dest As ListView, Optional colSeperator As String = vbTab) As Collection
+    Set CopyRemoteListView = LV_Duplicate(hwnd, dest, colSeperator)
+End Function
+
+Function CopyRemoteTreeView(Optional dest As TreeView) As Collection
    Dim TargetTreeview As dmTreeView
    Dim tvEntries As New Collection
    
-   Set CopyRemoteTv = tvEntries
+   Set CopyRemoteTreeView = tvEntries
    
-   TargetTreeview.hWnd = hWnd
+   TargetTreeview.hwnd = hwnd
    If Not dmGetTreeviewInfo(TargetTreeview) Then Exit Function
    If TargetTreeview.ItemCount < 1 Then Exit Function
 
@@ -117,7 +126,7 @@ End Function
 Function CopyListBox(Optional toListBox As ListBox) As Collection
     Dim count As Long
     Dim i As Long
-    Dim itemtext As String
+    Dim itemText As String
     Dim textlen As Long
     Dim c As New Collection
     Dim lb As Boolean
@@ -127,18 +136,18 @@ Function CopyListBox(Optional toListBox As ListBox) As Collection
     
     If lb Then toListBox.Clear
     
-    count = SendMessage(hWnd, LB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
+    count = SendMessage(hwnd, LB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
     If count < 1 Then Exit Function
     
     For i = 0 To count - 1
-        textlen = SendMessage(hWnd, LB_GETTEXTLEN, ByVal i, ByVal CLng(0))
-        itemtext = Space(textlen) & vbNullChar
+        textlen = SendMessage(hwnd, LB_GETTEXTLEN, ByVal i, ByVal CLng(0))
+        itemText = Space(textlen) & vbNullChar
         
-        textlen = SendMessage(hWnd, LB_GETTEXT, ByVal i, ByVal itemtext)
-        itemtext = Left(itemtext, textlen)
+        textlen = SendMessage(hwnd, LB_GETTEXT, ByVal i, ByVal itemText)
+        itemText = Left(itemText, textlen)
         
-        If lb Then toListBox.AddItem itemtext
-        c.Add itemtext
+        If lb Then toListBox.AddItem itemText
+        c.Add itemText
     Next
     
 End Function
@@ -146,7 +155,7 @@ End Function
 Function CopyComboBox(Optional toCombo As ComboBox) As Collection
     Dim count As Long
     Dim i As Long
-    Dim itemtext As String
+    Dim itemText As String
     Dim textlen As Long
     Dim c As New Collection
     Dim lb As Boolean
@@ -156,18 +165,18 @@ Function CopyComboBox(Optional toCombo As ComboBox) As Collection
     
     If lb Then toCombo.Clear
     
-    count = SendMessage(hWnd, CB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
+    count = SendMessage(hwnd, CB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
     If count < 1 Then Exit Function
     
     For i = 0 To count - 1
-        textlen = SendMessage(hWnd, CB_GETLBTEXTLEN, ByVal i, ByVal CLng(0))
-        itemtext = Space(textlen) & vbNullChar
+        textlen = SendMessage(hwnd, CB_GETLBTEXTLEN, ByVal i, ByVal CLng(0))
+        itemText = Space(textlen) & vbNullChar
         
-        textlen = SendMessage(hWnd, CB_GETLBTEXT, ByVal i, ByVal itemtext)
-        itemtext = Left(itemtext, textlen)
+        textlen = SendMessage(hwnd, CB_GETLBTEXT, ByVal i, ByVal itemText)
+        itemText = Left(itemText, textlen)
         
-        If lb Then toCombo.AddItem itemtext
-        c.Add itemtext
+        If lb Then toCombo.AddItem itemText
+        c.Add itemText
     Next
     
 End Function
@@ -175,42 +184,42 @@ End Function
 
 Property Get ProcessPID() As Long
     Dim pid As Long
-    GetWindowThreadProcessId hWnd, pid
+    GetWindowThreadProcessId hwnd, pid
     ProcessPID = pid
 End Property
 
 Property Get Caption() As String
     Dim hWndlength As Long, hWndTitle As String, a As Long
     
-    hWndlength = GetWindowTextLength(hWnd)
+    hWndlength = GetWindowTextLength(hwnd)
     hWndTitle = String$(hWndlength + 10, 0)
-    a = GetWindowText(hWnd, hWndTitle, (hWndlength + 1))
+    a = GetWindowText(hwnd, hWndTitle, (hWndlength + 1))
     Caption = hWndTitle
     
 End Property
 
-Property Get ClassName() As String
+Property Get className() As String
     Dim lpClassName As String, retVal As Long
     lpClassName = Space(256)
-    retVal = GetClassName(hWnd, lpClassName, 256)
-    ClassName = Left$(lpClassName, retVal)
+    retVal = GetClassName(hwnd, lpClassName, 256)
+    className = Left$(lpClassName, retVal)
 End Property
 
 Property Get WindowState() As eWindowStates
     Dim wp As WINDOWPLACEMENT
     wp.Length = Len(wp)
-    GetWindowPlacement hWnd, wp
+    GetWindowPlacement hwnd, wp
     WindowState = wp.showCmd
 End Property
 
 Property Let WindowState(s As eWindowStates)
     Dim wp As WINDOWPLACEMENT
     wp.Length = Len(wp)
-    GetWindowPlacement hWnd, wp
+    GetWindowPlacement hwnd, wp
     wp.Length = Len(wp)
     wp.showCmd = s
     wp.Flags = WPF_ASYNCWINDOWPLACEMENT
-    SetWindowPlacement hWnd, wp
+    SetWindowPlacement hwnd, wp
 End Property
 
 Property Get WindowStateString() As String
@@ -241,7 +250,7 @@ Property Get ProcessPath() As String
     Dim hMods() As Long, cbAlloc As Long, ret As Long, retMax As Long
     Dim sPath As String
     
-    GetWindowThreadProcessId hWnd, pid
+    GetWindowThreadProcessId hwnd, pid
     
     hProc = OpenProcess(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ, False, pid)
     
@@ -260,15 +269,15 @@ Property Get ProcessPath() As String
 End Property
 
 Public Sub MinimizeWindow()
-    PostMessage hWnd, WM_SYSCOMMAND, SC_MINIMIZE, 0
+    PostMessage hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0
 End Sub
 
 Property Get IsIEServerWindow() As Boolean
-    IsIEServerWindow = Morcillo.IsIEServerWindow(hWnd)
+    IsIEServerWindow = Morcillo.IsIEServerWindow(hwnd)
 End Property
 
 Function IEDOMFromhWnd() As HTMLDocument
-    Set IEDOMFromhWnd = Morcillo.IEDOMFromhWnd(hWnd)
+    Set IEDOMFromhWnd = Morcillo.IEDOMFromhWnd(hwnd)
 End Function
 
 
