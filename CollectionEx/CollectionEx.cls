@@ -56,18 +56,31 @@ Attribute Item.VB_UserMemId = 0
     'Attribute Item.VB_UserMemId = 0 ' This must be placed in with Notepad.  Makes this method the default.
     ' Had to leave this one public so the "Default" method could be used.
     Dim i As Integer
+    Dim k As String
     
     i = VarType(IndexOrKey)
     If forceAsKey <> 0 Then i = 8
     
     Select Case i
         Case 2 To 7 ' Integer, Long, Single, Double, Currency, & Date.  (A bit weird to pass in a date, but who knows.)
-            getValue CVar(CLng(IndexOrKey)), Item 'Item = c.Item(CLng(IndexOrKey))
+       
+            If IsObject(c.Item(IndexOrKey)) Then
+                Set Item = c.Item(IndexOrKey)
+            Else
+                Item = c.Item(IndexOrKey)
+            End If
+    
         Case 8
-            getValue Base16Encode(CStr(IndexOrKey)), Item 'Item = c.Item(Base16Encode(CStr(IndexOrKey)))
+            k = Base16Encode(CStr(IndexOrKey))
+            
+            If IsObject(c.Item(k)) Then
+                Set Item = c.Item(k)
+            Else
+                Item = c.Item(k)
+            End If
+    
     End Select
     
-    ' Returns Item = Empty if not set, because of bad IndexOrKey type (such as Null, an object or other nonsense).
 End Function
 
 'property so we can mouse over it in ide to see value..
@@ -136,20 +149,22 @@ Public Function KeyExists(Key As String) As Boolean
 DoesntExist:
 End Function
 
-Public Function toString(Optional delimiter As String = vbCrLf) As String
+Public Function toString(Optional delimiter As String = vbCrLf, Optional includeKeys As Boolean = False) As String
     Dim tmp() As Variant
-    Dim v, i As Long
-    Dim o As Object
+    Dim k, i As Long
     
     If c.Count = 0 Then GoTo done
     
     ReDim tmp(c.Count - 1)
     
     For i = 1 To c.Count
+        k = Empty
+        If includeKeys Then k = keyForIndex(i)
+        If Len(k) > 0 Then k = k & " = "
         If IsObject(c(i)) Then
-            tmp(i - 1) = "[ " & TypeName(c(i)) & " object ]"
+            tmp(i - 1) = k & "[ " & TypeName(c(i)) & " object ]"
         Else
-            tmp(i - 1) = c(i)
+            tmp(i - 1) = k & c(i)
         End If
     Next
     
@@ -267,22 +282,6 @@ Private Function Base16Decode(s As String) As String
         Mid$(Base16Decode, i \ 4 + 1, 1) = ChrW$(Val("&h" & Mid$(s, i + 1, 4)))
     Next i
 End Function
-
-Private Sub getValue(IndexOrKey As Variant, ValueOut As Variant)
-    ' This is necessary because we don't know if the item is an object or not.
-    ' If the item is an object, just using Let will cause an error.
-    ' We must also use ValueOut passed ByRef, so we don't have to Let/Set it again from a Function.
-    '
-    ' We may still error if IndexOrKey isn't valid, but this is the way it should be.
-    ' the function above this one handles determining if its an index or encoded key
-    
-    If IsObject(c.Item(IndexOrKey)) Then
-        Set ValueOut = c.Item(IndexOrKey)
-    Else
-        ValueOut = c.Item(IndexOrKey)
-    End If
-    
-End Sub
 
 Private Function FileExists(path As String) As Boolean
   On Error GoTo hell

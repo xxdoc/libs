@@ -17,7 +17,9 @@ Attribute VB_Exposed = False
 
 'we duplicate a few methods from CollectionEx so this class can be used independantly..
 '(i dont want to force an extra bas into the mix)
-
+'
+' so it turns out when you boil it all down..the only method you really need to do funky copymemory stuff
+' is keyforIndex, all of the other methods can be achieved with normal programming plus that one extra primitive
 
 Option Explicit
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSource As Any, ByVal ByteLen As Long)
@@ -62,54 +64,28 @@ Public Function keyForIndex(index As Long) As String
 End Function
 
 Public Function indexForKey(ByVal Key As String) As Long
-    ' Get an index based on its key value.
-    Dim ptr   As Long
-    Dim tKey  As String
-    Dim iHold  As Long
-    '
-    If c.Count Then
-        Key = Base16Encode(Key)
-        iHold = StrPtr(tKey)                                    ' Tuck away for later restore.  We're going to borrow this string.
-        CopyMemory ptr, ByVal ObjPtr(c) + &H18, 4               ' First item pointer of collection header.
-        indexForKey = 1
-        Do
-            CopyMemory ByVal VarPtr(tKey), ByVal ptr + &H10, 4  ' Key string of collection item.
-            If Key = tKey Then Exit Do
-            indexForKey = indexForKey + 1
-            CopyMemory ptr, ByVal ptr + &H18, 4                 ' Next item pointer of collection item.
-        Loop Until ptr = 0
-        CopyMemory ByVal VarPtr(tKey), iHold, 4                 ' Put string pointer back to keep memory straight.
-    End If
-    If ptr = 0 Then indexForKey = 0
+    Dim i As Long
+    indexForKey = 0
+    For i = 1 To c.Count
+        If keyForIndex(i) = Key Then
+            indexForKey = i
+            Exit Function
+        End If
+    Next
 End Function
 
 Public Function Keys() As String()
-    ' Returns a string array of all the keys.
-    Dim sKeys() As String
-    Dim j As Long
-    Dim iHold As Long
-    Dim ptr As Long
-    Dim sKeyTemp  As String
-    '
+    Dim tmp() As String, i As Long
+    
     If c.Count = 0 Then Exit Function
-    '
-    ReDim sKeys(1 To c.Count)
-    j = 1
-    CopyMemory ptr, ByVal ObjPtr(c) + &H18, 4                   ' First item pointer of collection header.
-    GoSub MoveKeyToArray
-    For j = 2 To c.Count
-        CopyMemory ptr, ByVal ptr + &H18, 4                     ' Next item pointer of collection item.
-        GoSub MoveKeyToArray
-    Next j
-    Keys = sKeys
-    Exit Function
-    '
-MoveKeyToArray: ' j and ptr must be set to call this.
-    iHold = StrPtr(sKeyTemp)                                    ' Save string pointer because we're going to borrow the string.
-    CopyMemory ByVal VarPtr(sKeyTemp), ByVal ptr + &H10, 4      ' Key string of collection item.
-    sKeys(j) = Base16Decode(sKeyTemp)                           ' Move key into array.
-    CopyMemory ByVal VarPtr(sKeyTemp), iHold, 4                 ' Put string pointer back to keep memory straight.
-    Return
+    
+    push tmp(), ""
+    For i = 1 To c.Count
+        push tmp(), keyForIndex(i)
+    Next
+    
+    Keys = tmp()
+    
 End Function
 
 Public Function changeKeyByIndex(ByVal index As Long, ByVal NewKey As String) As Boolean
@@ -139,33 +115,23 @@ Public Function changeKey(ByVal OldKey As String, ByVal NewKey As String) As Boo
     
     On Error GoTo hell
     
-    If c.Count Then
-        OldKey = Base16Encode(OldKey)
-        iHold = StrPtr(tKey)                                    ' Tuck away for later restore.  We're going to borrow this string.
-        CopyMemory ptr, ByVal ObjPtr(c) + &H18, 4               ' First item pointer of collection header.
-        index = 1
-        Do
-            CopyMemory ByVal VarPtr(tKey), ByVal ptr + &H10, 4  ' Key string of collection item.
-            If OldKey = tKey Then Exit Do
-            index = index + 1
-            CopyMemory ptr, ByVal ptr + &H18, 4                 ' Next item pointer of collection item.
-        Loop Until ptr = 0
-        CopyMemory ByVal VarPtr(tKey), iHold, 4                 ' Put string pointer back to keep memory straight.
+    index = indexForKey(OldKey)
+   
+    If IsObject(c.Item(index)) Then
+        Set vData = c.Item(index)
+    Else
+       vData = c.Item(index)
     End If
-    If ptr = 0 Then                                             ' We didn't find the old key.
-        Err.Raise 5
-        Exit Function
-    End If
-    '
-    ' We've found the old key if we got to here.
-    getValue CVar(index), vData 'vData = c.Item(Index)
+    
     c.Remove index
-    '
-    Select Case True
-    Case c.Count = 0: c.Add vData, Base16Encode(NewKey)                 ' Add first item.
-    Case index > c.Count: c.Add vData, Base16Encode(NewKey), , c.Count  ' Add to end.
-    Case Else: c.Add vData, Base16Encode(NewKey), index                 ' Add prior to one specified, so it takes on that index number.
-    End Select
+    
+    If c.Count = 0 Then
+        c.Add vData, Base16Encode(NewKey)             ' Add first item.
+    ElseIf index > c.Count Then
+        c.Add vData, Base16Encode(NewKey), , c.Count  ' Add to end.
+    Else
+        c.Add vData, Base16Encode(NewKey), index      ' Add prior to one specified, so it takes on that index number.
+    End If
     
     changeKey = True
     Exit Function
@@ -175,47 +141,31 @@ End Function
 Public Function changeIndex(OldIndex As Long, newIndex As Long) As Boolean
     Dim vData As Variant
     Dim sKey As String
-    Dim tKey As String
-    Dim ptr As Long
     Dim i As Long
     
     On Error GoTo hell
     
-    If OldIndex < 1 Or OldIndex > c.Count Or newIndex < 1 Or newIndex > c.Count Then
-        Err.Raise 9
-        Exit Function
-    End If
-    '
-    getValue CVar(OldIndex), vData 'vData = c.Item(OldIndex)
-    If c.Count = 1 Then Exit Function ' Nothing to do.  We wait until here to check to make sure the Key exists.
-    '
-    If OldIndex <= c.Count / 2 Then                             ' Start from front.
-        CopyMemory ptr, ByVal ObjPtr(c) + &H18, 4               ' First item pointer of collection header.
-        For i = 2 To OldIndex
-            CopyMemory ptr, ByVal ptr + &H18, 4                 ' Next item pointer of collection item.
-        Next i
-    Else                                                        ' Start from end and go back.
-        CopyMemory ptr, ByVal ObjPtr(c) + &H1C, 4               ' Last item pointer of collection header.
-        For i = c.Count - 1 To OldIndex Step -1
-            CopyMemory ptr, ByVal ptr + &H14, 4                 ' Previous item pointer of collection item.
-        Next i
-    End If
-    '
-    i = StrPtr(tKey)                                            ' Save string pointer because we're going to borrow the string.
-    CopyMemory ByVal VarPtr(tKey), ByVal ptr + &H10, 4          ' Key string of collection item.
-    sKey = tKey                                                 ' Move key into better spot.
-    CopyMemory ByVal VarPtr(tKey), i, 4                         ' Put string pointer back to keep memory straight.
-    '
-    ' Now that we've got the data and key, we can delete and re-add.
-    ' Key is still encoded.  No need to decode.
-    c.Remove OldIndex
-    '
-    Select Case True
-    Case c.Count = 0: c.Add vData, sKey                         ' Add first item.
-    Case newIndex > c.Count: c.Add vData, sKey, , c.Count       ' Add to end.
-    Case Else: c.Add vData, sKey, newIndex                      ' Add prior to one specified, so it takes on that index number.
-    End Select
+    If OldIndex = newIndex Then GoTo ok
+    If c.Count = 1 Then GoTo ok
     
+    If IsObject(c.Item(OldIndex)) Then
+        Set vData = c.Item(OldIndex)
+    Else
+        vData = c.Item(OldIndex)
+    End If
+
+    sKey = Base16Encode(keyForIndex(OldIndex))
+    c.Remove OldIndex
+    
+    If c.Count = 0 Then
+        c.Add vData, sKey             ' Add first item.
+    ElseIf newIndex > c.Count Then
+        c.Add vData, sKey, , c.Count  ' Add to end.
+    Else
+        c.Add vData, sKey, newIndex   ' Add prior to one specified, so it takes on that index number.
+    End If
+    
+ok:
     changeIndex = True
     Exit Function
 hell:
@@ -236,22 +186,6 @@ Private Function Base16Decode(s As String) As String
         Mid$(Base16Decode, i \ 4 + 1, 1) = ChrW$(Val("&h" & Mid$(s, i + 1, 4)))
     Next i
 End Function
-
-Private Sub getValue(IndexOrKey As Variant, ValueOut As Variant)
-    ' This is necessary because we don't know if the item is an object or not.
-    ' If the item is an object, just using Let will cause an error.
-    ' We must also use ValueOut passed ByRef, so we don't have to Let/Set it again from a Function.
-    '
-    ' We may still error if IndexOrKey isn't valid, but this is the way it should be.
-    ' the function above this one handles determining if its an index or encoded key
-    
-    If IsObject(c.Item(IndexOrKey)) Then
-        Set ValueOut = c.Item(IndexOrKey)
-    Else
-        ValueOut = c.Item(IndexOrKey)
-    End If
-    
-End Sub
 
 Public Function toArray() As Variant()
     Dim tmp() As Variant
@@ -352,6 +286,29 @@ hell:
     fromFile = -1
 End Function
 
+Public Function toString(Optional delimiter As String = vbCrLf, Optional includeKeys As Boolean = False) As String
+    Dim tmp() As Variant
+    Dim k, i As Long
+    
+    If c.Count = 0 Then GoTo done
+    
+    ReDim tmp(c.Count - 1)
+    
+    For i = 1 To c.Count
+        k = Empty
+        If includeKeys Then k = keyForIndex(i)
+        If Len(k) > 0 Then k = k & " = "
+        If IsObject(c(i)) Then
+            tmp(i - 1) = k & "[ " & TypeName(c(i)) & " object ]"
+        Else
+            tmp(i - 1) = k & c(i)
+        End If
+    Next
+    
+done:
+    toString = Join(tmp, delimiter)
+End Function
+
 Public Function KeyExists(Key As String) As Boolean
     On Error GoTo DoesntExist
     IsObject c(Base16Encode(Key))
@@ -396,3 +353,12 @@ Private Function AryIsEmpty(ary) As Boolean
 oops: AryIsEmpty = True
 End Function
 
+Private Sub push(ary, value) 'this modifies parent ary object
+    On Error GoTo init
+    Dim x
+    x = UBound(ary) '<-throws Error If Not initalized
+    ReDim Preserve ary(UBound(ary) + 1)
+    ary(UBound(ary)) = value
+    Exit Sub
+init:     ReDim ary(0): ary(0) = value
+End Sub

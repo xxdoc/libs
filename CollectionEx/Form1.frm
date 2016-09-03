@@ -19,6 +19,12 @@ Attribute VB_Exposed = False
 Private Sub Form_Load()
     Dim c As New CollectionEx
 
+    c.Add "test"
+    c.Add "test2", "mykey"
+    c.ext.changeKeyByIndex 1, "haha"
+    MsgBox c.toString(, True)
+    End
+    
 '    Dim cc As New Class1, c2 As Class1
 '    cc.name = "test"
 '
