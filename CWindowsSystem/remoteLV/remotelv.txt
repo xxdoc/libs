@@ -1,0 +1,1155 @@
+'https://www.experts-exchange.com/questions/21384252/syslistview32.html
+' Written by Arkadiy Olovyannikov (ark@msun.ru)
+' Copyright 2005 by Arkadiy Olovyannikov
+
+
+
+'========mApiRemote.bas==========
+'*****************************************************************
+' Module to inject API call in remote process.
+' Written by Arkadiy Olovyannikov (ark@msun.ru)
+' Copyright 2005 by Arkadiy Olovyannikov
+'
+' This software is FREEWARE. You may use it as you see fit for
+' your own projects but you may not re-sell the original or the
+' source code.
+'
+' No warranty express or implied, is given as to the use of this
+' program. Use at your own risk.
+'*****************************************************************
+Option Explicit
+
+Public Enum ARG_FLAG
+   arg_Value
+   arg_Pointer
+End Enum
+
+'Structure for passing parameters in remote API calls
+Public Type API_DATA
+   lpData       As Long      'Pointer to data or real data
+   dwDataLength As Long      'Data length
+   argType      As ARG_FLAG  'ByVal or ByRef?
+   bOut         As Boolean   'Is this argument [OUT]? If True,
+                             'lpData will be filled with [out] data
+End Type
+
+Private Declare Function WriteProcessMemory Lib "kernel32" (ByVal hProcess As Long, lpBaseAddress As Any, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+Private Declare Function ReadProcessMemory Lib "kernel32" (ByVal hProcess As Long, lpBaseAddress As Any, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+Private Declare Function CreateRemoteThread Lib "kernel32.dll" (ByVal hProcess As Long, ByVal lpThreadAttributes As Long, ByVal dwStackSize As Long, lpStartAddress As Long, ByVal lpParameter As Long, ByVal dwCreationFlags As Long, lpThreadId As Long) As Long
+Private Declare Function GetExitCodeThread Lib "kernel32.dll" (ByVal hThread As Long, lpExitCode As Long) As Long
+Private Declare Function VirtualAllocEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, ByVal dwSize As Long, ByVal flAllocationType As Long, ByVal flProtect As Long) As Long
+Private Declare Function VirtualFreeEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, ByVal dwSize As Long, ByVal dwFreeType As Long) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
+
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (lpDest As Any, lpSource As Any, ByVal cBytes As Long)
+Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
+Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
+Private Declare Function GetCurrentProcess Lib "kernel32" () As Long
+
+Public Const INFINITE = -1&
+Private Const MEM_COMMIT = &H1000
+Private Const MEM_RESERVE = &H2000
+Private Const MEM_RELEASE = &H8000
+Private Const PAGE_READWRITE = &H4&
+
+'Variables to store main kernel functions addresses
+'This allow call GetProcAddress for kernel32 only once
+Dim hKernel           As Long
+Dim lpGetModuleHandle As Long
+Dim lpLoadLibrary     As Long
+Dim lpFreeLibrary     As Long
+Dim lpGetProcAddress  As Long
+Dim bKernelInit       As Boolean
+
+Dim abAsm() As Byte 'buffer for assembly code
+Dim lCP As Long     'used to keep track of latest byte added to assembly code
+
+'********************************************************************************
+'Public calling function. Prepare some data (retrieve function address)
+'and call private CallFunctionRemote, which do the job.
+'Input values are self-descriptive:
+'hProcess  - handle to remote process
+'LibName   - API library name  (e.g. "user32")
+'FuncName  - API function name (e.g. "GetWindowTextA").
+'*****Note: FuncName is CaSeSeNsItIvE!*****
+'nParams   - # of function params (according normal API call)
+'data()    - an array of input params with description (see API_DATA structure)
+'dwTimeOut - timeout to wait API return from remote process.
+'*****Note: In case of some incorrect call INFINITE timeout can hang your and/or
+'remote app, so when debugging, use some FINITE value in milliseconds
+'(e.g. 5000 means 5 sec)*****
+'Return value - same as standard API call.
+'*********************************************************************************
+Public Function CallAPIRemote(ByVal hProcess As Long, ByVal LibName As String, _
+                             ByVal FuncName As String, ByVal nParams As Long, _
+                             data() As API_DATA, _
+                             Optional ByVal dwTimeOut As Long = INFINITE) As Long
+   
+   If hProcess = GetCurrentProcess Then
+'*****TODO*****:
+'You can get my sample to CallAPIByName (see http://www.freevbcode.com/ShowCode.Asp?ID=1863)
+'and use this call for current process instead of poppin message.
+      MsgBox "Unfortunatelly, VB is single thread application." & vbCrLf & "You have to call standard APi in your process address space", vbCritical, "Remote API error"
+      Exit Function
+   End If
+   
+   Dim hLib As Long, fnAddress As Long
+   Dim bNeedUnload As Boolean
+   Dim locData(1) As API_DATA
+     
+   hLib = GetModuleHandleRemote(hProcess, LibName)
+   If hLib = 0 Then
+      hLib = LoadLibraryRemote(hProcess, LibName)
+      If hLib = 0 Then Exit Function
+      bNeedUnload = True
+   End If
+   
+   fnAddress = GetProcAddressRemote(hProcess, hLib, FuncName)
+   If fnAddress Then
+      CallAPIRemote = CallFunctionRemote(hProcess, fnAddress, nParams, data, dwTimeOut)
+   End If
+   If bNeedUnload Then Call FreeLibraryRemote(hProcess, hLib)
+'*****TODO: API set last error in remote process!
+'Use ErrNum = CallFunctionRemoteOneParam(hProcess,lpGetLastError,0,0,0,0)
+'Where lpLastError = GetProcAddress(hKernel,"GetLastError")
+'and, probably, SetLastError ErrNum to set same error in your process.
+End Function
+
+'*****************************************************************
+'Main function which do the job.
+'Parameters are same as in above function, except of func_address -
+'function address in remote process.
+'*****************************************************************
+Private Function CallFunctionRemote(ByVal hProcess As Long, ByVal func_addr As Long, _
+                                    ByVal nParams As Long, data() As API_DATA, _
+                                    Optional ByVal dwTimeOut As Long = INFINITE) As Long
+   Dim hThread As Long, ThreadId As Long
+   Dim addr As Long, ret As Long, h As Long, i As Long
+   Dim codeStart As Long
+   Dim param_addr() As Long
+   
+   If nParams = 0 Then
+      CallFunctionRemote = CallFunctionRemoteOneParam(hProcess, func_addr, 0, 0, 0, 0)
+   ElseIf nParams = 1 Then
+      CallFunctionRemote = CallFunctionRemoteOneParam(hProcess, func_addr, 1, _
+                           data(0).lpData, data(0).dwDataLength, data(0).argType, _
+                           data(0).bOut)
+   End If
+   
+   ReDim abAsm(50 + 6 * nParams)
+   ReDim param_addr(nParams - 1)
+   lCP = 0
+   addr = VirtualAllocEx(ByVal hProcess, ByVal 0&, ByVal UBound(abAsm) + 1, MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+   
+   codeStart = GetAlignedCodeStart(addr)
+   lCP = codeStart - addr
+   For i = 0 To lCP - 1
+       abAsm(i) = &HCC
+   Next
+   PrepareStack 1 'remove ThreadFunc lpParam
+   Dim s As String
+   s = "MessageBoxA" & Chr(0)
+   For i = nParams To 1 Step -1
+       AddByteToCode &H68 'push wwxxyyzz
+       If data(i - 1).argType = arg_Value Then
+          If data(i - 1).dwDataLength > 4 Then
+             MsgBox "Arguments passing as Value should not exeed 4 bytes (long)", vbCritical
+             GoTo CleanUp
+          End If
+          AddLongToCode data(i - 1).lpData
+       Else
+          param_addr(i - 1) = VirtualAllocEx(ByVal hProcess, ByVal 0&, _
+                              ByVal data(i - 1).dwDataLength, MEM_RESERVE Or MEM_COMMIT, _
+                              PAGE_READWRITE)
+          If param_addr(i - 1) = 0 Then GoTo CleanUp
+          If WriteProcessMemory(hProcess, ByVal param_addr(i - 1), ByVal data(i - 1).lpData, _
+                               data(i - 1).dwDataLength, ret) = 0 Then GoTo CleanUp
+          AddLongToCode param_addr(i - 1)
+       End If
+   Next
+   AddCallToCode func_addr, addr + VarPtr(abAsm(lCP)) - VarPtr(abAsm(0))
+   AddByteToCode &HC3
+   AddByteToCode &HCC
+   If WriteProcessMemory(hProcess, ByVal addr, abAsm(0), UBound(abAsm) + 1, ret) = 0 Then GoTo CleanUp
+   hThread = CreateRemoteThread(hProcess, 0, 0, ByVal codeStart, data(0).lpData, 0&, ThreadId)
+   If hThread Then
+      ret = WaitForSingleObject(hThread, dwTimeOut)
+      If ret = 0 Then ret = GetExitCodeThread(hThread, h)
+   End If
+   CallFunctionRemote = h
+   For i = 0 To nParams - 1
+       If param_addr(i) <> 0 Then
+          If data(i).bOut Then
+             ReadProcessMemory hProcess, ByVal param_addr(i), ByVal data(i).lpData, data(i).dwDataLength, ret
+          End If
+       End If
+   Next i
+CleanUp:
+   VirtualFreeEx hProcess, ByVal addr, 0, MEM_RELEASE
+   For i = 0 To nParams - 1
+       If param_addr(i) <> 0 Then VirtualFreeEx hProcess, ByVal param_addr(i), 0, MEM_RELEASE
+   Next i
+End Function
+
+'******************************************************************************
+'Simplified version of above function - one parameter doesn't require asm code.
+'******************************************************************************
+Private Function CallFunctionRemoteOneParam(ByVal hProcess As Long, ByVal func_addr As Long, _
+                                    ByVal nParams As Long, ByVal lngVal As Long, _
+                                    ByVal dwSize As Long, ByVal argType As ARG_FLAG, _
+                                    Optional ByVal bReturn As Boolean) As Long
+   Dim hThread As Long, ThreadId As Long
+   Dim addr As Long, ret As Long, h As Long, i As Long
+   Dim lngTemp As Long
+   If nParams = 0 Then
+      bReturn = False
+   Else
+      If argType = arg_Pointer Then
+          addr = VirtualAllocEx(ByVal hProcess, ByVal 0&, ByVal dwSize, _
+                                MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+          If addr = 0 Then Exit Function
+          Call WriteProcessMemory(hProcess, ByVal addr, ByVal lngVal, dwSize, ret)
+          lngTemp = addr
+      Else
+          lngTemp = lngVal
+      End If
+   End If
+   hThread = CreateRemoteThread(hProcess, 0, 0, ByVal func_addr, lngTemp, 0&, ThreadId)
+   If hThread Then
+      ret = WaitForSingleObject(hThread, 1000)
+      If ret = 0 Then ret = GetExitCodeThread(hThread, h)
+      CallFunctionRemoteOneParam = h
+      CloseHandle hThread
+   End If
+   If bReturn Then
+      If addr <> 0 Then
+         ReadProcessMemory hProcess, ByVal addr, ByVal lngVal, dwSize, ret
+         VirtualFreeEx hProcess, ByVal addr, 0, MEM_RELEASE
+      End If
+   End If
+End Function
+
+'*****************************************************************
+'Some usefull Public functions for loading/unloading libraries.
+'[in]/[out] parameters are same as in appropriate API cals
+'except of remote process handle (hProcess).
+'*****************************************************************
+Public Function GetModuleHandleRemote(ByVal hProcess As Long, ByVal LibName As String) As Long
+   If Not InitKernel Then Exit Function
+   If GetModuleHandle(LibName) = hKernel Then
+      GetModuleHandleRemote = hKernel
+      Exit Function
+   End If
+
+   Dim hThread As Long, ThreadId As Long
+   Dim addr As Long, ret As Long, h As Long
+   addr = VirtualAllocEx(ByVal hProcess, ByVal 0&, ByVal Len(LibName) + 1, MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+   If addr = 0 Then Exit Function
+   If WriteProcessMemory(hProcess, ByVal addr, ByVal LibName, Len(LibName), ret) Then
+      hThread = CreateRemoteThread(hProcess, 0, 0, ByVal lpGetModuleHandle, addr, 0&, ThreadId)
+      If hThread Then
+         ret = WaitForSingleObject(hThread, 500)
+         If ret = 0 Then ret = GetExitCodeThread(hThread, h)
+      End If
+   End If
+   VirtualFreeEx hProcess, ByVal addr, 0, MEM_RELEASE
+   CloseHandle hThread
+   GetModuleHandleRemote = h
+End Function
+
+Public Function LoadLibraryRemote(ByVal hProcess As Long, ByVal LibName As String) As Long
+   If Not InitKernel Then Exit Function
+   If GetModuleHandle(LibName) = hKernel Then
+      LoadLibraryRemote = hKernel
+      Exit Function
+   End If
+   
+   Dim hThread As Long, ThreadId As Long
+   Dim addr As Long, ret As Long, h As Long
+   addr = VirtualAllocEx(ByVal hProcess, ByVal 0&, ByVal Len(LibName) + 1, MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+   If addr = 0 Then Exit Function
+   If WriteProcessMemory(hProcess, ByVal addr, ByVal LibName, Len(LibName), ret) Then
+      hThread = CreateRemoteThread(hProcess, 0, 0, ByVal lpLoadLibrary, addr, 0&, ThreadId)
+      If hThread Then
+         ret = WaitForSingleObject(hThread, 500)
+         If ret = 0 Then ret = GetExitCodeThread(hThread, h)
+      End If
+   End If
+   LoadLibraryRemote = h
+End Function
+
+Public Function GetProcAddressRemote(ByVal hProcess As Long, ByVal hLib As Long, ByVal fnName As String) As Long
+   If Not InitKernel Then Exit Function
+   
+   If hLib = hKernel Then
+      GetProcAddressRemote = GetProcAddress(hKernel, fnName)
+      Exit Function
+   End If
+   Dim localData(1) As API_DATA
+   Dim abName() As Byte
+   With localData(0)
+      .lpData = hLib
+      .dwDataLength = 4
+      .argType = arg_Value
+   End With
+   fnName = fnName & Chr(0)
+   abName = StrConv(fnName, vbFromUnicode)
+   With localData(1)
+      .lpData = VarPtr(abName(0))
+      .dwDataLength = UBound(abName) + 1
+      .argType = arg_Pointer
+   End With
+   GetProcAddressRemote = CallFunctionRemote(hProcess, lpGetProcAddress, 2, localData)
+End Function
+
+Public Function FreeLibraryRemote(ByVal hProcess As Long, ByVal hLib As Long) As Long
+   If Not InitKernel Then Exit Function
+   If hLib = hKernel Then
+      FreeLibraryRemote = True
+      Exit Function
+   End If
+   
+   Dim hThread As Long, ThreadId As Long, h As Long, ret As Long
+   hThread = CreateRemoteThread(hProcess, 0, 0, ByVal lpFreeLibrary, hLib, 0&, ThreadId)
+   If hThread Then
+      ret = WaitForSingleObject(hThread, 500)
+      If ret = 0 Then ret = GetExitCodeThread(hThread, h)
+   End If
+   CloseHandle hThread
+   FreeLibraryRemote = h
+End Function
+
+'============Private routines to prepare asm (op)code===========
+Private Sub AddCallToCode(ByVal dwAddress As Long, ByVal BaseAddr As Long)
+    AddByteToCode &HE8
+    AddLongToCode dwAddress - BaseAddr - 5
+End Sub
+
+Private Sub AddLongToCode(ByVal lng As Long)
+    Dim i As Integer
+    Dim byt(3) As Byte
+    CopyMemory byt(0), lng, 4
+    For i = 0 To 3
+        AddByteToCode byt(i)
+    Next
+End Sub
+
+Private Sub AddByteToCode(ByVal byt As Byte)
+    abAsm(lCP) = byt
+    lCP = lCP + 1
+End Sub
+
+Private Function GetAlignedCodeStart(ByVal dwAddress As Long) As Long
+    GetAlignedCodeStart = dwAddress + (15 - (dwAddress - 1) Mod 16)
+    If (15 - (dwAddress - 1) Mod 16) = 0 Then GetAlignedCodeStart = GetAlignedCodeStart + 16
+End Function
+
+Private Sub PrepareStack(ByVal numParamsToRemove As Long)
+    If numParamsToRemove = 0 Then Exit Sub
+    Dim i As Long
+    AddByteToCode &H58     'pop eax -  pop return address
+    For i = 1 To numParamsToRemove
+        AddByteToCode &H59 'pop ecx -  kill param
+    Next i
+    AddByteToCode &H50     'push eax - put return address back
+End Sub
+
+Private Sub ClearStack(ByVal nParams As Long)
+   Dim i As Long
+   For i = 1 To nParams
+       AddByteToCode &H59  'pop ecx - remove params from stack
+   Next
+End Sub
+
+'==========Get main kernel32 functions addresses=========
+Private Function InitKernel() As Boolean
+   If bKernelInit Then
+      InitKernel = True
+      Exit Function
+   End If
+   hKernel = GetModuleHandle("kernel32")
+   If hKernel = 0 Then Exit Function
+   lpGetProcAddress = GetProcAddress(hKernel, "GetProcAddress")
+   lpGetModuleHandle = GetProcAddress(hKernel, "GetModuleHandleA")
+   lpLoadLibrary = GetProcAddress(hKernel, "LoadLibraryA")
+   lpFreeLibrary = GetProcAddress(hKernel, "FreeLibrary")
+   InitKernel = True
+   bKernelInit = True
+End Function
+
+'============mEnumWindows.bas===========
+'Just to enumerate windows containing SysListView32
+Option Explicit
+
+Private Declare Function EnumWindows& Lib "user32" (ByVal lpEnumFunc As Long, ByVal lParam As Long)
+Private Declare Function EnumChildWindows& Lib "user32" (ByVal hParent As Long, ByVal lpEnumFunc As Long, ByVal lParam As Long)
+Private Declare Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hWnd As Long, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
+Private Declare Function GetWindowText Lib "user32" Alias "GetWindowTextA" (ByVal hWnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
+Private Declare Function GetParent Lib "user32" (ByVal hWnd As Long) As Long
+
+Dim lv As ListView
+Dim m_ClassName As String
+Dim sParent As String
+
+Function EnumWinProc(ByVal hWnd As Long, ByVal lParam As Long) As Long
+  sParent = GetWndText(hWnd)
+  Call EnumChildWindows(hWnd, AddressOf EnumChildWinProc, lParam)
+  EnumWinProc = 1
+End Function
+
+Function EnumChildWinProc(ByVal hWnd As Long, ByVal lParam As Long) As Long
+   Dim s As String, s1 As String
+   If m_ClassName <> "" Then
+      If GetWndClass(hWnd) = m_ClassName Then
+         s = "0x" & Right("00000000" & Hex(hWnd), 8)
+         If sParent = "No caption" Then
+            s1 = GetWndText(GetTopLevelParent(hWnd))
+         Else
+            s1 = sParent
+         End If
+         With lv.ListItems.Add(, , s1)
+            .SubItems(1) = s
+            .ToolTipText = s1
+            .Tag = hWnd
+         End With
+      End If
+   Else
+      s = "0x" & Right("00000000" & Hex(hWnd), 8)
+      s1 = GetWndText(GetTopLevelParent(hWnd))
+      With lv.ListItems.Add(, , s1)
+         .SubItems(1) = s
+         .ToolTipText = s1
+         .Tag = hWnd
+      End With
+   End If
+   EnumChildWinProc = 1
+End Function
+
+Private Function GetWndClass(hWnd As Long) As String
+  Dim k As Long, sName As String
+  sName = Space$(128)
+  k = GetClassName(hWnd, sName, 128)
+  If k > 0 Then sName = Left$(sName, k) Else sName = "No class"
+  GetWndClass = sName
+End Function
+
+Private Function GetWndText(hWnd As Long) As String
+  Dim k As Long, sName As String
+  sName = Space$(128)
+  k = GetWindowText(hWnd, sName, 128)
+  If k > 0 Then sName = Left$(sName, k) Else sName = "No caption"
+  GetWndText = sName
+End Function
+
+Public Sub GetWindowList(lvw As ListView, Optional ByVal sClassName As String, Optional ByVal hWndAfter As Long)
+   Set lv = lvw
+   m_ClassName = sClassName
+   EnumWindows AddressOf EnumWinProc, 0
+End Sub
+
+Private Function GetTopLevelParent(hWnd As Long) As Long
+  Dim hwndParent As Long
+  Dim hwndTmp As Long
+  hwndParent = hWnd
+  Do
+    hwndTmp = GetParent(hwndParent)
+    If hwndTmp Then hwndParent = hwndTmp
+  Loop While hwndTmp
+  GetTopLevelParent = hwndParent
+End Function
+
+'===========mHeaderDuplicate.bas========
+'module to duplicate LV column headers
+Option Explicit
+
+Private Type HD_ITEM
+    mask As Long
+    cxy As Long
+    pszText As Long
+    hbm As Long
+    cchTextMax As Long
+    fmt As Long
+    lParam As Long
+    ' 4.70:
+    iImage As Long
+    iOrder As Long
+End Type
+
+Private Type ITEM_TEXT
+   pszText As String * 80
+End Type
+
+Private Const HDM_FIRST = &H1200
+Private Const HDM_GETITEMCOUNT = HDM_FIRST + 0
+Private Const HDM_GETITEMA = HDM_FIRST + 3
+Private Const HDM_GETIMAGELIST = (HDM_FIRST + 9)
+
+Private Const HDI_WIDTH = &H1
+Private Const HDI_HEIGHT = HDI_WIDTH
+Private Const HDI_TEXT = &H2
+Private Const HDI_FORMAT = &H4
+Private Const HDI_LPARAM = &H8
+Private Const HDI_BITMAP = &H10
+Private Const HDI_IMAGE = &H20
+Private Const HDI_ORDER = &H80
+Private Const HDI_ALL = HDI_WIDTH Or HDI_TEXT Or HDI_FORMAT Or HDI_BITMAP Or HDI_IMAGE Or HDI_ORDER
+
+Private Const HDF_LEFT = &H0
+Private Const HDF_RIGHT = &H1
+Private Const HDF_CENTER = &H2
+Private Const HDF_JUSTIFYMASK = &H3
+
+Private Const HDF_IMAGE = &H800
+Private Const HDF_BITMAP_ON_RIGHT = &H1000
+Private Const HDF_BITMAP = &H2000
+Private Const HDF_STRING = &H4000
+Private Const HDF_OWNERDRAW = &H8000
+
+Private Const HDS_HIDDEN = &H8
+Private Const LVM_GETHEADER = (LVM_FIRST + 31)
+
+Private Function IsHeaderVisible(ByVal hHDR As Long) As Boolean
+   IsHeaderVisible = Not ((GetWindowLong(hHDR, GWL_STYLE) And HDS_HIDDEN) = HDS_HIDDEN)
+End Function
+
+Public Function LVHeaders_Duplicate(ByVal hLV As Long, lv As ListView, _
+                                    Optional ByVal hProcess As Long, _
+                                    Optional ByVal ImageList_Header As ImageList) As Long
+
+   Dim tid As Long, pid As Long
+   Dim hHDR As Long, nCount As Long, i As Long
+   Dim hiAddr As Long, itAddr As Long, lWritten As Long, hIml As Long
+   
+   Dim bNeedClose As Boolean
+   Dim hi As HD_ITEM
+   Dim it As ITEM_TEXT
+   
+   lv.ColumnHeaders.Clear
+   Set lv.ColumnHeaderIcons = Nothing
+   If hProcess = 0 Then
+      bNeedClose = True
+      tid = GetWindowThreadProcessId(hLV, pid)
+      EnableDebugPrivNT
+      hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+      If hProcess = 0 Then Exit Function
+   End If
+   hHDR = SendMessage(hLV, LVM_GETHEADER, 0, ByVal 0&)
+   If hHDR Then
+      hIml = SendMessage(hHDR, HDM_GETIMAGELIST, 0, ByVal 0&)
+      If hIml Then
+         If IL_Duplicate(hProcess, hIml, ImageList_Header) Then
+            Set lv.ColumnHeaderIcons = ImageList_Header
+         End If
+      End If
+      nCount = SendMessage(hHDR, HDM_GETITEMCOUNT, 0, ByVal 0&)
+      If nCount = 0 Then GoTo CleanUp
+      hiAddr = VirtualAllocEx(hProcess, 0, Len(hi), MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+      itAddr = VirtualAllocEx(hProcess, 0, LenB(it), MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+      For i = 0 To nCount - 1
+          ZeroMemory hi, Len(hi)
+          ZeroMemory it, Len(it)
+          hi.cchTextMax = Len(it)
+          hi.mask = HDI_ALL
+          hi.pszText = itAddr
+          WriteProcessMemory hProcess, ByVal hiAddr, hi, Len(hi), lWritten
+          WriteProcessMemory hProcess, ByVal itAddr, it, Len(it), lWritten
+          Call SendMessage(hHDR, HDM_GETITEMA, i, ByVal hiAddr)
+          ReadProcessMemory hProcess, ByVal hiAddr, hi, Len(hi), lWritten
+          ReadProcessMemory hProcess, ByVal itAddr, it, Len(it), lWritten
+          With lv.ColumnHeaders.Add(, , TrimNull(it.pszText), hi.cxy * Screen.TwipsPerPixelX, hi.fmt And 3)
+              If Not lv.ColumnHeaderIcons Is Nothing Then
+                 .Icon = hi.iImage 'IIf(hi.iImage > lv.ColumnHeaderIcons.ListImages.Count, 0, hi.iImage)
+              End If
+              .Tag = hi.iOrder + 1 'store header item position for reodering columns
+          End With
+      Next i
+      For i = 1 To nCount
+          With lv.ColumnHeaders(i)
+             .Position = .Tag 'move headers
+          End With
+      Next i
+      VirtualFreeEx hProcess, ByVal hiAddr, 0, MEM_RELEASE
+      VirtualFreeEx hProcess, ByVal itAddr, 0, MEM_RELEASE
+      lv.HideColumnHeaders = Not IsHeaderVisible(hHDR)
+   End If
+CleanUp:
+   If bNeedClose Then CloseHandle hProcess
+End Function
+
+'=========mILDuplicate===========
+'*****************************************************************
+' Module to duplicate imagelist from remote process
+' using remote API call.
+' Written by Arkadiy Olovyannikov (ark@msun.ru)
+' Copyright 2005 by Arkadiy Olovyannikov
+'
+' This software is FREEWARE. You may use it as you see fit for
+' your own projects but you may not re-sell the original or the
+' source code.
+'
+' No warranty express or implied, is given as to the use of this
+' program. Use at your own risk.
+'*****************************************************************
+Option Explicit
+
+Private Type PictDesc
+    cbSizeofStruct As Long
+    PicType As Long
+    hImage As Long
+    xExt As Long
+    yExt As Long
+End Type
+
+Private Type Guid
+    Data1 As Long
+    Data2 As Integer
+    Data3 As Integer
+    Data4(0 To 7) As Byte
+End Type
+
+Private Declare Function OleCreatePictureIndirect Lib "olepro32.dll" (lpPictDesc As _
+PictDesc, riid As Guid, ByVal fPictureOwnsHandle As Long, ipic As IPicture) As Long
+
+Private Type IMAGEINFO
+   hbmImage As Long
+   hbmMask As Long
+   Unused1 As Long
+   Unused2 As Long
+   rcImage As RECT
+End Type
+
+Private Type BITMAP '14 bytes
+   bmType As Long
+   bmWidth As Long
+   bmHeight As Long
+   bmWidthBytes As Long
+   bmPlanes As Integer
+   bmBitsPixel As Integer
+   bmBits As Long
+End Type
+
+Private Declare Function CreateDCAsNull Lib "gdi32" Alias "CreateDCA" (ByVal lpDriverName As String, lpDeviceName As Any, lpOutput As Any, lpInitData As Any) As Long
+Private Declare Function CreateBitmapIndirect Lib "gdi32" (lpBitmap As BITMAP) As Long
+Private Declare Function CreateCompatibleDC Lib "gdi32" (ByVal hdc As Long) As Long
+Private Declare Function CreateCompatibleBitmap Lib "gdi32" (ByVal hdc As Long, ByVal nWidth As Long, ByVal nHeight As Long) As Long
+Private Declare Function SelectObject Lib "gdi32" (ByVal hdc As Long, ByVal hObject As Long) As Long
+Private Declare Function DeleteDC Lib "gdi32" (ByVal hdc As Long) As Long
+Private Declare Function DeleteObject Lib "gdi32" (ByVal hObject As Long) As Long
+Private Declare Function StretchBlt Lib "gdi32" (ByVal hdc As Long, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal xSrc As Long, ByVal ySrc As Long, ByVal nSrcWidth As Long, ByVal nSrcHeight As Long, ByVal dwRop As Long) As Long
+
+'********************************************************************************
+'Main function to duplicate remote image list and fill VB ImageList with
+'appropriate icons.
+'Note: VB ImageList doesn't support new XP style 24/32 bpp icons,
+'it uses old 8 bpp icons, so some colors are corrupted.
+'If you want keep XP style, use API ImageList_XXX functions to create and fill
+'image list and bind this list to ListView with API calls.
+'********************************************************************************
+Public Function IL_Duplicate(ByVal hProcess As Long, ByVal hIml As Long, il As ImageList) As Long
+   
+   If (hIml = 0) Or (hProcess = 0) Or (il Is Nothing) Then Exit Function
+   Dim nCount As Long, i As Long, ret As Long, hImlNew As Long, hIcon As Long
+   Dim ii As IMAGEINFO
+   Dim bmp As BITMAP, bmMask As BITMAP
+   
+   Dim dt() As API_DATA
+   Dim abBitmap() As Byte, abMask() As Byte
+   Dim dcTemp As Long, dcSrc As Long, dcDest As Long, dcBitmap As Long, dcMask As Long
+   Dim hBitmap As Long, hMask As Long, hImage As Long, hTemp As Long
+   Dim hOld1 As Long, hOld2 As Long, hOld3 As Long
+   Dim cx As Long, cy As Long
+   
+'Get image count
+   ReDim dt(0)
+   dt(0).lpData = hIml
+   dt(0).argType = arg_Value
+   dt(0).dwDataLength = 4
+   nCount = CallAPIRemote(hProcess, "comctl32", "ImageList_GetImageCount", 1, dt, 5000)
+   If nCount = 0 Then Exit Function
+   
+'Get bitmap and mask handles from image list, using
+'ImageList_GetImageInfo API for the first image_list item
+   ReDim dt(2)
+   dt(0).lpData = hIml
+   dt(0).argType = arg_Value
+   dt(0).dwDataLength = 4
+   
+   dt(1).lpData = 0
+   dt(1).argType = arg_Value
+   dt(1).dwDataLength = 4
+   
+   dt(2).lpData = VarPtr(ii)
+   dt(2).argType = arg_Pointer
+   dt(2).dwDataLength = Len(ii)
+   dt(2).bOut = True
+   
+   ret = CallAPIRemote(hProcess, "comctl32", "ImageList_GetImageInfo", 3, dt, 5000)
+   If ret = 0 Then Exit Function
+   
+   cx = ii.rcImage.Right - ii.rcImage.Left
+   cy = ii.rcImage.Bottom - ii.rcImage.Top
+
+'Retrieve BITMAP objects for hBitmap and pass it trough process boundaries
+   dt(0).lpData = ii.hbmImage
+   dt(0).argType = arg_Value
+   dt(0).dwDataLength = 4
+   
+   dt(1).lpData = Len(bmp)
+   dt(1).argType = arg_Value
+   dt(1).dwDataLength = 4
+   
+   dt(2).lpData = VarPtr(bmp)
+   dt(2).argType = arg_Pointer
+   dt(2).dwDataLength = Len(bmp)
+   dt(2).bOut = True
+   
+   ret = CallAPIRemote(hProcess, "gdi32", "GetObjectA", 3, dt, 5000)
+   If ret = 0 Then Exit Function
+
+'Get bitmap bits for hBitmap and pass them trough process boundaries
+   ReDim abBitmap(bmp.bmHeight * bmp.bmWidthBytes - 1)
+   ret = ReadProcessMemory(hProcess, ByVal bmp.bmBits, abBitmap(0), UBound(abBitmap) + 1, ret)
+   If ret = 0 Then Exit Function
+   
+   bmp.bmBits = VarPtr(abBitmap(0))
+'Create new bitmap from HBITMAT structure
+   hBitmap = CreateBitmapIndirect(bmp)
+   
+'Repeat above steps fo hMask bitmap. Actually, it's not nessesarry for VB ImageList
+'since VB doesn't support Mask Image, MaskColor only
+   If ii.hbmMask Then
+      dt(0).lpData = ii.hbmMask
+      dt(2).lpData = VarPtr(bmMask)
+      ret = CallAPIRemote(hProcess, "gdi32", "GetObjectA", 3, dt, 5000)
+      If ret = 0 Then GoTo CleanUp
+      If bmMask.bmBits Then
+         ReDim abMask(bmMask.bmHeight * bmMask.bmWidthBytes - 1)
+         ret = ReadProcessMemory(hProcess, ByVal bmMask.bmBits, abMask(0), UBound(abMask) + 1, ret)
+         If ret = 0 Then Exit Function
+         bmMask.bmBits = VarPtr(abMask(0))
+      Else
+         bmMask.bmBits = 0
+      End If
+      hMask = CreateBitmapIndirect(bmMask)
+   End If
+   
+   dcTemp = CreateDCAsNull("DISPLAY", ByVal 0&, ByVal 0&, ByVal 0&)
+   dcSrc = CreateCompatibleDC(dcTemp)
+   dcDest = CreateCompatibleDC(dcTemp)
+   
+   hOld1 = SelectObject(dcSrc, hBitmap)
+   hImage = CreateCompatibleBitmap(dcTemp, cx, cy)
+   
+'Prepare VB ImageList
+   il.ListImages.Clear
+   il.UseMaskColor = hMask
+   If bmMask.bmBits Then il.MaskColor = abMask(0) Else il.MaskColor = 0
+   il.ImageWidth = cx
+   il.ImageHeight = cy
+
+'Get images from hBitmap one by one and add them to VB ImageList
+   For i = -1 To nCount - 1
+       hOld2 = SelectObject(dcDest, hImage)
+       Call StretchBlt(dcDest, 0, 0, cx, cy, dcSrc, 0, bmp.bmHeight - (i + 1) * cy - 1, cx, -cy, vbSrcCopy)
+       hImage = SelectObject(dcDest, hOld2)
+       il.ListImages.Add , , BitmapToPicture(hImage)
+   Next i
+   IL_Duplicate = nCount
+'Free objects
+CleanUp:
+   SelectObject dcSrc, hOld1
+   SelectObject dcDest, hOld2
+   If hBitmap Then DeleteObject hBitmap
+   If hMask Then DeleteObject hMask
+   If hImage Then DeleteObject hImage
+   DeleteDC dcTemp
+   DeleteDC dcSrc
+   DeleteDC dcDest
+End Function
+
+Private Function IconToPicture(ByVal hIcon As Long) As StdPicture
+    If hIcon = 0 Then Exit Function
+    Dim oNewPic As Picture
+    Dim tPicConv As PictDesc
+    Dim IGuid As Guid
+    With tPicConv
+       .cbSizeofStruct = Len(tPicConv)
+       .PicType = vbPicTypeIcon
+       .hImage = hIcon
+    End With
+    With IGuid
+        .Data1 = &H7BF80980
+        .Data2 = &HBF32
+        .Data3 = &H101A
+        .Data4(0) = &H8B
+        .Data4(1) = &HBB
+        .Data4(2) = &H0
+        .Data4(3) = &HAA
+        .Data4(4) = &H0
+        .Data4(5) = &H30
+        .Data4(6) = &HC
+        .Data4(7) = &HAB
+    End With
+    OleCreatePictureIndirect tPicConv, IGuid, True, oNewPic
+    Set IconToPicture = oNewPic
+End Function
+
+Private Function BitmapToPicture(ByVal hBmp As Long) As StdPicture
+    Dim oNewPic As Picture, tPicConv As PictDesc, IGuid As Guid
+    With tPicConv
+       .cbSizeofStruct = Len(tPicConv)
+       .PicType = vbPicTypeBitmap
+       .hImage = hBmp
+    End With
+    With IGuid
+       .Data1 = &H20400
+       .Data4(0) = &HC0
+       .Data4(7) = &H46
+    End With
+    OleCreatePictureIndirect tPicConv, IGuid, True, oNewPic
+    Set BitmapToPicture = oNewPic
+End Function
+
+'===========mLVDuplicate==========
+'Main module to duplicate remote ListView
+Option Explicit
+
+Private Type LV_ITEM
+    mask As Long
+    iItem As Long
+    iSubItem As Long
+    state As Long
+    stateMask As Long
+    pszText As Long
+    cchTextMax As Long
+    iImage As Long
+    lParam As Long
+    iIndent As Long
+End Type
+
+Private Type ITEM_TEXT
+   pszText As String * 80
+End Type
+
+Public Const LVM_FIRST = &H1000
+Private Const LVM_GETIMAGELIST = (LVM_FIRST + 2)
+Private Const LVM_SETIMAGELIST = (LVM_FIRST + 3)
+Private Const LVM_GETITEMCOUNT = (LVM_FIRST + 4)
+Private Const LVM_GETITEMA = (LVM_FIRST + 5)
+Private Const LVM_SETITEMA = (LVM_FIRST + 6)
+Private Const LVM_SETITEMSTATE = (LVM_FIRST + 43)
+Private Const LVM_GETITEMSTATE = (LVM_FIRST + 44)
+Private Const LVM_SETVIEW = (LVM_FIRST + 142)
+Private Const LVM_GETVIEW = (LVM_FIRST + 143)
+
+Private Const LVIF_TEXT = &H1
+Private Const LVIF_IMAGE = &H2
+Private Const LVIF_PARAM = &H4
+Private Const LVIF_STATE = &H8
+Private Const LVIF_INDENT = &H10
+Private Const LVIF_ALL = LVIF_TEXT Or LVIF_IMAGE Or LVIF_PARAM Or LVIF_STATE Or LVIF_INDENT
+
+Private Const LVIS_SELECTED = &H2
+
+Private Const LVS_ICON = &H0
+Private Const LVS_REPORT = &H1
+Private Const LVS_SMALLICON = &H2
+Private Const LVS_LIST = &H3
+Private Const LVS_TILE = &H4
+Private Const LVS_TYPEMASK = &H3
+Private Const LVS_SHAREIMAGELISTS = &H40
+Private Const LVS_OWNERDRAWFIXED = &H400
+
+Private Const LVS_ALIGNTOP = &H0
+Private Const LVS_AUTOARRANGE = &H100
+Private Const LVS_ALIGNLEFT = &H800
+Private Const LVS_ALIGNMASK = &HC00
+
+Private Const LVSIL_NORMAL = 0
+Private Const LVSIL_SMALL = 1
+Private Const LVSIL_STATE = 2
+
+
+Public Function LV_Duplicate(ByVal hLV As Long, lv As ListView, _
+                             Optional ByVal ImageList_Normal As ImageList, _
+                             Optional ByVal ImageList_Small As ImageList, _
+                             Optional ByVal ImageList_Header As ImageList) As Long
+   
+   Dim tid As Long, pid As Long, hProcess As Long
+   Dim nCount As Long, i As Long, j As Long
+   Dim liAddr As Long, itAddr As Long, lWritten As Long, align As Long
+   Dim hIml_small As Long
+   Dim hIml_large As Long
+   Dim nSmallIcons As Long, nIcons As Long
+   Dim itm As ListItem
+   
+   Dim li As LV_ITEM
+   Dim it As ITEM_TEXT
+   
+   
+   lv.ListItems.Clear
+   Set lv.Icons = Nothing
+   Set lv.SmallIcons = Nothing
+   
+   If GetWindowLong(hLV, GWL_STYLE) And LVS_OWNERDRAWFIXED Then
+      lv.ColumnHeaders.Clear
+      lv.View = lvwReport
+      lv.HideColumnHeaders = True
+      lv.ColumnHeaders.Add , , , 4500
+      lv.ListItems.Add , , "This listview has ownerdraw style"
+      Exit Function
+   End If
+   
+   If Not EnableDebugPrivNT Then Exit Function
+   tid = GetWindowThreadProcessId(hLV, pid)
+   If pid = 0 Then Exit Function
+   hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+   If hProcess = 0 Then Exit Function
+   
+   Select Case GetLVViewStyle(hLV)
+      Case LVS_ICON:      lv.View = lvwIcon
+      Case LVS_REPORT:    lv.View = lvwReport
+      Case LVS_SMALLICON: lv.View = lvwSmallIcon
+      Case LVS_LIST:      lv.View = lvwList
+      Case Else:          lv.View = lvwIcon
+   End Select
+   align = GetWindowLong(hLV, GWL_STYLE) And LVS_ALIGNMASK
+   If align Then
+      If align And LVS_ALIGNLEFT Then
+         lv.Arrange = lvwAutoLeft
+      Else
+         lv.Arrange = lvwAutoTop
+      End If
+   Else
+      lv.Arrange = lvwNone
+   End If
+   
+   Call LVHeaders_Duplicate(hLV, lv, hProcess, ImageList_Header)
+   hIml_large = SendMessage(hLV, LVM_GETIMAGELIST, LVSIL_NORMAL, ByVal 0&)
+   hIml_small = SendMessage(hLV, LVM_GETIMAGELIST, LVSIL_SMALL, ByVal 0&)
+   
+   If hIml_large Then
+      If Not ImageList_Normal Is Nothing Then
+         nIcons = IL_Duplicate(hProcess, hIml_large, ImageList_Normal)
+         Set lv.Icons = ImageList_Normal
+      End If
+   End If
+   
+   If hIml_small Then
+      If Not ImageList_Small Is Nothing Then
+         nSmallIcons = IL_Duplicate(hProcess, hIml_small, ImageList_Small)
+         Set lv.SmallIcons = ImageList_Small
+      End If
+   Else
+      If nIcons Then
+         nSmallIcons = nIcons
+         Set lv.SmallIcons = ImageList_Normal
+      End If
+   End If
+   nCount = SendMessage(hLV, LVM_GETITEMCOUNT, 0, ByVal 0&)
+   If nCount = 0 Then GoTo CleanUp
+   liAddr = VirtualAllocEx(hProcess, 0, Len(li), MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+   itAddr = VirtualAllocEx(hProcess, 0, LenB(it), MEM_RESERVE Or MEM_COMMIT, PAGE_READWRITE)
+      For i = 0 To nCount - 1
+          ZeroMemory li, Len(li)
+          ZeroMemory it, Len(it)
+          li.cchTextMax = Len(it)
+          li.mask = LVIF_ALL
+          li.pszText = itAddr
+          li.iItem = i
+          WriteProcessMemory hProcess, ByVal liAddr, li, Len(li), lWritten
+          WriteProcessMemory hProcess, ByVal itAddr, it, Len(it), lWritten
+          Call SendMessage(hLV, LVM_GETITEMA, i, ByVal liAddr)
+          ReadProcessMemory hProcess, ByVal liAddr, li, Len(li), lWritten
+          ReadProcessMemory hProcess, ByVal itAddr, it, Len(it), lWritten
+         
+          If nIcons Then
+             Set itm = lv.ListItems.Add(, , TrimNull(it.pszText), IIf(li.iImage > nIcons, 0, li.iImage + 1), IIf(li.iImage > nSmallIcons, 0, li.iImage + 1))
+          Else
+             If nSmallIcons Then
+                Set itm = lv.ListItems.Add(, , TrimNull(it.pszText), , IIf(li.iImage > nSmallIcons, 0, li.iImage + 1))
+             Else
+                Set itm = lv.ListItems.Add(, , TrimNull(it.pszText))
+             End If
+          End If
+          With itm
+             li.mask = LVIF_TEXT
+             For j = 1 To lv.ColumnHeaders.Count - 1
+                 li.iSubItem = j
+                 WriteProcessMemory hProcess, ByVal liAddr, li, Len(li), lWritten
+                 WriteProcessMemory hProcess, ByVal itAddr, it, Len(it), lWritten
+                 Call SendMessage(hLV, LVM_GETITEMA, 0, ByVal liAddr)
+                 ReadProcessMemory hProcess, ByVal liAddr, li, Len(li), lWritten
+                 ReadProcessMemory hProcess, ByVal itAddr, it, Len(it), lWritten
+                 .SubItems(j) = TrimNull(it.pszText)
+             Next j
+          End With
+      Next i
+      VirtualFreeEx hProcess, ByVal liAddr, 0, MEM_RELEASE
+      VirtualFreeEx hProcess, ByVal itAddr, 0, MEM_RELEASE
+CleanUp:
+   If hProcess Then CloseHandle hProcess
+End Function
+
+Private Function GetLVViewStyle(ByVal hLV As Long) As Long
+   Dim lStyle As Long
+   lStyle = GetWindowLong(hLV, GWL_STYLE) And LVS_TYPEMASK
+   If lStyle = 0 Then 'Probably XP?
+      lStyle = SendMessage(hLV, LVM_GETVIEW, 0, ByVal 0&)
+   End If
+   GetLVViewStyle = lStyle
+End Function
+
+Private Function GetLVAlign(ByVal hLV As Long) As Long
+   GetLVAlign = GetWindowLong(hLV, GWL_STYLE) And LVS_ALIGNMASK
+End Function
+
+'========mMisc.bas=======
+'Some support functions
+Option Explicit
+
+Public Type RECT
+   Left As Long
+   Top As Long
+   Right As Long
+   Bottom As Long
+End Type
+
+Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (lpDest As Any, lpSource As Any, ByVal cBytes As Long)
+Public Declare Sub ZeroMemory Lib "kernel32" Alias "RtlZeroMemory" (Destination As Any, ByVal Length As Long)
+Public Declare Function SendMessage& Lib "user32" Alias "SendMessageA" (ByVal hWnd&, ByVal wMsg&, ByVal wParam&, lParam As Any)
+Public Declare Function GetWindowLong& Lib "user32" Alias "GetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long)
+Public Declare Function SetWindowLong& Lib "user32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal nStyle As Long)
+Public Const GWL_STYLE = (-16)
+
+Public Function TrimNull(startstr As String) As String
+   Dim pos As Integer
+   pos = InStr(startstr, Chr$(0))
+   If pos Then
+      TrimNull = Left$(startstr, pos - 1)
+      Exit Function
+   End If
+   TrimNull = startstr
+End Function
+
+'==========mNTPrivileges.bas==========
+'Module to obtain NT privilegest to access remote process
+Option Explicit
+
+Private Const SE_DEBUG_NAME = "SeDebugPrivilege"
+Private Const SE_PRIVILEGE_ENABLED = &H2
+Private Const ANYSIZE_ARRAY = 1
+Private Const TOKEN_ADJUST_PRIVILEGES = &H20
+Private Const TOKEN_QUERY = &H8
+
+Private Type LARGE_INTEGER
+  LowPart As Long
+  HighPart As Long
+End Type
+
+Private Type LUID_AND_ATTRIBUTES
+  pLuid As LARGE_INTEGER
+  Attributes As Long
+End Type
+
+Private Type TOKEN_PRIVILEGES
+  PrivilegeCount As Long
+  Privileges(ANYSIZE_ARRAY) As LUID_AND_ATTRIBUTES
+End Type
+
+Private Declare Function OpenProcessToken Lib "advapi32.dll" ( _
+  ByVal ProcessHandle As Long, _
+  ByVal DesiredAccess As Long, _
+  TokenHandle As Long) As Long
+
+Private Declare Function LookupPrivilegeValue Lib "advapi32.dll" _
+  Alias "LookupPrivilegeValueA" ( _
+  ByVal lpSystemName As String, _
+  ByVal lpName As String, _
+  lpLuid As LARGE_INTEGER) As Long
+
+Private Declare Function AdjustTokenPrivileges Lib "advapi32" ( _
+  ByVal TokenHandle As Long, _
+  ByVal DisableAllPrivileges As Long, _
+  ByRef NewState As TOKEN_PRIVILEGES, _
+  ByVal BufferLength As Long, _
+  ByRef PreviousState As Any, _
+  ByRef ReturnLength As Any) As Long
+
+Private Declare Function GetCurrentProcess Lib "kernel32" () As Long
+Private bDone As Boolean
+
+Public Function EnableDebugPrivNT() As Boolean
+  If bDone Then
+     EnableDebugPrivNT = True
+     Exit Function
+  End If
+ 
+  Dim hToken As Long
+  Dim li As LARGE_INTEGER
+  Dim tkp As TOKEN_PRIVILEGES
+ 
+  If OpenProcessToken(GetCurrentProcess, TOKEN_ADJUST_PRIVILEGES _
+                      Or TOKEN_QUERY, hToken) = 0 Then Exit Function
+ 
+  If LookupPrivilegeValue("", SE_DEBUG_NAME, li) = 0 Then Exit Function
+ 
+  tkp.PrivilegeCount = 1
+  tkp.Privileges(0).pLuid = li
+  tkp.Privileges(0).Attributes = SE_PRIVILEGE_ENABLED
+ 
+  bDone = AdjustTokenPrivileges(hToken, False, tkp, 0, ByVal 0&, 0)
+  EnableDebugPrivNT = bDone
+End Function
+
+'=========mProcesses.bas=========
+'Some processes related API
+
+Public Declare Function ReadProcessMemory Lib "kernel32" (ByVal hProcess As Long, lpBaseAddress As Any, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+Public Declare Function WriteProcessMemory Lib "kernel32" (ByVal hProcess As Long, lpBaseAddress As Any, lpBuffer As Any, ByVal nSize As Long, lpNumberOfBytesWritten As Long) As Long
+Public Declare Function GetWindowThreadProcessId Lib "user32" (ByVal hWnd As Long, lpdwProcessId As Long) As Long
+Public Declare Function VirtualAllocEx Lib "kernel32" (ByVal hProcess As Long, ByVal lpAddress As Long, ByVal dwSize As Long, ByVal flAllocationType As Long, ByVal flProtect As Long) As Long
+Public Declare Function VirtualFreeEx Lib "kernel32" (ByVal hProcess As Long, lpAddress As Any, ByVal dwSize As Long, ByVal dwFreeType As Long) As Long
+Public Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
+Public Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
+
+Public Const MEM_COMMIT = &H1000
+Public Const MEM_RESERVE = &H2000
+Public Const MEM_RELEASE = &H8000
+
+Public Const PAGE_READWRITE = &H4&
+Public Const PAGE_EXECUTE_READWRITE = &H40&
+Public Const PROCESS_ALL_ACCESS = &H1F0FFF
+
+'========================================================
+'Form code
+'Add 2 ListView (lvWinList and lvDupe) and 3 ImageLists (ilLarge, ilSmall, ilHeader)
+'=========================================================
+Option Explicit
+
+Private Sub Form_Load()
+   Caption = "List View duplicate demo"
+   lvWinList.View = lvwReport
+   GetWindowList lvWinList, "SysListView32"
+   If lvWinList.ListItems.Count Then
+      lvWinList_ItemClick lvWinList.ListItems(1)
+   End If
+End Sub
+
+Private Sub Form_Resize()
+   If WindowState = vbMinimized Then Exit Sub
+   lvWinList.Move 0, 0, lvWinList.Width, ScaleHeight
+   lvDupe.Move lvWinList.Width + 30, 0, ScaleWidth - lvWinList.Width - 60, ScaleHeight
+End Sub
+
+Private Sub lvWinList_ItemClick(ByVal Item As MSComctlLib.ListItem)
+   MousePointer = vbHourglass
+   LV_Duplicate Item.Tag, lvDupe, ilLarge, ilSmall, ilHeader
+   MousePointer = vbDefault
+End Sub
+
+
+'=================================================
+'Enjoy :)
+'=================================================
