@@ -31,7 +31,7 @@ Sub push(ary, value) 'this modifies parent ary object
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
-init: ReDim ary(0): ary(0) = value
+init: ReDim ary(0): ary(0) = IIf(IsEmpty(value), "", value)
 End Sub
 
 Function ColToStr(c As Collection) As String

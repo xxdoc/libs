@@ -10,7 +10,7 @@ Attribute VB_Name = "CCmnDlg"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = True
+Attribute VB_Exposed = False
 Option Explicit
 
 Const LANG_US = &H409
@@ -70,7 +70,6 @@ Public Enum FilterTypes
     CustomFilter = 5
 End Enum
 
-
 Private Declare Function GetForegroundWindow Lib "user32" () As Long
 Private Declare Function GetOpenFileName Lib "comdlg32.dll" Alias "GetOpenFileNameA" (pOpenfilename As OPENFILENAME) As Long
 Private Declare Function GetSaveFileName Lib "comdlg32.dll" Alias "GetSaveFileNameA" (pOpenfilename As OPENFILENAME) As Long
@@ -83,7 +82,12 @@ Private Declare Function LocalAlloc Lib "kernel32" (ByVal uFlags As Long, ByVal 
 Private Declare Function LocalFree Lib "kernel32" (ByVal hMem As Long) As Long
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 
+Private Const OFN_ALLOWMULTISELECT = &H200
+Private Const OFN_EXPLORER = &H80000
+Private Const OFN_FILEMUSTEXIST = &H1000
+Private Const OFN_LONGNAMES = &H200000
 Private o As OPENFILENAME
+
 Private filters(6) As String
 Private extensions(6) As String
 Private filt As FilterTypes
@@ -149,6 +153,50 @@ Function OpenDialog(Optional initDir = "", Optional title = "Open File") As Stri
     OpenDialog = IIf(GetOpenFileName(o), Trim$(o.lpstrFile), "")
     OpenDialog = Replace(OpenDialog, Chr(0), Empty)
     
+End Function
+
+Function OpenMulti(Optional initDir = "", Optional title = "Open File") As Collection
+         
+    Dim c As New Collection
+    Set OpenMulti = c
+    
+    If Len(initDir) <> 0 Then lastDir = initDir
+    
+    Dim tOPENFILENAME As OPENFILENAME
+    Dim lResult As Long, i As Long
+    Dim vFiles As Variant
+    Dim lIndex As Long, lStart As Long
+    
+    With tOPENFILENAME
+        .flags = OFN_ALLOWMULTISELECT Or OFN_EXPLORER Or OFN_FILEMUSTEXIST Or OFN_LONGNAMES
+        .hWndOwner = GetForegroundWindow()
+        .nMaxFile = 2048
+        .lpstrFilter = filters(filt)
+        .lpstrFile = Space(.nMaxFile - 1) & Chr(0)
+        .lStructSize = Len(tOPENFILENAME)
+        .lpstrFileTitle = Space$(254)
+        .nMaxFileTitle = 255
+        .lpstrInitialDir = lastDir
+        .hInstance = 0
+        .lpstrTitle = CStr(title)
+    End With
+    
+    lResult = GetOpenFileName(tOPENFILENAME)
+    
+    If lResult > 0 Then
+        With tOPENFILENAME
+            vFiles = Split(Left(.lpstrFile, InStr(.lpstrFile, Chr(0) & Chr(0)) - 1), Chr(0))
+            If UBound(vFiles) = 0 Then
+                c.Add vFiles(0)
+            Else
+                'otherwise the first element (0) is the folder path, and the rest are file names
+                For lIndex = 1 To UBound(vFiles)
+                    c.Add vFiles(0) & "\" & vFiles(lIndex)
+                Next
+            End If
+        End With
+    End If
+     
 End Function
 
 Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optional title = "Save File") As String

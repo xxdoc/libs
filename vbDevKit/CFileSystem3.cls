@@ -10,7 +10,7 @@ Attribute VB_Name = "CFileSystem3"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = True
+Attribute VB_Exposed = False
 'Revision 4
 '
 'Info:     These are basically macros for VB's built in file processes

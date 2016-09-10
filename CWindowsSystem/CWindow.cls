@@ -93,6 +93,7 @@ Private Declare Function GetWindowPlacement Lib "user32" (ByVal hwnd As Long, lp
 Private Declare Function SetWindowPlacement Lib "user32" (ByVal hwnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
 Private Declare Function SendMessage Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal msg As Long, wParam As Any, lParam As Any) As Long
 Private Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
+Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClassName As String, ByVal lpszWindowName As String) As Long
 
 Private Const LB_GETCOUNT = &H18B
 Private Const LB_GETTEXT = &H189
@@ -100,6 +101,11 @@ Private Const LB_GETTEXTLEN = &H18A
 Private Const CB_GETCOUNT = &H146
 Private Const CB_GETLBTEXT = &H148
 Private Const CB_GETLBTEXTLEN = &H149
+Private Const WM_CLOSE = &H10
+
+Sub CloseWindow()
+    PostMessage hwnd, WM_CLOSE, 0, 0
+End Sub
 
 Property Get isValid() As Boolean
     isValid = Not (IsWindow(hwnd) = 0)
@@ -121,6 +127,16 @@ Function CopyRemoteTreeView(Optional dest As TreeView) As Collection
 
    CopyTargetTreeview TargetTreeview, dest, tvEntries
    
+End Function
+
+Function FindChild(ByVal className As String) As Cwindow
+    
+    Dim hChild As Long
+    Dim w As New Cwindow
+    
+    w.hwnd = FindWindowEx(hwnd, 0&, className, vbNullString)
+    Set FindChild = w 'can be 0 check isValid...
+    
 End Function
 
 Function CopyListBox(Optional toListBox As ListBox) As Collection

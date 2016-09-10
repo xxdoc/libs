@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.UserControl ucFilterList 
    ClientHeight    =   6315
    ClientLeft      =   0
@@ -122,6 +122,8 @@ Attribute VB_Exposed = False
 'author:  David Zimmer <dzzie@yahoo.com>
 'site:    http://sandsprite.com
 'License: free for any use
+'
+'9.9.16 - added bold and color: to filter capabilities
 
 Public AllowDelete As Boolean
 
@@ -160,10 +162,10 @@ End Property
     
 Sub setFont(Optional name As String = "tahoma", Optional size As Integer = 10)
     On Error Resume Next
-    lv.font.name = name
-    lvFilter.font.name = name
-    lv.font.size = size
-    lvFilter.font.size = size
+    lv.Font.name = name
+    lvFilter.Font.name = name
+    lv.Font.size = size
+    lvFilter.Font.size = size
 End Sub
 
  
@@ -482,7 +484,8 @@ Private Sub mnuFilterHelp_Click()
     Const msg = "You can enter multiple criteria to filter \n" & _
                 "on by seperating with commas. You can also\n" & _
                 "utilize a subtractive filter if the first \n" & _
-                "character in the textbox is a minus sign\n\n" & _
+                "character in the textbox is a minus sign\n" & _
+                "Filter also understands: bold, color:red|blue|etc\n\n" & _
                 "The FilterColumn is marked with an * this is \n" & _
                 "the column that is being searched. You can \n" & _
                 "modify it on the filter menu, or by entering\n" & _
@@ -526,6 +529,25 @@ Private Sub mnuToggleMulti_Click()
     Me.MultiSelect = Not lv.MultiSelect
 End Sub
 
+Private Function ColorConstantsToLong(ByVal s As String) As Long
+    
+    Dim c As ColorConstants
+    s = LCase(s)
+    
+    c = -1
+    If InStr(s, "black") > 0 Then c = vbBlack
+    If InStr(s, "blue") > 0 Then c = vbBlue
+    If InStr(s, "cyan") > 0 Then c = vbCyan
+    If InStr(s, "green") > 0 Then c = vbGreen
+    If InStr(s, "magenta") > 0 Then c = vbMagenta
+    If InStr(s, "red") > 0 Then c = vbRed
+    If InStr(s, "white") > 0 Then c = vbWhite
+    If InStr(s, "yellow") > 0 Then c = vbYellow
+    
+    ColorConstantsToLong = c
+    
+End Function
+
 Private Sub txtFilter_Change()
 
     Dim li As ListItem
@@ -562,10 +584,20 @@ Private Sub txtFilter_Change()
     Set indexMapping = New Collection
     
     Dim sMatch As String
+    Dim isColor As Boolean
+    Dim lColor As Long
     
     If VBA.Left(txtFilter, 1) = "-" Then
         useSubtractiveFilter = True
         sMatch = Mid(txtFilter, 2)
+    ElseIf VBA.Left(txtFilter, 6) = "color:" Then
+        isColor = True
+        sMatch = Replace(txtFilter, "color:", Empty)
+        If Len(sMatch) = 0 Then Exit Sub 'they are still entering it...
+        Err.Clear
+        lColor = CLng(sMatch)
+        If Err.Number <> 0 Then lColor = ColorConstantsToLong(sMatch)
+        If lColor = -1 Then Exit Sub
     Else
         sMatch = txtFilter
     End If
@@ -579,22 +611,31 @@ Private Sub txtFilter_Change()
          Else
             t = li.subItems(m_FilterColumn - 1)
          End If
-        
-         addit = useSubtractiveFilter
-         If InStr(txtFilter, ",") Then
-            tmp = Split(sMatch, ",")
-         Else
-            push tmp, sMatch
-         End If
          
-         For Each x In tmp
-             If Len(x) > 0 Then
-                 If InStr(1, t, x, vbTextCompare) > 0 Then
-                     addit = Not addit
-                     Exit For
-                 End If
-             End If
-         Next
+         addit = False
+         If txtFilter = "bold" Then
+            If li.Bold = True Then addit = True
+         ElseIf isColor Then
+            If li.ForeColor = lColor Then addit = True
+         Else
+         
+            addit = useSubtractiveFilter
+            If InStr(txtFilter, ",") Then
+               tmp = Split(sMatch, ",")
+            Else
+               push tmp, sMatch
+            End If
+            
+            For Each x In tmp
+                If Len(x) > 0 Then
+                    If InStr(1, t, x, vbTextCompare) > 0 Then
+                        addit = Not addit
+                        Exit For
+                    End If
+                End If
+            Next
+            
+         End If
          
          If addit Then
              CloneListItemTo li, lvFilter
@@ -611,6 +652,7 @@ hideExit:
             
     
 End Sub
+
 
 Sub CloneListItemTo(li As ListItem, lv As ListView)
     Dim li2 As ListItem, i As Integer

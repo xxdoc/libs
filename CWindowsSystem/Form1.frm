@@ -10,6 +10,14 @@ Begin VB.Form Form1
    ScaleHeight     =   9345
    ScaleWidth      =   18615
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command6 
+      Caption         =   "clone Kanal treeview"
+      Height          =   405
+      Left            =   1710
+      TabIndex        =   15
+      Top             =   5070
+      Width           =   2235
+   End
    Begin VB.Timer Timer1 
       Enabled         =   0   'False
       Interval        =   100
@@ -312,6 +320,27 @@ Private Sub Command5_Click()
         body = d.body.innerHTML
         Text2 = url & vbCrLf & vbCrLf & body
     End If
+    
+End Sub
+
+Private Sub Command6_Click()
+    Dim c As Collection, c2 As Collection
+    Dim w As Cwindow, wTv As Cwindow
+    
+    Set c = ws.ChildWindows()
+    For Each w In c
+        If VBA.Left(w.Caption, 5) = "KANAL" Then
+            Set wTv = w.FindChild("SysTreeView32")
+            If wTv.isValid Then
+                 Set c2 = wTv.CopyRemoteTreeView(TreeView1)
+                 Text2 = ColToStr(c2)
+                 w.CloseWindow
+            End If
+            Exit Sub
+        End If
+    Next
+    
+    Text2 = "failed to find kanal window?"
     
 End Sub
 

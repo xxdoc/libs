@@ -18,15 +18,15 @@ Attribute VB_Exposed = False
 Private Sub Form_Load()
 
     Dim fso As New CFileSystem3
-    Dim c As Collection
-    
-    Set c = fso.GetSubFolders("C:\Program Files", , True)
-    
-    
-    For Each f In c
-        Debug.Print f
-    Next
-    Debug.Print c.Count
+'    Dim c As Collection
+'
+'    Set c = fso.GetSubFolders("C:\Program Files", , True)
+'
+'
+'    For Each f In c
+'        Debug.Print f
+'    Next
+'    Debug.Print c.Count
     
     'Debug.Print fso.GetShortName("C:\Documents and Settings\david\Desktop\doesnotexistyet.txt")
     
@@ -34,6 +34,10 @@ Private Sub Form_Load()
     
     'If fso.FolderExists("c:\windows") Then MsgBox 1
     
+    Set c = fso.dlg.OpenMulti()
+    For Each f In c
+        Debug.Print f
+    Next
     
     End
     
