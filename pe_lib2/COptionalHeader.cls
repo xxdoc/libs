@@ -72,7 +72,30 @@ Public Enum eDATA_DIRECTORY
     Reserved = 15
 End Enum
 
-Friend Function LoadStruc(fHandle As Long, is64Bit As Boolean)
+Public OSVersion As String
+Public LinkerVersion As String
+Public ImageVersion As String
+Public SubSysVersion As String
+
+Function PEVersionReport(Optional compact As Boolean = False) As String
+    Dim tmp() As String
+    
+    If OSVersion = Empty Then Exit Function 'marker that its not set...
+    
+    If compact Then
+        PEVersionReport = "PEVersion:" & "OS:" & OSVersion & " Link:" & LinkerVersion & _
+                                         " Img:" & ImageVersion & " SubSys:" & SubSysVersion
+    Else
+        push tmp, rpad("OSVersion: ", 16) & OSVersion
+        push tmp, rpad("LinkerVersion: ", 16) & LinkerVersion
+        push tmp, rpad("ImageVersion: ", 16) & ImageVersion
+        push tmp, rpad("SubSysVersion: ", 16) & SubSysVersion
+        PEVersionReport = Join(tmp, vbCrLf)
+    End If
+    
+End Function
+
+Friend Function LoadStruc(fhandle As Long, is64Bit As Boolean)
     Dim i As Integer
     
     is64 = is64Bit
@@ -80,7 +103,7 @@ Friend Function LoadStruc(fHandle As Long, is64Bit As Boolean)
     'cant use a variant without making the structs public types so just paste..
     
     If is64Bit Then
-        Get fHandle, , opt64
+        Get fhandle, , opt64
         
         With opt64
              Magic = .Magic
@@ -116,11 +139,16 @@ Friend Function LoadStruc(fHandle As Long, is64Bit As Boolean)
              For i = 0 To 15
                  DataDirectory(i) = .DataDirectory(i)
              Next
+        
+            LinkerVersion = .MajorLinkerVersion & "." & .MinorLinkerVersion
+            OSVersion = .MajorOperatingSystemVersion & "." & .MinorOperatingSystemVersion
+            ImageVersion = .MajorImageVersion & "." & .MinorImageVersion
+            SubSysVersion = .MajorSubsystemVersion & "." & .MinorSubsystemVersion
         End With
         
     Else
     
-        Get fHandle, , opt
+        Get fhandle, , opt
         
         With opt
              Magic = .Magic
@@ -156,13 +184,18 @@ Friend Function LoadStruc(fHandle As Long, is64Bit As Boolean)
              For i = 0 To 15
                  DataDirectory(i) = .DataDirectory(i)
              Next
+        
+            LinkerVersion = .MajorLinkerVersion & "." & .MinorLinkerVersion
+            OSVersion = .MajorOperatingSystemVersion & "." & .MinorOperatingSystemVersion
+            ImageVersion = .MajorImageVersion & "." & .MinorImageVersion
+            SubSysVersion = .MajorSubsystemVersion & "." & .MinorSubsystemVersion
         End With
         
     End If
        
 End Function
 
-Friend Sub WriteStruc(fHandle As Long)
+Friend Sub WriteStruc(fhandle As Long)
     Dim i As Integer
 
     If is64 Then
@@ -202,7 +235,7 @@ Friend Sub WriteStruc(fHandle As Long)
              Next
         End With
     
-        Put fHandle, , opt64
+        Put fhandle, , opt64
         
     Else
     
@@ -242,7 +275,7 @@ Friend Sub WriteStruc(fHandle As Long)
              Next
         End With
     
-        Put fHandle, , opt
+        Put fhandle, , opt
         
     End If
 

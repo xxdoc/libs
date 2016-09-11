@@ -77,7 +77,7 @@ End Type
 
 Public Type IMAGE_DATA_DIRECTORY
     VirtualAddress As Long
-    size As Long
+    Size As Long
 End Type
 
 
@@ -186,7 +186,7 @@ End Type
 
 Public Type RESOURCE_DATAENTRY
    Data_RVA As Long
-   size As Long
+   Size As Long
    CodePage As Long
    Reserved As Long
 End Type
@@ -206,14 +206,14 @@ End Function
 
 
 
-Sub push(ary, Value) 'this modifies parent ary object
+Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
-    Dim x As Long
-    x = UBound(ary) '<-throws Error If Not initalized
+    Dim X As Long
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init:     ReDim ary(0): ary(0) = Value
+init:     ReDim ary(0): ary(0) = value
 End Sub
 
 Function GetHextxt(t As TextBox, v As Long) As Boolean
@@ -318,7 +318,7 @@ Function HexDump(ByVal str, Optional hexOnly = 0) As String
     Dim ary() As Byte
     Dim offset As Long
     Const LANG_US = &H409
-    Dim i As Long, tt, h, x
+    Dim i As Long, tt, h, X
     
     offset = 0
     str = " " & str
@@ -329,9 +329,9 @@ Function HexDump(ByVal str, Optional hexOnly = 0) As String
         tt = Hex(ary(i))
         If Len(tt) = 1 Then tt = "0" & tt
         tmp = tmp & tt & " "
-        x = ary(i)
+        X = ary(i)
         'chars = chars & IIf((x > 32 And x < 127) Or x > 191, Chr(x), ".") 'x > 191 causes \x0 problems on non us systems... asc(chr(x)) = 0
-        chars = chars & IIf((x > 32 And x < 127), Chr(x), ".")
+        chars = chars & IIf((X > 32 And X < 127), Chr(X), ".")
         If i > 1 And i Mod 16 = 0 Then
             h = Hex(offset)
             While Len(h) < 6: h = "0" & h: Wend
@@ -368,3 +368,14 @@ Function HexDump(ByVal str, Optional hexOnly = 0) As String
     
 End Function
 
+Function rpad(v, Optional l As Long = 10)
+    On Error GoTo hell
+    Dim X As Long
+    X = Len(v)
+    If X < l Then
+        rpad = v & String(l - X, " ")
+    Else
+hell:
+        rpad = v
+    End If
+End Function
