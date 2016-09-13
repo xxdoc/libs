@@ -53,7 +53,20 @@ Public Declare Function EnableHook Lib "hooklib.dll" (ByVal lpOrgFunc As Long) A
 Public Declare Function RemoveHook Lib "hooklib.dll" (ByVal lpOrgFunc As Long) As Long
 
 'int __stdcall CallOriginal(int orgFunc, int arg1)
-Public Declare Function CallOriginal Lib "hooklib.dll" (ByVal lpOrgFunc As Long, ByVal arg1 As Long) As Long
+'updated to work with functions with up to 10 args...
+Public Declare Function CallOriginal Lib "hooklib.dll" ( _
+    ByVal lpOrgFunc As Long, _
+    Optional ByVal arg1 As Long = &HDEADBEEF, _
+    Optional ByVal arg2 As Long = &HDEADBEEF, _
+    Optional ByVal arg3 As Long = &HDEADBEEF, _
+    Optional ByVal arg4 As Long = &HDEADBEEF, _
+    Optional ByVal arg5 As Long = &HDEADBEEF, _
+    Optional ByVal arg6 As Long = &HDEADBEEF, _
+    Optional ByVal arg7 As Long = &HDEADBEEF, _
+    Optional ByVal arg8 As Long = &HDEADBEEF, _
+    Optional ByVal arg9 As Long = &HDEADBEEF, _
+    Optional ByVal arg10 As Long = &HDEADBEEF _
+) As Long
 
 Public Declare Sub RemoveAllHooks Lib "hooklib.dll" ()
 Public Declare Sub UnInitilizeHookLib Lib "hooklib.dll" Alias "UnInitilize" ()

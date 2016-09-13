@@ -21,6 +21,7 @@
 //
 //Mods by David Zimmer <dzzie@yahoo.com>
 
+//todo: if debugger present..make sure no breakpoints set on api we are going to hook..flag that shit!
 
 //note: in several places we work on HookInfo[NumberOfHooks] as a global object in sub fx..
 
@@ -641,7 +642,7 @@ ULONG_PTR __stdcall GetOriginalFunction(ULONG_PTR Hook)
 
 //this was added just for this project 
 stdc
-int __stdcall CallOriginal(int orgFunc, int arg1)
+int __stdcall CallOriginal(int orgFunc, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10)
 {
 #pragma EXPORT
 	
@@ -661,11 +662,54 @@ int __stdcall CallOriginal(int orgFunc, int arg1)
 		return -1;
 	}
 
+	int rv = 0;
 	int lpProc = hinfo->Bridge;
 
 	_asm{
+		cmp arg10, 0xDEADBEEF
+		je s10
+		push arg10
+	s10:
+		cmp arg9, 0xDEADBEEF
+		je s9
+		push arg9
+	s9:
+		cmp arg8, 0xDEADBEEF
+		je s8
+		push arg8
+	s8:
+		cmp arg7, 0xDEADBEEF
+		je s7
+		push arg7
+	s7:
+		cmp arg6, 0xDEADBEEF
+		je s6
+		push arg6
+	s6:
+		cmp arg5, 0xDEADBEEF
+		je s5
+		push arg5
+	s5:
+		cmp arg4, 0xDEADBEEF
+		je s4
+		push arg4
+	s4:
+		cmp arg3, 0xDEADBEEF
+		je s3
+		push arg3
+	s3:
+		cmp arg2, 0xDEADBEEF
+		je s2
+		push arg2
+	s2:
+		cmp arg1, 0xDEADBEEF
+		je s1
 		push arg1
+	s1:
 		call lpProc
+		mov rv, eax
 	}
+
+	return rv;
 
 }

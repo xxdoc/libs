@@ -116,7 +116,7 @@ Private Sub Command1_Click()
     
     'DebugBreak
     ret = GetSaveFileName(o)
-    
+    List1.AddItem "Data returned: " & o.lpstrFile
     MsgBox ret
     
 End Sub

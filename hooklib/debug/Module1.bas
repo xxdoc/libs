@@ -41,8 +41,20 @@ Public Declare Function EnableHook Lib "hooklib.dll" (ByVal lpOrgFunc As Long) A
 'VOID __stdcall RemoveHook(ULONG_PTR Function)
 Public Declare Function RemoveHook Lib "hooklib.dll" (ByVal lpOrgFunc As Long) As Long
 
-'int __stdcall CallOriginal(int orgFunc, int arg1)
-Public Declare Function CallOriginal Lib "hooklib.dll" (ByVal lpOrgFunc As Long, ByVal arg1 As Long) As Long
+'updated to work with functions with up to 10 args...
+Public Declare Function CallOriginal Lib "hooklib.dll" ( _
+    ByVal lpOrgFunc As Long, _
+    Optional ByVal arg1 As Long = &HDEADBEEF, _
+    Optional ByVal arg2 As Long = &HDEADBEEF, _
+    Optional ByVal arg3 As Long = &HDEADBEEF, _
+    Optional ByVal arg4 As Long = &HDEADBEEF, _
+    Optional ByVal arg5 As Long = &HDEADBEEF, _
+    Optional ByVal arg6 As Long = &HDEADBEEF, _
+    Optional ByVal arg7 As Long = &HDEADBEEF, _
+    Optional ByVal arg8 As Long = &HDEADBEEF, _
+    Optional ByVal arg9 As Long = &HDEADBEEF, _
+    Optional ByVal arg10 As Long = &HDEADBEEF _
+) As Long
 
 Public Declare Sub RemoveAllHooks Lib "hooklib.dll" ()
 Public Declare Sub UnInitilizeHookLib Lib "hooklib.dll" Alias "UnInitilize" ()
@@ -113,10 +125,7 @@ Public Function My_GetSaveFileName(ByRef ofn As lng_OPENFILENAME) As Long
     Dim ext As String
     Dim outputName As String
     
-    Form1.List1.AddItem "Inside My_GetSaveFileName lpOFN = 0x" & VarPtr(lpOFN)
-    
-    'make our structure reference the actual one passed in..
-    'CopyMemory ByVal VarPtr(ofn), ByVal lpOFN, 4
+    Form1.List1.AddItem "Inside My_GetSaveFileName lpOFN = 0x" & VarPtr(ofn)
     
     If ofn.lpstrFile <> 0 Then
         outputName = CStringToVBString(ofn.lpstrFile)
@@ -130,7 +139,7 @@ Public Function My_GetSaveFileName(ByRef ofn As lng_OPENFILENAME) As Long
     
     'if we make it down to here..they we should proceed as normal
     Form1.List1.AddItem "Calling real GetSaveFileName"
-    My_GetSaveFileName = CallOriginal(lpGetSaveFileName, lpOFN)
+    My_GetSaveFileName = CallOriginal(lpGetSaveFileName, VarPtr(ofn))
     
 End Function
 

@@ -1,9 +1,11 @@
 Type=Exe
 Form=form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Module=Module1; Module1.bas
+Module=mSer; Module1.bas
+Module=modLibrary; modLibrary.bas
 IconForm="Form1"
 Startup="Form1"
+HelpFile=""
 ExeName32="Project1.exe"
 Command32=""
 Name="Project1"
@@ -18,7 +20,7 @@ VersionCompanyName="sandsprite"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
-CodeViewDebugInfo=0
+CodeViewDebugInfo=-1
 NoAliasing=0
 BoundsCheck=0
 OverflowCheck=0
@@ -30,6 +32,7 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
+DebugStartupOption=0
 
 [MS Transaction Server]
 AutoRefresh=1
