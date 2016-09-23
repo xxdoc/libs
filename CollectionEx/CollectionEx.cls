@@ -51,7 +51,34 @@ Public Sub Add(vData As Variant, Optional ByVal Key As String, Optional Before A
     End If
 End Sub
 
-Public Function Item(ByVal IndexOrKey As Variant, Optional ByVal forceAsKey As Byte = 0) As Variant
+Property Let Item(ByVal IndexOrKey As Variant, Optional ByVal forceAsKey As Byte = 0, val As Variant)
+
+'this works as default as well since set in get
+    Dim i As Integer
+    Dim k As String
+    Dim tmp As Variant
+    
+    i = VarType(IndexOrKey)
+    If forceAsKey <> 0 Then i = 8
+    
+    Select Case i
+        Case 2 To 7 ' Integer, Long, Single, Double, Currency, & Date.  (A bit weird to pass in a date, but who knows.)
+            
+            k = Me.keyForIndex(CLng(IndexOrKey))
+            c.Remove CLng(IndexOrKey)
+            c.Add val, k
+            
+        Case 8
+            k = Base16Encode(CStr(IndexOrKey))
+            Me.Remove IndexOrKey, forceAsKey
+            Add val, IndexOrKey
+    
+    End Select
+    
+
+End Property
+
+Property get  Item(ByVal IndexOrKey As Variant, Optional ByVal forceAsKey As Byte = 0) As Variant
 Attribute Item.VB_UserMemId = 0
     'Attribute Item.VB_UserMemId = 0 ' This must be placed in with Notepad.  Makes this method the default.
     ' Had to leave this one public so the "Default" method could be used.
@@ -81,7 +108,7 @@ Attribute Item.VB_UserMemId = 0
     
     End Select
     
-End Function
+End property
 
 'property so we can mouse over it in ide to see value..
 Property Get Count()
@@ -295,4 +322,74 @@ hell: FileExists = False
 End Function
 
 
+Function Sort(Optional descending As Boolean = True) As Boolean
+    
+    Dim tmp() As Variant
+    Dim keys() As String
+    
+    Dim v, i As Long
+    Dim o As Object
+    
+    If c.Count = 0 Then Exit Function
+    
+    ReDim tmp(c.Count - 1)
+    ReDim keys(c.Count - 1)
+    
+    For i = 1 To c.Count
+        If IsObject(c(i)) Then
+            Exit Function
+        Else
+            keys(i - 1) = Me.keyForIndex(i)
+            tmp(i - 1) = c(i)
+        End If
+    Next
+    
+    If Not SortArray(descending, tmp, keys) Then Exit Function
+    
+    Set c = New Collection
+    
+    For i = 0 To UBound(tmp)
+        Add tmp(i), keys(i)
+    Next
+    
+    Sort = True
 
+End Function
+
+Private Function SortArray(descending As Boolean, ByRef TheArray As Variant, ByRef keys As Variant) As Boolean
+    Dim sorted As Boolean
+    Dim temp, temp_key, x As Long
+    Dim doit As Boolean
+    
+    On Error GoTo hell
+    
+    sorted = False
+    Do While Not sorted
+        sorted = True
+        For x = 0 To UBound(TheArray) - 1
+        
+            doit = False
+            
+            If descending Then
+                If TheArray(x) < TheArray(x + 1) Then doit = True
+            Else
+                If TheArray(x) > TheArray(x + 1) Then doit = True
+            End If
+            
+            If doit Then
+                temp = TheArray(x + 1)
+                temp_key = keys(x + 1)
+                TheArray(x + 1) = TheArray(x)
+                keys(x + 1) = keys(x)
+                TheArray(x) = temp
+                keys(x) = temp_key
+                sorted = False
+            End If
+            
+        Next x
+    Loop
+    
+    SortArray = True
+hell:
+    
+End Function
