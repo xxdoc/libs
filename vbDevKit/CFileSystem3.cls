@@ -38,6 +38,15 @@ Private Declare Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As Lon
 Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hMem As Long)
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 
+Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
+Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
+Private Declare Function GetFileVersionInfo Lib "Version.dll" Alias "GetFileVersionInfoA" (ByVal lptstrFilename As String, ByVal dwhandle As Long, ByVal dwlen As Long, lpData As Any) As Long
+Private Declare Function GetFileVersionInfoSize Lib "Version.dll" Alias "GetFileVersionInfoSizeA" (ByVal lptstrFilename As String, lpdwHandle As Long) As Long
+Private Declare Function VerQueryValue Lib "Version.dll" Alias "VerQueryValueA" (pBlock As Any, ByVal lpSubBlock As String, lplpBuffer As Any, puLen As Long) As Long
+Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, ByVal Source As Long, ByVal length As Long)
+Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
+
 Enum DriveTypes
     DRIVE_UNKNOWN = 0
     DRIVE_NOTFOUND = 1
@@ -487,13 +496,13 @@ oops: buildPath = False
 End Function
 
 
-Function ReadFile(filename) As Variant
+Function ReadFile(fileName) As Variant
   Dim f As Long
   Dim temp As Variant
   f = FreeFile
   temp = ""
-   Open filename For Binary As #f        ' Open file.(can be text or image)
-     temp = Input(FileLen(filename), #f) ' Get entire Files data
+   Open fileName For Binary As #f        ' Open file.(can be text or image)
+     temp = Input(FileLen(fileName), #f) ' Get entire Files data
    Close #f
    ReadFile = temp
 End Function
@@ -712,3 +721,36 @@ Function GetSpecialFolder(sf As SpecialFolders) As String
       CoTaskMemFree idl
   
 End Function
+
+Function FileProperties(ByVal fpath As String, Optional checkSignature As Boolean = False) As CFileProperties
+    Dim f As New CFileProperties
+    f.LoadFileInfo fpath, checkSignature
+    Set FileProperties = f
+End Function
+
+Public Function FileSize(fpath As String) As String
+    Dim fsize As Long
+    Dim szName As String
+    On Error GoTo hell
+    
+    fsize = FileLen(fpath)
+    
+    szName = " bytes"
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Kb"
+    End If
+    
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Mb"
+    End If
+    
+    FileSize = fsize & szName
+    
+    Exit Function
+hell:
+    
+End Function
+
+

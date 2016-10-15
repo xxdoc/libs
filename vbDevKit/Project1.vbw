@@ -1,6 +1,6 @@
 clsCmnDlg = 22, 22, 912, 684, 
 clsFileStream = 132, 132, 591, 462, 
-clsFileSystem = 33, 7, 679, 600, 
+clsFileSystem = 33, 7, 679, 600, C
 clsRegistry = 22, 22, 872, 739, 
 clsIniFile = 33, 20, 471, 448, 
 clsCmdLine = 154, 154, 596, 582, 
@@ -14,6 +14,6 @@ CFileSystem2 = 66, 66, 721, 685,
 CVariantFileSystem = 102, 76, 740, 651, 
 CBinaryClipboard = 154, 154, 909, 557, 
 clsCmnDlg2 = 176, 176, 1173, 666, 
-CFileSystem3 = 88, 88, 1138, 800, Z
+CFileSystem3 = 88, 88, 1138, 800, 
 frmDlg = 154, 154, 846, 727, , 176, 176, 868, 749, C
 CCmnDlg = 110, 110, 802, 683, 

@@ -34,10 +34,16 @@ Private Sub Form_Load()
     
     'If fso.FolderExists("c:\windows") Then MsgBox 1
     
-    Set c = fso.dlg.OpenMulti()
-    For Each f In c
-        Debug.Print f
-    Next
+'    Set c = fso.dlg.OpenMulti()
+'    For Each f In c
+'        Debug.Print f
+'    Next
+    
+'    Dim fp As CFileProperties
+'    Set fp = fso.FileProperties("d:\_installs\ActivePresenter_v5.0.0_setup.exe", True)
+'    'fp.checkSignature
+'    MsgBox fp.QuickInfo
+    
     
     End
     

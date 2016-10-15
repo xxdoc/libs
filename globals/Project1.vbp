@@ -1,13 +1,8 @@
 Type=Exe
-Form=Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Class=CFileSystem3; ..\CFileSystem3.cls
-Class=CCmnDlg; ..\CCmnDlg.cls
-Form=..\frmDlg.frm
-Class=CFileProperties; ..\CFileProperties.cls
-Module=mCryptQuery; ..\mCryptQuery.bas
-Module=mWinVerify; ..\mWinVerify.bas
-IconForm="Form1"
+Reference=*\G{BD81FD7B-3D7F-4D87-8839-5B50399D18AD}#6.0#0#globals.dll#Sandsprite Global Functions
+Form=Form1.frm
+Module=Module1; Module1.bas
 Startup="Form1"
 ExeName32="Project1.exe"
 Command32=""

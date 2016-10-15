@@ -1,5 +1,6 @@
 Type=OleDll
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.8#0#..\vbDevKit\vbDevKit.dll#Vb Developers Library From Sandsprite.com
 Class=CGlobals; CGlobals.cls
 Startup="(None)"
 HelpFile=""

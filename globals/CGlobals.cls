@@ -49,6 +49,11 @@ Public Enum dbServers
     dBase
 End Enum
 
+Private h As New CWinHash
+
+Property Get hash() As CWinHash
+    Set hash = h
+End Property
 
 Property Get LANG_US() As Long
     LANG_US = &H409
