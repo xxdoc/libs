@@ -1,0 +1,13 @@
+LIBRARY NTREG
+      DESCRIPTION 'NT Registry routines for VB'
+      EXPORTS
+		keyExists_
+		deleteValue_
+		userSID
+		;DeleteKey
+		;createKey_
+		;SetValue
+		;ReadValue
+		;EnumKeys
+		;EnumValues
+        
