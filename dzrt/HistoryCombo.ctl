@@ -18,7 +18,7 @@ Attribute VB_Name = "HistoryCombo"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Dim history() As String
 Dim m_file As String
 
@@ -30,7 +30,7 @@ Property Let Text(ByVal v As String)
     cbo.Text = v
 End Property
 
-Property Get Combo() As ComboBox
+Property Get Combo() As Object
     Set Combo = cbo
 End Property
 

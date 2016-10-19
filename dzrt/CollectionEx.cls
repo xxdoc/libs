@@ -26,7 +26,7 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As An
 
 Private Type dump
     Key As String
-    Data As Variant
+    data As Variant
 End Type
 
 Public Sub Attach(existing As Collection)
@@ -138,11 +138,11 @@ Public Function uniqueKey(ByVal suggested As String) As String
     
     If Len(suggested) = 0 Then suggested = Base16Encode(Now)
     
-    If KeyExists(suggested) Then
+    If keyExists(suggested) Then
         Do
             i = i + 1
             tmp = suggested & "_" & i
-        Loop While KeyExists(tmp)
+        Loop While keyExists(tmp)
         suggested = tmp
     End If
     
@@ -162,14 +162,14 @@ Attribute NewEnum.VB_MemberFlags = "40"
    Set NewEnum = c.[_NewEnum]
 End Function
 
-Public Function KeyExists(Key As String) As Boolean
+Public Function keyExists(ByVal Key As String) As Boolean
     On Error GoTo DoesntExist
     IsObject c(Base16Encode(Key))
-    KeyExists = True
+    keyExists = True
 DoesntExist:
 End Function
 
-Public Function toString(Optional delimiter As String = vbCrLf, Optional includeKeys As Boolean = False) As String
+Public Function toString(Optional ByVal delimiter As String = vbCrLf, Optional ByVal includeKeys As Boolean = False) As String
     Dim tmp() As Variant
     Dim k, i As Long
     
@@ -209,9 +209,9 @@ Public Function toFile(ByVal fPath As String) As Boolean
     For i = 1 To c.Count
         tmp(i - 1).Key = keyForIndex(i)
         If IsObject(c(i)) Then
-            tmp(i - 1).Data = "[ invalid can not save " & TypeName(c(i)) & " object ]"
+            tmp(i - 1).data = "[ invalid can not save " & TypeName(c(i)) & " object ]"
         Else
-            tmp(i - 1).Data = c(i)
+            tmp(i - 1).data = c(i)
         End If
     Next
     
@@ -246,9 +246,9 @@ Public Function fromFile(ByVal fPath As String, Optional append As Boolean) As L
     
     For i = 0 To UBound(tmp)
         If Len(tmp(i).Key) = 0 Then
-            c.Add tmp(i).Data
+            c.Add tmp(i).data
         Else
-            c.Add tmp(i).Data, Base16Encode(uniqueKey(tmp(i).Key))
+            c.Add tmp(i).data, Base16Encode(uniqueKey(tmp(i).Key))
         End If
     Next
         
@@ -416,16 +416,26 @@ done:
     toArray = tmp()
 End Function
 
-Public Sub fromArray(ary As Variant, Optional append As Boolean = True)
+Public Sub fromArray(ary As Variant, Optional append As Boolean = True, Optional uniqueOnly As Boolean)
     Dim i As Long
+    'On Error GoTo hell
     
     If AryIsEmpty(ary) Then Exit Sub
     If Not append And c.Count > 0 Then Set c = New Collection
     
     For i = LBound(ary) To UBound(ary)
-        c.Add ary(i)
+        If uniqueOnly Then
+            If Not keyExists(ary(i)) Then
+                Add ary(i), ary(i)
+            End If
+        Else
+            c.Add ary(i)
+        End If
     Next
 
+Exit Sub
+hell:
+    Stop
 End Sub
 
 

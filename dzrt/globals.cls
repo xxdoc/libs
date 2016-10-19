@@ -230,9 +230,9 @@ Sub push(ary, value) 'this modifies parent ary object
     ReDim Preserve ary(x + 1)
     
     If IsObject(value) Then
-        Set ary(x) = value
+        Set ary(x + 1) = value
     Else
-        ary(x) = value
+        ary(x + 1) = value
     End If
     
     Exit Sub
@@ -280,7 +280,7 @@ Function AryIsEmpty(ary) As Boolean
 oops: AryIsEmpty = True
 End Function
 
-Function KeyExists(ByVal t As String, c As Collection) As Boolean
+Function keyExists(ByVal t As String, c As Collection) As Boolean
     On Error GoTo hell
     Dim x
     
@@ -290,17 +290,17 @@ Function KeyExists(ByVal t As String, c As Collection) As Boolean
         x = c(t)
     End If
     
-    KeyExists = True
+    keyExists = True
 Exit Function
 hell:
 End Function
 
-Function AnyofTheseInstr(Data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
+Function AnyofTheseInstr(data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
     Dim tmp() As String
     Dim x
     tmp = Split(match, ",")
     For Each x In tmp
-        If InStr(1, Data, x, compare) > 0 Then
+        If InStr(1, data, x, compare) > 0 Then
             AnyofTheseInstr = True
             Exit Function
         End If
@@ -790,17 +790,17 @@ nope:
     isHexChar = False
 End Function
 
-Public Function rc4(Data As Variant, ByVal Password As Variant) As String
+Public Function rc4(data As Variant, ByVal Password As Variant) As String
 On Error Resume Next
     Dim RB(0 To 255) As Integer, x As Long, y As Long, Z As Long, Key() As Byte, ByteArray() As Byte, temp As Byte
     
     Dim plen As Long
     
-    If TypeName(Data) = "Byte()" Then
-        ByteArray() = Data
+    If TypeName(data) = "Byte()" Then
+        ByteArray() = data
     Else
-        If Len(Data) = 0 Then Exit Function
-        ByteArray() = StrConv(CStr(Data), vbFromUnicode, LANG_US)
+        If Len(data) = 0 Then Exit Function
+        ByteArray() = StrConv(CStr(data), vbFromUnicode, LANG_US)
     End If
     
     If TypeName(Password) = "Byte()" Then
