@@ -132,6 +132,18 @@ Public Sub Clear()
     Set c = New Collection
 End Sub
 
+Public Function Clone() As CollectionEx
+    
+    Dim cc As New CollectionEx
+    Dim i As Long
+    
+    For i = 1 To c.Count
+        'If IsObject(c(i)) Then Err.Raise 256, , "CollectionEx.Clone: Can not clone a collection with object references"
+        cc.Add c(i), keyForIndex(i)
+    Next
+    
+    Set Clone = cc
+End Function
 
 Public Function uniqueKey(ByVal suggested As String) As String
     Dim i As Long, tmp As String

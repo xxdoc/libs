@@ -210,7 +210,7 @@ Private history() As String
 Private ignoreDriveChange As Boolean
 Private pt As POINTAPI
 
-'Public Enum SpecialFolders
+''Public Enum SpecialFolders
 '
 Const sf_DESKTOP = &H0     '<desktop>
 '    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
@@ -397,7 +397,7 @@ End Sub
 Private Sub Drive1_Change()
     On Error Resume Next
     If ignoreDriveChange Then Exit Sub
-    Dir1.path = Drive1.drive
+    Dir1.path = Drive1.Drive
 End Sub
 
 Private Sub Form_Load()
