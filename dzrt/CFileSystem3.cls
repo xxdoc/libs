@@ -507,13 +507,27 @@ Function ReadFile(filename) As Variant
    ReadFile = temp
 End Function
 
-Sub writeFile(path, it)
+Function writeFile(path, it) As Boolean
     Dim f As Long
+    Dim b() As Byte
+    On Error Resume Next
+    
+    If FileExists(path) Then Kill path
+    
+    If TypeName(it) = "Byte()" Then
+        b() = it
+    Else
+        b() = StrConv(CStr(it), vbFromUnicode, &H409)
+    End If
+    
     f = FreeFile
-    Open path For Output As #f
-    Print #f, it
+    Open path For Binary As #f
+    Put #f, , it
     Close f
-End Sub
+    
+    writeFile = (Err.Number = 0)
+    
+End Function
 
 Sub AppendFile(path, it)
     Dim f As Long
@@ -575,13 +589,13 @@ Private Sub delTree(folderPath, Optional force = True)
    Set sfi = GetFolderFiles(folderPath)
    Set sfo = GetSubFolders(folderPath)
    
-   If sfi.count > 0 And force = True Then
+   If sfi.Count > 0 And force = True Then
         For Each f In sfi
             DeleteFile f
         Next
    End If
    
-   If sfo.count > 0 And force = True Then
+   If sfo.Count > 0 And force = True Then
         For Each f In sfo
             Call DeleteFolder(f, True)
         Next

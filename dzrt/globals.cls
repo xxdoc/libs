@@ -16,17 +16,21 @@ Option Explicit
 
 Private Declare Sub SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long)
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
-Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
-Private Declare Function GetTickCount Lib "kernel32" () As Long
+
 Private Const HWND_TOPMOST = -1
 Private Const HWND_NOTOPMOST = -2
-
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
-Private Declare Function SendMessage Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Const LB_GETCOUNT = &H18B
 Private Const LB_SETTOPINDEX = &H197
+Private startTime As Long
+
+Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () As Long
+Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
+Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
+Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 
 'all but jet are odbc jet is ole
 Public Enum dbServers
@@ -44,6 +48,30 @@ Private crc_table() As Long
 Public base64 As New CBase64
 Public hash As New CWinHash
 Public fso As New CFileSystem3
+
+Function GetTickCount() As Long
+    GetTickCount = GetTickCount_()
+End Function
+
+Function LoadLibrary(ByVal lpLibFileName As String) As Long
+    LoadLibrary = LoadLibrary_(lpLibFileName)
+End Function
+
+ Function FreeLibrary(ByVal hLibModule As Long) As Long
+    FreeLibrary = FreeLibrary_(hLibModule)
+ End Function
+ 
+ Sub Sleep(ByVal dwMilliseconds As Long)
+    Sleep_ dwMilliseconds
+ End Sub
+ 
+ Sub CopyMemory(Destination, Source, ByVal length As Long)
+     CopyMemory_ Destination, Source, length
+ End Sub
+ 
+ Function SendMessage(ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+    SendMessage = SendMessage_(hwnd, Msg, wParam, lParam)
+ End Function
 
 Property Get MAX_LONG() As Long
     MAX_LONG = 2147483647
@@ -64,6 +92,25 @@ End Property
 Property Get LANG_US() As Long
     LANG_US = &H409
 End Property
+
+Sub StartBenchMark(Optional ByRef t As Long)
+    If IsMissing(t) Then
+        startTime = GetTickCount()
+    Else
+        t = GetTickCount()
+    End If
+End Sub
+
+Function EndBenchMark(Optional ByRef t As Long) As String
+    Dim endTime As Long, loadTime As Long
+    endTime = GetTickCount()
+    If IsMissing(t) Then
+        loadTime = endTime - startTime
+    Else
+        loadTime = endTime - t
+    End If
+    EndBenchMark = loadTime / 1000 & " seconds"
+End Function
 
 Public Function isIde() As Boolean
     On Error GoTo hell
@@ -313,17 +360,30 @@ Public Function isHexNum(v, Optional ByRef dataOut) As Boolean
     If Err.Number = 0 Then isHexNum = True
 End Function
 
-Function LB_Count(hListBox As Long) As Long
-   LB_Count = SendMessage(hListBox, LB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
+Function lbCount(hListBox As Long) As Long
+   lbCount = SendMessage(hListBox, LB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
 End Function
 
-Public Sub LB_ScrollTo(hListBox As Long, Optional ByVal index As Long = -1)
-    If index = -1 Then index = LB_Count(hListBox)
+Public Sub lbScrollTo(hListBox As Long, Optional ByVal index As Long = -1)
+    If index = -1 Then index = lbCount(hListBox)
     SendMessage hListBox, LB_SETTOPINDEX, ByVal index - 1, ByVal 0
 End Sub
 
+Function lbCopy(lstBox As Object) As String
+    
+    Dim i As Long
+    Dim tmp() As String
+    
+    For i = 0 To lstBox.ListCount
+        push tmp, lstBox.List(i)
+    Next
+    
+    lbCopy = Join(tmp, vbCrLf)
+    
+End Function
 
-Public Sub LV_ColumnSort(ListViewControl As Object, Column As Object)
+
+Public Sub lvColumnSort(ListViewControl As Object, Column As Object)
     On Error Resume Next
     Const lvwAscending As Long = 0
     Const lvwDescending As Long = 1
@@ -343,7 +403,7 @@ Public Sub LV_ColumnSort(ListViewControl As Object, Column As Object)
     End With
 End Sub
 
-Function LV_GetAllElements(lv As Object) As String
+Function lvGetAllElements(lv As Object) As String
     Dim ret() As String, i As Integer, tmp As String
     Dim li 'As ListItem
     
@@ -364,7 +424,7 @@ Function LV_GetAllElements(lv As Object) As String
         push ret, tmp
     Next
     
-    LV_GetAllElements = Join(ret, vbCrLf)
+    lvGetAllElements = Join(ret, vbCrLf)
     
 End Function
 
@@ -564,7 +624,7 @@ Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     h2l = (Err.Number = 0)
 End Function
 
-Function HexDump(bAryOrStrData, Optional hexOnly = 0) As String
+Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As Long = 1, Optional ByVal length As Long = -1) As String
     Dim s() As String, chars As String, tmp As String
     On Error Resume Next
     Dim ary() As Byte
@@ -580,8 +640,17 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0) As String
         ary = StrConv(CStr(bAryOrStrData), vbFromUnicode, LANG_US)
     End If
     
+    If startAt < 1 Then startAt = 1
+    If length < 1 Then length = -1
+    
+    While startAt Mod 16 <> 0
+        startAt = startAt - 1
+    Wend
+    
+    startAt = startAt + 1
+    
     chars = "   "
-    For i = 1 To UBound(ary) + 1
+    For i = startAt To UBound(ary) + 1
         tt = Hex(ary(i - 1))
         If Len(tt) = 1 Then tt = "0" & tt
         tmp = tmp & tt & " "
@@ -599,6 +668,10 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0) As String
             offset = offset + 16
             tmp = Empty
             chars = "   "
+        End If
+        If length <> -1 Then
+            length = length - 1
+            If length = 0 Then Exit For
         End If
     Next
     
@@ -625,7 +698,7 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0) As String
     
 End Function
 
-Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = False, Optional isDecimal As Boolean = False)
+Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optional isDecimal As Boolean = False)
 
 'supports:
 '11 22 33 44   spaced hex chars
