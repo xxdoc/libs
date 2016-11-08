@@ -11,10 +11,26 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-Private base As String
+Option Explicit
+
+
 Private Const LANG_US = &H409
 Private Const MAX_LONG As Long = 2147483647
 Private selIndex As Long 'used in setLowest
+
+Private p_Value As String
+Private p_ValueLen As Long
+Private p_ValueLenReal As Long
+Private p_ValuePtr As Long
+
+'WINAPI
+
+Private Declare Function CharLowerBuffW Lib "user32" (ByVal lStr As Long, ByVal lLength As Long) As Long
+Private Declare Function CharUpperBuffW Lib "user32" (ByVal lStr As Long, ByVal lLength As Long) As Long
+Private Declare Function IsTextUnicode Lib "advapi32" (ByRef uBuffer As Any, ByVal lBufferLen As Long, ByRef lResult As Long) As Long
+Private Declare Function MultiByteToWideChar Lib "kernel32" (ByVal lCodePage As Long, ByVal lFlags As Long, uMultiByte As Any, ByVal lMultiByteLen As Long, uWideCharStr As Any, ByVal lWideCharStrLen As Long) As Long
+Private Declare Sub RtlMoveMemory Lib "kernel32" (uTarget As Any, uSource As Any, ByVal lLen As Long)
+
 
 Private Declare Function URLDownloadToFile Lib "urlmon" Alias _
     "URLDownloadToFileA" (ByVal pCaller As Long, _
@@ -23,20 +39,137 @@ Private Declare Function URLDownloadToFile Lib "urlmon" Alias _
     ByVal dwReserved As Long, _
     ByVal lpfnCB As Long) As Long
 
+Private Sub Class_Initialize()
+    p_ValueLenReal = 256&
+End Sub
 
-'this property is the default method..get and let
-Property Get text() As String
-Attribute text.VB_UserMemId = 0
-    text = base
+Public Property Get value() As String
+Attribute value.VB_UserMemId = 0
+
+    If p_ValueLen Then value = VBA.Left$(p_Value, p_ValueLen)
+
 End Property
 
-Property Let text(x As String)
-    base = x
+Public Property Let value(ByRef newvalue As String)
+        
+    Dim l As Long
+
+    l = Len(newvalue)
+
+    If l Then
+    
+        BufferRedim l, True
+    
+        RtlMoveMemory ByVal p_ValuePtr, ByVal StrPtr(newvalue), p_ValueLen + p_ValueLen
+    
+    Else
+        p_ValueLen = 0&
+    End If
+    
 End Property
+
+Public Function concat(ByRef ConcatString As String) As CString
+    
+    Dim l As Long
+    
+    Set concat = Me
+    
+    l = Len(ConcatString)
+    
+    If l Then
+    
+        BufferRedim l, False
+    
+        RtlMoveMemory ByVal p_ValuePtr + ((p_ValueLen - l) * 2&), ByVal StrPtr(ConcatString), l + l
+    
+    End If
+
+End Function
+
+Public Function remove(ByVal index As Long, ByVal length As Long) As CString
+
+    Dim x As Long
+
+    Set remove = Me
+
+    If p_ValueLen > 0& And index > 0& And index <= p_ValueLen And length > 0& Then
+    
+        x = length - (length - (p_ValueLen - index + 1&))
+        
+        If length <= x Then x = length
+    
+        If x < p_ValueLen Then
+    
+            RtlMoveMemory ByVal p_ValuePtr + ((index + -1) * 2&), ByVal p_ValuePtr + ((index + -1) * 2&) + (x * 2&), (p_ValueLen - (index + x) + 1&) * 2&
+            
+            p_ValueLen = p_ValueLen - x
+            
+        Else
+            p_ValueLen = 0&
+        End If
+    
+    End If
+
+End Function
+
+Public Function insert(ByVal index As Long, ByRef InsertString As String) As CString
+
+    Dim l As Long
+
+    Set insert = Me
+    
+    l = Len(InsertString)
+        
+    If l > 0& And index >= 0& And index <= p_ValueLen Then
+    
+        BufferRedim l, False
+        
+        RtlMoveMemory ByVal p_ValuePtr + (index * 2&) + l + l, ByVal p_ValuePtr + (index * 2&), (p_ValueLen - (index + l)) * 2&
+        RtlMoveMemory ByVal p_ValuePtr + (index * 2&), ByVal StrPtr(InsertString), l + l
+    
+    End If
+
+End Function
+
+Private Sub BufferRedim(ByVal NewStringLen As Long, ByVal FromScratch As Boolean)
+
+    Dim b As String
+    Dim r As Boolean
+    Dim x As Long
+        
+    p_ValueLen = (p_ValueLen * ((Not FromScratch) * -1)) + NewStringLen
+
+    If p_ValueLen > (p_ValueLenReal \ 2&) Then p_ValueLenReal = p_ValueLenReal + (p_ValueLen * 2&) Else r = p_ValuePtr
+
+    If Not r Then
+    
+        If FromScratch Then
+        
+            p_Value = Space$(p_ValueLenReal)
+            p_ValuePtr = StrPtr(p_Value)
+        
+        Else
+            
+            x = p_ValueLen - NewStringLen
+            
+            If x Then b = VBA.Left$(p_Value, x)
+            
+            p_Value = Space$(p_ValueLenReal)
+            p_ValuePtr = StrPtr(p_Value)
+            
+            If x Then RtlMoveMemory ByVal p_ValuePtr, ByVal StrPtr(b), x + x
+        
+        End If
+
+    End If
+    
+End Sub
+
 
 'sometimes you need the loop like when replacing two spaces with one..
 Function replace(find As String, Optional rep As String, Optional start As Long = 1, Optional count As Long = -1, Optional method As VbCompareMethod = vbBinaryCompare)
-    tmp = base
+    Dim tmp As String
+    tmp = value
     While InStr(start, tmp, find, method) > 0
         tmp = VBA.replace(tmp, find, rep, start, count, method)
     Wend
@@ -44,11 +177,11 @@ Function replace(find As String, Optional rep As String, Optional start As Long 
 End Function
 
 Function indexOf(find As String, Optional index As Long = 1, Optional method As VbCompareMethod = vbBinaryCompare) As Long
-    indexOf = InStr(index, base, find, method)
+    indexOf = InStr(index, value, find, method)
 End Function
 
 Function lastIndexOf(find As String, Optional index As Long = -1, Optional method As VbCompareMethod = vbBinaryCompare) As Long
-    lastIndexOf = InStrRev(base, find, index, method)
+    lastIndexOf = InStrRev(value, find, index, method)
 End Function
 
 Function endsWith(ByVal char As String, Optional method As VbCompareMethod = vbBinaryCompare) As Boolean
@@ -56,9 +189,9 @@ Function endsWith(ByVal char As String, Optional method As VbCompareMethod = vbB
     On Error GoTo hell
     Dim tmp As String
     
-    If Len(base) < Len(char) Then Exit Function
+    If Len(value) < Len(char) Then Exit Function
     
-    tmp = Right(base, Len(char))
+    tmp = Right(value, Len(char))
     
     If method <> vbBinaryCompare Then
         tmp = LCase(tmp)
@@ -73,7 +206,7 @@ End Function
 Sub stripFromEnd(Optional char As String = vbCrLf, Optional method As VbCompareMethod = vbBinaryCompare)
         
         While endsWith(char, method)
-            base = Mid(base, 1, Len(base) - Len(char))
+            value = Mid(value, 1, Len(value) - Len(char))
         Wend
         
 End Sub
@@ -84,12 +217,13 @@ Sub stripAnyFromEnd(ParamArray chars())
         Dim cnt As Long
         Dim index As Long
         Dim b As String
+        Dim c
         
-        index = Len(base) - 1
+        index = Len(value) - 1
         Do
             hadResult = False
             For Each c In chars
-                b = Mid(base, index, 1)
+                b = Mid(value, index, 1)
                 If LCase(b) = LCase(c) Then
                     index = index - 1
                     If index < 1 Then Exit Do
@@ -99,73 +233,206 @@ Sub stripAnyFromEnd(ParamArray chars())
             Next
         Loop While hadResult
         
-        If index = Len(base) - 1 Then Exit Sub 'nothing to do
+        If index = Len(value) - 1 Then Exit Sub 'nothing to do
         
         If index < 1 Then
-            base = Empty
+            value = Empty
         Else
-            base = Mid(base, 1, index)
+            value = Mid(value, 1, index)
         End If
 
     'much simplier but very inefficient for long strings..
-    'If LCase(Right(base, 1)) = LCase(c) Then
-    '    base = Mid(base, 1, Len(base) - Len(c))
+    'If LCase(Right(value, 1)) = LCase(c) Then
+    '    value = Mid(value, 1, Len(value) - Len(c))
     '    hadResult = True
     'End If
     
 End Sub
 
 Function readX(start As Long, length As Long) As String
-    readX = Mid(base, start, length)
+    readX = Mid(value, start, length)
 End Function
 
-Function substr(start As Long, Optional endat As Long) As String
-    If IsMissing(endat) Then
-        substr = Mid(base, start)
+'supports negative offsets
+Public Function subString(Optional start As Long = 1, Optional ByVal endAt As Long = 0) As CString
+    Dim s As New CString
+    Dim v As String
+    Dim leng As Long
+    
+    Set subString = s
+    
+    If start > Me.length Then Exit Function
+    
+    If start > 0 Then
+    
+        If endAt = 0 Then
+            endAt = Me.length - start + 1
+        ElseIf endAt < 0 Then
+            endAt = Me.length + 1 - endAt
+        Else
+            If endAt > Me.length - start Then
+                endAt = Me.length - start + 1
+            End If
+        End If
+        
+        s.value = Mid(p_Value, start, endAt)
     Else
-        substr = Mid(base, start, endat - start)
+        
+        If endAt > 0 Then Exit Function
+        If endAt < start Then Exit Function
+        If Abs(start) > Me.length Then Exit Function
+        
+        v = VBA.Right(Me.value, Abs(start))
+        If endAt < 0 Then
+            v = VBA.Left(v, Len(v) - Abs(endAt))
+        End If
+        
+        s.value = v
+         
     End If
+    
+            
+        
 End Function
+
+Public Function subStr(start As Long, Optional ByVal length As Long = -1) As CString
+    Dim s As New CString
+    
+    Set subStr = s
+    
+    If start > Me.length Then Exit Function
+    
+    If length = -1 Or length > Me.length - start Then
+        length = Me.length - start + 1
+    End If
+    
+    s.value = Mid(p_Value, start, length)
+    
+End Function
+
 
 Function charAt(x As Long)
-    charAt = Mid(base, x, 1)
+    charAt = Mid(value, x, 1)
 End Function
 
 Function charCodeAt(x As Long) As Byte
-    charCodeAt = Asc(Mid(base, x, 1))
+    charCodeAt = Asc(Mid(value, x, 1))
 End Function
 
 Function split(at As String, Optional method As VbCompareMethod = vbBinaryCompare)
-    split = VBA.split(base, at, , method)
+    split = VBA.split(value, at, , method)
 End Function
 
-Function join(wth As String) As String
-    join = VBA.join(ary, wth)
-End Function
+'Function join(wth As String) As String
+'    join = VBA.join(ary, wth)
+'End Function
 
-Property Get length() As Long
-    length = Len(base)
+Public Property Get length() As Long
+
+    length = p_ValueLen
+
 End Property
 
-Function trim() As String
-    trim = VBA.trim(base)
+Public Function toLower() As CString
+      
+    Set toLower = Me
+    If p_ValueLen Then CharLowerBuffW p_ValuePtr, p_ValueLen
+
 End Function
 
-Function toLower() As String
-    toLower = LCase(base)
+Public Function toUpper() As CString
+    
+    Set toUpper = Me
+    
+    If p_ValueLen Then CharUpperBuffW p_ValuePtr, p_ValueLen
+
 End Function
 
-Function toUpper() As String
-    toUpper = UCase(base)
+Public Function trim() As CString
+
+    Set trim = Me
+    
+    lTrim
+    rTrim
+
+End Function
+
+Public Function rTrim() As CString
+
+    Set rTrim = Me
+    
+    If p_ValueLen Then
+    
+        If AscW(Mid$(p_Value, p_ValueLen, 1&)) = 32 Then
+            
+            Do
+                p_ValueLen = p_ValueLen + -1
+            Loop While InStrRev(p_Value, ChrW$(32&), p_ValueLen, vbBinaryCompare) = p_ValueLen
+        
+        End If
+    
+    End If
+
+End Function
+
+Public Function lTrim() As CString
+
+    Dim x As Long
+
+    Set lTrim = Me
+    
+    If p_ValueLen Then
+    
+        If AscW(p_Value) = 32 Then
+    
+            Do
+                x = x + 1&
+            Loop While InStr(x + 1&, p_Value, ChrW$(32&), vbBinaryCompare) = (x + 1&)
+        
+            If x Then
+        
+                p_ValueLen = p_ValueLen - x
+            
+                RtlMoveMemory ByVal p_ValuePtr, ByVal p_ValuePtr + x + x, p_ValueLen + p_ValueLen
+            
+            End If
+        
+        End If
+    
+    End If
+
+End Function
+
+Public Function strip(ByRef SearchString As String, Optional ByVal CompareMethod As VbCompareMethod) As CString
+
+    Set strip = Me
+
+    If p_ValueLen Then value = VBA.replace(VBA.Left$(p_Value, p_ValueLen), SearchString, Empty, , , CompareMethod)
+
+End Function
+
+Public Function strip2(ParamArray args()) As CString
+
+    Dim tmp As String
+    Dim v
+    
+    Set strip2 = Me
+    
+    tmp = Me.value
+    For Each v In args
+       tmp = VBA.replace(tmp, v, Empty, , , vbTextCompare)
+       If Len(tmp) = 0 Then Exit For
+    Next
+    
+    value = tmp
+
 End Function
 
 Function startsWith(str As String) As Boolean
-    startsWith = (LCase(str) = LCase(Left(base, Len(str))))
+    startsWith = (LCase(str) = LCase(Left(value, Len(str))))
 End Function
 
-Function concat(str As String)
-    concat = base & str
-End Function
+
 
 Function getLine(Optional lNo As Long = 0) As String
     
@@ -174,18 +441,18 @@ Function getLine(Optional lNo As Long = 0) As String
     Dim cnt As Long
     
     lineStart = 1
-    lineEnd = InStr(base, vbCrLf)
+    lineEnd = InStr(value, vbCrLf)
     While cnt < lNo
         If lineEnd < 1 Then Exit Function
         lineStart = lineEnd + 2
-        lineEnd = InStr(lineEnd + 1, base, vbCrLf)
+        lineEnd = InStr(lineEnd + 1, value, vbCrLf)
         cnt = cnt + 1
     Wend
     
     If lineEnd < 1 Then Exit Function
     If lineStart > lineEnd Then Exit Function
     
-    getLine = Mid(base, lineStart, lineEnd - lineStart)
+    getLine = Mid(value, lineStart, lineEnd - lineStart)
     
 End Function
 
@@ -196,7 +463,7 @@ End Function
 Function AnyLikeThese(csvCmp) As Boolean
     Dim tmp() As String, i As Integer, sin As String
     tmp() = split(LCase(csvCmp), ",")
-    sin = LCase(base)
+    sin = LCase(value)
     For i = 0 To UBound(tmp)
         tmp(i) = VBA.trim(tmp(i))
         If Len(tmp(i)) > 0 And sin Like "*" & tmp(i) & "*" Then
@@ -211,7 +478,7 @@ Function AnyOfTheseInstr(csvCmp As String) As Boolean
     tmp() = split(csvCmp, ",")
     For i = 0 To UBound(tmp)
         tmp(i) = VBA.trim(tmp(i))
-        If Len(tmp(i)) > 0 And InStr(1, base, tmp(i), vbTextCompare) > 0 Then
+        If Len(tmp(i)) > 0 And InStr(1, value, tmp(i), vbTextCompare) > 0 Then
             AnyOfTheseInstr = True
             Exit Function
         End If
@@ -220,31 +487,52 @@ End Function
 
 Function CountOccurances(find, Optional method As VbCompareMethod = vbTextCompare) As Integer
     Dim tmp() As String
-    If InStr(1, base, find, vbTextCompare) < 1 Then CountOccurances = 0: Exit Function
-    tmp = VBA.split(base, find, , method)
+    If InStr(1, value, find, vbTextCompare) < 1 Then CountOccurances = 0: Exit Function
+    tmp = VBA.split(value, find, , method)
     CountOccurances = UBound(tmp)
 End Function
 
 Function reverse() As String
-    reverse = StrReverse(base)
+    reverse = StrReverse(value)
 End Function
 
-Function toBytes() As Byte()
-    toBytes = StrConv(base, vbFromUnicode, LANG_US)
+Public Function toBytes(Optional ByVal AsANSI As Boolean = True) As Byte()
+
+    Dim x As Long
+    Dim b() As Byte
+   
+    If p_ValueLen Then
+
+        x = p_ValueLen * (((Not AsANSI) * -1) + 1&)
+
+        ReDim b(x + -1)
+
+        If AsANSI Then
+            RtlMoveMemory ByVal VarPtr(b(0)), ByVal p_Value, x
+        Else
+            RtlMoveMemory ByVal VarPtr(b(0)), ByVal p_ValuePtr, x
+        End If
+
+    End If
+    
+    toBytes = b()
+
 End Function
+
 
 Function extract(marker1, marker2, Optional start As Long = 1, Optional ByRef lastPos As Long, Optional method As VbCompareMethod = vbBinaryCompare) As String
+    Dim a As Long, b As Long
     
-    a = InStr(start, base, marker1, method)
+    a = InStr(start, value, marker1, method)
     If a < 1 Then Exit Function
     
     a = a + Len(marker1)
     
-    b = InStr(a, base, marker2, method)
+    b = InStr(a, value, marker2, method)
     If b < 1 Then Exit Function
     
     lastPos = b + Len(marker2)
-    extract = Mid(base, a, b - a)
+    extract = Mid(value, a, b - a)
     
 End Function
 
@@ -252,10 +540,11 @@ Function toHexString(Optional str)
     Dim b() As Byte
     Dim ret() As String
     Dim t As String
+    Dim i As Long
     
     If IsMissing(str) Then
-        If Len(base) = 0 Then Exit Function
-        t = base
+        If Len(value) = 0 Then Exit Function
+        t = value
     Else
         t = str
     End If
@@ -300,7 +589,7 @@ End Function
 
 Function LoadFromBytes(bArray) As Boolean
     On Error GoTo hell
-    base = StrConv(bArray, vbUnicode, LANG_US)
+    value = StrConv(bArray, vbUnicode, LANG_US)
     LoadFromBytes = True
 hell:
 End Function
@@ -312,6 +601,7 @@ Public Function LoadFromHexString(str As String) As Boolean
     Dim errCount As Long
     Dim r() As Byte
     Dim b As Byte
+    Dim i As Long
     
     On Error Resume Next
 
@@ -332,7 +622,7 @@ Public Function LoadFromHexString(str As String) As Boolean
         End If
     Next
 
-    base = StrConv(r(), vbUnicode, LANG_US)
+    value = StrConv(r(), vbUnicode, LANG_US)
     If Err.Number = 0 Then LoadFromHexString = True
     
 End Function
@@ -343,7 +633,7 @@ Function LoadFromWeb(url) As Boolean
     tmp = Environ("temp") & "\cstring_dl.tmp"
     If FileExists(tmp) Then Kill tmp
     If DownloadFile(url, tmp) Then
-        base = ReadFile(tmp)
+        value = ReadFile(tmp)
         LoadFromWeb = True
         Kill tmp
     End If
@@ -352,7 +642,7 @@ End Function
 Public Function LoadFromFile(path As String) As Boolean
     On Error GoTo hell
     If Not FileExists(path) Then Exit Function
-    base = ReadFile(path)
+    value = ReadFile(path)
     LoadFromFile = True
 hell:
 End Function
@@ -360,7 +650,7 @@ End Function
 Function SaveToFile(path As String) As Boolean
 On Error GoTo hell
     If FileExists(path) Then Kill path
-    WriteFile path, base
+    WriteFile path, value
     SaveToFile = True
 hell:
 End Function
@@ -391,7 +681,7 @@ Function HexDump(Optional val, Optional hexOnly As Boolean = False, Optional sta
     Dim tmp As String
     
     If IsMissing(val) Then
-        HexDump = internal_HexDump(base, hexOnly, start, leng)
+        HexDump = internal_HexDump(value, hexOnly, start, leng)
     Else
         If IsArray(val) Then
             If TypeName(val) = "Byte()" Then
@@ -413,6 +703,7 @@ Private Function internal_HexDump(str As String, Optional hexOnly As Boolean = F
     Dim ary() As Byte
     Dim offset As Long
     Dim s() As String, chars As String, tmp As String
+    Dim i As Long, tt, x, h
     
     offset = 0
     str = " " & str
@@ -479,11 +770,11 @@ Function unescape() As String '%uxxxx and %xx
     
     Dim tmp() As String
     Dim b1 As String, b2 As String
-    Dim i As Long
+    Dim i As Long, t
     Dim r() As Byte
     Dim elems As Long
     
-    tmp = VBA.split(base, "%")
+    tmp = VBA.split(value, "%")
     
     s_bpush r(), tmp(0) 'any prefix before encoded part..
     
@@ -526,7 +817,7 @@ hell:
 End Function
 
 Function findNextChar(charList, Optional ByRef whichFound As String, Optional ByRef startAt As Long = 1) As Long
-    Dim tmp() As String
+    Dim tmp() As String, i As Long
     For i = 1 To Len(charList)
         push tmp, Mid(charList, i, 1)
     Next
@@ -547,7 +838,7 @@ Function findNextOf(strArray() As String, Optional ByRef whichFound As String, O
     
     For i = 0 To UBound(tmp)
         If Len(tmp(i)) > 0 Then
-            push m, InStr(startAt, base, tmp(i))
+            push m, InStr(startAt, value, tmp(i))
         End If
     Next
     
@@ -559,7 +850,7 @@ Function findNextOf(strArray() As String, Optional ByRef whichFound As String, O
     End If
     
     whichFound = tmp(selIndex)
-    findNextOf = InStr(startAt, base, whichFound)
+    findNextOf = InStr(startAt, value, whichFound)
     
 End Function
 
@@ -628,7 +919,7 @@ Private Function ReadFile(filename) As String
 End Function
 
 Private Sub WriteFile(path, it)
-    Dim b() As Byte
+    Dim b() As Byte, f As Long
     b() = StrConv(it, vbFromUnicode, LANG_US)
     f = FreeFile
     Open path For Binary As f
@@ -651,7 +942,7 @@ End Function
 'maxlong = error basically..
  Function lowest(ParamArray vals())
        
-    Dim tmp As Long, i As Long
+    Dim tmp As Long, i As Long, x, xx
     
     tmp = MAX_LONG
     
@@ -680,7 +971,7 @@ End Function
  Private Sub setIfLowest(curVal, ByRef curLow, index As Long)
 
     Const allowNeg As Boolean = False
-    Const allZero As Boolean = False
+    Const allowZero As Boolean = False
     
         If curVal < 0 Then
             If allowNeg Then
@@ -707,6 +998,8 @@ End Function
 
 Private Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
+  Dim i As Long
+  
     i = UBound(ary)  '<- throws error if not initalized
     AryIsEmpty = False
   Exit Function
@@ -736,7 +1029,7 @@ Function sprintf(ByVal msg As String, ParamArray vars()) As String
     Dim t
     Dim ret As String
     Dim i As Long
-    Dim base As String
+    Dim value As String
     Dim marker As String
     
     msg = VBA.replace(msg, Chr(0), Empty)
@@ -752,12 +1045,12 @@ Function sprintf(ByVal msg As String, ParamArray vars()) As String
     
     ret = t(0)
     For i = 1 To UBound(t)
-        base = t(i)
-        marker = ExtractSpecifier(base)
+        value = t(i)
+        marker = ExtractSpecifier(value)
         If Len(marker) > 0 Then
-            ret = ret & HandleMarker(base, marker, vars(i - 1))
+            ret = ret & HandleMarker(value, marker, vars(i - 1))
         Else
-            ret = ret & base
+            ret = ret & value
         End If
     Next
     
@@ -766,16 +1059,16 @@ Function sprintf(ByVal msg As String, ParamArray vars()) As String
     
 End Function
 
-Private Function HandleMarker(base, ByVal marker, var) As String
-    Dim newBase As String
+Private Function HandleMarker(value, ByVal marker, var) As String
+    Dim newvalue As String
     Dim mType As Integer
     Dim nVal As String
     Dim spacer As String
     Dim prefix As String
     Dim count As Long
     
-    If Len(base) > Len(marker) Then
-        newBase = Mid(base, Len(marker) + 1) 'remove the marker..
+    If Len(value) > Len(marker) Then
+        newvalue = Mid(value, Len(marker) + 1) 'remove the marker..
     End If
     
     mType = Asc(Mid(marker, Len(marker), 1))  'last character
@@ -803,14 +1096,15 @@ Private Function HandleMarker(base, ByVal marker, var) As String
         If count > 0 Then prefix = VBA.String(count, spacer)
     End If
     
-    HandleMarker = prefix & nVal & newBase
+    HandleMarker = prefix & nVal & newvalue
             
 End Function
 
 Private Function ExtractSpecifier(v)
     
     Dim ret As String
-    Dim b() As Byte
+    Dim b() As Byte, i As Long
+    
     Const LANG_US = &H409
     If Len(v) = 0 Then Exit Function
     
@@ -829,5 +1123,6 @@ Private Function ExtractSpecifier(v)
     ExtractSpecifier = ret
     
 End Function
+
 
 

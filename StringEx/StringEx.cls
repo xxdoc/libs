@@ -60,7 +60,7 @@ Public Property Get Value() As String
 Attribute Value.VB_UserMemId = 0
 Attribute Value.VB_MemberFlags = "200"
 
-    If p_ValueLen Then Value = VBA.Left$(p_Value, p_ValueLen)
+    If p_ValueLen Then Value = VBA.left$(p_Value, p_ValueLen)
 
 End Property
 
@@ -96,19 +96,19 @@ Public Function split(delimiter As String, Optional compare As VbCompareMethod =
     split = VBA.split(p_Value, delimiter, , compare)
 End Function
 
-Public Function Clone() As StringEx
+Public Function clone() As StringEx
 
-    Set Clone = New StringEx
+    Set clone = New StringEx
     
-    If p_ValueLen Then Clone.Value = VBA.Left$(p_Value, p_ValueLen)
+    If p_ValueLen Then clone.Value = VBA.left$(p_Value, p_ValueLen)
 
 End Function
 
-Public Function Concat(ByRef ConcatString As String) As StringEx
+Public Function concat(ByRef ConcatString As String) As StringEx
     
     Dim l As Long
     
-    Set Concat = Me
+    Set concat = Me
     
     l = Len(ConcatString)
     
@@ -122,27 +122,64 @@ Public Function Concat(ByRef ConcatString As String) As StringEx
 
 End Function
 
-
-Public Function subString(start As Long, Optional ByVal length As Long = -1) As StringEx
+'supports negative offsets
+Public Function subString(Optional start As Long = 1, Optional ByVal endAt As Long = 0) As StringEx
     Dim s As New StringEx
+    Dim v As String
+    Dim leng As Long
     
     Set subString = s
     
     If start > Me.length Then Exit Function
     
-    If length = -1 Then
-        length = Me.length - start + 1
-    Else
-        If length > Me.length - start Then
-            length = Me.length - start + 1
+    If start > 0 Then
+    
+        If endAt = 0 Then
+            endAt = Me.length - start + 1
+        ElseIf endAt < 0 Then
+            endAt = Me.length + 1 - endAt
+        Else
+            If endAt > Me.length - start Then
+                endAt = Me.length - start + 1
+            End If
         End If
+        
+        s.Value = Mid(p_Value, start, endAt)
+    Else
+        
+        If endAt > 0 Then Exit Function
+        If endAt < start Then Exit Function
+        If Abs(start) > Me.length Then Exit Function
+        
+        v = VBA.right(Me.Value, Abs(start))
+        If endAt < 0 Then
+            v = VBA.left(v, Len(v) - Abs(endAt))
+        End If
+        
+        s.Value = v
+         
+    End If
+    
+            
+        
+End Function
+
+Public Function subStr(start As Long, Optional ByVal length As Long = -1) As StringEx
+    Dim s As New StringEx
+    
+    Set subStr = s
+    
+    If start > Me.length Then Exit Function
+    
+    If length = -1 Or length > Me.length - start Then
+        length = Me.length - start + 1
     End If
     
     s.Value = Mid(p_Value, start, length)
     
 End Function
 
-Public Function Find(ByRef SearchString As String, Optional ByVal start As Long, Optional ByVal Reverse As Boolean, Optional ByVal CompareMethod As VbCompareMethod) As Long
+Public Function find(ByRef SearchString As String, Optional ByVal start As Long, Optional ByVal Reverse As Boolean, Optional ByVal CompareMethod As VbCompareMethod) As Long
 
     Dim x As Long
     
@@ -152,7 +189,7 @@ Public Function Find(ByRef SearchString As String, Optional ByVal start As Long,
         
             If start > 0& And start < p_ValueLen Then x = start Else x = p_ValueLen
         
-            Find = InStrRev(p_Value, SearchString, x, CompareMethod)
+            find = InStrRev(p_Value, SearchString, x, CompareMethod)
         
         Else
         
@@ -160,7 +197,7 @@ Public Function Find(ByRef SearchString As String, Optional ByVal start As Long,
         
             x = InStr(x, p_Value, SearchString, CompareMethod)
             
-            If x <= p_ValueLen Then Find = x
+            If x <= p_ValueLen Then find = x
         
         End If
         
@@ -168,11 +205,11 @@ Public Function Find(ByRef SearchString As String, Optional ByVal start As Long,
 
 End Function
 
-Public Function Insert(ByVal index As Long, ByRef InsertString As String) As StringEx
+Public Function insert(ByVal index As Long, ByRef InsertString As String) As StringEx
 
     Dim l As Long
 
-    Set Insert = Me
+    Set insert = Me
     
     l = Len(InsertString)
         
@@ -187,19 +224,19 @@ Public Function Insert(ByVal index As Long, ByRef InsertString As String) As Str
 
 End Function
 
-Public Function Left(ByVal length As Long) As StringEx
+Public Function left(ByVal length As Long) As StringEx
 
-    Set Left = Me
+    Set left = Me
     
     If p_ValueLen > 0& And length >= 0& And length < p_ValueLen Then p_ValueLen = length
 
 End Function
 
-Public Function LTrim() As StringEx
+Public Function lTrim() As StringEx
 
     Dim x As Long
 
-    Set LTrim = Me
+    Set lTrim = Me
     
     If p_ValueLen Then
     
@@ -225,11 +262,11 @@ End Function
 
 
 
-Public Function Remove(ByVal index As Long, ByVal length As Long) As StringEx
+Public Function remove(ByVal index As Long, ByVal length As Long) As StringEx
 
     Dim x As Long
 
-    Set Remove = Me
+    Set remove = Me
 
     If p_ValueLen > 0& And index > 0& And index <= p_ValueLen And length > 0& Then
     
@@ -251,25 +288,42 @@ Public Function Remove(ByVal index As Long, ByVal length As Long) As StringEx
 
 End Function
 
-Public Function Replace(ByRef SearchString As String, ByRef ReplaceString As String, Optional ByVal start As Long = 1&, Optional ByVal Count As Long = -1, Optional ByVal CompareMethod As VbCompareMethod) As StringEx
+Public Function replace(ByRef SearchString As String, ByRef ReplaceString As String, Optional ByVal start As Long = 1&, Optional ByVal Count As Long = -1, Optional ByVal CompareMethod As VbCompareMethod) As StringEx
 
-    Set Replace = Me
+    Set replace = Me
 
-    If p_ValueLen Then Value = VBA.Replace(VBA.Left$(p_Value, p_ValueLen), SearchString, ReplaceString, start, Count, CompareMethod)
-
-End Function
-
-Public Function Strip(ByRef SearchString As String, Optional ByVal CompareMethod As VbCompareMethod) As StringEx
-
-    Set Strip = Me
-
-    If p_ValueLen Then Value = VBA.Replace(VBA.Left$(p_Value, p_ValueLen), SearchString, Empty, , , CompareMethod)
+    If p_ValueLen Then Value = VBA.replace(VBA.left$(p_Value, p_ValueLen), SearchString, ReplaceString, start, Count, CompareMethod)
 
 End Function
 
-Public Function Right(ByVal length As Long) As StringEx
+Public Function strip(ByRef SearchString As String, Optional ByVal CompareMethod As VbCompareMethod) As StringEx
 
-    Set Right = Me
+    Set strip = Me
+
+    If p_ValueLen Then Value = VBA.replace(VBA.left$(p_Value, p_ValueLen), SearchString, Empty, , , CompareMethod)
+
+End Function
+
+Public Function strip2(ParamArray args()) As StringEx
+
+    Dim tmp As String
+    Dim v
+    
+    Set strip2 = Me
+    
+    tmp = Me.Value
+    For Each v In args
+       tmp = VBA.replace(tmp, v, Empty, , , vbTextCompare)
+       If Len(tmp) = 0 Then Exit For
+    Next
+    
+    Value = tmp
+
+End Function
+
+Public Function right(ByVal length As Long) As StringEx
+
+    Set right = Me
     
     If p_ValueLen > 0& And length >= 0& And length < p_ValueLen Then
     
@@ -281,9 +335,9 @@ Public Function Right(ByVal length As Long) As StringEx
 
 End Function
 
-Public Function RTrim() As StringEx
+Public Function rTrim() As StringEx
 
-    Set RTrim = Me
+    Set rTrim = Me
     
     If p_ValueLen Then
     
@@ -299,7 +353,7 @@ Public Function RTrim() As StringEx
 
 End Function
 
-Public Function ToArray(Optional ByVal AsANSI As Boolean = True) As Byte()
+Public Function toArray(Optional ByVal AsANSI As Boolean = True) As Byte()
 
     Dim x As Long
     Dim b() As Byte
@@ -318,32 +372,32 @@ Public Function ToArray(Optional ByVal AsANSI As Boolean = True) As Byte()
 
     End If
     
-    ToArray = b()
+    toArray = b()
 
 End Function
 
-Public Function ToLower() As StringEx
+Public Function toLower() As StringEx
     
-    Set ToLower = Me
+    Set toLower = Me
     
     If p_ValueLen Then CharLowerBuffW p_ValuePtr, p_ValueLen
 
 End Function
 
-Public Function ToUpper() As StringEx
+Public Function toUpper() As StringEx
     
-    Set ToUpper = Me
+    Set toUpper = Me
     
     If p_ValueLen Then CharUpperBuffW p_ValuePtr, p_ValueLen
 
 End Function
 
-Public Function Trim() As StringEx
+Public Function trim() As StringEx
 
-    Set Trim = Me
+    Set trim = Me
     
-    LTrim
-    RTrim
+    lTrim
+    rTrim
 
 End Function
 
@@ -368,7 +422,7 @@ Private Sub BufferRedim(ByVal NewStringLen As Long, ByVal FromScratch As Boolean
             
             x = p_ValueLen - NewStringLen
             
-            If x Then b = VBA.Left$(p_Value, x)
+            If x Then b = VBA.left$(p_Value, x)
             
             p_Value = Space$(p_ValueLenReal)
             p_ValuePtr = StrPtr(p_Value)

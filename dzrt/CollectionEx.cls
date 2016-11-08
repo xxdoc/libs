@@ -451,9 +451,72 @@ hell:
 End Sub
 
 
+Public Function intersect(c2 As CollectionEx, Optional byKey As Boolean = False) As CollectionEx
+    
+    Dim ret As New CollectionEx
+    Dim i As Long
+    Dim k As String
+    Dim v, v2
+    
+    On Error Resume Next
+    Set intersect = ret
+    
+    If byKey Then
+        For i = 1 To c.Count
+            k = Me.keyForIndex(i)
+            If c2.keyExists(k) Then
+                ret.Add c(i), k
+            End If
+        Next
+    Else
+        For i = 1 To c.Count
+            v = c(i)
+            For Each v2 In c2
+                If v = v2 Then
+                    ret.Add v, keyForIndex(i)
+                    Exit For
+                End If
+            Next
+        Next
+    End If
+        
+End Function
 
-
-
+Public Function diff(c2 As CollectionEx, Optional byKey As Boolean = False) As CollectionEx
+    
+    Dim ret As New CollectionEx
+    Dim i As Long
+    Dim k As String
+    Dim v, v2
+    Dim found As Boolean
+    
+    On Error Resume Next
+    Set diff = ret
+    
+    If byKey Then
+        For i = 1 To c.Count
+            k = Me.keyForIndex(i)
+            If Not c2.keyExists(k) Then
+                ret.Add c(i), k
+            End If
+        Next
+    Else
+        For i = 1 To c.Count
+            v = c(i)
+            found = False
+            For Each v2 In c2
+                If v = v2 Then
+                    found = True
+                    Exit For
+                End If
+            Next
+            If Not found Then
+                ret.Add v, keyForIndex(i)
+            End If
+        Next
+    End If
+        
+End Function
 
 
 

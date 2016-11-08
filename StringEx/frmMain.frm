@@ -177,9 +177,10 @@ Private Sub Command3_Click()
     'Debug.Print s.subString(2, 6)
     'Debug.Print s.subString(2, 200)
     
-    Dim b() As Byte
-    b = s.ToArray(False)
-    Debug.Print HexDump(b)
+    Debug.Print s.subString(-3)
+   Debug.Print s.subString(-3, -1)
+   Debug.Print s.subString(-200)
+   
     
     
     

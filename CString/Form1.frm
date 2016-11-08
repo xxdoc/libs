@@ -9,8 +9,16 @@ Begin VB.Form Form1
    ScaleHeight     =   6270
    ScaleWidth      =   4110
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command1 
+      Caption         =   "concat test"
+      Height          =   510
+      Left            =   1350
+      TabIndex        =   1
+      Top             =   5625
+      Width           =   1230
+   End
    Begin VB.ListBox List1 
-      Height          =   6105
+      Height          =   5520
       Left            =   0
       TabIndex        =   0
       Top             =   45
@@ -22,6 +30,54 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+Private Declare Function GetTickCount Lib "kernel32.dll" () As Long
+
+
+Private Sub Command1_Click()
+    Const x As Long = 10000
+    List1.AddItem TestString(x)
+    List1.AddItem TestStringEx(x)
+End Sub
+
+Private Function TestString(ByVal Iterations As Long) As String
+
+    Dim i As Long
+    Dim s As String
+    Dim x As Long
+    
+    x = GetTickCount
+    
+    For i = 0& To Iterations
+        
+        s = s & " this is my test!"
+    
+    Next i
+    
+    TestString = Len(s) & " characters in " & (GetTickCount - x) / 1000& & " seconds"
+
+End Function
+
+Private Function TestStringEx(ByVal Iterations As Long) As String
+
+    Dim i As Long
+    Dim s As CString
+    Dim x As Long
+    
+    Set s = New CString
+    x = GetTickCount
+    
+    For i = 0& To Iterations
+        s.concat " this is my test!"
+    Next i
+    
+    TestStringEx = s.length & " characters in " & (GetTickCount - x) / 1000& & " seconds"
+    
+    Set s = Nothing
+
+End Function
+
+
+
 Private Sub Form_Load()
 
     'most put together from existing code but not
@@ -42,7 +98,7 @@ Private Sub Form_Load()
         .AddItem cs.charCodeAt(1)
         .AddItem cs.indexOf("is")
         .AddItem cs.replace("text", "dog")
-        .AddItem cs.substr(2, cs.indexOf(" "))
+        .AddItem cs.subStr(2, cs.indexOf(" "))
         .AddItem cs.endsWith("t")
         .AddItem cs.startsWith("thi")
         .AddItem cs.HexDump(, True)
@@ -53,7 +109,7 @@ Private Sub Form_Load()
         .AddItem cs.extract("'", "'", pos)
         
         cs.LoadFromHexString "6920736D656C6C2061206661727421"
-        .AddItem cs.text
+        .AddItem cs.value
         
         cs.LoadFromBytes b()
         .AddItem cs
@@ -83,9 +139,9 @@ Private Sub Form_Load()
         .AddItem cs
         .AddItem cs.endsWith("est")
         
-        If cs.LoadFromWeb("http://sandsprite.com/tools.php") Then
-            .AddItem cs
-        End If
+        'If cs.LoadFromWeb("http://sandsprite.com/tools.php") Then
+        '    .AddItem cs
+        'End If
         
         cs = "line0 \n line1 \n line2 \n line3"
         cs = cs.replace("\n", vbCrLf)
