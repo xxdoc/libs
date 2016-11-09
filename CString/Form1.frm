@@ -101,7 +101,7 @@ Private Sub Form_Load()
         .AddItem cs.subStr(2, cs.indexOf(" "))
         .AddItem cs.endsWith("t")
         .AddItem cs.startsWith("thi")
-        .AddItem cs.HexDump(, True)
+        .AddItem cs.HexDump(, , True)
         .AddItem cs.unescape()
         
         cs = "val='this is my val';val2='this is val2';"
@@ -115,8 +115,8 @@ Private Sub Form_Load()
         .AddItem cs
         
         Debug.Print cs.HexDump
-        .AddItem cs.HexDump(b(), True)
-        .AddItem cs.HexDump("test", True)
+        .AddItem cs.HexDump(, , True, b())
+        .AddItem cs.HexDump(val:="test", hexOnly:=True)
         
         Debug.Print cs.HexDump("1234567890", , 4, 4)
         
@@ -153,7 +153,7 @@ Private Sub Form_Load()
         cs.stripAnyFromEnd vbLf, vbCr, " ", Chr(0)
         .AddItem cs & " (len: " & cs.length & ")"
         
-        .AddItem cs.sprintf("number  %08x", &HCC)
+        .AddItem cs.printf("number  %08x", &HCC)
         
     End With
 

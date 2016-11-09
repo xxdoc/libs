@@ -6,11 +6,11 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "CString"
+Attribute VB_Name = "StringEx"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 
 'so this class is a mash up between a StringBuffer class which vb6 really needs for large strings
@@ -215,7 +215,7 @@ Public Sub rTrim()
 
 End Sub
 
-Public Sub lTrim() 'As CString
+Public Sub lTrim() 'As StringEx
 
     Dim x As Long
 
@@ -243,7 +243,7 @@ Public Sub lTrim() 'As CString
 
 End Sub
 
-Sub unixToDOS() 'As CString
+Sub unixToDOS() 'As StringEx
     Dim tmp As String, isMixed As Boolean
     
     'Set unixToDOS = Me
@@ -275,7 +275,7 @@ Public Sub strip2(ParamArray args())
 
 End Sub
 
-Sub reverse() 'As CString
+Sub reverse() 'As StringEx
     'Set reverse = Me
     value = StrReverse(value)
 End Sub
@@ -288,10 +288,10 @@ End Sub
 'sometimes you need the loop like when replacing two spaces with one..
 Function replace(find As String, Optional rep As String = Empty, Optional start As Long = 1, _
                 Optional count As Long = -1, Optional method As VbCompareMethod = vbBinaryCompare _
-) As CString
+) As StringEx
 
     Dim tmp As String
-    Set replace = New CString
+    Set replace = New StringEx
     tmp = value
     While InStr(start, tmp, find, method) > 0
         tmp = VBA.replace(tmp, find, rep, start, count, method)
@@ -300,8 +300,8 @@ Function replace(find As String, Optional rep As String = Empty, Optional start 
 End Function
 
 'supports negative offsets
-Public Function subString(Optional start As Long = 1, Optional ByVal endAt As Long = 0) As CString
-    Dim s As New CString
+Public Function subString(Optional start As Long = 1, Optional ByVal endAt As Long = 0) As StringEx
+    Dim s As New StringEx
     Dim v As String
     Dim leng As Long
     
@@ -341,8 +341,8 @@ Public Function subString(Optional start As Long = 1, Optional ByVal endAt As Lo
         
 End Function
 
-Public Function subStr(start As Long, Optional ByVal length As Long = -1) As CString
-    Dim s As New CString
+Public Function subStr(start As Long, Optional ByVal length As Long = -1) As StringEx
+    Dim s As New StringEx
     
     Set subStr = s
     
@@ -365,13 +365,13 @@ Function split(Optional at As String, Optional method As VbCompareMethod = vbBin
     End If
 End Function
 
-Function getLine(Optional lNo As Long = 0) As CString
+Function getLine(Optional lNo As Long = 0) As StringEx
     
     Dim lineEnd As Long
     Dim lineStart As Long
     Dim cnt As Long
     
-    Set getLine = New CString
+    Set getLine = New StringEx
     
     lineStart = 1
     lineEnd = InStr(value, vbCrLf)
@@ -392,11 +392,11 @@ End Function
 Function extract(marker1, marker2, _
                 Optional start As Long = 1, Optional ByRef lastPos As Long, _
                 Optional method As VbCompareMethod = vbBinaryCompare _
-) As CString
+) As StringEx
 
     Dim a As Long, b As Long
     
-    Set extract = New CString
+    Set extract = New StringEx
     
     a = InStr(start, value, marker1, method)
     If a < 1 Then Exit Function
@@ -412,7 +412,7 @@ Function extract(marker1, marker2, _
 End Function
 
 'this should now be unicode safe on foreign systems..
-Function unescape(Optional newVal As String) As CString  '%uxxxx and %xx
+Function unescape(Optional newVal As String) As StringEx  '%uxxxx and %xx
     
     'On Error GoTo hell
     
@@ -422,7 +422,7 @@ Function unescape(Optional newVal As String) As CString  '%uxxxx and %xx
     Dim r() As Byte
     Dim elems As Long
     
-    Set unescape = New CString
+    Set unescape = New StringEx
     If Len(newVal) > 0 Then
         tmp = VBA.split(newVal, "%")
     Else
@@ -481,7 +481,7 @@ End Function
 ' ("chr(&h61) = %c it is my %s", &H61, "favorite letter")
 ' ("this is\n\ta test of \n\t\tnew lines tabs \t and %% escapes")
 
-Function printf(ByVal msg As String, ParamArray vars()) As CString
+Function printf(ByVal msg As String, ParamArray vars()) As StringEx
 'supports %x, %c, %s, %d, %10d \t \n %%
 
     Dim t
@@ -490,7 +490,7 @@ Function printf(ByVal msg As String, ParamArray vars()) As CString
     Dim value As String
     Dim marker As String
     
-    Set printf = New CString
+    Set printf = New StringEx
     
     msg = VBA.replace(msg, Chr(0), Empty)
     msg = VBA.replace(msg, "\t", vbTab)
@@ -568,7 +568,7 @@ End Function
 Function LoadFromWeb(url) As Boolean
     On Error Resume Next
     Dim tmp As String
-    tmp = Environ("temp") & "\cstring_dl.tmp"
+    tmp = Environ("temp") & "\StringEx_dl.tmp"
     If FileExists(tmp) Then Kill tmp
     If DownloadFile(url, tmp) Then
         value = ReadFile(tmp)

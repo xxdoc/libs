@@ -1,4 +1,4 @@
-Type=Control
+Type=OleDll
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
 Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; mscomctl.ocx
 Class=CBase64; CBase64.cls
@@ -10,10 +10,8 @@ Class=CFileStream; clsFileStream.cls
 Class=CWinHash; CWinHash.cls
 Form=frmDlg.frm
 Class=globals; globals.cls
-UserControl=HistoryCombo.ctl
 Module=mCryptQuery; mCryptQuery.bas
 Module=mWinVerify; mWinVerify.bas
-UserControl=ucFilterList.ctl
 Module=CommandLineToArgv; CommandLineToArgv.bas
 Class=CollectionEx; CollectionEx.cls
 Class=CCmdOutput; CCmdOutput2.cls
@@ -21,19 +19,19 @@ Class=CElevate; CElevate.cls
 Class=cSubclass; CSubclass.cls
 Class=iSubclass; ISubclass.cls
 Class=CRegistry3; CRegistry3.cls
+Class=StringEx; StringEx.cls
 Startup="(None)"
 HelpFile=""
 Title="dzrt"
-ExeName32="dzrt.ocx"
 Command32=""
 Name="dzrt"
 HelpContextID="0"
 Description=".DZ Runtime from Sandsprite.com"
 CompatibleMode="1"
-CompatibleEXE32="_dzrt.ocx"
+CompatibleEXE32="dzrt.dll"
 MajorVer=1
 MinorVer=0
-RevisionVer=13
+RevisionVer=15
 AutoIncrementVer=1
 ServerSupportFiles=0
 VersionCompanyName="sandsprite"
@@ -52,11 +50,9 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
-DebugStartupOption=2
-DebugStartupComponent=C:\Documents and Settings\david\Desktop\Project1.exe
 
 [MS Transaction Server]
 AutoRefresh=1
 
 [fastBuild]
-fullPath=%ap%\dzrt.ocx
+fullPath=%ap%\dzrt.dll
