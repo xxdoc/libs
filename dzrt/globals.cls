@@ -29,7 +29,7 @@ Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () A
 Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
-Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 
 'all but jet are odbc jet is ole
@@ -69,8 +69,8 @@ End Function
      CopyMemory_ Destination, Source, length
  End Sub
  
- Function SendMessage(ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-    SendMessage = SendMessage_(hwnd, Msg, wParam, lParam)
+ Function SendMessage(ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+    SendMessage = SendMessage_(hwnd, msg, wParam, lParam)
  End Function
 
 Property Get MAX_LONG() As Long
@@ -126,7 +126,7 @@ Function ParseCommandLine(Optional ByVal cmd As String) As CollectionEx
     Dim cc As New CollectionEx
     Set c = CommandLineArgs(cmd)
     cc.Attach c
-    Set ParseCommandLine = c
+    Set ParseCommandLine = cc
 End Function
 
 Function TopMost(frm As Object, Optional ontop As Boolean = True)
@@ -144,7 +144,7 @@ Public Function GetShortName(ByVal sFile As String) As String
     'the path must actually exist to get the short path name !!
     If Not FileExists(sFile) Then
         iCreated = True
-        writeFile sFile, ""
+        WriteFile sFile, ""
     End If
     
     'Make a call to the GetShortPathName API
@@ -165,7 +165,7 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     On Error Resume Next
     
     Dim f, sz, i, ff, def
-    f = Split(",Left,Top,Height,Width", ",")
+    f = split(",Left,Top,Height,Width", ",")
     
     If fform.WindowState = vbMinimized Then Exit Sub
     If andSize = False Then sz = 2 Else sz = 4
@@ -173,22 +173,22 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     For i = 1 To sz
         If save_mode Then
             ff = CallByName(fform, f(i), VbGet)
-            SaveSetting App.EXEName, fform.name & ".FormPos", f(i), ff
+            SaveSetting App.EXEName, fform.Name & ".FormPos", f(i), ff
         Else
             def = CallByName(fform, f(i), VbGet)
-            ff = GetSetting(App.EXEName, fform.name & ".FormPos", f(i), def)
+            ff = GetSetting(App.EXEName, fform.Name & ".FormPos", f(i), def)
             CallByName fform, f(i), VbLet, ff
         End If
     Next
     
 End Sub
 
-Sub SaveMySetting(Key, value)
-    SaveSetting App.EXEName, "Settings", Key, value
+Sub SaveMySetting(key, value)
+    SaveSetting App.EXEName, "Settings", key, value
 End Sub
 
-Function GetMySetting(Key, Optional defaultval = "")
-    GetMySetting = GetSetting(App.EXEName, "Settings", Key, defaultval)
+Function GetMySetting(key, Optional defaultval = "")
+    GetMySetting = GetSetting(App.EXEName, "Settings", key, defaultval)
 End Function
 
 Function FolderExists(path) As Boolean
@@ -244,7 +244,7 @@ Function ReadFile(filename) As String 'this one should be binary safe...
 hell:   ReadFile = ""
 End Function
 
-Function writeFile(path, it) As Boolean 'this one should be binary safe...
+Function WriteFile(path, it) As Boolean 'this one should be binary safe...
     On Error GoTo hell
     Dim b() As Byte, f As Long
     
@@ -254,9 +254,9 @@ Function writeFile(path, it) As Boolean 'this one should be binary safe...
     Open path For Binary As #f
     Put f, , b()
     Close f
-    writeFile = True
+    WriteFile = True
     Exit Function
-hell: writeFile = False
+hell: WriteFile = False
 End Function
 
 Function AppendFile(path, it) As Boolean  'not binary safe
@@ -292,18 +292,18 @@ init:
     End If
 End Sub
 
-Function pop(ary, Optional Count As Long = 1) As Variant
+Function pop(ary, Optional count As Long = 1) As Variant
     On Error GoTo isEmpty
     Dim x
     
     x = UBound(ary)
     
-    If Count > x Then
+    If count > x Then
         Erase ary
         Exit Function
     End If
     
-    ReDim Preserve ary(x - Count + 1)
+    ReDim Preserve ary(x - count + 1)
         
     If IsObject(ary(x)) Then
         Set pop = ary(x)
@@ -311,7 +311,7 @@ Function pop(ary, Optional Count As Long = 1) As Variant
         pop = ary(x)
     End If
     
-    ReDim Preserve ary(x - Count)
+    ReDim Preserve ary(x - count)
     
     Exit Function
 isEmpty: Erase ary
@@ -342,13 +342,13 @@ Exit Function
 hell:
 End Function
 
-Function AnyofTheseInstr(data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
+Function AnyOfTheseInstr(data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
     Dim tmp() As String
     Dim x
-    tmp = Split(match, ",")
+    tmp = split(match, ",")
     For Each x In tmp
         If InStr(1, data, x, compare) > 0 Then
-            AnyofTheseInstr = True
+            AnyOfTheseInstr = True
             Exit Function
         End If
     Next
@@ -409,7 +409,7 @@ Function lvGetAllElements(lv As Object) As String
     
     On Error Resume Next
     
-    For i = 1 To lv.ColumnHeaders.Count
+    For i = 1 To lv.ColumnHeaders.count
         tmp = tmp & lv.ColumnHeaders(i).Text & vbTab
     Next
     
@@ -418,8 +418,8 @@ Function lvGetAllElements(lv As Object) As String
         
     For Each li In lv.ListItems
         tmp = li.Text & vbTab
-        For i = 1 To lv.ColumnHeaders.Count - 1
-            tmp = tmp & li.subItems(i) & vbTab
+        For i = 1 To lv.ColumnHeaders.count - 1
+            tmp = tmp & li.SubItems(i) & vbTab
         Next
         push ret, tmp
     Next
@@ -453,18 +453,18 @@ hell:
 End Function
 
 'supports %x, %c, %s, %d, %10d \t \n %%
-Function printf(ByVal Msg As String, ParamArray vars()) As String
+Function printf(ByVal msg As String, ParamArray vars()) As String
 
     Dim t
     Dim ret As String
     Dim i As Long, base, marker
     
-    Msg = Replace(Msg, Chr(0), Empty)
-    Msg = Replace(Msg, "\t", vbTab)
-    Msg = Replace(Msg, "\n", vbCrLf) 'simplified
-    Msg = Replace(Msg, "%%", Chr(0))
+    msg = replace(msg, Chr(0), Empty)
+    msg = replace(msg, "\t", vbTab)
+    msg = replace(msg, "\n", vbCrLf) 'simplified
+    msg = replace(msg, "%%", Chr(0))
     
-    t = Split(Msg, "%")
+    t = split(msg, "%")
     If UBound(t) <> UBound(vars) + 1 Then
         MsgBox "Format string mismatch.."
         Exit Function
@@ -481,7 +481,7 @@ Function printf(ByVal Msg As String, ParamArray vars()) As String
         End If
     Next
     
-    ret = Replace(ret, Chr(0), "%")
+    ret = replace(ret, Chr(0), "%")
     printf = ret
     
 End Function
@@ -492,7 +492,7 @@ Private Function HandleMarker(base, ByVal marker, var) As String
     Dim nVal As String
     Dim spacer As String
     Dim prefix As String
-    Dim Count As Long
+    Dim count As Long
     
     If Len(base) > Len(marker) Then
         newBase = Mid(base, Len(marker) + 1) 'remove the marker..
@@ -519,8 +519,8 @@ Private Function HandleMarker(base, ByVal marker, var) As String
         Else
             spacer = " "
         End If
-        Count = CLng(marker) - Len(nVal)
-        If Count > 0 Then prefix = String(Count, spacer)
+        count = CLng(marker) - Len(nVal)
+        If count > 0 Then prefix = String(count, spacer)
     End If
     
     HandleMarker = prefix & nVal & newBase
@@ -580,9 +580,9 @@ Public Function BuildConnectionString(dbServer As dbServers, dbName As String, O
     End If
        
     '%AP% is like enviromental variable for app.path i am lazy :P
-    dbPath = Replace(dbName, "%AP%", App.path)
+    dbPath = replace(dbName, "%AP%", App.path)
     
-    BuildConnectionString = Replace(baseString, "____", dbPath)
+    BuildConnectionString = replace(baseString, "____", dbPath)
     
 End Function
 
@@ -611,15 +611,15 @@ Function CountOccurances(it, find) As Integer
     Dim tmp() As String
     
     If InStr(1, it, find, vbTextCompare) < 1 Then Exit Function
-    tmp = Split(it, find, , vbTextCompare)
+    tmp = split(it, find, , vbTextCompare)
     CountOccurances = UBound(tmp)
     
 End Function
 
 Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     On Error Resume Next
-    x = Trim(Replace(x, "0x", Empty, , , vbTextCompare))
-    x = Trim(Replace(x, "&h", Empty, , , vbTextCompare))
+    x = trim(replace(x, "0x", Empty, , , vbTextCompare))
+    x = trim(replace(x, "&h", Empty, , , vbTextCompare))
     outVal = CLng("&h" & x)
     h2l = (Err.Number = 0)
 End Function
@@ -692,8 +692,8 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As 
     HexDump = Join(s, vbCrLf)
     
     If hexOnly <> 0 Then
-        HexDump = Replace(HexDump, " ", "")
-        HexDump = Replace(HexDump, vbCrLf, "")
+        HexDump = replace(HexDump, " ", "")
+        HexDump = replace(HexDump, vbCrLf, "")
     End If
     
 End Function
@@ -719,22 +719,22 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
     
     On Error GoTo hell
     
-    str = Replace(hexstr, vbCr, Empty)
-    str = Replace(str, vbLf, Empty)
-    str = Replace(str, vbTab, Empty)
-    str = Replace(str, Chr(0), Empty)
-    str = Replace(str, "{", Empty)
-    str = Replace(str, "}", Empty)
-    str = Replace(str, ";", Empty)
-    str = Replace(str, "+", Empty)
-    str = Replace(str, """""", Empty)
-    str = Replace(str, "'", Empty)
+    str = replace(hexstr, vbCr, Empty)
+    str = replace(str, vbLf, Empty)
+    str = replace(str, vbTab, Empty)
+    str = replace(str, Chr(0), Empty)
+    str = replace(str, "{", Empty)
+    str = replace(str, "}", Empty)
+    str = replace(str, ";", Empty)
+    str = replace(str, "+", Empty)
+    str = replace(str, """""", Empty)
+    str = replace(str, "'", Empty)
     hexstr = str
     
-    If InStr(hexstr, "\u") > 0 Then hexstr = Replace(hexstr, "\u", "%u")
+    If InStr(hexstr, "\u") > 0 Then hexstr = replace(hexstr, "\u", "%u")
     
     If InStr(hexstr, "%u") > 0 Then
-        tmp = Split(hexstr, "%u")
+        tmp = split(hexstr, "%u")
         For i = 1 To UBound(tmp)
             a = InStr(tmp(i), "%")
             x = ""
@@ -754,7 +754,7 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
     End If
     
     If InStr(hexstr, "%") > 0 Then
-        tmp = Split(hexstr, "%")
+        tmp = split(hexstr, "%")
         For i = 1 To UBound(tmp)
             If Len(tmp(i)) < 2 Then
                 tmp(i) = 0 & tmp(i)
@@ -766,7 +766,7 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
     If Len(hexstr) > 4 Then
         pos = FirstOccurance(hexstr, " ,", marker)
         If pos > 0 And pos < 5 Then   'make sure all are double digit hex chars...(also account for decimal 1,11,111,
-            tmp = Split(hexstr, marker)
+            tmp = split(hexstr, marker)
             
             If isDecimal Then
                 For i = 0 To UBound(tmp)
@@ -782,9 +782,9 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
         End If
     End If
         
-    str = Replace(hexstr, " ", Empty)
-    str = Replace(str, "0x", Empty)
-    str = Replace(str, ",", Empty)
+    str = replace(hexstr, " ", Empty)
+    str = replace(str, "0x", Empty)
+    str = replace(str, ",", Empty)
     
     For i = 1 To Len(str) Step 2
         x = Mid(str, i, 2)
@@ -808,7 +808,7 @@ Function FirstOccurance(it, ByVal csvFind As String, ByRef outFoundVal) As Long
     
     outFoundVal = Empty
     lowestOffset = MAX_LONG
-    find = Split(csvFind, ",")
+    find = split(csvFind, ",")
     
     For i = 0 To UBound(find)
         If Len(find(i)) = 0 Then find(i) = ","
@@ -865,7 +865,7 @@ End Function
 
 Public Function rc4(data As Variant, ByVal Password As Variant) As String
 On Error Resume Next
-    Dim RB(0 To 255) As Integer, x As Long, y As Long, Z As Long, Key() As Byte, ByteArray() As Byte, temp As Byte
+    Dim RB(0 To 255) As Integer, x As Long, y As Long, Z As Long, key() As Byte, ByteArray() As Byte, temp As Byte
     
     Dim plen As Long
     
@@ -877,21 +877,21 @@ On Error Resume Next
     End If
     
     If TypeName(Password) = "Byte()" Then
-        Key() = Password
-        If UBound(Key) > 255 Then ReDim Preserve Key(255)
+        key() = Password
+        If UBound(key) > 255 Then ReDim Preserve key(255)
     Else
         If Len(Password) = 0 Then
             Exit Function
         End If
 
         If Len(Password) > 256 Then
-            Key() = StrConv(Left$(CStr(Password), 256), vbFromUnicode, LANG_US)
+            key() = StrConv(Left$(CStr(Password), 256), vbFromUnicode, LANG_US)
         Else
-            Key() = StrConv(CStr(Password), vbFromUnicode, LANG_US)
+            key() = StrConv(CStr(Password), vbFromUnicode, LANG_US)
         End If
     End If
     
-    plen = UBound(Key) + 1
+    plen = UBound(key) + 1
  
     'Debug.Print "key=" & HexDump(Key)
     'Debug.Print "data=" & HexDump(ByteArray)
@@ -904,7 +904,7 @@ On Error Resume Next
     y = 0
     Z = 0
     For x = 0 To 255
-        y = (y + RB(x) + Key(x Mod plen)) Mod 256
+        y = (y + RB(x) + key(x Mod plen)) Mod 256
         temp = RB(x)
         RB(x) = RB(y)
         RB(y) = temp
@@ -1056,28 +1056,28 @@ Function ExtractHexFromDump(dump) As String
     Dim a As Long
     Dim x
     
-    dat = Trim(dump)
+    dat = trim(dump)
     If InStr(dat, " ") > 0 Then
-        tmp = Split(dat, vbCrLf)
+        tmp = split(dat, vbCrLf)
         For i = 0 To UBound(tmp)
-            x = Trim(tmp(i))
+            x = trim(tmp(i))
             If InStr(1, x, "Offset", vbTextCompare) = 1 Then GoTo nextone
             If Len(x) = 0 Then GoTo nextone
             a = InStr(x, " ") '8
             If a > 0 Then 'remove offset
-                x = Trim(Mid(x, a))
+                x = trim(Mid(x, a))
             End If
             
             a = Len(x)
             If a >= 48 Then
-                x = Trim(Mid(x, 1, 48))
+                x = trim(Mid(x, 1, 48))
             Else
                 'they didnt copy the ascii area for last line? it will be copied anyway...
                 'If i = UBound(tmp) Then
             End If
             
             
-            push y, Replace(x, " ", Empty)
+            push y, replace(x, " ", Empty)
 nextone:
         Next
         dat = Join(y, "")

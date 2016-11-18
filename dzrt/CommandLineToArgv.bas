@@ -17,28 +17,58 @@ Public Function CommandLineArgs(Optional cmdLine) As Collection
     Dim nArgs       As Integer
     Dim i           As Long
     Dim nRet        As Long
-    Dim args As New Collection
     Dim cmd As String
+    Dim key As String
+    Dim tmp As String
+    Dim args As New Collection
     
+    On Error Resume Next
+    
+    Set args = New Collection
     Set CommandLineArgs = args
     
     If IsMissing(cmdLine) Then
         cmd = Command
-    ElseIf Len(Trim(cmdLine)) = 0 Then
+    ElseIf Len(trim(cmdLine)) = 0 Then
         cmd = Command
     Else
         cmd = CStr(cmdLine)
     End If
     
-    lpszArgs = CommandLineToArgvAsPtrW(StrPtr(cmd), nArgs)
+    cmd = trim(cmd)
+    If Len(cmd) = 0 Then Exit Function
+    
+    'already strings double quoted strings and honors the boundaries of..
+    'does not honor the boundaries of single quoted strings so we convert...
+    lpszArgs = CommandLineToArgvAsPtrW(StrPtr(replace(cmd, "'", """")), nArgs)
+    
     If lpszArgs <> 0 Then
+    
         ReDim sArgs(nArgs - 1)
+        
         For i = 0 To nArgs - 1
-            args.Add ToStringW(GetPointer(lpszArgs, i))
+            tmp = ToStringW(GetPointer(lpszArgs, i))
+            
+            If Left(tmp, 1) = "-" Or Left(tmp, 1) = "/" Then
+                If Len(key) > 0 Then args.Add "[empty]", key 'maybe the /switch does not require an argument...
+                key = LCase(Right(tmp, Len(tmp) - 1))
+            Else
+                If Len(key) > 0 Then
+                    args.Add tmp, key
+                Else
+                    args.Add tmp
+                End If
+                key = Empty
+            End If
+            
         Next
+        
+        If Len(key) > 0 Then args.Add "[empty]", key
         nRet = LocalFree(lpszArgs)
+        
     End If
-
+    
+    
 End Function
 
 Private Function GetPointer(ByVal iAddress As Long, ByVal iIndex As Long) As Long

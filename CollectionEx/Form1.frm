@@ -21,7 +21,7 @@ Private Sub Form_Load()
 
     c.Add "test"
     c.Add "test2", "mykey"
-    c.ext.changeKeyByIndex 1, "haha"
+    c.changeKeyByIndex 1, "haha"
     MsgBox c.toString(, True)
     End
     
@@ -51,11 +51,11 @@ Private Sub Form_Load()
         c.Add "test " & i, i
     Next
     
-    If c.toFile("C:\test.bin") Then
+    If c.toDumpFile("C:\test.bin") Then
         Dim cc As New CollectionEx
-        MsgBox "Added :" & cc.fromFile("C:\test.bin")
-        MsgBox "Appended :" & cc.fromFile("C:\test.bin", True)
-        MsgBox "Keys: " & vbCrLf & Join(cc.ext.Keys(), vbCrLf)
+        MsgBox "Added :" & cc.fromDumpFile("C:\test.bin")
+        MsgBox "Appended :" & cc.fromDumpFile("C:\test.bin", True)
+        MsgBox "Keys: " & vbCrLf & Join(cc.Keys(), vbCrLf)
         MsgBox "Values to string: " & vbCrLf & cc.toString()
         MsgBox "Item key=4 value=" & cc(4, 1)
     End If

@@ -10,7 +10,7 @@ Attribute VB_Name = "CollectionEx"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = True
+Attribute VB_Exposed = False
 'Wrapper for VB6 collection object with some extended capabilities
 ' add now allows keys to be numeric only and is case sensitive
 ' if you use a numeric only key, make sure to use forceAsKey =1 when accessing by key
@@ -26,7 +26,7 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As An
 
 Private Type dump
     Key As String
-    Data As Variant
+    data As Variant
 End Type
 
 Public Sub Attach(existing As Collection)
@@ -132,17 +132,29 @@ Public Sub Clear()
     Set c = New Collection
 End Sub
 
+Public Function Clone() As CollectionEx
+    
+    Dim cc As New CollectionEx
+    Dim i As Long
+    
+    For i = 1 To c.Count
+        'If IsObject(c(i)) Then Err.Raise 256, , "CollectionEx.Clone: Can not clone a collection with object references"
+        cc.Add c(i), keyForIndex(i)
+    Next
+    
+    Set Clone = cc
+End Function
 
 Public Function uniqueKey(ByVal suggested As String) As String
     Dim i As Long, tmp As String
     
     If Len(suggested) = 0 Then suggested = Base16Encode(Now)
     
-    If KeyExists(suggested) Then
+    If keyExists(suggested) Then
         Do
             i = i + 1
             tmp = suggested & "_" & i
-        Loop While KeyExists(tmp)
+        Loop While keyExists(tmp)
         suggested = tmp
     End If
     
@@ -162,14 +174,14 @@ Attribute NewEnum.VB_MemberFlags = "40"
    Set NewEnum = c.[_NewEnum]
 End Function
 
-Public Function KeyExists(Key As String) As Boolean
+Public Function keyExists(ByVal Key As String) As Boolean
     On Error GoTo DoesntExist
     IsObject c(Base16Encode(Key))
-    KeyExists = True
+    keyExists = True
 DoesntExist:
 End Function
 
-Public Function toString(Optional delimiter As String = vbCrLf, Optional includeKeys As Boolean = False) As String
+Public Function toString(Optional ByVal delimiter As String = vbCrLf, Optional ByVal includeKeys As Boolean = False) As String
     Dim tmp() As Variant
     Dim k, i As Long
     
@@ -192,7 +204,7 @@ done:
     toString = Join(tmp, delimiter)
 End Function
 
-Public Function toFile(ByVal fPath As String) As Boolean
+Public Function toDumpFile(ByVal fPath As String) As Boolean
         
     On Error GoTo hell
     
@@ -209,9 +221,9 @@ Public Function toFile(ByVal fPath As String) As Boolean
     For i = 1 To c.Count
         tmp(i - 1).Key = keyForIndex(i)
         If IsObject(c(i)) Then
-            tmp(i - 1).Data = "[ invalid can not save " & TypeName(c(i)) & " object ]"
+            tmp(i - 1).data = "[ invalid can not save " & TypeName(c(i)) & " object ]"
         Else
-            tmp(i - 1).Data = c(i)
+            tmp(i - 1).data = c(i)
         End If
     Next
     
@@ -221,19 +233,83 @@ Public Function toFile(ByVal fPath As String) As Boolean
     Put f, , tmp()
     Close f
     
-    toFile = True
+    toDumpFile = True
     
 hell:
 End Function
 
-Public Function fromFile(ByVal fPath As String, Optional append As Boolean) As Long
+Public Function toTextFile(ByVal fPath As String, Optional header As String) As Boolean
+        
+    On Error GoTo hell
+    
+    If FileExists(fPath) Then Kill fPath
+    If FileExists(fPath) Then GoTo hell
+    
+    Dim tmp() As String
+    Dim v, i As Long, f As Long
+    
+    If c.Count = 0 Then GoTo hell
+    
+    ReDim tmp(c.Count - 1)
+    
+    For i = 1 To c.Count
+        If IsObject(c(i)) Then
+            tmp(i - 1) = "[ invalid can not save " & TypeName(c(i)) & " object ]"
+        Else
+            tmp(i - 1) = Replace(c(i), vbCrLf, "\n")
+        End If
+        If i Mod 100 = 0 Then DoEvents
+    Next
+    
+    If Len(header) > 0 Then
+        header = vbCrLf & header & vbCrLf & String(100, "-") & vbCrLf & vbCrLf
+    End If
+    
+    WriteFile fPath, header & Join(tmp, vbCrLf)
+    
+    toTextFile = True
+    
+hell:
+End Function
+
+Public Function fromTextFile(ByVal fPath As String, Optional append As Boolean, Optional trim As Boolean) As Long
     
     On Error GoTo hell
     
     If Not FileExists(fPath) Then GoTo hell
     
-    Dim tmp() As dump, d As dump
+    Dim tmp() As String, dat As String
     Dim v, i As Long, f As Long, cnt As Long
+    
+    If c.Count > 0 And append = False Then Set c = New Collection
+    
+    dat = ReadFile(fPath)
+    If InStr(dat, Chr(0)) > 0 Then
+        MsgBox "This looks like binary data and not a text file?"
+        Exit Function
+    End If
+    
+    tmp() = Split(dat, vbCrLf)
+    
+    For i = 0 To UBound(tmp)
+        If trim Then tmp(i) = VBA.trim(tmp(i))
+        c.Add tmp(i)
+        If i Mod 100 = 0 Then DoEvents
+    Next
+
+hell:
+    fromTextFile = c.Count
+End Function
+
+Public Function fromDumpFile(ByVal fPath As String, Optional append As Boolean, Optional trimIt As Boolean) As Long
+    
+    On Error GoTo hell
+    
+    If Not FileExists(fPath) Then GoTo hell
+    
+    Dim tmp() As dump ', d As dump
+    Dim v, i As Long, f As Long, cnt As Long
+    Dim d As String
     
     If c.Count > 0 And append = False Then Set c = New Collection
     
@@ -245,17 +321,17 @@ Public Function fromFile(ByVal fPath As String, Optional append As Boolean) As L
     Close f
     
     For i = 0 To UBound(tmp)
+        d = tmp(i).data(i)
+        If trimIt Then d = trim(d)
         If Len(tmp(i).Key) = 0 Then
-            c.Add tmp(i).Data
+            c.Add d
         Else
-            c.Add tmp(i).Data, Base16Encode(uniqueKey(tmp(i).Key))
+            c.Add d, Base16Encode(uniqueKey(tmp(i).Key))
         End If
     Next
-        
-    fromFile = UBound(tmp)
-    Exit Function
+
 hell:
-    fromFile = -1
+    fromDumpFile = c.Count
 End Function
 
 Public Function keyForIndex(index As Long) As String
@@ -416,22 +492,120 @@ done:
     toArray = tmp()
 End Function
 
-Public Sub fromArray(ary As Variant, Optional append As Boolean = True)
+Public Sub fromArray(ary As Variant, Optional append As Boolean = True, Optional uniqueOnly As Boolean, Optional trim As Boolean)
     Dim i As Long
+    'On Error GoTo hell
     
     If AryIsEmpty(ary) Then Exit Sub
     If Not append And c.Count > 0 Then Set c = New Collection
     
     For i = LBound(ary) To UBound(ary)
-        c.Add ary(i)
+        If trim Then ary(i) = VBA.trim(ary(i))
+        If uniqueOnly Then
+            If Not keyExists(ary(i)) Then
+                Add ary(i), ary(i)
+            End If
+        Else
+            c.Add ary(i)
+        End If
     Next
 
+Exit Sub
+hell:
+    Stop
 End Sub
 
 
+Public Function findMatches(c2 As CollectionEx, Optional byKey As Boolean = False) As CollectionEx
+    
+    Dim ret As New CollectionEx
+    Dim i As Long
+    Dim k As String
+    Dim v, v2
+    Dim longestCol As CollectionEx
+    Dim shortCol As CollectionEx
+    Dim a As String, b As String
+    
+    If c.Count > c2.Count Then
+        Set longestCol = Me
+        Set shortCol = c2
+    Else
+        Set longestCol = c2
+        Set shortCol = Me
+    End If
+    
+    On Error Resume Next
+    Set findMatches = ret
+    
+    If byKey Then
+        For i = 1 To longestCol.Count
+            k = longestCol.keyForIndex(i)
+            If shortCol.keyExists(k) Then
+                ret.Add longestCol(i), k
+            End If
+        Next
+    Else
+        For i = 1 To longestCol.Count
+            v = longestCol(i)
+            v = trim(v)
+            For Each v2 In shortCol
+               If LCase(v) = LCase(v2) Then
+                   ret.Add v, longestCol.keyForIndex(i)
+                   Exit For
+               End If
+            Next
+        Next
+    End If
+        
+End Function
 
-
-
+Public Function diff(c2 As CollectionEx, Optional byKey As Boolean = False) As CollectionEx
+    
+    Dim ret As New CollectionEx
+    Dim i As Long
+    Dim k As String
+    Dim v, v2
+    Dim found As Boolean
+    Dim longestCol As CollectionEx
+    Dim shortCol As CollectionEx
+    
+    On Error Resume Next
+    Set diff = ret
+    
+    If c.Count > c2.Count Then
+        Set longestCol = Me
+        Set shortCol = c2
+    Else
+        Set longestCol = c2
+        Set shortCol = Me
+    End If
+    
+    If byKey Then
+        For i = 1 To longestCol.Count
+            k = longestCol.keyForIndex(i)
+            If Not shortCol.keyExists(k) Then
+                ret.Add longestCol(i), k
+            End If
+            If i Mod 100 = 0 Then DoEvents
+        Next
+    Else
+        For i = 1 To longestCol.Count
+            v = longestCol(i)
+            found = False
+            For Each v2 In shortCol
+                If v = v2 Then
+                    found = True
+                    Exit For
+                End If
+            Next
+            If Not found Then
+                ret.Add v, longestCol.keyForIndex(i)
+            End If
+            If i Mod 100 = 0 Then DoEvents
+        Next
+    End If
+        
+End Function
 
 
 
@@ -551,5 +725,38 @@ Private Function SortArray(descending As Boolean, ByRef TheArray As Variant, ByR
     
     SortArray = True
 hell:
+    
+End Function
+
+Private Function ReadFile(filename) As Variant
+  Dim f As Long
+  Dim temp As Variant
+  f = FreeFile
+  temp = ""
+   Open filename For Binary As #f        ' Open file.(can be text or image)
+     temp = Input(FileLen(filename), #f) ' Get entire Files data
+   Close #f
+   ReadFile = temp
+End Function
+
+Private Function WriteFile(ByVal path As String, it) As Boolean
+    Dim f As Long
+    Dim b() As Byte
+    On Error Resume Next
+    
+    If FileExists(path) Then Kill path
+    
+    If TypeName(it) = "Byte()" Then
+        b() = it
+    Else
+        b() = StrConv(CStr(it), vbFromUnicode, &H409)
+    End If
+    
+    f = FreeFile
+    Open path For Binary As #f
+    Put #f, , it
+    Close f
+    
+    WriteFile = (Err.Number = 0)
     
 End Function

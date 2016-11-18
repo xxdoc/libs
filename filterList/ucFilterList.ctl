@@ -168,7 +168,19 @@ Sub setFont(Optional name As String = "tahoma", Optional size As Integer = 10)
     lvFilter.Font.size = size
 End Sub
 
+Property Get selItems() As Collection
+
+    Dim c As New Collection
+    Dim li As ListItem
+    Dim cnt As Long
+    
+    Set selItems = c
  
+    For Each li In currentLV.ListItems
+        If li.Selected Then c.Add li
+    Next
+    
+End Property
 
 
 Property Get FilterColumn() As Long
