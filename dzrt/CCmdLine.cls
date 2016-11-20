@@ -1,4 +1,16 @@
-Attribute VB_Name = "CommandLineToArgv"
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+  Persistable = 0  'NotPersistable
+  DataBindingBehavior = 0  'vbNone
+  DataSourceBehavior  = 0  'vbNone
+  MTSTransactionMode  = 0  'NotAnMTSObject
+END
+Attribute VB_Name = "CCmdLine"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
 Option Explicit
 'http://kozhouse.homeip.net/TIPS/CommandLineToArgvW/
 
@@ -11,8 +23,18 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination
 Private Const OFFSET_4      As Currency = 4294967296@
 Private Const MAXINT_4      As Currency = 2147483647
  
+Public args As New Collection
+ 
+Function ArgExists(arg As String) As Boolean
+    ArgExists = KeyExistsInCollection(args, arg)
+End Function
 
-Public Function CommandLineArgs(Optional cmdLine) As Collection
+Function GetArg(arg As String) As String
+    On Error Resume Next
+    GetArg = args(arg)
+End Function
+
+Public Function LoadArgs(Optional cmdline) As Long
     Dim lpszArgs    As Long
     Dim nArgs       As Integer
     Dim i           As Long
@@ -20,19 +42,17 @@ Public Function CommandLineArgs(Optional cmdLine) As Collection
     Dim cmd As String
     Dim key As String
     Dim tmp As String
-    Dim args As New Collection
     
     On Error Resume Next
     
     Set args = New Collection
-    Set CommandLineArgs = args
     
-    If IsMissing(cmdLine) Then
+    If IsMissing(cmdline) Then
         cmd = Command
-    ElseIf Len(trim(cmdLine)) = 0 Then
+    ElseIf Len(trim(cmdline)) = 0 Then
         cmd = Command
     Else
-        cmd = CStr(cmdLine)
+        cmd = CStr(cmdline)
     End If
     
     cmd = trim(cmd)
@@ -68,7 +88,8 @@ Public Function CommandLineArgs(Optional cmdLine) As Collection
         
     End If
     
-    
+    LoadArgs = args.count
+
 End Function
 
 Private Function GetPointer(ByVal iAddress As Long, ByVal iIndex As Long) As Long
@@ -116,5 +137,14 @@ Dim strBuffer As String
         ToStringW = ""
     End If
 
+End Function
+
+Private Function KeyExistsInCollection(c As Collection, val As String) As Boolean
+    On Error GoTo nope
+    Dim t
+    t = c(val)
+    KeyExistsInCollection = True
+ Exit Function
+nope: KeyExistsInCollection = False
 End Function
 

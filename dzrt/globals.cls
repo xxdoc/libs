@@ -45,9 +45,11 @@ End Enum
 
 Private OnBits(0 To 31) As Long
 Private crc_table() As Long
+
 Public base64 As New CBase64
 Public hash As New CWinHash
 Public fso As New CFileSystem3
+Public cmdline As New CCmdLine
 
 Function GetTickCount() As Long
     GetTickCount = GetTickCount_()
@@ -121,13 +123,6 @@ hell:
     isIde = True
 End Function
 
-Function ParseCommandLine(Optional ByVal cmd As String) As CollectionEx
-    Dim c As Collection
-    Dim cc As New CollectionEx
-    Set c = CommandLineArgs(cmd)
-    cc.Attach c
-    Set ParseCommandLine = cc
-End Function
 
 Function TopMost(frm As Object, Optional ontop As Boolean = True)
     On Error Resume Next
@@ -173,10 +168,10 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     For i = 1 To sz
         If save_mode Then
             ff = CallByName(fform, f(i), VbGet)
-            SaveSetting App.EXEName, fform.Name & ".FormPos", f(i), ff
+            SaveSetting App.EXEName, fform.name & ".FormPos", f(i), ff
         Else
             def = CallByName(fform, f(i), VbGet)
-            ff = GetSetting(App.EXEName, fform.Name & ".FormPos", f(i), def)
+            ff = GetSetting(App.EXEName, fform.name & ".FormPos", f(i), def)
             CallByName fform, f(i), VbLet, ff
         End If
     Next

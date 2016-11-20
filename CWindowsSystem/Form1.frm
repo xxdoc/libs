@@ -252,6 +252,14 @@ Private Sub Command2_Click()
     
     Set c = w.CopyListBox(List2)
     
+    Dim tmp() As String
+    For Each v In c
+        push tmp, v
+    Next
+    Clipboard.Clear
+    Clipboard.SetText Join(tmp, vbCrLf)
+    
+    
 End Sub
 
 Private Sub Command3_Click()
