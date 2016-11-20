@@ -1,9 +1,11 @@
 Type=Exe
 Form=Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Class=ULong64; Ulong64.cls
-Class=Ulong; Ulong.cls
+Class=ULong64; ULong64.cls
+Class=ULong; ULong.cls
 Module=Module1; Module1.bas
+Class=UByte; UByte.cls
+Class=UInt; UInt.cls
 IconForm="Form1"
 Startup="Form1"
 Command32=""

@@ -35,7 +35,7 @@ Attribute VB_Exposed = False
 'End Enum
 
 Public mode As modes
-Public value As Currency
+Public rawValue As Currency   'this is the default property of the class
 Public padLeft As Boolean
 Public useTick As Boolean
 Public use0x As Boolean
@@ -63,6 +63,29 @@ Private Declare Function U642Str Lib "utypes.dll" (ByVal v1 As Currency, ByVal b
 
 'get hi and lo longs from 64 numbers
 Private Declare Sub fromU64 Lib "utypes.dll" (ByVal v0 As Currency, ByRef v1 As Long, ByRef v2 As Long)
+
+Property Get Value()
+Attribute Value.VB_UserMemId = 0
+    Value = rawValue
+End Property
+
+'this is the default method of the class
+Property Let Value(v)
+    
+    If TypeName(v) = "String" Then
+        fromString v
+    ElseIf TypeName(v) = "ULong64" Then
+        rawValue = v.Value
+    ElseIf TypeName(v) = "ULong" Or TypeName(v) = "UInt" Or TypeName(v) = "UByte" Then
+        SetLongs 0, v.Value
+    ElseIf TypeName(v) = "Long" Or TypeName(v) = "Byte" Or TypeName(v) = "Integer" Then
+        SetLongs 0, CLng(v)
+    Else
+        Err.Raise 1, "ULong64.Value", "Unsupported conversion type to ULong64: " & TypeName(v)
+    End If
+
+End Property
+
 
 Property Get MAX_SIGNED64() As String
      If useTick Then
@@ -97,8 +120,8 @@ Property Get is32BitSafe() As Boolean
     If hi = 0 Then is32BitSafe = True
 End Property
 
-Property Get isNegAsSigned() As Boolean
-    isNegAsSigned = (Left(sValue(mSigned), 1) = "-")
+Property Get isNegBitSet() As Boolean
+    isNegBitSet = (Left(toString(msigned), 1) = "-")
 End Property
 
 Property Get hi() As Long
@@ -121,15 +144,13 @@ Property Let lo(x As Long)
     SetLongs a, x
 End Property
 
-
-'as a property, the IDE can show it results as a tooltip when debugging
-Property Get sValue(Optional m As modes = mHex) As String
+Function toString(Optional m As modes = mhex) As String
     Dim tmp As String, i As Long, lo As String, hi As String, a As Long
     tmp = Space(64)
-    i = U642Str(value, tmp, 64, m)
+    i = U642Str(rawValue, tmp, 64, m)
     If i > 0 Then
         tmp = UCase(Mid(tmp, 1, i))
-        If m = mHex Then
+        If m = mhex Then
             If padLeft Then
                 tmp = Right("0000000000000000" & tmp, 16)
             End If
@@ -143,26 +164,36 @@ Property Get sValue(Optional m As modes = mHex) As String
             End If
             If use0x Then tmp = "0x" & tmp
         End If
-        sValue = tmp
+        toString = tmp
     End If
-End Property
+End Function
 
-Property Let sValue(Optional m As modes = mHex, ByVal s As String)
+
+Function fromString(ByVal s As String, Optional m As modes = mhex) As Boolean
+    On Error GoTo hell
     s = Trim(s)
     s = Replace(s, "`", Empty)
-    If LCase(Left(s, 2)) = "0x" Then
-        m = mHex
+    
+    If Left(s, 1) = "-" Then m = msigned
+    
+    If LCase(Left(s, 2)) = "0x" Or LCase(Left(s, 2)) = "&h" Or LCase(Left(s, 2)) = "\x" Then
+        m = mhex
         s = Mid(s, 3)
     End If
-    value = Str264(s, IIf(m = mHex, 16, 10))
-End Property
+    
+    rawValue = Str264(s, IIf(m = mhex, 16, 10))
+    
+    fromString = True
+    Exit Function
+hell:
+End Function
 
 Sub SetLongs(Optional hi As Long, Optional lo As Long)
-    value = toU64(hi, lo)
+    rawValue = toU64(hi, lo)
 End Sub
 
 Sub GetLongs(Optional ByRef hi As Long, Optional ByRef lo As Long)
-    fromU64 value, hi, lo
+    fromU64 rawValue, hi, lo
 End Sub
 
 'this is left public so that once this goes into a binary compatiable dll
@@ -174,16 +205,21 @@ Function raw_op(operand2, operation As op) As ULong64
     If TypeName(operand2) = "ULong64" Then
         Set tmp = operand2
     ElseIf TypeName(operand2) = "ULong" Then
-        tmp.SetLongs 0, operand2.value
+        tmp.SetLongs 0, operand2.rawValue
     Else
         tmp.SetLongs 0, CLng(operand2)
     End If
     
-    If mode = mSigned Then
-        ret.value = S64(value, tmp.value, operation)
+    If mode = msigned Then
+        ret.rawValue = S64(rawValue, tmp.rawValue, operation)
     Else
-        ret.value = U64(value, tmp.value, operation)
+        ret.rawValue = U64(rawValue, tmp.rawValue, operation)
     End If
+    
+    ret.mode = Me.mode
+    ret.use0x = Me.useTick
+    ret.use0x = Me.use0x
+    ret.padLeft = Me.padLeft
     
     Set raw_op = ret
     
@@ -242,23 +278,23 @@ End Function
 Function greaterThan(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_gt)
-    greaterThan = (a.value = 1)
+    greaterThan = (a.rawValue = 1)
 End Function
 
 Function lessThan(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_lt)
-    lessThan = (a.value = 1)
+    lessThan = (a.rawValue = 1)
 End Function
 
 Function greaterThanEqual(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_gteq)
-    greaterThanEqual = (a.value = 1)
+    greaterThanEqual = (a.rawValue = 1)
 End Function
 
 Function lessThanEqual(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_lteq)
-    lessThanEqual = (a.value = 1)
+    lessThanEqual = (a.rawValue = 1)
 End Function

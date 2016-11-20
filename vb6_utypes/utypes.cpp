@@ -149,6 +149,7 @@ __int64 __stdcall S64(__int64 v1, __int64 v2, int operation){
 int __stdcall U642Str(unsigned __int64 v1, LPSTR pszString, LONG cSize, int mode){
 
 	char buf[64]={0};
+    signed __int64 v2 = v1;
     int i;
 
 	switch(mode){
@@ -174,6 +175,23 @@ int __stdcall U2Str(unsigned int v1, LPSTR pszString, LONG cSize){
 	if (cSize > i ) strcpy(pszString, buf);
 	return i;
 
+}
+
+int __stdcall UShortStr(unsigned short v1, LPSTR pszString, LONG cSize){
+
+	char buf[64]={0};
+    int i;
+    sprintf(buf, "%hu", v1);
+	i = strlen(buf);
+	if (cSize > i ) strcpy(pszString, buf);
+	return i;
+
+}
+
+unsigned int  __stdcall Str2Long(LPSTR pszString, int base){
+	//supports - but doesnt seem to work with 0x prefix? so had to include base arg..
+	unsigned int ret = strtoul(pszString, NULL, base);
+	return ret;
 }
 
 unsigned __int64  __stdcall Str264(LPSTR pszString, int base){

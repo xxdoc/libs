@@ -11,3 +11,7 @@ LIBRARY UTypes
 		fromU64
 		S64
 		UByte
+		UShortStr
+		Str2Long
+		crc32
+		crc32w

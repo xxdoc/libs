@@ -6,7 +6,7 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "Ulong"
+Attribute VB_Name = "ULong"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
@@ -35,17 +35,41 @@ Attribute VB_Exposed = False
 'End Enum
 
 Public use0x As Boolean
-Public value As Long
+Public rawValue As Long           'this is the default method of the class
 Public padLeft As Boolean
 
 'unsigned math operations
-Private Declare Function Ulong Lib "utypes.dll" Alias "ULong" (ByVal v1 As Long, ByVal v2 As Long, ByVal operation As Long) As Long
+Private Declare Function ULong Lib "utypes.dll" (ByVal v1 As Long, ByVal v2 As Long, ByVal operation As Long) As Long
 
 'convert an unsigned long (or int) to unsigned string (vb6 hex and signed displays are fine so ommited..)
 Private Declare Function U2Str Lib "utypes.dll" (ByVal v1 As Long, ByVal buf As String, ByVal cBufferSize As Long) As Long
 
+'create a 32 bit number from a string in specified base (16 for a hex string)
+Private Declare Function Str2Long Lib "utypes.dll" (ByVal s As String, Optional ByVal base As Long = 10) As Long
+Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
+
 Dim hLib As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+
+Property Get Value()
+Attribute Value.VB_UserMemId = 0
+    Value = rawValue
+End Property
+
+'this is the default method of the class
+Property Let Value(v)
+    
+    If TypeName(v) = "String" Then
+        fromString v
+    ElseIf TypeName(v) = "ULong" Or TypeName(v) = "UInt" Or TypeName(v) = "UByte" Then
+        rawValue = v.Value
+    ElseIf TypeName(v) = "Long" Or TypeName(v) = "Byte" Or TypeName(v) = "Integer" Then
+        rawValue = v
+    Else
+        Err.Raise 1, "ULong.Value", "Unsupported conversion type to long: " & TypeName(v)
+    End If
+
+End Property
 
 
 Property Get MAX_SIGNED() As String
@@ -63,18 +87,20 @@ Property Get MAX_UNSIGNED() As String
     If use0x Then MAX_UNSIGNED = "0x" & MAX_UNSIGNED
 End Property
 
-Property Get isNegAsSigned() As Boolean
-    isNegAsSigned = (Left(CStr(value), 1) = "-")
+Property Get isNegBitSet() As Boolean
+    isNegBitSet = (Left(CStr(rawValue), 1) = "-")
 End Property
 
 'as a property, the IDE can show it results as a tooltip when debugging
-Property Get sValue(Optional isHex As Boolean = True) As String
+Function toString(Optional m As modes = mhex) As String
     Dim tmp As String
     
-    If Not isHex Then
-        sValue = GetUnsigned(value)
+    If m = munSigned Then
+        toString = GetUnsigned(rawValue)
+    ElseIf m = msigned Then
+        toString = rawValue
     Else
-        tmp = Hex(value)
+        tmp = Hex(rawValue)
          
         If padLeft Then
             tmp = Right("00000000" & tmp, 8)
@@ -82,24 +108,28 @@ Property Get sValue(Optional isHex As Boolean = True) As String
              
         If use0x Then tmp = "0x" & tmp
         
-        sValue = tmp
+        toString = tmp
     End If
     
-End Property
+End Function
 
-'ok this is weird but works!
-Property Let sValue(Optional isHex As Boolean = True, ByVal s As String)
+Function fromString(ByVal s As String, Optional forceHex As Boolean = True) As Boolean
+    On Error GoTo hell
+    Dim tmp As Long
+    
     s = Trim(s)
-    If LCase(Left(s, 2)) = "0x" Or LCase(Left(s, 2)) = "&h" Then
-        isHex = True
+    If Left(s, 1) = "-" Then forceHex = False
+    
+    If LCase(Left(s, 2)) = "0x" Or LCase(Left(s, 2)) = "&h" Or LCase(Left(s, 2)) = "\x" Then
+        forceHex = True
         s = Mid(s, 3)
     End If
-    If isHex Then
-        value = CLng("&h" & s)
-    Else
-        value = CLng(s)
-    End If
-End Property
+     
+    rawValue = Str2Long(s, IIf(forceHex, 16, 10))
+    fromString = True
+    Exit Function
+hell:
+End Function
 
 Private Function GetUnsigned(v As Long) As String
     Dim tmp As String, i As Long
@@ -109,17 +139,19 @@ Private Function GetUnsigned(v As Long) As String
 End Function
 
 'for signed math..you can use native vb6 operations..so mode is omitted..
-Function raw_op(operand2, operation As op) As Ulong
-    Dim ret As New Ulong
+Function raw_op(operand2, operation As op) As ULong
+    Dim ret As New ULong
     Dim v2 As Long
     
-    If TypeName(operand2) = "Ulong" Then
-        v2 = operand2.value
+    If TypeName(operand2) = "ULong" Then
+        v2 = operand2.Value
     Else
         v2 = CLng(operand2)
     End If
     
-    ret.value = Ulong(value, v2, operation)
+    ret.use0x = Me.use0x
+    ret.padLeft = Me.padLeft
+    ret.rawValue = ULong(rawValue, v2, operation)
     
     Set raw_op = ret
     
@@ -134,71 +166,66 @@ Private Sub Class_Initialize()
 End Sub
 
 'these stubs are for readability/ease of use
-Function add(operand2) As Ulong
+Function add(operand2) As ULong
     Set add = raw_op(operand2, op_add)
 End Function
 
-Function subtract(operand2) As Ulong
+Function subtract(operand2) As ULong
     Set subtract = raw_op(operand2, op_sub)
 End Function
 
-Function divide(operand2) As Ulong
+Function divide(operand2) As ULong
     Set divide = raw_op(operand2, op_div)
 End Function
 
-Function multiply(operand2) As Ulong
+Function multiply(operand2) As ULong
     Set multiply = raw_op(operand2, op_mul)
 End Function
 
-Function modulus(operand2) As Ulong
+Function modulus(operand2) As ULong
     Set modulus = raw_op(operand2, op_mod)
 End Function
 
-Function xor_(operand2) As Ulong
+Function xor_(operand2) As ULong
     Set xor_ = raw_op(operand2, op_xor)
 End Function
 
-Function and_(operand2) As Ulong
+Function and_(operand2) As ULong
     Set and_ = raw_op(operand2, op_and)
 End Function
 
-Function or_(operand2) As Ulong
+Function or_(operand2) As ULong
     Set or_ = raw_op(operand2, op_or)
 End Function
 
-Function rshift(operand2) As Ulong
+Function rshift(operand2) As ULong
     Set rshift = raw_op(operand2, op_rsh)
 End Function
 
-Function lshift(operand2) As Ulong
+Function lshift(operand2) As ULong
     Set lshift = raw_op(operand2, op_lsh)
 End Function
 
 Function greaterThan(operand2) As Boolean
-    Dim a As Ulong
+    Dim a As ULong
     Set a = raw_op(operand2, op_gt)
-    greaterThan = (a.value = 1)
+    greaterThan = (a.rawValue = 1)
 End Function
 
 Function lessThan(operand2) As Boolean
-    Dim a As Ulong
+    Dim a As ULong
     Set a = raw_op(operand2, op_lt)
-    lessThan = (a.value = 1)
+    lessThan = (a.rawValue = 1)
 End Function
 
 Function greaterThanEqual(operand2) As Boolean
-    Dim a As Ulong
+    Dim a As ULong
     Set a = raw_op(operand2, op_gteq)
-    greaterThanEqual = (a.value = 1)
+    greaterThanEqual = (a.rawValue = 1)
 End Function
 
 Function lessThanEqual(operand2) As Boolean
-    Dim a As Ulong
+    Dim a As ULong
     Set a = raw_op(operand2, op_lteq)
-    lessThanEqual = (a.value = 1)
+    lessThanEqual = (a.rawValue = 1)
 End Function
-
-
-
-
-
