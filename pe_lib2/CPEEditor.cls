@@ -310,7 +310,7 @@ End Function
 '
 'End Sub
 
-Private Sub LoadSections(fHand As Long, nth As IMAGE_NT_HEADERS)
+Private Sub LoadSections(fhand As Long, nth As IMAGE_NT_HEADERS)
     
     Dim i As Long
     Dim udtSH As IMAGE_SECTION_HEADER
@@ -319,7 +319,7 @@ Private Sub LoadSections(fHand As Long, nth As IMAGE_NT_HEADERS)
     Set Sections = New Collection
     
     For i = 1 To nth.FileHeader.NumberOfSections
-        Get fHand, , udtSH
+        Get fhand, , udtSH
         Set CSect = New CSection
         CSect.LoadStruc udtSH
         CSect.index = i
@@ -330,7 +330,7 @@ Private Sub LoadSections(fHand As Long, nth As IMAGE_NT_HEADERS)
     
     Dim b() As Byte
     ReDim b(Len(udtSH))
-    Get fHand, , b() ' buffer where next section would sit
+    Get fhand, , b() ' buffer where next section would sit
     
     'if all empty then is room to add new section
     For i = 0 To UBound(b)
@@ -342,7 +342,7 @@ Private Sub LoadSections(fHand As Long, nth As IMAGE_NT_HEADERS)
 End Sub
 
 Function VAtoRVA(ByVal va As Double) As Double
-    VAtoRVA = OptionalHeader.ImageBase - va
+    VAtoRVA = va - OptionalHeader.ImageBase
 End Function
 
 Function RVAtoVA(ByVal rva As Double) As Double
