@@ -423,6 +423,30 @@ Function lvGetAllElements(lv As Object) As String
     
 End Function
 
+Function lvGetColumn(lv As Object, colIndex As Long) As String
+    Dim ret() As String, i As Integer, tmp As String
+    Dim li 'As ListItem
+    
+    On Error Resume Next
+    
+    If colIndex > lv.ColumnHeaders.count Then Exit Function
+    If colIndex < 0 Then Exit Function
+    
+    'push ret, lv.ColumnHeaders(colIndex + 1).Text
+    'push ret, String(50, "-")
+        
+    For Each li In lv.ListItems
+        If colIndex = 0 Then
+            push ret, li.Text
+        Else
+            push ret, li.SubItems(colIndex)
+        End If
+    Next
+    
+    lvGetColumn = Join(ret, vbCrLf)
+    
+End Function
+
 Function rpad(v, Optional l As Long = 8, Optional char As String = " ")
     On Error GoTo hell
     Dim x As Long
