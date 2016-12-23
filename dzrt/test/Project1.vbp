@@ -1,7 +1,7 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{60E64C4D-86E1-4F70-9D74-82C8C8F7745C}#11.0#0#..\dzrt.dll#.DZ Runtime from Sandsprite.com
 Form=Form1.frm
-Class=StringEx; ..\StringEx.cls
 IconForm="Form1"
 Startup="Form1"
 Command32=""

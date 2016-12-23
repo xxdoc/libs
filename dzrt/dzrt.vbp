@@ -22,6 +22,8 @@ Class=StringEx; StringEx.cls
 Class=CCmdLine; CCmdLine.cls
 Class=CAnchorElement; CAnchorElement.cls
 Class=CAnchor; CAnchor.cls
+Class=CZlib; CZlib.cls
+ResFile32="dzrt.RES"
 Startup="(None)"
 HelpFile=""
 Title="dzrt"
@@ -33,7 +35,7 @@ CompatibleMode="1"
 CompatibleEXE32="dzrt.dll"
 MajorVer=1
 MinorVer=0
-RevisionVer=29
+RevisionVer=37
 AutoIncrementVer=1
 ServerSupportFiles=0
 VersionCompanyName="sandsprite"
@@ -58,3 +60,4 @@ AutoRefresh=1
 
 [fastBuild]
 fullPath=%ap%\dzrt.dll
+PostBuild=upx %1

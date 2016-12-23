@@ -60,7 +60,7 @@ Private Declare Function CharUpperBuffW Lib "user32" (ByVal lStr As Long, ByVal 
 Private Declare Function IsTextUnicode Lib "advapi32" (ByRef uBuffer As Any, ByVal lBufferLen As Long, ByRef lResult As Long) As Long
 Private Declare Function MultiByteToWideChar Lib "kernel32" (ByVal lCodePage As Long, ByVal lFlags As Long, uMultiByte As Any, ByVal lMultiByteLen As Long, uWideCharStr As Any, ByVal lWideCharStrLen As Long) As Long
 Private Declare Sub RtlMoveMemory Lib "kernel32" (uTarget As Any, uSource As Any, ByVal lLen As Long)
-
+Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
 
 Private Declare Function URLDownloadToFile Lib "urlmon" Alias _
     "URLDownloadToFileA" (ByVal pCaller As Long, _
@@ -120,15 +120,15 @@ Public Function concat(ByRef ConcatString As String) As StringEx
 
 End Function
 
-Public Function remove(ByVal index As Long, ByVal length As Long) As StringEx
+Public Function remove(ByVal index As Long, ByVal Length As Long) As StringEx
     Dim x As Long
 
     Set remove = Me
-    If p_ValueLen > 0& And index > 0& And index <= p_ValueLen And length > 0& Then
+    If p_ValueLen > 0& And index > 0& And index <= p_ValueLen And Length > 0& Then
     
-        x = length - (length - (p_ValueLen - index + 1&))
+        x = Length - (Length - (p_ValueLen - index + 1&))
         
-        If length <= x Then x = length
+        If Length <= x Then x = Length
     
         If x < p_ValueLen Then
     
@@ -170,7 +170,7 @@ Public Function insert(ByVal index As Long, ByRef InsertString As String) As Str
 
 End Function
 
-Function stripFromEnd(Optional char As String = vbCrLf, Optional method As VbCompareMethod = vbBinaryCompare) As StringEx
+Function stripFromEnd(Optional ByVal char As String = vbCrLf, Optional method As VbCompareMethod = vbBinaryCompare) As StringEx
     
     Set stripFromEnd = Me
     While endsWith(char, method)
@@ -260,29 +260,6 @@ Public Function trim(Optional allWhiteSpace As Boolean = False) As StringEx
     rTrim allWhiteSpace
 End Function
 
-Function isSpace(Optional pos As Long = -1, Optional allWhiteSpace As Boolean = False) As Boolean
-    
-    Dim b As Integer
-    
-    If p_ValueLen < 1 Then Exit Function
-    
-    If pos = -1 Then 'check last character
-        b = Asc(Mid$(p_Value, p_ValueLen, 1&))
-    Else
-        b = Asc(Mid(p_Value, pos, 1))
-    End If
-    
-    If allWhiteSpace = False Then
-        isSpace = (b = 32)
-    Else
-        'return true for Space, CR, LF, Tab
-        isSpace = (b = 32)
-        If b = 10 Then isSpace = True
-        If b = 13 Then isSpace = True
-        If b = 9 Then isSpace = True
-    End If
-        
-End Function
 
 Public Function rTrim(Optional allWhiteSpace As Boolean = False) As StringEx
     
@@ -326,6 +303,67 @@ Function unixToDOS() As StringEx
     tmp = VBA.Replace(tmp, vbLf, vbCrLf)
     If isMixed Then tmp = VBA.Replace(tmp, Chr(5), vbCrLf)
     value = tmp
+    
+End Function
+
+Function CollapseConstants() As StringEx
+    Set CollapseConstants = Me
+    Dim tmp As String
+    Dim evar As String
+    Dim eval As String
+    Dim a As Long
+    Dim EnvString As String
+    Dim Indx As Long
+    Dim doIt As Boolean
+    
+    tmp = value
+    tmp = VBA.Replace(tmp, vbTab, "\t")
+    tmp = VBA.Replace(tmp, vbCr, "\r")
+    tmp = VBA.Replace(tmp, vbLf, "\n")
+    
+    Indx = 1
+    Do
+        EnvString = Environ(Indx)
+        a = InStr(EnvString, "=")
+        Debug.Print EnvString
+        If a > 0 Then
+            evar = Mid(EnvString, 1, a - 1)
+            eval = Mid(EnvString, a + 1)
+            doIt = True
+            If Len(eval) < 4 Then doIt = False 'has to be unique enough to not get weird
+            'If LCase(evar) = "systemdrive" Then doIt = True
+            'If LCase(evar) = "homedrive" Then doIt = True
+            If LCase(evar) = "username" Then doIt = True
+            
+            If doIt Then
+                'If InStr(1, eval, "Windows", vbTextCompare) > 0 Then Stop
+                tmp = VBA.Replace(tmp, eval, "%" & evar & "%", , , vbTextCompare)
+            End If
+        End If
+        Indx = Indx + 1
+    Loop Until EnvString = ""
+
+    value = tmp
+End Function
+
+Function ExpandConstants() As StringEx
+    Dim tmp As String
+    Dim result As Long
+    Dim strOutput As String
+    
+    Set ExpandConstants = Me
+    
+    tmp = value
+    tmp = VBA.Replace(tmp, "\t", vbTab)
+    tmp = VBA.Replace(tmp, "\r", vbCr)
+    tmp = VBA.Replace(tmp, "\n", vbLf)
+   
+    'Two calls required, one to get expansion buffer length first then do expansion
+    result = 0
+    result = ExpandEnvironmentStrings(tmp, strOutput, result)
+    strOutput = Space$(result)
+    result = ExpandEnvironmentStrings(tmp, strOutput, result)
+    value = strOutput
     
 End Function
 
@@ -411,7 +449,6 @@ Function printf(ByVal msg As String, ParamArray vars()) As StringEx
 End Function
 
 
-
 '------------------------------------------------------------------------------------------------
 'these ones return a new string....
 
@@ -445,17 +482,17 @@ Public Function SubString(Optional start As Long = 1, Optional ByVal endAt As Lo
     
     Set SubString = s
     
-    If start > Me.length Then Exit Function
+    If start > Me.Length Then Exit Function
     
     If start > 0 Then
     
         If endAt = 0 Then
-            endAt = Me.length - start + 1
+            endAt = Me.Length - start + 1
         ElseIf endAt < 0 Then
-            endAt = Me.length + 1 - endAt
+            endAt = Me.Length + 1 - endAt
         Else
-            If endAt > Me.length - start Then
-                endAt = Me.length - start + 1
+            If endAt > Me.Length - start Then
+                endAt = Me.Length - start + 1
             End If
         End If
         
@@ -464,7 +501,7 @@ Public Function SubString(Optional start As Long = 1, Optional ByVal endAt As Lo
         
         If endAt > 0 Then Exit Function
         If endAt < start Then Exit Function
-        If Abs(start) > Me.length Then Exit Function
+        If Abs(start) > Me.Length Then Exit Function
         
         v = VBA.Right(Me.value, Abs(start))
         If endAt < 0 Then
@@ -479,18 +516,18 @@ Public Function SubString(Optional start As Long = 1, Optional ByVal endAt As Lo
         
 End Function
 
-Public Function SubStr(start As Long, Optional ByVal length As Long = -1) As StringEx
+Public Function SubStr(start As Long, Optional ByVal Length As Long = -1) As StringEx
     Dim s As New StringEx
     
     Set SubStr = s
     
-    If start > Me.length Then Exit Function
+    If start > Me.Length Then Exit Function
     
-    If length = -1 Or length > Me.length - start Then
-        length = Me.length - start + 1
+    If Length = -1 Or Length > Me.Length - start Then
+        Length = Me.Length - start + 1
     End If
     
-    s.value = Mid(p_Value, start, length)
+    s.value = Mid(p_Value, start, Length)
     
 End Function
 
@@ -757,8 +794,8 @@ Function charCodeAt(x As Long) As Byte
     charCodeAt = Asc(Mid(value, x, 1))
 End Function
 
-Public Property Get length() As Long
-    length = p_ValueLen
+Public Property Get Length() As Long
+    Length = p_ValueLen
 End Property
 
 Function startsWith(str As String) As Boolean
@@ -871,6 +908,31 @@ Public Function isHexChar(hexValue As String, Optional b As Byte) As Boolean
 nope:
     Err.Clear
     isHexChar = False
+End Function
+
+
+Function isSpace(Optional pos As Long = -1, Optional allWhiteSpace As Boolean = False) As Boolean
+    
+    Dim b As Integer
+    
+    If p_ValueLen < 1 Then Exit Function
+    
+    If pos = -1 Then 'check last character
+        b = Asc(Mid$(p_Value, p_ValueLen, 1&))
+    Else
+        b = Asc(Mid(p_Value, pos, 1))
+    End If
+    
+    If allWhiteSpace = False Then
+        isSpace = (b = 32)
+    Else
+        'return true for Space, CR, LF, Tab
+        isSpace = (b = 32)
+        If b = 10 Then isSpace = True
+        If b = 13 Then isSpace = True
+        If b = 9 Then isSpace = True
+    End If
+        
 End Function
 
 Function HexDump(Optional start As Long = 1, Optional leng As Long = -1, Optional hexOnly As Boolean = False, Optional val) As String

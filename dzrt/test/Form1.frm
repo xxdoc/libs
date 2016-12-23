@@ -9,14 +9,30 @@ Begin VB.Form Form1
    ScaleHeight     =   3195
    ScaleWidth      =   4680
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command2 
+      Caption         =   "Command2"
+      Height          =   525
+      Left            =   1740
+      TabIndex        =   1
+      Top             =   1350
+      Width           =   1245
+   End
+   Begin VB.CommandButton Command1 
+      Caption         =   "Command1"
+      Height          =   525
+      Left            =   3000
+      TabIndex        =   0
+      Top             =   630
+      Width           =   1245
+   End
 End
 Attribute VB_Name = "Form1"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Private Sub Form_Load()
-
+Private Sub Command1_Click()
+    
     Dim s As New StringEx
     Const x As Boolean = False
     
@@ -25,8 +41,40 @@ Private Sub Form_Load()
     s = d
     
     Debug.Print unesc("'" & s & "'")
-    Debug.Print unesc("'" & s.rTrim(x) & "'")
-    Debug.Print unesc("'" & s.lTrim(x) & "'")
+    Debug.Print unesc("'" & s.RTrim(x) & "'")
+    Debug.Print unesc("'" & s.LTrim(x) & "'")
+    
+End Sub
+
+Private Sub Command2_Click()
+
+    Dim x()
+    Dim ok As Boolean
+
+    tmp = String(4000, "A")
+    push x, "InitHash: " & hash.HashString(CStr(tmp)) & " Len: " & Len(tmp)
+    c = Compress(tmp, True)
+    push x, "Compressed size: " & Len(c)
+    
+    If Not decompress(c, d, True) Then
+        MsgBox "Decompress failed"
+        Exit Sub
+    End If
+    
+    push x, "Decompressed hash: " & hash.HashString(CStr(d)) & " Len: " & Len(d)
+    
+    MsgBox Join(x, vbCrLf)
+End Sub
+
+Private Sub Form_Load()
+    
+
+    Dim s As New StringEx
+    
+    s = "c:\windows\system32"
+    s.CollapseConstants
+    
+    MsgBox s
     
         
 

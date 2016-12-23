@@ -28,9 +28,10 @@ Private startTime As Long
 Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () As Long
 Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
-Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
+Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
+Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
 
 'all but jet are odbc jet is ole
 Public Enum dbServers
@@ -43,6 +44,10 @@ Public Enum dbServers
     dBase
 End Enum
 
+Public Enum dzCompressTypes
+    dz_Zlib = 0
+End Enum
+
 Private OnBits(0 To 31) As Long
 Private crc_table() As Long
 
@@ -50,6 +55,7 @@ Public base64 As New CBase64
 Public hash As New CWinHash
 Public fso As New CFileSystem3
 Public cmdline As New CCmdLine
+Public zlib As New CZlib
 
 Function GetTickCount() As Long
     GetTickCount = GetTickCount_()
@@ -67,8 +73,8 @@ End Function
     Sleep_ dwMilliseconds
  End Sub
  
- Sub CopyMemory(Destination, Source, ByVal length As Long)
-     CopyMemory_ Destination, Source, length
+ Sub CopyMemory(Destination, Source, ByVal Length As Long)
+     CopyMemory_ Destination, Source, Length
  End Sub
  
  Function SendMessage(ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
@@ -337,13 +343,13 @@ Exit Function
 hell:
 End Function
 
-Function AnyOfTheseInstr(data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
+Function anyOfTheseInstr(data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
     Dim tmp() As String
     Dim x
     tmp = split(match, ",")
     For Each x In tmp
         If InStr(1, data, x, compare) > 0 Then
-            AnyOfTheseInstr = True
+            anyOfTheseInstr = True
             Exit Function
         End If
     Next
@@ -447,15 +453,15 @@ Function lvGetColumn(lv As Object, colIndex As Long) As String
     
 End Function
 
-Function rpad(v, Optional l As Long = 8, Optional char As String = " ")
+Function Rpad(v, Optional l As Long = 8, Optional char As String = " ")
     On Error GoTo hell
     Dim x As Long
     x = Len(v)
     If x < l Then
-        rpad = v & String(l - x, char)
+        Rpad = v & String(l - x, char)
     Else
 hell:
-        rpad = v
+        Rpad = v
     End If
 End Function
 
@@ -478,10 +484,10 @@ Function printf(ByVal msg As String, ParamArray vars()) As String
     Dim ret As String
     Dim i As Long, base, marker
     
-    msg = replace(msg, Chr(0), Empty)
-    msg = replace(msg, "\t", vbTab)
-    msg = replace(msg, "\n", vbCrLf) 'simplified
-    msg = replace(msg, "%%", Chr(0))
+    msg = Replace(msg, Chr(0), Empty)
+    msg = Replace(msg, "\t", vbTab)
+    msg = Replace(msg, "\n", vbCrLf) 'simplified
+    msg = Replace(msg, "%%", Chr(0))
     
     t = split(msg, "%")
     If UBound(t) <> UBound(vars) + 1 Then
@@ -500,7 +506,7 @@ Function printf(ByVal msg As String, ParamArray vars()) As String
         End If
     Next
     
-    ret = replace(ret, Chr(0), "%")
+    ret = Replace(ret, Chr(0), "%")
     printf = ret
     
 End Function
@@ -599,9 +605,9 @@ Public Function BuildConnectionString(dbServer As dbServers, dbName As String, O
     End If
        
     '%AP% is like enviromental variable for app.path i am lazy :P
-    dbPath = replace(dbName, "%AP%", App.path)
+    dbPath = Replace(dbName, "%AP%", App.path)
     
-    BuildConnectionString = replace(baseString, "____", dbPath)
+    BuildConnectionString = Replace(baseString, "____", dbPath)
     
 End Function
 
@@ -626,24 +632,24 @@ Function isPrintable(b As Byte) As Boolean
  
 End Function
 
-Function CountOccurances(it, find) As Integer
+Function countOccurances(it, find) As Integer
     Dim tmp() As String
     
     If InStr(1, it, find, vbTextCompare) < 1 Then Exit Function
     tmp = split(it, find, , vbTextCompare)
-    CountOccurances = UBound(tmp)
+    countOccurances = UBound(tmp)
     
 End Function
 
 Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     On Error Resume Next
-    x = trim(replace(x, "0x", Empty, , , vbTextCompare))
-    x = trim(replace(x, "&h", Empty, , , vbTextCompare))
+    x = trim(Replace(x, "0x", Empty, , , vbTextCompare))
+    x = trim(Replace(x, "&h", Empty, , , vbTextCompare))
     outVal = CLng("&h" & x)
     h2l = (Err.Number = 0)
 End Function
 
-Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As Long = 1, Optional ByVal length As Long = -1) As String
+Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As Long = 1, Optional ByVal Length As Long = -1) As String
     Dim s() As String, chars As String, tmp As String
     On Error Resume Next
     Dim ary() As Byte
@@ -660,7 +666,7 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As 
     End If
     
     If startAt < 1 Then startAt = 1
-    If length < 1 Then length = -1
+    If Length < 1 Then Length = -1
     
     While startAt Mod 16 <> 0
         startAt = startAt - 1
@@ -688,9 +694,9 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As 
             tmp = Empty
             chars = "   "
         End If
-        If length <> -1 Then
-            length = length - 1
-            If length = 0 Then Exit For
+        If Length <> -1 Then
+            Length = Length - 1
+            If Length = 0 Then Exit For
         End If
     Next
     
@@ -711,8 +717,8 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As 
     HexDump = Join(s, vbCrLf)
     
     If hexOnly <> 0 Then
-        HexDump = replace(HexDump, " ", "")
-        HexDump = replace(HexDump, vbCrLf, "")
+        HexDump = Replace(HexDump, " ", "")
+        HexDump = Replace(HexDump, vbCrLf, "")
     End If
     
 End Function
@@ -738,19 +744,19 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
     
     On Error GoTo hell
     
-    str = replace(hexstr, vbCr, Empty)
-    str = replace(str, vbLf, Empty)
-    str = replace(str, vbTab, Empty)
-    str = replace(str, Chr(0), Empty)
-    str = replace(str, "{", Empty)
-    str = replace(str, "}", Empty)
-    str = replace(str, ";", Empty)
-    str = replace(str, "+", Empty)
-    str = replace(str, """""", Empty)
-    str = replace(str, "'", Empty)
+    str = Replace(hexstr, vbCr, Empty)
+    str = Replace(str, vbLf, Empty)
+    str = Replace(str, vbTab, Empty)
+    str = Replace(str, Chr(0), Empty)
+    str = Replace(str, "{", Empty)
+    str = Replace(str, "}", Empty)
+    str = Replace(str, ";", Empty)
+    str = Replace(str, "+", Empty)
+    str = Replace(str, """""", Empty)
+    str = Replace(str, "'", Empty)
     hexstr = str
     
-    If InStr(hexstr, "\u") > 0 Then hexstr = replace(hexstr, "\u", "%u")
+    If InStr(hexstr, "\u") > 0 Then hexstr = Replace(hexstr, "\u", "%u")
     
     If InStr(hexstr, "%u") > 0 Then
         tmp = split(hexstr, "%u")
@@ -801,9 +807,9 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
         End If
     End If
         
-    str = replace(hexstr, " ", Empty)
-    str = replace(str, "0x", Empty)
-    str = replace(str, ",", Empty)
+    str = Replace(hexstr, " ", Empty)
+    str = Replace(str, "0x", Empty)
+    str = Replace(str, ",", Empty)
     
     For i = 1 To Len(str) Step 2
         x = Mid(str, i, 2)
@@ -1096,7 +1102,7 @@ Function ExtractHexFromDump(dump) As String
             End If
             
             
-            push y, replace(x, " ", Empty)
+            push y, Replace(x, " ", Empty)
 nextone:
         Next
         dat = Join(y, "")
@@ -1106,4 +1112,75 @@ nextone:
      
 End Function
 
+Function Compress(fileStringOrByte, Optional retAsString As Boolean = True, Optional method As dzCompressTypes = dz_Zlib) As Variant
+    
+    Dim b() As Byte
+    Dim bOut() As Byte
+    Dim success As Boolean
+    
+    If FileExists(fileStringOrByte) Then
+         success = zlib.CompressFile(fileStringOrByte, bOut)
+    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
+        b() = fileStringOrByte
+        success = zlib.CompressData(b, bOut)
+    Else
+        b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
+        success = zlib.CompressData(b, bOut)
+    End If
+           
+    If success Then
+        If retAsString Then
+           Compress = StrConv(bOut, vbUnicode, LANG_US)
+        Else
+           Compress = bOut
+        End If
+    End If
+         
+End Function
+
+Function decompress(fileStringOrByte, ByRef outVal, Optional retAsString As Boolean = True, Optional method As dzCompressTypes = dz_Zlib, Optional success As Boolean) As Boolean
+    
+    Dim b() As Byte
+    Dim bOut() As Byte
+    Dim f As Long
+    On Error Resume Next
+    
+    If FileExists(fileStringOrByte) Then
+         success = zlib.DeCompressFile(fileStringOrByte, bOut)
+    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
+        b() = fileStringOrByte
+        success = zlib.UncompressData(b, bOut)
+    Else
+        b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
+        success = zlib.UncompressData(b, bOut)
+    End If
+    
+    If Err.Number <> 0 Then Exit Function
+    
+    If success Then
+    
+'        If TypeName(retAsString) = "String" Then
+'            If Len(retAsString) > 3 Then
+'                If Mid(retAsString, 2, 2) = ":\" Then 'its a file path
+'                    If FileExists(retAsString) Then Kill retAsString
+'                    f = FreeFile
+'                    Open retAsString For Binary As f
+'                    Put f, , bOut
+'                    Close f
+'                    decompress = (Err.Number = 0)
+'                    Exit Function
+'                End If
+'            End If
+'        End If
+        
+        If retAsString Then
+           outVal = StrConv(bOut, vbUnicode, LANG_US)
+        Else
+           outVal = bOut
+        End If
+    End If
+    
+    decompress = success
+         
+End Function
 
