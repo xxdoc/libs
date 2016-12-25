@@ -120,15 +120,15 @@ Public Function concat(ByRef ConcatString As String) As StringEx
 
 End Function
 
-Public Function remove(ByVal index As Long, ByVal Length As Long) As StringEx
+Public Function remove(ByVal index As Long, ByVal length As Long) As StringEx
     Dim x As Long
 
     Set remove = Me
-    If p_ValueLen > 0& And index > 0& And index <= p_ValueLen And Length > 0& Then
+    If p_ValueLen > 0& And index > 0& And index <= p_ValueLen And length > 0& Then
     
-        x = Length - (Length - (p_ValueLen - index + 1&))
+        x = length - (length - (p_ValueLen - index + 1&))
         
-        If Length <= x Then x = Length
+        If length <= x Then x = length
     
         If x < p_ValueLen Then
     
@@ -325,7 +325,7 @@ Function CollapseConstants() As StringEx
     Do
         EnvString = Environ(Indx)
         a = InStr(EnvString, "=")
-        Debug.Print EnvString
+        'Debug.Print EnvString
         If a > 0 Then
             evar = Mid(EnvString, 1, a - 1)
             eval = Mid(EnvString, a + 1)
@@ -348,7 +348,7 @@ End Function
 
 Function ExpandConstants() As StringEx
     Dim tmp As String
-    Dim result As Long
+    Dim Result As Long
     Dim strOutput As String
     
     Set ExpandConstants = Me
@@ -359,10 +359,10 @@ Function ExpandConstants() As StringEx
     tmp = VBA.Replace(tmp, "\n", vbLf)
    
     'Two calls required, one to get expansion buffer length first then do expansion
-    result = 0
-    result = ExpandEnvironmentStrings(tmp, strOutput, result)
-    strOutput = Space$(result)
-    result = ExpandEnvironmentStrings(tmp, strOutput, result)
+    Result = 0
+    Result = ExpandEnvironmentStrings(tmp, strOutput, Result)
+    strOutput = Space$(Result)
+    Result = ExpandEnvironmentStrings(tmp, strOutput, Result)
     value = strOutput
     
 End Function
@@ -410,7 +410,7 @@ End Function
 ' ("chr(&h61) = %c it is my %s", &H61, "favorite letter")
 ' ("this is\n\ta test of \n\t\tnew lines tabs \t and %% escapes")
 
-Function printf(ByVal msg As String, ParamArray vars()) As StringEx
+Function printf(ByVal Msg As String, ParamArray vars()) As StringEx
 'supports %x, %c, %s, %d, %10d \t \n %%
 
     Dim t
@@ -421,12 +421,12 @@ Function printf(ByVal msg As String, ParamArray vars()) As StringEx
     
     Set printf = Me
     
-    msg = VBA.Replace(msg, Chr(0), Empty)
-    msg = VBA.Replace(msg, "\t", vbTab)
-    msg = VBA.Replace(msg, "\n", vbCrLf) 'simplified
-    msg = VBA.Replace(msg, "%%", Chr(0))
+    Msg = VBA.Replace(Msg, Chr(0), Empty)
+    Msg = VBA.Replace(Msg, "\t", vbTab)
+    Msg = VBA.Replace(Msg, "\n", vbCrLf) 'simplified
+    Msg = VBA.Replace(Msg, "%%", Chr(0))
     
-    t = VBA.split(msg, "%")
+    t = VBA.split(Msg, "%")
     If UBound(t) <> UBound(vars) + 1 Then
         MsgBox "Format string mismatch.."
         Exit Function
@@ -482,17 +482,17 @@ Public Function SubString(Optional start As Long = 1, Optional ByVal endAt As Lo
     
     Set SubString = s
     
-    If start > Me.Length Then Exit Function
+    If start > Me.length Then Exit Function
     
     If start > 0 Then
     
         If endAt = 0 Then
-            endAt = Me.Length - start + 1
+            endAt = Me.length - start + 1
         ElseIf endAt < 0 Then
-            endAt = Me.Length + 1 - endAt
+            endAt = Me.length + 1 - endAt
         Else
-            If endAt > Me.Length - start Then
-                endAt = Me.Length - start + 1
+            If endAt > Me.length - start Then
+                endAt = Me.length - start + 1
             End If
         End If
         
@@ -501,7 +501,7 @@ Public Function SubString(Optional start As Long = 1, Optional ByVal endAt As Lo
         
         If endAt > 0 Then Exit Function
         If endAt < start Then Exit Function
-        If Abs(start) > Me.Length Then Exit Function
+        If Abs(start) > Me.length Then Exit Function
         
         v = VBA.Right(Me.value, Abs(start))
         If endAt < 0 Then
@@ -516,18 +516,18 @@ Public Function SubString(Optional start As Long = 1, Optional ByVal endAt As Lo
         
 End Function
 
-Public Function SubStr(start As Long, Optional ByVal Length As Long = -1) As StringEx
+Public Function SubStr(start As Long, Optional ByVal length As Long = -1) As StringEx
     Dim s As New StringEx
     
     Set SubStr = s
     
-    If start > Me.Length Then Exit Function
+    If start > Me.length Then Exit Function
     
-    If Length = -1 Or Length > Me.Length - start Then
-        Length = Me.Length - start + 1
+    If length = -1 Or length > Me.length - start Then
+        length = Me.length - start + 1
     End If
     
-    s.value = Mid(p_Value, start, Length)
+    s.value = Mid(p_Value, start, length)
     
 End Function
 
@@ -794,8 +794,8 @@ Function charCodeAt(x As Long) As Byte
     charCodeAt = Asc(Mid(value, x, 1))
 End Function
 
-Public Property Get Length() As Long
-    Length = p_ValueLen
+Public Property Get length() As Long
+    length = p_ValueLen
 End Property
 
 Function startsWith(str As String) As Boolean

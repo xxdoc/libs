@@ -29,7 +29,7 @@ Attribute VB_Exposed = True
     next_out As Long
     avail_out As Long
     total_out As Long
-    msg As Long
+    Msg As Long
     state As Long
     zalloc As Long
     zfree As Long
@@ -40,7 +40,7 @@ Attribute VB_Exposed = True
  End Type
 
  Private Declare Function ArrPtr Lib "msvbvm60.dll" Alias "VarPtr" (Ptr() As Any) As Long
- Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
+ Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal length As Long)
  Private Declare Function deflate Lib "zlib.dll" (vStream As zStream, Optional ByVal vflush As Long = Z_FINISH) As Long
  Private Declare Function deflateEnd Lib "zlib.dll" (vStream As zStream) As Long
  Private Declare Function deflateInit Lib "zlib.dll" Alias "deflateInit_" (strm As zStream, ByVal level As Long, ByVal version As String, ByVal stream_size As Long) As Long
@@ -114,8 +114,8 @@ Public Property Get ZLIB_ChunkSize() As Long
     ZLIB_ChunkSize = mnChunkSize
 End Property
 
-Public Property Let ZLIB_ChunkSize(ByVal value As Long)
-    mnChunkSize = value
+Public Property Let ZLIB_ChunkSize(ByVal Value As Long)
+    mnChunkSize = Value
 End Property
 
 Public Property Get ZLIB_Version() As String
@@ -125,8 +125,8 @@ Public Property Get ZLIB_Version() As String
     ZLIB_Version = msVersion
 End Property
 
-Public Property Let ZLIB_Version(ByRef value As String)
-    msVersion = value
+Public Property Let ZLIB_Version(ByRef Value As String)
+    msVersion = Value
 End Property
 
 Public Function CompressData(ByRef vxbInput() As Byte, ByRef vxbOutput() As Byte, Optional vnStart As Long = 0, Optional vnMaxSize As Long = 0, Optional veCompressionLevel As ZLIB_CompressionLevelConstants = Z_DEFAULT_COMPRESSION) As Boolean
@@ -408,23 +408,5 @@ Function DeCompressFileToFile(ByVal pth As String, ByVal outFile As String) As B
 
 End Function
 
-Private Function FileExists(path) As Boolean
-  On Error Resume Next
-  If Len(path) = 0 Then Exit Function
-  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then
-     If Err.Number <> 0 Then Exit Function
-     FileExists = True
-  End If
-End Function
-
-Private Function AryIsEmpty(ary) As Boolean
-  On Error GoTo oops
-  Dim x
-  
-    x = UBound(ary)
-    AryIsEmpty = False
-  Exit Function
-oops: AryIsEmpty = True
-End Function
 
 

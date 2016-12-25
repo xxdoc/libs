@@ -70,11 +70,13 @@ Private Sub Form_Load()
     
 
     Dim s As New StringEx
-    
+
     s = "c:\windows\system32"
     s.CollapseConstants
-    
+
     MsgBox s
+    
+
     
         
 

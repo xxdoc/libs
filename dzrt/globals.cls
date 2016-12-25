@@ -28,8 +28,8 @@ Private startTime As Long
 Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () As Long
 Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
-Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
-Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
+Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
 
@@ -73,12 +73,12 @@ End Function
     Sleep_ dwMilliseconds
  End Sub
  
- Sub CopyMemory(Destination, Source, ByVal Length As Long)
-     CopyMemory_ Destination, Source, Length
+ Sub CopyMemory(Destination, Source, ByVal length As Long)
+     CopyMemory_ Destination, Source, length
  End Sub
  
- Function SendMessage(ByVal hwnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-    SendMessage = SendMessage_(hwnd, msg, wParam, lParam)
+ Function SendMessage(ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+    SendMessage = SendMessage_(hwnd, Msg, wParam, lParam)
  End Function
 
 Property Get MAX_LONG() As Long
@@ -184,8 +184,8 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     
 End Sub
 
-Sub SaveMySetting(key, value)
-    SaveSetting App.EXEName, "Settings", key, value
+Sub SaveMySetting(key, Value)
+    SaveSetting App.EXEName, "Settings", key, Value
 End Sub
 
 Function GetMySetting(key, Optional defaultval = "")
@@ -270,26 +270,26 @@ Function AppendFile(path, it) As Boolean  'not binary safe
     AppendFile = (Err.Number = 0)
 End Function
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x
        
     x = UBound(ary)
     ReDim Preserve ary(x + 1)
     
-    If IsObject(value) Then
-        Set ary(x + 1) = value
+    If IsObject(Value) Then
+        Set ary(x + 1) = Value
     Else
-        ary(x + 1) = value
+        ary(x + 1) = Value
     End If
     
     Exit Sub
 init:
     ReDim ary(0)
-    If IsObject(value) Then
-        Set ary(0) = value
+    If IsObject(Value) Then
+        Set ary(0) = Value
     Else
-        ary(0) = value
+        ary(0) = Value
     End If
 End Sub
 
@@ -478,18 +478,18 @@ hell:
 End Function
 
 'supports %x, %c, %s, %d, %10d \t \n %%
-Function printf(ByVal msg As String, ParamArray vars()) As String
+Function printf(ByVal Msg As String, ParamArray vars()) As String
 
     Dim t
     Dim ret As String
     Dim i As Long, base, marker
     
-    msg = Replace(msg, Chr(0), Empty)
-    msg = Replace(msg, "\t", vbTab)
-    msg = Replace(msg, "\n", vbCrLf) 'simplified
-    msg = Replace(msg, "%%", Chr(0))
+    Msg = Replace(Msg, Chr(0), Empty)
+    Msg = Replace(Msg, "\t", vbTab)
+    Msg = Replace(Msg, "\n", vbCrLf) 'simplified
+    Msg = Replace(Msg, "%%", Chr(0))
     
-    t = split(msg, "%")
+    t = split(Msg, "%")
     If UBound(t) <> UBound(vars) + 1 Then
         MsgBox "Format string mismatch.."
         Exit Function
@@ -649,7 +649,7 @@ Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     h2l = (Err.Number = 0)
 End Function
 
-Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As Long = 1, Optional ByVal Length As Long = -1) As String
+Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As Long = 1, Optional ByVal length As Long = -1) As String
     Dim s() As String, chars As String, tmp As String
     On Error Resume Next
     Dim ary() As Byte
@@ -666,7 +666,7 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As 
     End If
     
     If startAt < 1 Then startAt = 1
-    If Length < 1 Then Length = -1
+    If length < 1 Then length = -1
     
     While startAt Mod 16 <> 0
         startAt = startAt - 1
@@ -694,9 +694,9 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As 
             tmp = Empty
             chars = "   "
         End If
-        If Length <> -1 Then
-            Length = Length - 1
-            If Length = 0 Then Exit For
+        If length <> -1 Then
+            length = length - 1
+            If length = 0 Then Exit For
         End If
     Next
     
@@ -960,74 +960,91 @@ Function b64Decode(bArrayStringOrFile, ByRef dataOut As Variant, Optional retAsS
 End Function
 
 Function crc32(bAryOrString) As String
-    
-    Dim c As Long, n As Long, x As Long
-    Dim b() As Byte
-    
-    c = -1
-    If AryIsEmpty(crc_table) Then make_crc_table
 
+    Dim b() As Byte
+    Dim v As Long
+    
+    If Not ensureUTypes() Then Exit Function 'use the C dll version its faster
+    
     If TypeName(bAryOrString) = "Byte()" Then
         b() = bAryOrString
     Else
         b() = StrConv(CStr(bAryOrString), vbFromUnicode, LANG_US)
     End If
+
+    If AryIsEmpty(b) Then Exit Function
     
-    For n = 0 To UBound(b)
-        c = crc_table((c Xor b(n)) And &HFF) Xor RShift(c, 8)
-    Next
+    v = ut_crc32(b(0), UBound(b) + 1)
+    crc32 = Hex(v)
     
-    crc32 = Hex(c Xor &HFFFFFFFF)
+'    vb native implementation...
+'    Dim c As Long, n As Long, x As Long
+'    Dim b() As Byte
+'
+'    c = -1
+'    If AryIsEmpty(crc_table) Then make_crc_table
+'
+'    If TypeName(bAryOrString) = "Byte()" Then
+'        b() = bAryOrString
+'    Else
+'        b() = StrConv(CStr(bAryOrString), vbFromUnicode, LANG_US)
+'    End If
+'
+'    For n = 0 To UBound(b)
+'        c = crc_table((c Xor b(n)) And &HFF) Xor rshift(c, 8)
+'    Next
+'
+'    crc32 = Hex(c Xor &HFFFFFFFF)
     
 End Function
 
-Private Sub make_crc_table()
-    Dim c As Long, n As Long, k As Long
-    
-    ReDim crc_table(256)
-    
-    For n = 0 To 255
-          c = n
-          For k = 0 To 7
-                If c And 1 Then
-                     c = &HEDB88320 Xor RShift(c)
-                Else
-                    c = RShift(c)
-                End If
-           Next
-          crc_table(n) = c
-    Next
-     
-End Sub
+'Private Sub make_crc_table()
+'    Dim c As Long, n As Long, k As Long
+'
+'    ReDim crc_table(256)
+'
+'    For n = 0 To 255
+'          c = n
+'          For k = 0 To 7
+'                If c And 1 Then
+'                     c = &HEDB88320 Xor rshift(c)
+'                Else
+'                    c = rshift(c)
+'                End If
+'           Next
+'          crc_table(n) = c
+'    Next
+'
+'End Sub
 
-Public Function LShift(ByVal value As Long, Optional ByVal Shift As Integer = 1) As Long
-    MakeOnBits
-    If (value And (2 ^ (31 - Shift))) Then 'GoTo OverFlow
-        LShift = ((value And OnBits(31 - (Shift + 1))) * (2 ^ (Shift))) Or &H80000000
-    Else
-        LShift = ((value And OnBits(31 - Shift)) * (2 ^ Shift))
-    End If
-End Function
-
-Public Function RShift(ByVal value As Long, Optional ByVal Shift As Integer = 1) As Long
-    Dim hi As Long
-    MakeOnBits
-    If (value And &H80000000) Then hi = &H40000000
-    RShift = (value And &H7FFFFFFE) \ (2 ^ Shift)
-    RShift = (RShift Or (hi \ (2 ^ (Shift - 1))))
-End Function
-
-Private Sub MakeOnBits()
-    Dim j As Integer, v As Long
-  
-    For j = 0 To 30
-        v = v + (2 ^ j)
-        OnBits(j) = v
-    Next j
-  
-    OnBits(j) = v + &H80000000
-
-End Sub
+'Public Function lshift(ByVal Value As Long, Optional ByVal Shift As Integer = 1) As Long
+'    MakeOnBits
+'    If (Value And (2 ^ (31 - Shift))) Then 'GoTo OverFlow
+'        lshift = ((Value And OnBits(31 - (Shift + 1))) * (2 ^ (Shift))) Or &H80000000
+'    Else
+'        lshift = ((Value And OnBits(31 - Shift)) * (2 ^ Shift))
+'    End If
+'End Function
+'
+'Public Function rshift(ByVal Value As Long, Optional ByVal Shift As Integer = 1) As Long
+'    Dim hi As Long
+'    MakeOnBits
+'    If (Value And &H80000000) Then hi = &H40000000
+'    rshift = (Value And &H7FFFFFFE) \ (2 ^ Shift)
+'    rshift = (rshift Or (hi \ (2 ^ (Shift - 1))))
+'End Function
+'
+'Private Sub MakeOnBits()
+'    Dim j As Integer, v As Long
+'
+'    For j = 0 To 30
+'        v = v + (2 ^ j)
+'        OnBits(j) = v
+'    Next j
+'
+'    OnBits(j) = v + &H80000000
+'
+'End Sub
 
 Public Function inc(ByRef x, Optional Increment As Long = 1)
     x = x + Increment
