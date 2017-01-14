@@ -5,3 +5,6 @@
 *.manifest
 *.idb
 *Log.htm
+*.suo
+*.user
+*.vbw
