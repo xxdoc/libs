@@ -173,11 +173,16 @@ uc_err __stdcall ucs_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callba
 
 unsigned int __stdcall ucs_dynload(char *path){
 #pragma EXPORT
+
     #ifdef DYNLOAD
-		return uc_dyn_load(path, 0);
-	#else
-		return 1;
-	#endif	
+		if(!uc_dyn_load(path, 0)){
+			MessageBox(0,lastDynLoadErr,"DynLoad Failed on:",0);
+			return 0;
+		}
+	#endif 
+	
+	return 1;
+	 
 }
 
 unsigned int __stdcall ucs_version(unsigned int *major, unsigned int *minor){

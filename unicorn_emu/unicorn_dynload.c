@@ -42,7 +42,7 @@
 #define DYNLOAD_HANDLE			HMODULE
 #define DYNLOAD_LOADLIB(path, f)LoadLibraryEx(path, NULL, f)
 #define DYNLOAD_FREELIB(handle)	FreeLibrary(handle)
-#define DYNLOAD_GETFUNC(h, n)	GetProcAddress(h, n)
+//#define DYNLOAD_GETFUNC(h, n)	GetProcAddress(h, n)
 #define DYNLOAD_GETERROR()		GetLastError()
 #else
 #include <dlfcn.h>
@@ -50,13 +50,12 @@
 #define DYNLOAD_HANDLE			void*
 #define DYNLOAD_LOADLIB(path, f)dlopen(path, f)
 #define DYNLOAD_FREELIB(handle)	dlclose(handle)
-#define DYNLOAD_GETFUNC(h, n)	dlsym(h, n)
+//#define DYNLOAD_GETFUNC(h, n)	dlsym(h, n)
 #define DYNLOAD_GETERROR()		dlerror()
 #endif
 
-
 static DYNLOAD_HANDLE g_dyn_handle = NULL;
-
+char* lastDynLoadErr = NULL;
 
 typedef unsigned int (*uc_version_t)(unsigned int *major, unsigned int *minor);
 typedef bool   (*uc_arch_supported_t)(uc_arch arch);
@@ -113,6 +112,28 @@ static uc_context_save_t gp_uc_context_save = NULL;
 static uc_context_restore_t gp_uc_context_restore = NULL;
 static uc_free_t gp_uc_free = NULL;
 
+void* DYNLOAD_GETFUNC(void* hLib, char* import){
+
+	void* ret = NULL;
+
+	#ifdef WINDOWS_DLL
+		ret = GetProcAddress(hLib, import);
+	#else
+		ret = dlsym(hLib, import);
+	#endif
+
+	if(ret == NULL){
+		if(lastDynLoadErr != NULL) free(lastDynLoadErr); 
+		if(import == NULL)
+			lastDynLoadErr = strdup("<null>");
+		else
+			lastDynLoadErr = strdup(import);
+	}
+
+	return ret;
+
+}
+
 bool uc_dyn_load(const char* path, int flags)
 {
     if (path == NULL) {
@@ -132,34 +153,83 @@ bool uc_dyn_load(const char* path, int flags)
     }
 
     gp_uc_version = (uc_version_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_version");
-    gp_uc_arch_supported = (uc_arch_supported_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_arch_supported");
-    gp_uc_open = (uc_open_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_open");
-    gp_uc_close = (uc_close_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_close");
-    gp_uc_query = (uc_query_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_query");
-    gp_uc_errno = (uc_errno_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_errno");
-    gp_uc_strerror = (uc_strerror_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_strerror");
-    gp_uc_reg_write = (uc_reg_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write");
-    gp_uc_reg_read = (uc_reg_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read");
-    gp_uc_reg_write_batch = (uc_reg_write_batch_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write_batch");
-    gp_uc_reg_read_batch = (uc_reg_read_batch_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read_batch");
-    gp_uc_mem_write = (uc_mem_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_write");
-    gp_uc_mem_read = (uc_mem_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_read");
-    gp_uc_emu_start = (uc_emu_start_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_start");
-    gp_uc_emu_stop = (uc_emu_stop_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_stop");
-    gp_uc_hook_add = (uc_hook_add_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_add");
-    gp_uc_hook_del = (uc_hook_del_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_del");
-    gp_uc_mem_map = (uc_mem_map_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map");
-    gp_uc_mem_map_ptr = (uc_mem_map_ptr_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map_ptr");
-    gp_uc_mem_unmap = (uc_mem_unmap_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_unmap");
-    gp_uc_mem_protect = (uc_mem_protect_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_protect");
-    gp_uc_mem_regions = (uc_mem_regions_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_regions");
-    gp_uc_context_alloc = (uc_context_alloc_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_alloc");
-	gp_uc_context_save = (uc_context_save_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_save");
-	gp_uc_context_restore = (uc_context_restore_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_restore");
-	gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_free");
+    if(gp_uc_version == NULL) return false;
 
-	//support old compiled dlls
-	if(gp_uc_free==0) gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_free"); 
+    gp_uc_arch_supported = (uc_arch_supported_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_arch_supported");
+    if(gp_uc_arch_supported == NULL) return false;
+
+    gp_uc_open = (uc_open_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_open");
+    if(gp_uc_open == NULL) return false;
+
+    gp_uc_close = (uc_close_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_close");
+    if(gp_uc_close == NULL) return false;
+
+    gp_uc_query = (uc_query_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_query");
+    if(gp_uc_query == NULL) return false;
+
+    gp_uc_errno = (uc_errno_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_errno");
+    if(gp_uc_errno == NULL) return false;
+
+    gp_uc_strerror = (uc_strerror_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_strerror");
+    if(gp_uc_strerror == NULL) return false;
+
+    gp_uc_reg_write = (uc_reg_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write");
+    if(gp_uc_reg_write == NULL) return false;
+
+    gp_uc_reg_read = (uc_reg_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read");
+    if(gp_uc_reg_read == NULL) return false;
+
+    gp_uc_reg_write_batch = (uc_reg_write_batch_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write_batch");
+    if(gp_uc_reg_write_batch == NULL) return false;
+
+    gp_uc_reg_read_batch = (uc_reg_read_batch_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read_batch");
+    if(gp_uc_reg_read_batch == NULL) return false;
+
+    gp_uc_mem_write = (uc_mem_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_write");
+    if(gp_uc_mem_write == NULL) return false;
+
+    gp_uc_mem_read = (uc_mem_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_read");
+    if(gp_uc_mem_read == NULL) return false;
+
+    gp_uc_emu_start = (uc_emu_start_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_start");
+    if(gp_uc_emu_start == NULL) return false;
+
+    gp_uc_emu_stop = (uc_emu_stop_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_stop");
+    if(gp_uc_emu_stop == NULL) return false;
+
+    gp_uc_hook_add = (uc_hook_add_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_add");
+    if(gp_uc_hook_add == NULL) return false;
+
+    gp_uc_hook_del = (uc_hook_del_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_del");
+    if(gp_uc_hook_del == NULL) return false;
+
+    gp_uc_mem_map = (uc_mem_map_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map");
+    if(gp_uc_mem_map == NULL) return false;
+
+    gp_uc_mem_map_ptr = (uc_mem_map_ptr_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map_ptr");
+    if(gp_uc_mem_map_ptr == NULL) return false;
+
+    gp_uc_mem_unmap = (uc_mem_unmap_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_unmap");
+    if(gp_uc_mem_unmap == NULL) return false;
+
+    gp_uc_mem_protect = (uc_mem_protect_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_protect");
+    if(gp_uc_mem_protect == NULL) return false;
+
+    gp_uc_mem_regions = (uc_mem_regions_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_regions");
+    if(gp_uc_mem_regions == NULL) return false;
+
+    gp_uc_context_alloc = (uc_context_alloc_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_alloc");
+    if(gp_uc_context_alloc == NULL) return false;
+
+	gp_uc_context_save = (uc_context_save_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_save");
+    if(gp_uc_context_save == NULL) return false;
+
+	gp_uc_context_restore = (uc_context_restore_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_restore");
+    if(gp_uc_context_restore == NULL) return false;
+
+	gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_free");
+    if(gp_uc_free == NULL) gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_free"); //support old compiled dlls
+    if(gp_uc_free == NULL) return false;
 
     return true;
 }

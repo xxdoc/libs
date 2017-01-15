@@ -39,6 +39,7 @@
 extern "C" {
 #endif
 
+extern char* lastDynLoadErr;
 
 /*
  Dynamically load shared library.
