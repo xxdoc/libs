@@ -368,11 +368,11 @@ int __stdcall disasm_addr(uc_engine *uc, uint32_t va, char *str, int bufLen){
 
 
 //maps and write in one shot, auto handles alignment..
-uc_err __stdcall mem_write_block(uc_engine *uc, uint32_t address, void* data, uint32_t size, uint32_t perm){
+uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint32_t size, uint32_t perm){
 #pragma EXPORT
 
 	uc_err x;
-	uint32_t base = address;
+	uint64_t base = address;
     uint32_t sz = size;
 
 	while(base % 0x1000 !=0){
@@ -391,38 +391,6 @@ uc_err __stdcall mem_write_block(uc_engine *uc, uint32_t address, void* data, ui
 	x = uc_mem_write(uc, address, (void*)data, size);
 	if(x) return x;
 	return UC_ERR_OK;
-}
-
-
-int __stdcall dump_flags(uint32_t eflags, char *buf, int bufLen){
-#pragma EXPORT
-
-	char tmp[300]; 
-
-	//http://www.c-jump.com/CIS77/ASM/Instructions/I77_0050_eflags.htm      
-    const char *n[] = { "C ", 0, "P ", 0 , "A " , 0, "Z ", "S ",
-		                "T ","I ","D ","O ","IOPL ","IOPL ","NT ",0, 
-						"RF ", "VM ", "AC ", "VIF ", "VIP " , "ID ",0};
-
-	sprintf(tmp, "EFL %x ", eflags);
-
-	for (int i=0;i<22;i++ ){
-		if ( eflags & (1 << i) ){
-			if(n[i]!=0) 
-				strcat(tmp, n[i]);
-		}
-	} 
-	
-	/*
-	int jt = isJumpTaken(uc, eip);
-	if(jt >=0 ){
-		if(jt==0) printf(" (jump not taken)"); else printf(" (jump taken)");
-	}*/
-	
-	int retLen = strlen(tmp)+1;
-	if(retLen < bufLen)	strncpy(buf,tmp,bufLen);
-	return retLen;
-
 }
 
 void addStr(_CollectionPtr p , char* str){

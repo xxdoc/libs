@@ -41,8 +41,7 @@ Option Explicit
 '
 ' bonus:
 '        disasm_addr     (32bit only uses libdasm)
-'        mem_write_block (map and write data)
-'        dump_flags      (decode eflags value to human readable string)
+'        mem_write_block (map and write data auto handles alignment)
 '        get_memMap      (wrapper for uc_mem_regions)
 '
 '
@@ -2365,11 +2364,8 @@ Public Declare Function disasm_addr Lib "ucvbshim.dll" (ByVal hEngine As Long, B
 
 
 'simplified access to map and write data to emu memory
-'uc_err __stdcall mem_write_block(uc_engine *uc, uint32_t address, void* data, uint32_t size, uint32_t perm){
-Public Declare Function mem_write_block Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Long, ByRef data As Byte, ByVal size As Long, ByVal perm As Long) As uc_err
-
-'int __stdcall dumpFlags(uint32_t eflags, char *buf, int bufLen){
-Public Declare Function dump_flags Lib "ucvbshim.dll" (ByVal eflags As Long, ByVal buf As String, ByVal size As Long) As Long
+'uc_err __stdcall mem_write_block(uc_engine *uc, uint64_t address, void* data, uint32_t size, uint32_t perm){
+Public Declare Function mem_write_block Lib "ucvbshim.dll" (ByVal hEngine As Long, ByVal addr As Currency, ByRef data As Byte, ByVal size As Long, ByVal perm As Long) As uc_err
 
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As String) As Long
 Private Declare Function lstrlen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Long) As Long
@@ -2438,9 +2434,6 @@ Function memType2str(t As uc_mem_type)
     If t = UC_MEM_READ_AFTER Then memType2str = "Memory is read from (successful access)"
     
 End Function
-
- 
-
 
 
 

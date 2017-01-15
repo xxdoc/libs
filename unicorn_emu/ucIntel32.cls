@@ -246,14 +246,28 @@ Function regDump(Optional includeState As Boolean = True) As String
 End Function
 
 Function dumpFlags() As String
-    Dim buf As String
-    Dim sz As Long
     
-    buf = String(500, Chr(0))
-    sz = dump_flags(Me.eflags, buf, 500)
-    If sz > 0 And sz < Len(buf) Then
-        dumpFlags = VBA.Left(buf, sz)
-    End If
+    Dim ret() As String
+    Dim n As Variant
+    Dim i As Long
+    Dim flags As Long
+    
+    'http://www.c-jump.com/CIS77/ASM/Instructions/I77_0050_eflags.htm
+    n = Array("C ", 0, "P ", 0, "A ", 0, "Z ", "S ", _
+              "T ", "I ", "D ", "O ", "IOPL ", "IOPL ", "NT ", 0, _
+              "RF ", "VM ", "AC ", "VIF ", "VIP ", "ID ", 0)
+
+    flags = Me.eflags
+    push ret, "EFL " & Hex(flags)
+
+    For i = 0 To 21
+        If flags And ULong(1, i, op_lsh) Then
+            If n(i) <> 0 Then push ret, n(i)
+        End If
+    Next
+    
+    dumpFlags = Join(ret, "  ")
+    
         
 End Function
 
@@ -458,13 +472,13 @@ End Function
 'this function maps and writes (note 32bit only right now)
 Function writeBlock(address As Long, buf() As Byte, Optional perm As uc_prot = UC_PROT_ALL) As Boolean
     
-    'Dim addr As Currency
+    Dim addr As Currency
     Dim e As uc_err
     
-    'addr = lng2Cur(address)
+    addr = lng2Cur(address)
     
     errMsg = Empty
-    e = mem_write_block(uc, address, buf(0), UBound(buf) + 1, perm)
+    e = mem_write_block(uc, addr, buf(0), UBound(buf) + 1, perm)
     If e <> uc_err_ok Then
         errMsg = err2str(e)
         Exit Function

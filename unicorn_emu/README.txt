@@ -41,8 +41,7 @@ License:        Apache
 '
 ' bonus:
 '        disasm_addr     (conditional compile - uses libdasm)
-'        mem_write_block (map and write data)
-'        dump_flags      (decode eflags value to human readable string)
+'        mem_write_block (map and write data auto handles alignment)
 '        get_memMap      (wrapper for uc_mem_regions)
 '
 

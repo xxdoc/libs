@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   6720
    ScaleWidth      =   14220
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command2 
+      Caption         =   "Command2"
+      Height          =   525
+      Left            =   11730
+      TabIndex        =   2
+      Top             =   6150
+      Width           =   1245
+   End
    Begin VB.CommandButton Command1 
       Caption         =   "Copy"
       Height          =   465
@@ -48,7 +56,6 @@ Option Explicit
 Public WithEvents uc As ucIntel32
 Attribute uc.VB_VarHelpID = -1
 Dim hContext As Long
-
 
 'test sample ported from: (requires unicorn 1.0 for success)
 '   https://github.com/unicorn-engine/unicorn/blob/master/tests/unit/test_pc_change.c
@@ -139,9 +146,9 @@ Private Sub Form_Load()
     List1.AddItem uc.dumpFlags
     If ecx <> 6 Then List1.AddItem "failed to change eip in hook!"
     
-    ReDim b(100)
-    uc.writeBlock &H2000, b(), UC_PROT_READ Or UC_PROT_WRITE
-    
+    ReDim b(100) 'this will handle mapping and alignment automatically..
+    uc.writeBlock &H2001, b(), UC_PROT_READ Or UC_PROT_WRITE
+     
     List1.AddItem "Initilizing sharedMemory with: aabbccddeeff0011223344556677889900"
     sharedMemory() = toBytes("aabbccddeeff0011223344556677889900")
     ReDim Preserve sharedMemory(&H1000) 'must be 4k bytes aligned...
