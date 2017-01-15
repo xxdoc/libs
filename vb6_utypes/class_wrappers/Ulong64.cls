@@ -86,6 +86,11 @@ Property Let Value(v)
 
 End Property
 
+'this way you can .setval(x).add(y)
+Function setVal(v) As ULong64
+    Set setVal = Me
+    Value = v
+End Function
 
 Property Get MAX_SIGNED64() As String
      If useTick Then
@@ -121,7 +126,7 @@ Property Get is32BitSafe() As Boolean
 End Property
 
 Property Get isNegBitSet() As Boolean
-    isNegBitSet = (Left(toString(msigned), 1) = "-")
+    isNegBitSet = (Left(toString(mSigned), 1) = "-")
 End Property
 
 Property Get hi() As Long
@@ -144,13 +149,13 @@ Property Let lo(x As Long)
     SetLongs a, x
 End Property
 
-Function toString(Optional m As modes = mhex) As String
+Function toString(Optional m As modes = mHex) As String
     Dim tmp As String, i As Long, lo As String, hi As String, a As Long
     tmp = Space(64)
     i = U642Str(rawValue, tmp, 64, m)
     If i > 0 Then
         tmp = UCase(Mid(tmp, 1, i))
-        If m = mhex Then
+        If m = mHex Then
             If padLeft Then
                 tmp = Right("0000000000000000" & tmp, 16)
             End If
@@ -169,19 +174,19 @@ Function toString(Optional m As modes = mhex) As String
 End Function
 
 
-Function fromString(ByVal s As String, Optional m As modes = mhex) As Boolean
+Function fromString(ByVal s As String, Optional m As modes = mHex) As Boolean
     On Error GoTo hell
     s = Trim(s)
     s = Replace(s, "`", Empty)
     
-    If Left(s, 1) = "-" Then m = msigned
+    If Left(s, 1) = "-" Then m = mSigned
     
     If LCase(Left(s, 2)) = "0x" Or LCase(Left(s, 2)) = "&h" Or LCase(Left(s, 2)) = "\x" Then
-        m = mhex
+        m = mHex
         s = Mid(s, 3)
     End If
     
-    rawValue = Str264(s, IIf(m = mhex, 16, 10))
+    rawValue = Str264(s, IIf(m = mHex, 16, 10))
     
     fromString = True
     Exit Function
@@ -210,7 +215,7 @@ Function raw_op(operand2, operation As op) As ULong64
         tmp.SetLongs 0, CLng(operand2)
     End If
     
-    If mode = msigned Then
+    If mode = mSigned Then
         ret.rawValue = S64(rawValue, tmp.rawValue, operation)
     Else
         ret.rawValue = U64(rawValue, tmp.rawValue, operation)
@@ -231,6 +236,7 @@ Private Sub Class_Initialize()
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
+'    If ensureUTypes() Then hLib = modGeneral.hUTypes
     padLeft = True
 End Sub
 

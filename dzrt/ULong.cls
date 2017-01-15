@@ -71,6 +71,11 @@ Property Let Value(v)
 
 End Property
 
+'this way you can .setval(x).add(y)
+Function setVal(v) As ULong
+    Set setVal = Me
+    Value = v
+End Function
 
 Property Get MAX_SIGNED() As String
      MAX_SIGNED = "7FFFFFFF"

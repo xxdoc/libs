@@ -48,6 +48,12 @@ Private Declare Function ubop Lib "utypes.dll" Alias "UByte" (ByVal v1 As Byte, 
 Dim hLib As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
+'this way you can .setval(x).add(y)
+Function setVal(v) As UByte
+    Set setVal = Me
+    Value = v
+End Function
+
 'as a property, the IDE can show it results as a tooltip when debugging
 Function toString(Optional asHex As Boolean = True) As String
     Dim tmp As String

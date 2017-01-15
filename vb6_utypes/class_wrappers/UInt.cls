@@ -35,8 +35,7 @@ Attribute VB_Exposed = False
 'End Enum
 
 Public use0x As Boolean
-Public rawValue As Integer
-Attribute rawValue.VB_VarUserMemId = 0
+Public rawInt As Integer
 Public padLeft As Boolean
 
 'unsigned math operations
@@ -53,26 +52,33 @@ Dim hLib As Long
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
 Property Get Value()
-Attribute Value.VB_UserMemId = 0
-    Value = rawValue
+    Value = rawInt
 End Property
 
 'this is the default method of the class
 Property Let Value(v)
-    
+    Dim tmp As Integer
+
     If TypeName(v) = "String" Then
         fromString v
     ElseIf TypeName(v) = "UInt" Then
-        rawValue = v.Value
+        rawInt = v.Value
     ElseIf TypeName(v) = "Integer" Or TypeName(v) = "Long" Or TypeName(v) = "Currency" Then
-        CopyMemory rawValue, VarPtr(v), 2
+        CopyMemory tmp, VarPtr(v), 2
+        rawInt = tmp
     ElseIf TypeName(v) = "Byte" Then
-        rawValue = v
+        rawInt = v
     Else
         Err.Raise 1, "Cint.Value", "Unsupported conversion type toint: " & TypeName(v)
     End If
 
 End Property
+
+'this way you can .setval(x).add(y)
+Function setVal(v) As UInt
+    Set setVal = Me
+    Value = v
+End Function
 
 Property Get MAX_SIGNED() As String
      MAX_SIGNED = "7FFF"
@@ -90,46 +96,48 @@ Property Get MAX_UNSIGNED() As String
 End Property
 
 Property Get isNegBitSet() As Boolean
-    isNegBitSet = (Left(CStr(rawValue), 1) = "-")
+    isNegBitSet = (Left(CStr(rawInt), 1) = "-")
 End Property
 
-'as a property, the IDE can show it results as a tooltip when debugging
-Function toString(Optional m As modes = mhex) As String
+''as a property, the IDE can show it results as a tooltip when debugging
+Function toString(Optional m As modes = mHex) As String
     Dim tmp As String
-    
-    If m = munSigned Then
-        toString = GetUnsigned(rawValue)
-    ElseIf m = msigned Then
-        toString = rawValue
+
+    If m = mUnsigned Then
+        toString = GetUnsigned(rawInt)
+    ElseIf m = mSigned Then
+        toString = rawInt
     Else
-        tmp = Hex(rawValue)
-         
+        tmp = Hex(rawInt)
+
         If padLeft Then
             tmp = Right("0000" & tmp, 4)
         End If
-             
+
         If use0x Then tmp = "0x" & tmp
-        
+
         toString = tmp
     End If
-    
+
 End Function
 
 Function fromString(ByVal s As String, Optional forceHex As Boolean = True) As Boolean
-    Dim tmp As Long
+    Dim tmp As Long, tint As Integer
+
     On Error Resume Next
     s = Trim(s)
-    
+
     If Left(s, 1) = "-" Then forceHex = False
-    
+
     If LCase(Left(s, 2)) = "0x" Or LCase(Left(s, 2)) = "&h" Or LCase(Left(s, 2)) = "\x" Then
         forceHex = True
         s = Mid(s, 3)
     End If
-     
+
     tmp = Str2Long(s, IIf(forceHex, 16, 10))
-    CopyMemory rawValue, VarPtr(tmp), 2
-     
+    CopyMemory tint, VarPtr(tmp), 2
+    rawInt = tint
+
     fromString = True
     Exit Function
 hell:
@@ -146,19 +154,21 @@ End Function
 Function raw_op(operand2, operation As op) As UInt
     Dim ret As New UInt
     Dim v2 As Long
-    
+    'Dim tmp As Integer
+
     If TypeName(operand2) = "UInt" Then
         v2 = operand2.Value
     Else
         v2 = CInt(operand2)
     End If
-    
+
+    'tmp = rawInt
     ret.use0x = Me.use0x
     ret.padLeft = Me.padLeft
-    ret.Value = uiop(rawValue, v2, operation)
-    
+    ret.Value = uiop(rawInt, v2, operation)
+
     Set raw_op = ret
-    
+'
 End Function
 
 Private Sub Class_Initialize()
@@ -166,6 +176,7 @@ Private Sub Class_Initialize()
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
+'    If ensureUTypes() Then hLib = modGeneral.hUTypes
     padLeft = True
 End Sub
 

@@ -141,6 +141,10 @@ Private Sub cmdUlong_Click()
     List1.AddItem "60 >> 1 = " & b & " = 30?"
     List1.AddItem String(10, "-")
     
+    Set b = a.setVal(2).lshift(1)
+    List1.AddItem "2 << 1 = " & b & " = 4?"
+    List1.AddItem String(10, "-")
+    
     a = 60
     a = a.rshift(2).Value
     List1.AddItem "60 >> 2 = " & a & " = 15?"
@@ -197,13 +201,13 @@ Private Sub cmdx64Test_Click()
     
     List1.Clear
     a.fromString -1
-    List1.AddItem "-1 = " & a.toString(msigned)
+    List1.AddItem "-1 = " & a.toString(mSigned)
     
     a = 0
     a = a.subtract(1)
-    List1.AddItem "0-1 signed = " & a.toString(msigned) & " =? -1"
-    List1.AddItem "0-1 unsigned = " & a.toString(munSigned) & " =? 18446744073709551615"
-    List1.AddItem "0-1 hex = " & a.toString(mhex) & " =?  FFFFFFFFFFFFFFFF"
+    List1.AddItem "0-1 signed = " & a.toString(mSigned) & " =? -1"
+    List1.AddItem "0-1 unsigned = " & a.toString(mUnsigned) & " =? 18446744073709551615"
+    List1.AddItem "0-1 hex = " & a.toString(mHex) & " =?  FFFFFFFFFFFFFFFF"
     List1.AddItem String(10, "-")
     
     a.SetLongs &H11223344, &H55667788
@@ -215,18 +219,18 @@ Private Sub cmdx64Test_Click()
     
     a.SetLongs 0, 1
     Set b = a.lshift(60)
-    List1.AddItem "1 << 60 (unsigned) = " & b.toString(munSigned) & " =? 1152921504606846976"
+    List1.AddItem "1 << 60 (unsigned) = " & b.toString(mUnsigned) & " =? 1152921504606846976"
     List1.AddItem "hex: " & b.toString & " =? 1000000000000000"
     List1.AddItem String(10, "-")
     
     a.fromString a.MAX_UNSIGNED64
     Set b = a.add(1)
-    List1.AddItem "MAX_UNSIGNED64 + 1 = " & b.toString(munSigned)
+    List1.AddItem "MAX_UNSIGNED64 + 1 = " & b.toString(mUnsigned)
     List1.AddItem String(10, "-")
 
     a.fromString a.MAX_SIGNED64
     Set b = a.add(1)
-    List1.AddItem "MAX_SIGNED64 + 1 = " & b.toString(msigned)
+    List1.AddItem "MAX_SIGNED64 + 1 = " & b.toString(mSigned)
     List1.AddItem "isNegBitSet = " & b.isNegBitSet
     List1.AddItem "a > b " & (a.Value > b.Value)
     List1.AddItem "a < b " & (a.Value < b.Value)
@@ -235,7 +239,7 @@ Private Sub cmdx64Test_Click()
     
     a.fromString a.MIN_SIGNED64
     Set b = a.subtract(1)
-    List1.AddItem "MIN_SIGNED64 - 1 = " & b.toString(msigned)
+    List1.AddItem "MIN_SIGNED64 - 1 = " & b.toString(mSigned)
     List1.AddItem "native a > b ? " & (a.Value > b.Value)
     List1.AddItem "native a < b ? " & (a.Value < b.Value)
     List1.AddItem "unsigned  a < b ? " & a.lessThan(b)
@@ -250,7 +254,7 @@ Private Sub cmdx64Test_Click()
     List1.AddItem String(10, "-")
     
     a.SetLongs 0, 32
-    List1.AddItem a.toString(msigned) & " is 32bit safe? " & a.is32BitSafe
+    List1.AddItem a.toString(mSigned) & " is 32bit safe? " & a.is32BitSafe
     List1.AddItem String(10, "-")
 
     a.SetLongs 1, 32

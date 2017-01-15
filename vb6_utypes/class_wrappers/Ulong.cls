@@ -71,6 +71,11 @@ Property Let Value(v)
 
 End Property
 
+'this way you can .setval(x).add(y)
+Function setVal(v) As ULong
+    Set setVal = Me
+    Value = v
+End Function
 
 Property Get MAX_SIGNED() As String
      MAX_SIGNED = "7FFFFFFF"
@@ -92,12 +97,12 @@ Property Get isNegBitSet() As Boolean
 End Property
 
 'as a property, the IDE can show it results as a tooltip when debugging
-Function toString(Optional m As modes = mhex) As String
+Function toString(Optional m As modes = mHex) As String
     Dim tmp As String
     
-    If m = munSigned Then
+    If m = mUnsigned Then
         toString = GetUnsigned(rawValue)
-    ElseIf m = msigned Then
+    ElseIf m = mSigned Then
         toString = rawValue
     Else
         tmp = Hex(rawValue)
@@ -162,6 +167,7 @@ Private Sub Class_Initialize()
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
     If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
+'    If ensureUTypes() Then hLib = modGeneral.hUTypes
     padLeft = True
 End Sub
 

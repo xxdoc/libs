@@ -86,6 +86,11 @@ Property Let Value(v)
 
 End Property
 
+'this way you can .setval(x).add(y)
+Function setVal(v) As ULong64
+    Set setVal = Me
+    Value = v
+End Function
 
 Property Get MAX_SIGNED64() As String
      If useTick Then
