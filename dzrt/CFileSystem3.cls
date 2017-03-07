@@ -153,7 +153,7 @@ Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath 
    
    fs = Dir(folderPath & Filter, vbHidden Or vbNormal Or vbReadOnly Or vbSystem)
    While fs <> ""
-     If fs <> "" Then fnames.Add IIf(retFullPath, folderPath & fs, fs)
+     If fs <> "" Then fnames.add IIf(retFullPath, folderPath & fs, fs)
      fs = Dir()
    Wend
    
@@ -164,7 +164,7 @@ Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath 
         Next
         If Not retFullPath Then
             For Each f In tmp
-                fnames.Add Replace(f, folderPath, Empty) 'make relative path from base
+                fnames.add Replace(f, folderPath, Empty) 'make relative path from base
             Next
         End If
     End If
@@ -182,7 +182,7 @@ Private Sub FolderEngine(fldrpath, c As Collection, Optional Filter = "*")
     Set folders = GetSubFolders(fldrpath)
         
     For Each f In files
-        c.Add f
+        c.add f
     Next
     
     For Each f In folders
@@ -210,7 +210,7 @@ Function GetSubFolders(folderPath, Optional retFullPath = True, Optional recursi
         If Left(fd, 1) <> "." Then
             atr = GetAttr(folderPath & fd) 'things like pagefile.sys that are locked can throw an error...
             If (atr And vbDirectory) = vbDirectory Then
-               tmp.Add folderPath & fd 'always add full path we filter latter..(needed for recursive option)
+               tmp.add folderPath & fd 'always add full path we filter latter..(needed for recursive option)
             End If
         End If
         fd = Dir()
@@ -224,17 +224,17 @@ Function GetSubFolders(folderPath, Optional retFullPath = True, Optional recursi
 
    For Each fd In tmp
         If retFullPath = True Then
-            fnames.Add fd
+            fnames.add fd
         Else
-            fnames.Add Replace(fd, folderPath, Empty) 'make relative to parent dir
+            fnames.add Replace(fd, folderPath, Empty) 'make relative to parent dir
         End If
    Next
         
    For Each fd In tmp2
         If retFullPath = True Then
-            fnames.Add fd
+            fnames.add fd
         Else
-            fnames.Add Replace(fd, folderPath, Empty) 'make relative to parent dir
+            fnames.add Replace(fd, folderPath, Empty) 'make relative to parent dir
         End If
    Next
    
@@ -244,7 +244,7 @@ Private Sub SubFoldersInternal(pc As Collection, parentDir)
     Dim c As New Collection, d
     Set c = GetSubFolders(parentDir)
     For Each d In c
-        pc.Add d
+        pc.add d
         SubFoldersInternal pc, d
         DoEvents
     Next
@@ -286,7 +286,7 @@ Function GetParentFolder(path)
         my_path = Mid(my_path, 1, Len(my_path) - 1)
     Wend
     
-    tmp = Split(my_path, "\")
+    tmp = split(my_path, "\")
     tmp(UBound(tmp)) = Empty
     my_path = Replace(Join(tmp, "\"), "\\", "\")
     If VBA.Right(my_path, 1) = "\" Then my_path = Mid(my_path, 1, Len(my_path) - 1)
@@ -315,7 +315,7 @@ Function FileNameFromPath(fullpath)
     marker = "\"
     If InStr(fullpath, "/") > 0 Then marker = "/"
     If InStr(fullpath, marker) > 0 Then
-        tmp = Split(fullpath, marker)
+        tmp = split(fullpath, marker)
         FileNameFromPath = CStr(tmp(UBound(tmp)))
     Else
         FileNameFromPath = CStr(fullpath) 'maybe its just a file name already..
@@ -354,7 +354,7 @@ End Sub
 Function GetExtension(path)
     Dim tmp()
     Dim ub
-    tmp = Split(path, "\")
+    tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
        GetExtension = Mid(ub, InStrRev(ub, "."), Len(ub))
@@ -366,7 +366,7 @@ End Function
 Function GetBaseName(path)
     Dim tmp()
     Dim ub
-    tmp = Split(path, "\")
+    tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
        GetBaseName = Mid(ub, 1, InStrRev(ub, ".") - 1)
@@ -390,7 +390,7 @@ End Function
 Function SafeFileName(proposed)
   Dim badChars, bad(), i As Long
   badChars = ">,<,&,/,\,:,|,?,*,"""
-  bad = Split(badChars, ",")
+  bad = split(badChars, ",")
   For i = 0 To UBound(bad)
     proposed = Replace(proposed, bad(i), "")
   Next
@@ -482,7 +482,7 @@ Function buildPath(folderPath)
     
     Dim tmp(), build, i As Long
     
-    tmp = Split(folderPath, "\")
+    tmp = split(folderPath, "\")
     build = tmp(0)
     For i = 1 To UBound(tmp)
         build = build & "\" & tmp(i)
@@ -507,7 +507,7 @@ Function ReadFile(filename) As Variant
    ReadFile = temp
 End Function
 
-Function writeFile(path, it) As Boolean
+Function WriteFile(path, it) As Boolean
     Dim f As Long
     Dim b() As Byte
     On Error Resume Next
@@ -521,11 +521,11 @@ Function writeFile(path, it) As Boolean
     End If
     
     f = FreeFile
-    Open path For Binary As #f
-    Put #f, , it
+    Open path For Binary As f
+    Put f, , b
     Close f
     
-    writeFile = (Err.Number = 0)
+    WriteFile = (Err.Number = 0)
     
 End Function
 
@@ -589,13 +589,13 @@ Private Sub delTree(folderPath, Optional force = True)
    Set sfi = GetFolderFiles(folderPath)
    Set sfo = GetSubFolders(folderPath)
    
-   If sfi.Count > 0 And force = True Then
+   If sfi.count > 0 And force = True Then
         For Each f In sfi
             DeleteFile f
         Next
    End If
    
-   If sfo.Count > 0 And force = True Then
+   If sfo.count > 0 And force = True Then
         For Each f In sfo
             Call DeleteFolder(f, True)
         Next
@@ -603,14 +603,14 @@ Private Sub delTree(folderPath, Optional force = True)
    
 End Sub
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init: ReDim ary(0): ary(0) = value
+init: ReDim ary(0): ary(0) = Value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean
@@ -624,7 +624,7 @@ End Function
 
 Function FolderName(folderPath)
     Dim ret, tmp()
-    tmp = Split(folderPath, "\")
+    tmp = split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _
         Else ret = tmp(UBound(tmp) - 1)
@@ -641,7 +641,7 @@ Public Function GetShortName(sFile As String) As String
     
     'the path must actually exist to get the short path name !!
     If Not FileExists(sFile) Then
-        writeFile sFile, ""
+        WriteFile sFile, ""
         iCreated = True
     End If
     
@@ -659,18 +659,18 @@ End Function
 Function GetDrives() As Collection
     Dim c As New Collection
     Dim strDrives As String
-    Dim result As Long
+    Dim Result As Long
     Dim pos As Long
     Dim drive As String
     
     Set GetDrives = c
     
     'get requireed buffer length and create buffer
-    result = GetLogicalDriveStrings(0, strDrives)
-    strDrives = String(result, Chr(0))
+    Result = GetLogicalDriveStrings(0, strDrives)
+    strDrives = String(Result, Chr(0))
 
-    result = GetLogicalDriveStrings(Len(strDrives), strDrives)
-    If result = 0 Then Exit Function
+    Result = GetLogicalDriveStrings(Len(strDrives), strDrives)
+    If Result = 0 Then Exit Function
     
     ' Walk through the logical drive string and display the drive
     ' letters. The logical drive string is a null seperated
@@ -679,7 +679,7 @@ Function GetDrives() As Collection
     Do While Not Mid$(strDrives, pos, 1) = Chr(0)
         drive = Mid$(strDrives, pos, 3)
         pos = pos + 4
-        c.Add UCase(drive) & " " & DriveTypeString(drive)
+        c.add UCase(drive) & " " & DriveTypeString(drive)
     Loop
     
 End Function

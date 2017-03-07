@@ -611,6 +611,59 @@ Public Function BuildConnectionString(dbServer As dbServers, dbName As String, O
     
 End Function
 
+Function buildInsert(tblName, fields, ParamArray params()) As String
+
+    Dim sSql As String, sTmp As String, i As Integer, x
+    Dim values()
+    
+    values() = params() 'force byval
+    sSql = "Insert into " & tblName & " (" & fields & ") VALUES(____)"
+    
+    Dim tn As String
+    For i = 0 To UBound(values)
+        tn = LCase(TypeName(values(i)))
+        If tn = "string" Or tn = "textbox" Or tn = "date" Then
+            values(i) = "'" & Replace(values(i), "'", "''") & "'"
+        End If
+    Next
+    
+    sTmp = Join(values, ",")
+    buildInsert = Replace(sSql, "____", sTmp)
+     
+    
+End Function
+
+Function buildUpdate(tblName, criteria, fields, ParamArray params()) As String
+
+    Dim sSql As String, sTmp As String, i As Integer
+    Dim values()
+    
+    values() = params() 'force byval
+    sSql = "Update " & tblName & " SET ____" & " " & criteria
+    
+    Dim tn As String
+    For i = 0 To UBound(values)
+        tn = LCase(TypeName(values(i)))
+        If tn = "string" Or tn = "textbox" Or tn = "date" Then
+            values(i) = "'" & Replace(values(i), "'", "''") & "'"
+        End If
+    Next
+    
+    Dim tmp() As String
+    tmp() = split(fields, ",")
+    
+    If UBound(tmp()) <> UBound(values()) Then MsgBox "Err in update fields/values"
+    
+    For i = 0 To UBound(tmp)
+        tmp(i) = tmp(i) & "=" & values(i)
+    Next
+    
+    sTmp = Join(tmp, ",")
+    buildUpdate = Replace(sSql, "____", sTmp)
+    
+End Function
+
+
 ''endian swap and return spaced out hex string
 'Private Function lng2Hex(x As Long) As String
 '    Dim b(1 To 4) As Byte
