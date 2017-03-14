@@ -32,7 +32,7 @@ Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destinatio
 Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
-
+ 
 'all but jet are odbc jet is ole
 Public Enum dbServers
     Access
@@ -44,8 +44,10 @@ Public Enum dbServers
     dBase
 End Enum
 
-Public Enum dzCompressTypes
-    dz_Zlib = 0
+Public Enum CompressTypes
+    ct_Zlib = 0
+    ct_LZNT1 = 1      'so the compress seems to work..but is 1 byte short?
+    ct_LZNT1_MAX = 2  'the decompress works with other known samples, but not with one compressed with our compress..havent been able to fix the error yet!
 End Enum
 
 Private OnBits(0 To 31) As Long
@@ -56,6 +58,122 @@ Public hash As New CWinHash
 Public fso As New CFileSystem3
 Public cmdline As New CCmdLine
 Public zlib As New CZlib
+
+'this function will convert any of the following to a byte array:
+'   read a file if path supplied and allowFilePaths = true
+'   byte(), integer() or long() arrays
+'   all other data types it will attempt to convert them to string, then to byte array
+'   if the data type you pass can not be converted with cstr() it will throw an error.
+'   no other types make sense to support explicitly
+'   this assumes all arrays are 0 based..
+Function LoadData(fileStringOrByte, Optional allowFilePaths As Boolean = True) As Byte()
+    
+    Dim f As Long
+    Dim size As Long
+    Dim b() As Byte
+    Dim l() As Long    ' must cast to specific array type or
+    Dim i() As Integer ' else you are reading part of the variant structure..
+    
+    If allowFilePaths And FileExists(fileStringOrByte) Then
+         f = FreeFile
+         Open fileStringOrByte For Binary As f
+         ReDim b(LOF(f) - 1)
+         Get f, , b()
+         Close f
+    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
+        b() = fileStringOrByte
+    ElseIf TypeName(fileStringOrByte) = "Integer()" Then
+        i() = fileStringOrByte
+        ReDim b((UBound(i) * 2) - 1)
+        CopyMemory VarPtr(b(0)), VarPtr(i(0)), UBound(b) + 1
+    ElseIf TypeName(fileStringOrByte) = "Long()" Then
+        l() = fileStringOrByte
+        ReDim b((UBound(l) * 4) - 1)
+        CopyMemory VarPtr(b(0)), VarPtr(l(0)), UBound(b) + 1
+    Else
+        b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
+    End If
+    
+    LoadData = b()
+    
+End Function
+
+Function cast(varIn, varOut, Optional allowFilePaths As Boolean = False) As Boolean
+    On Error Resume Next
+    Dim b() As Byte
+    Dim i() As Integer
+    Dim l() As Long
+    Dim c() As Currency
+    Dim d() As Double
+    
+    Dim sz As Long
+    Dim bytes As Long
+    
+    On Error GoTo hell
+    
+    If TypeName(varIn) = "Object" Or TypeName(varOut) = "Object" Then
+        Err.Raise "Invalid use of cast object type not supported"
+    End If
+    
+    If Not allowFilePaths Then
+        If TypeName(varIn) = TypeName(varOut) Then
+            varOut = varIn
+            Exit Function
+        End If
+    End If
+        
+    b() = LoadData(varIn, allowFilePaths)
+    bytes = UBound(b) + 1
+    
+    If TypeName(varOut) = "String" Or TypeName(varOut) = "Variant" Then
+        varOut = StrConv(b, vbUnicode, LANG_US)
+    ElseIf TypeName(varOut) = "Byte()" Then
+        varOut = b()
+    ElseIf TypeName(varOut) = "Integer()" Then
+        If bytes Mod 2 <> 0 Then
+            sz = bytes + (bytes Mod 2)
+            ReDim Preserve b(sz)
+        End If
+        ReDim i((bytes / 2) - 1)
+        CopyMemory_ ByVal VarPtr(i(0)), ByVal VarPtr(b(0)), bytes
+        varOut = i()
+    ElseIf TypeName(varOut) = "Long()" Then
+        If bytes Mod 4 <> 0 Then
+            sz = bytes + (bytes Mod 4)
+            ReDim Preserve b(sz)
+        End If
+        ReDim l((bytes / 4) - 1)
+        CopyMemory_ ByVal VarPtr(l(0)), ByVal VarPtr(b(0)), bytes
+        varOut = l()
+    ElseIf TypeName(varOut) = "Double()" Then
+        If bytes Mod 8 <> 0 Then
+            sz = bytes + (bytes Mod 8)
+            ReDim Preserve b(sz)
+        End If
+        ReDim d((bytes / 8) - 1)
+        CopyMemory_ ByVal VarPtr(d(0)), ByVal VarPtr(b(0)), bytes
+        varOut = d()
+    ElseIf TypeName(varOut) = "Currency()" Then
+        If bytes Mod 8 <> 0 Then
+            sz = bytes + (bytes Mod 8)
+            ReDim Preserve b(sz)
+        End If
+        ReDim c((bytes / 8) - 1)
+        CopyMemory_ ByVal VarPtr(c(0)), ByVal VarPtr(b(0)), bytes
+        varOut = c()
+    Else
+        varOut = Empty
+        cast = False
+        Exit Function
+    End If
+    
+    cast = True
+    
+Exit Function
+hell:
+    cast = False
+
+End Function
 
 Function GetTickCount() As Long
     GetTickCount = GetTickCount_()
@@ -73,8 +191,8 @@ End Function
     Sleep_ dwMilliseconds
  End Sub
  
- Sub CopyMemory(Destination, Source, ByVal length As Long)
-     CopyMemory_ Destination, Source, length
+ Sub CopyMemory(Destination As Long, Source As Long, ByVal length As Long)
+     CopyMemory_ ByVal Destination, ByVal Source, length
  End Sub
  
  Function SendMessage(ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
@@ -343,12 +461,12 @@ Exit Function
 hell:
 End Function
 
-Function anyOfTheseInstr(data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
+Function anyOfTheseInstr(Data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
     Dim tmp() As String
     Dim x
     tmp = split(match, ",")
     For Each x In tmp
-        If InStr(1, data, x, compare) > 0 Then
+        If InStr(1, Data, x, compare) > 0 Then
             anyOfTheseInstr = True
             Exit Function
         End If
@@ -575,7 +693,7 @@ Private Function ExtractSpecifier(v)
     
 End Function
 
-Public Function BuildConnectionString(dbServer As dbServers, dbName As String, Optional server As String, Optional Port = 3306, Optional user As String, Optional pass As String) As String
+Public Function ado_ConnectionString(dbServer As dbServers, dbName As String, Optional server As String, Optional Port = 3306, Optional user As String, Optional pass As String) As String
     Dim dbPath As String, baseString As String, blnInlineAuth As Boolean
     
     Select Case dbServer
@@ -607,11 +725,11 @@ Public Function BuildConnectionString(dbServer As dbServers, dbName As String, O
     '%AP% is like enviromental variable for app.path i am lazy :P
     dbPath = Replace(dbName, "%AP%", App.path)
     
-    BuildConnectionString = Replace(baseString, "____", dbPath)
+    ado_ConnectionString = Replace(baseString, "____", dbPath)
     
 End Function
 
-Function buildInsert(tblName, fields, ParamArray params()) As String
+Function ado_buildInsert(tblName, fields, ParamArray params()) As String
 
     Dim sSql As String, sTmp As String, i As Integer, x
     Dim values()
@@ -628,12 +746,12 @@ Function buildInsert(tblName, fields, ParamArray params()) As String
     Next
     
     sTmp = Join(values, ",")
-    buildInsert = Replace(sSql, "____", sTmp)
+    ado_buildInsert = Replace(sSql, "____", sTmp)
      
     
 End Function
 
-Function buildUpdate(tblName, criteria, fields, ParamArray params()) As String
+Function ado_buildUpdate(tblName, criteria, fields, ParamArray params()) As String
 
     Dim sSql As String, sTmp As String, i As Integer
     Dim values()
@@ -659,7 +777,7 @@ Function buildUpdate(tblName, criteria, fields, ParamArray params()) As String
     Next
     
     sTmp = Join(tmp, ",")
-    buildUpdate = Replace(sSql, "____", sTmp)
+    ado_buildUpdate = Replace(sSql, "____", sTmp)
     
 End Function
 
@@ -941,18 +1059,13 @@ nope:
     isHexChar = False
 End Function
 
-Public Function rc4(data As Variant, ByVal Password As Variant) As String
+Public Function rc4(fileByteOrString As Variant, ByVal Password As Variant) As String
 On Error Resume Next
     Dim RB(0 To 255) As Integer, x As Long, y As Long, Z As Long, key() As Byte, ByteArray() As Byte, temp As Byte
     
     Dim plen As Long
     
-    If TypeName(data) = "Byte()" Then
-        ByteArray() = data
-    Else
-        If Len(data) = 0 Then Exit Function
-        ByteArray() = StrConv(CStr(data), vbFromUnicode, LANG_US)
-    End If
+    ByteArray() = LoadData(fileByteOrString)
     
     If TypeName(Password) = "Byte()" Then
         key() = Password
@@ -1012,18 +1125,15 @@ Function b64Decode(bArrayStringOrFile, ByRef dataOut As Variant, Optional retAsS
      b64Decode = base64.Decode(bArrayStringOrFile, dataOut, retAsString)
 End Function
 
-Function crc32(bAryOrString) As String
+Function crc32(fileByteOrString) As String
 
     Dim b() As Byte
     Dim v As Long
     
     If Not ensureUTypes() Then Exit Function 'use the C dll version its faster
     
-    If TypeName(bAryOrString) = "Byte()" Then
-        b() = bAryOrString
-    Else
-        b() = StrConv(CStr(bAryOrString), vbFromUnicode, LANG_US)
-    End If
+    b() = LoadData(fileByteOrString)
+    
 
     If AryIsEmpty(b) Then Exit Function
     
@@ -1111,11 +1221,11 @@ Function paramsToArray(ParamArray values()) As Variant()
     paramsToArray = values
 End Function
 
-Function Max(values() As Variant)
+Function max(values() As Variant)
    On Error Resume Next
    Dim Item
    For Each Item In values
-      Max = IIf(Max < Item, Item, Max)
+      max = IIf(max < Item, Item, max)
    Next
 End Function
 
@@ -1128,19 +1238,10 @@ Function Min(values() As Variant)
    Next
 End Function
 
-Function md5(fileStringOrByte) As String
-    
+Function md5(fileByteOrString) As String
     Dim b() As Byte
-    
-    If FileExists(fileStringOrByte) Then
-        md5 = hash.HashFile(CStr(fileStringOrByte))
-    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
-        b() = fileStringOrByte
-        md5 = hash.HashBytes(b)
-    Else
-        md5 = hash.HashString(CStr(fileStringOrByte))
-    End If
-           
+    b() = LoadData(fileByteOrString)
+    md5 = hash.HashBytes(b)
 End Function
 
 Function ExtractHexFromDump(dump) As String
@@ -1182,75 +1283,60 @@ nextone:
      
 End Function
 
-Function Compress(fileStringOrByte, Optional retAsString As Boolean = True, Optional method As dzCompressTypes = dz_Zlib) As Variant
+Function Compress(fileStringOrByte, ByRef outVal, Optional method As CompressTypes = ct_Zlib) As Boolean
     
     Dim b() As Byte
     Dim bOut() As Byte
     Dim success As Boolean
+    Dim f As Long
     
-    If FileExists(fileStringOrByte) Then
-         success = zlib.CompressFile(fileStringOrByte, bOut)
-    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
-        b() = fileStringOrByte
-        success = zlib.CompressData(b, bOut)
-    Else
-        b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
-        success = zlib.CompressData(b, bOut)
-    End If
-           
+    b() = LoadData(fileStringOrByte)
+    
+    Select Case method
+        Case ct_Zlib:      success = zlib.CompressData(b, bOut)
+        Case ct_LZNT1:     success = RTLCompress(b, bOut)
+        Case ct_LZNT1_MAX: success = RTLCompress(b, bOut, True)
+    End Select
+    
     If success Then
-        If retAsString Then
-           Compress = StrConv(bOut, vbUnicode, LANG_US)
+        If TypeName(outVal) = "String" Or TypeName(outVal) = "Variant" Then
+           outVal = StrConv(bOut, vbUnicode, LANG_US)
         Else
-           Compress = bOut
+           outVal = bOut
         End If
     End If
          
+    Compress = success
+    
 End Function
 
-Function decompress(fileStringOrByte, ByRef outVal, Optional retAsString As Boolean = True, Optional method As dzCompressTypes = dz_Zlib, Optional success As Boolean) As Boolean
+'if outval is a string or variant this will return a string. if its a bytearray() it will return a byte array
+Function DeCompress(fileStringOrByte, ByRef outVal, Optional method As CompressTypes = ct_Zlib) As Boolean
     
     Dim b() As Byte
     Dim bOut() As Byte
     Dim f As Long
+    Dim success As Boolean
+    
     On Error Resume Next
-    
-    If FileExists(fileStringOrByte) Then
-         success = zlib.DeCompressFile(fileStringOrByte, bOut)
-    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
-        b() = fileStringOrByte
-        success = zlib.UncompressData(b, bOut)
-    Else
-        b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
-        success = zlib.UncompressData(b, bOut)
-    End If
-    
+    b() = LoadData(fileStringOrByte)
     If Err.Number <> 0 Then Exit Function
     
-    If success Then
+    Select Case method
+        Case ct_Zlib:  success = zlib.UncompressData(b, bOut)
+        Case ct_LZNT1:   success = RTLDeCompress(b, bOut)
+        Case ct_LZNT1_MAX:   success = RTLDeCompress(b, bOut, True)
+    End Select
     
-'        If TypeName(retAsString) = "String" Then
-'            If Len(retAsString) > 3 Then
-'                If Mid(retAsString, 2, 2) = ":\" Then 'its a file path
-'                    If FileExists(retAsString) Then Kill retAsString
-'                    f = FreeFile
-'                    Open retAsString For Binary As f
-'                    Put f, , bOut
-'                    Close f
-'                    decompress = (Err.Number = 0)
-'                    Exit Function
-'                End If
-'            End If
-'        End If
-        
-        If retAsString Then
+    If success Then
+        If TypeName(outVal) = "String" Or TypeName(outVal) = "Variant" Then
            outVal = StrConv(bOut, vbUnicode, LANG_US)
         Else
            outVal = bOut
         End If
     End If
     
-    decompress = success
+    DeCompress = success
          
 End Function
 
