@@ -1,10 +1,10 @@
 Attribute VB_Name = "modMain"
 Public ChildWindows As Collection
 
-Public Declare Function SetForegroundWindow Lib "user32" (ByVal hwnd As Long) As Long
+Public Declare Function SetForegroundWindow Lib "user32" (ByVal hWnd As Long) As Long
 Public Declare Function GetForegroundWindow Lib "user32" () As Long
-Public Declare Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hwnd As Long, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
-Public Declare Function ShowWindow Lib "user32" (ByVal hwnd As Long, ByVal nCmdShow As Long) As Long
+Public Declare Function GetClassName Lib "user32" Alias "GetClassNameA" (ByVal hWnd As Long, ByVal lpClassName As String, ByVal nMaxCount As Long) As Long
+Public Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 Public Declare Function EnumChildWindows Lib "user32" (ByVal hWndParent As Long, ByVal lpEnumFunc As Long, ByVal lParam As Long) As Long
 
 Public Declare Function GetCursorPos Lib "user32" (lpPoint As POINTAPI) As Long
@@ -15,11 +15,17 @@ Public Type POINTAPI
     Y As Long
 End Type
 
-Public Function EnumChildProc(ByVal hwnd As Long, ByVal lParam As Long) As Long
+Public classFilter As String
+
+Public Function EnumChildProc(ByVal hWnd As Long, ByVal lParam As Long) As Long
     Dim c As New Cwindow
-    c.hwnd = hwnd
+    c.hWnd = hWnd
     If Not IsObject(ChildWindows) Then Set ChildWindows = New Collection
-    ChildWindows.Add c 'module level collection object...
+    If Len(classFilter) > 0 Then
+        If InStr(1, c.className, classFilter, vbTextCompare) > 0 Then ChildWindows.Add c 'module level collection object...
+    Else
+        ChildWindows.Add c 'module level collection object...
+    End If
     EnumChildProc = 1  'continue enum
 End Function
 

@@ -192,9 +192,10 @@ Public Function GetWindowsVersionName() As String
 End Function
 
 
-Function ChildWindows(Optional hWnd As Long = 0) As Collection 'of CWindow
+Function ChildWindows(Optional hWnd As Long = 0, Optional classNameFilter As String) As Collection  'of CWindow
     
     Set modMain.ChildWindows = New Collection
+    modMain.classFilter = classNameFilter
     x = modMain.EnumChildWindows(0, AddressOf modMain.EnumChildProc, ByVal 0&)
     Set ChildWindows = modMain.ChildWindows
 
@@ -349,7 +350,7 @@ Function IsProcessElevated() As Boolean
     Dim hToken As Long
 
     'Open the primary access token of the process with TOKEN_QUERY.
-    If OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, hToken) = 0 Then GoTo cleanup
+    If OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, hToken) = 0 Then GoTo CleanUp
      
     Dim elevation As TOKEN_ELEVATION
     Dim dwSize As Long
@@ -357,12 +358,12 @@ Function IsProcessElevated() As Boolean
         'When the process is run on operating systems prior to Windows Vista, GetTokenInformation returns FALSE with the
         'ERROR_INVALID_PARAMETER error code because TokenElevation is not supported on those operating systems.
          dwError = Err.LastDllError
-         GoTo cleanup
+         GoTo CleanUp
     End If
 
     fIsElevated = IIf(elevation.TokenIsElevated = 0, False, True)
 
-cleanup:
+CleanUp:
     If hToken Then CloseHandle (hToken)
     'if ERROR_SUCCESS <> dwError then err.Raise
     IsProcessElevated = fIsElevated

@@ -507,6 +507,17 @@ Function ReadFile(filename) As Variant
    ReadFile = temp
 End Function
 
+Function ReadBinaryFile(filename) As Byte()
+    Dim f As Long
+    Dim b() As Byte
+    f = FreeFile
+    Open filename For Binary As f
+    ReDim b(LOF(f) - 1)
+    Get f, , b()
+    Close f
+    ReadBinaryFile = b()
+End Function
+
 Function WriteFile(path, it) As Boolean
     Dim f As Long
     Dim b() As Byte
