@@ -4,11 +4,88 @@ Begin VB.Form Form1
    ClientHeight    =   6315
    ClientLeft      =   60
    ClientTop       =   345
-   ClientWidth     =   8640
+   ClientWidth     =   12000
    LinkTopic       =   "Form1"
    ScaleHeight     =   6315
-   ScaleWidth      =   8640
+   ScaleWidth      =   12000
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton cmdCombo 
+      Caption         =   "combo test"
+      Height          =   375
+      Left            =   8760
+      TabIndex        =   9
+      Top             =   2160
+      Width           =   1215
+   End
+   Begin VB.ComboBox Combo1 
+      Height          =   315
+      Left            =   8760
+      TabIndex        =   8
+      Text            =   "Combo1"
+      Top             =   1800
+      Width           =   1215
+   End
+   Begin VB.CommandButton Command3 
+      Caption         =   "string test 2"
+      Height          =   375
+      Index           =   1
+      Left            =   10200
+      TabIndex        =   7
+      Top             =   2760
+      Width           =   1455
+   End
+   Begin VB.CommandButton Command3 
+      Caption         =   "string test 1"
+      Height          =   375
+      Index           =   0
+      Left            =   10200
+      TabIndex        =   6
+      Top             =   2280
+      Width           =   1455
+   End
+   Begin VB.CommandButton Command2 
+      Caption         =   "textbox test 2"
+      Height          =   375
+      Index           =   1
+      Left            =   10200
+      TabIndex        =   5
+      Top             =   1680
+      Width           =   1455
+   End
+   Begin VB.TextBox Text1 
+      Height          =   975
+      Left            =   10200
+      MultiLine       =   -1  'True
+      ScrollBars      =   3  'Both
+      TabIndex        =   4
+      Text            =   "Form1.frx":0000
+      Top             =   120
+      Width           =   1455
+   End
+   Begin VB.CommandButton Command2 
+      Caption         =   "textbox test 1"
+      Height          =   375
+      Index           =   0
+      Left            =   10200
+      TabIndex        =   3
+      Top             =   1200
+      Width           =   1455
+   End
+   Begin VB.CommandButton Command1 
+      Caption         =   "Listbox test"
+      Height          =   375
+      Left            =   8760
+      TabIndex        =   2
+      Top             =   1200
+      Width           =   1215
+   End
+   Begin VB.ListBox List2 
+      Height          =   1035
+      Left            =   8760
+      TabIndex        =   1
+      Top             =   120
+      Width           =   1215
+   End
    Begin VB.ListBox List1 
       Height          =   5910
       Left            =   120
@@ -22,6 +99,84 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+Private Sub cmdCombo_Click()
+    
+    Combo1.AddItem "item 0"
+    Combo1.AddItem "item 1"
+    Combo1.AddItem "item 2"
+    Combo1.AddItem "item 3"
+    
+    Dim i, v, tmp
+    While enumerate(Combo1, v, i)
+        tmp = tmp & i & "=" & v & vbCrLf
+    Wend
+    
+    MsgBox tmp
+    
+End Sub
+
+Private Sub Command1_Click()
+    'listbox test
+    List2.AddItem "a"
+    List2.AddItem "bb"
+    List2.AddItem "ccc"
+    
+    Dim i, v, tmp
+    While enumerate(List2, v, i)
+        tmp = tmp & i & "=" & v & vbCrLf
+    Wend
+    
+    MsgBox tmp
+    
+End Sub
+
+'textbox test either enum by line(no key) or split at key
+Private Sub Command2_Click(index As Integer)
+    
+    Dim key As String, i, v, tmp
+    
+    Text1 = Replace("1,2\n3,4\n5,6", "\n", vbCrLf)
+    
+    If index = 1 Then key = ","
+    
+    While enumerate(Text1, v, i, key)
+        tmp = tmp & i & "=" & Replace(v, vbCrLf, "\n") & vbCrLf
+    Wend
+    
+    MsgBox tmp
+    
+End Sub
+
+'string test either as byte array(no key) or split at key
+'we also test the key change but obj stay the same after a partial loop logic..confusing  but needs testing
+Private Sub Command3_Click(index As Integer)
+
+    Dim key As String, i, v, tmp
+    Dim s As String
+    
+    s = "test,test"
+    Text1 = s
+    
+    If index = 1 Then key = ","
+    
+    Do While enumerate(s, v, i, key)
+        tmp = tmp & i & "=" & Replace(v, vbCrLf, "\n") & vbCrLf
+        If i = 3 Then Exit Do
+    Loop
+    
+    MsgBox tmp
+    tmp = Empty
+    
+    If index = 0 Then key = "," Else key = Empty
+    
+    Do While enumerate(s, v, i, key)
+        tmp = tmp & i & "=" & Replace(v, vbCrLf, "\n") & vbCrLf
+    Loop
+    
+    MsgBox tmp
+    
+End Sub
+
 Private Sub Form_Load()
     Dim i, v, sample, colkey
     Dim c As New Collection
@@ -32,7 +187,7 @@ Private Sub Form_Load()
     sample = Array("apple", "orange", "cat", "dog")
     
     List1.AddItem "----- [ walk simple array ] -------"
-    Do While enumerate(i, v, sample)
+    Do While enumerate(sample, v, i)
         List1.AddItem "  Index: " & i & " Value: " & v
         c.Add v
         sample(i) = i
@@ -43,13 +198,13 @@ Private Sub Form_Load()
     List1.AddItem "----- [ walk array with long var enumerator ] -------"
     
     'walk changed array, use long as enum variable (variant not required like for each)
-    Do While enumerate(i, l, sample)
+    Do While enumerate(sample, l, i)
         List1.AddItem "  Index: " & i & " Value: " & l
     Loop
     
     List1.AddItem "----- [ enum collection of simple values ] -------"
     
-    Do While enumerate(i, v, c)
+    Do While enumerate(c, v, i)
         List1.AddItem "  Collection Index: " & i & " Value: " & v
     Loop
     
@@ -72,7 +227,7 @@ Private Sub Form_Load()
     
     List1.AddItem "----- [ walk obj collection with key and class obj var ] -------"
     List1.AddItem "----- [ note i = " & i & " is unitilized  ] -------"
-    Do While enumerate(i, c1, c, colkey)
+    Do While enumerate(c, c1, i, colkey)
         List1.AddItem "  Objs Index: " & i & " Class1 id: " & c1.id & " ColKey: " & colkey
     Loop
 
@@ -80,14 +235,14 @@ Private Sub Form_Load()
     
     List1.AddItem "----- [ bug test 1 - incomplete loop exit + same obj enum ] -------"
     
-    Do While enumerate(i, v, sample)
+    Do While enumerate(sample, v, i)
         List1.AddItem "  Index: " & i & " Value: " & v
         If i = 1 Then Exit Do
     Loop
     
     List1.AddItem "----- [ first enum call exited, enum again same i same obj ] -------"
     
-    Do While enumerate(i, v, sample)
+    Do While enumerate(sample, v, i)
         List1.AddItem "  Index: " & i & " Value: " & v
     Loop
     
@@ -99,7 +254,7 @@ Private Sub Form_Load()
 '
 '        List1.AddItem "  Array Index: " & i & " Value: " & v
 '
-'        Do While enumerate(i, c1, c, colkey)
+'        Do While enumerate( c,c1, i, colkey)
 '            List1.AddItem "  Objs Index: " & i & " Class1 id: " & c1.id & " ColKey: " & colkey
 '        Loop
 '
@@ -122,28 +277,72 @@ End Sub
     '  whatever...maybe thats a feature :P
 
 
-Function enumerate(ByRef startIndex, ByRef value As Variant, ByRef obj, Optional ByRef key) As Boolean
+Function enumerate(ByRef obj, ByRef value As Variant, Optional ByRef startIndex, Optional ByRef key) As Boolean
     Dim t As String
+    Dim b() As Byte
     
     Static counter As Long
     Static lastObj As Long
+    Static internalData
+    Static lastKey
     
     t = TypeName(obj)
     clearVal value
-    key = Empty
+    If InStr("TextBox,String", t) < 1 Then key = Empty
     
-     
     If IsObject(obj) Then
         If lastObj <> ObjPtr(obj) Then
             startIndex = 0
             counter = 0
             lastObj = ObjPtr(obj)
+            If t = "TextBox" Then
+                internalData = Split(obj.Text, IIf(Len(key) = 0, vbCrLf, key), , vbTextCompare)
+                lastKey = key
+            End If
+        Else
+            'same object but key changed..they must have aborted an enum loop early and changed key
+            If t = "TextBox" And lastKey <> key Then
+                startIndex = 0
+                counter = 0
+                lastObj = ObjPtr(obj)
+                internalData = Split(obj.Text, IIf(Len(key) = 0, vbCrLf, key), , vbTextCompare)
+                lastKey = key
+            End If
         End If
     ElseIf IsArray(obj) Then
         If lastObj <> VarPtr(obj) Then
             startIndex = 0
             counter = 0
             lastObj = VarPtr(obj)
+        End If
+    ElseIf t = "String" Then
+        If lastObj <> StrPtr(obj) Then
+            startIndex = 0
+            counter = 0
+            lastObj = StrPtr(obj)
+            If Len(key) > 0 Then
+                internalData = Split(obj, key, , vbTextCompare)
+                lastKey = key
+            Else
+                b() = StrConv(obj, vbFromUnicode, &H409)
+                internalData = b()
+                lastKey = Empty
+            End If
+        Else
+            'same object but key changed..they must have aborted an enum loop early and changed key
+            If t = "String" And lastKey <> key Then
+                startIndex = 0
+                counter = 0
+                lastObj = StrPtr(obj)
+                If Len(key) > 0 Then
+                    internalData = Split(obj, key, , vbTextCompare)
+                    lastKey = key
+                Else
+                    b() = StrConv(obj, vbFromUnicode, &H409)
+                    internalData = b()
+                    lastKey = Empty
+                End If
+            End If
         End If
     Else
         Err.Raise "Invalid Source, expects array or collection - given type: " & t, "enumerate()"
@@ -159,15 +358,38 @@ Function enumerate(ByRef startIndex, ByRef value As Variant, ByRef obj, Optional
         If counter > obj.Count Then GoTo loopDone
         If startIndex < 1 Then counter = 1
         key = keyForIndex(counter, obj)
+    ElseIf t = "ListBox" Or t = "ComboBox" Then
+        If obj.ListCount = 0 Then GoTo loopDone
+        If counter = obj.ListCount Then GoTo loopDone
+        If startIndex < 0 Then counter = 0
+    ElseIf t = "TextBox" Then
+        If AryIsEmpty(internalData) Then GoTo loopDone
+        If counter > UBound(internalData) Then GoTo loopDone
+        If startIndex < 0 Then counter = 0
+    ElseIf t = "String" Then
+        If AryIsEmpty(internalData) Then GoTo loopDone
+        If counter > UBound(internalData) Then GoTo loopDone
+        If startIndex < 0 Then counter = 0
     Else
         Err.Raise "Invalid Source, expects array or collection - given type: " & t, "enumerate()"
     End If
         
-        
-    If IsObject(obj(counter)) Then
-        Set value = obj(counter)
+    If t = "ListBox" Or t = "ComboBox" Then
+        value = obj.List(counter)
+    ElseIf t = "TextBox" Then
+        value = internalData(counter)
+    ElseIf t = "String" Then
+        If TypeName(internalData(counter)) = "Byte" Then
+            value = Chr(internalData(counter))
+        Else
+            value = internalData(counter)
+        End If
     Else
-        value = obj(counter)
+        If IsObject(obj(counter)) Then
+            Set value = obj(counter)
+        Else
+            value = obj(counter)
+        End If
     End If
     
     startIndex = counter  'current item index
@@ -180,6 +402,8 @@ loopDone:
     counter = 0
     startIndex = -1
     lastObj = 0
+    clearVal internalData
+    lastKey = Empty
     enumerate = False
     
 End Function

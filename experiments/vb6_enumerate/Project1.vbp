@@ -1,10 +1,11 @@
 Type=Exe
 Form=Form1.frm
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
 Class=Class1; Class1.cls
 Module=Module1; Module1.bas
 IconForm="Form1"
 Startup="Form1"
+ExeName32="enumerate.exe"
 Command32=""
 Name="Project1"
 HelpContextID="0"
@@ -33,3 +34,6 @@ MaxNumberOfThreads=1
 
 [MS Transaction Server]
 AutoRefresh=1
+
+[fastBuild]
+fullPath=%ap%\enumerate.exe
