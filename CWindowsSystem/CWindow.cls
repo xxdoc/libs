@@ -51,7 +51,7 @@ End Type
  
 Private Type WINDOWPLACEMENT
         Length As Long
-        flags As Long
+        Flags As Long
         showCmd As Long
         ptMinPosition As POINTAPI
         ptMaxPosition As POINTAPI
@@ -94,6 +94,8 @@ Private Declare Function SetWindowPlacement Lib "user32" (ByVal hWnd As Long, lp
 Private Declare Function SendMessage Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal msg As Long, wParam As Any, lParam As Any) As Long
 Private Declare Function IsWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClassName As String, ByVal lpszWindowName As String) As Long
+Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
+Private Declare Function IsWindowVisible Lib "user32" (ByVal hWnd As Long) As Long
 
 Private Const LB_GETCOUNT = &H18B
 Private Const LB_GETTEXT = &H189
@@ -104,12 +106,24 @@ Private Const CB_GETLBTEXTLEN = &H149
 Private Const WM_CLOSE = &H10
 Private Const SWP_NOMOVE = &H2
 Private Const SWP_NOSIZE = &H1
+Private Const GWL_EXSTYLE    As Long = -20
+Private Const WS_EX_TOPMOST As Long = 8
+
+Property Get Visible() As Boolean
+    Visible = IIf(IsWindowVisible(Me.hWnd) = 0, False, True)
+End Property
 
 Property Let TopMost(v As Boolean)
-    Dim flags As Long, zflags As Long
-    flags = SWP_NOACTIVATE Or SWP_SHOWWINDOW Or SWP_NOMOVE Or SWP_NOSIZE
+    Dim Flags As Long, zflags As Long
+    Flags = SWP_NOACTIVATE Or SWP_SHOWWINDOW Or SWP_NOMOVE Or SWP_NOSIZE
     zflags = IIf(v, HWND_TOPMOST, HWND_NOTOPMOST)
-    SetWindowPos hWnd, zflags, 0, 0, 0, 0, flags
+    SetWindowPos hWnd, zflags, 0, 0, 0, 0, Flags
+End Property
+
+Property Get TopMost() As Boolean
+    Dim exStyle As Long
+    exStyle = GetWindowLong(hWnd, GWL_EXSTYLE)
+    TopMost = ((exStyle And WS_EX_TOPMOST) = WS_EX_TOPMOST)
 End Property
 
 Sub CloseWindow()
@@ -243,7 +257,7 @@ Property Let WindowState(s As eWindowStates)
     GetWindowPlacement hWnd, wp
     wp.Length = Len(wp)
     wp.showCmd = s
-    wp.flags = WPF_ASYNCWINDOWPLACEMENT
+    wp.Flags = WPF_ASYNCWINDOWPLACEMENT
     SetWindowPlacement hWnd, wp
 End Property
 
