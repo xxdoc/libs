@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   6315
    ScaleWidth      =   12000
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton cmdBenchMark 
+      Caption         =   "benchmark"
+      Height          =   375
+      Left            =   8760
+      TabIndex        =   10
+      Top             =   2760
+      Width           =   1335
+   End
    Begin VB.CommandButton cmdCombo 
       Caption         =   "combo test"
       Height          =   375
@@ -99,6 +107,55 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+Private Sub cmdBenchMark_Click()
+    
+    'in ide 2.2ghz machine, under 10k elements dont really notice a difference..
+'    For each 10000000 = 0.641 seconds
+'    For i to 10000000 = 0.547 seconds
+'    enumerator 10000000 = 22.296 seconds - 41x slower
+
+'    For each 100000 = 0.016 seconds
+'    For i to 100000 = 0.015 seconds
+'    enumerator 100000 = 0.297 seconds - 20x slower
+
+    'For each 100000 = 0.015 seconds
+    'For i to 100000 = 0.016 seconds
+    'enumerate_v1 100000 = 0.25 seconds - 17x slower
+    
+    'For each 10000000 = 0.563 seconds
+    'For i to 10000000 = 0.515 seconds
+    'enumerate_v1 10000000 = 16.532 seconds - 32x slower
+    
+    Dim b() As Byte
+    Dim report() As String
+    Dim x, i
+    Const size As Long = 10000
+    
+    b() = StrConv(String(size, "a"), vbFromUnicode)
+    
+    StartBenchMark
+    For Each x In b
+        'x = x + 1
+    Next
+    push report, "For each " & size & " = " & EndBenchMark()
+    
+    StartBenchMark
+    For i = 0 To UBound(b)
+        'b(i) = b(i) + 1
+    Next
+    push report, "For i to " & size & " = " & EndBenchMark()
+    
+    StartBenchMark
+    Do While enumerate_v1(b, x, i)
+        'x = x + 1
+    Loop
+    push report, "enumerate_v1 " & size & " = " & EndBenchMark()
+    
+    Debug.Print Join(report, vbCrLf)
+    MsgBox Join(report, vbCrLf)
+    
+End Sub
+
 Private Sub cmdCombo_Click()
     
     Combo1.AddItem "item 0"
@@ -277,7 +334,7 @@ End Sub
     '  whatever...maybe thats a feature :P
 
 
-Function enumerate(ByRef obj, ByRef value As Variant, Optional ByRef startIndex, Optional ByRef key) As Boolean
+Function enumerate(ByRef obj, ByRef value As Variant, ByRef startIndex, Optional ByRef key) As Boolean
     Dim t As String
     Dim b() As Byte
     
@@ -405,6 +462,69 @@ loopDone:
     clearVal internalData
     lastKey = Empty
     enumerate = False
+    
+End Function
+
+
+Function enumerate_v1(ByRef obj, ByRef value As Variant, ByRef startIndex, Optional ByRef key) As Boolean
+    Dim t As String
+    
+    Static counter As Long
+    Static lastObj As Long
+    
+    t = TypeName(obj)
+    clearVal value
+    key = Empty
+    
+     
+    If IsObject(obj) Then
+        If lastObj <> ObjPtr(obj) Then
+            startIndex = 0
+            counter = 0
+            lastObj = ObjPtr(obj)
+        End If
+    ElseIf IsArray(obj) Then
+        If lastObj <> VarPtr(obj) Then
+            startIndex = 0
+            counter = 0
+            lastObj = VarPtr(obj)
+        End If
+    Else
+        Err.Raise "Invalid Source, expects array or collection - given type: " & t, "enumerate()"
+    End If
+        
+    
+    If InStr(t, "()") > 0 Then 'array type
+        If AryIsEmpty(obj) Then GoTo loopDone
+        If counter > UBound(obj) Then GoTo loopDone
+        If startIndex < LBound(obj) Then counter = LBound(obj)
+    ElseIf t = "Collection" Then
+        If obj.Count = 0 Then GoTo loopDone
+        If counter > obj.Count Then GoTo loopDone
+        If startIndex < 1 Then counter = 1
+        key = keyForIndex(counter, obj)
+    Else
+        Err.Raise "Invalid Source, expects array or collection - given type: " & t, "enumerate()"
+    End If
+        
+        
+    If IsObject(obj(counter)) Then
+        Set value = obj(counter)
+    Else
+        value = obj(counter)
+    End If
+    
+    startIndex = counter  'current item index
+    counter = counter + 1 'advance to next one (limitation: nesting of enumerate calls not supported)
+    enumerate_v1 = True
+    
+Exit Function
+
+loopDone:
+    counter = 0
+    startIndex = -1
+    lastObj = 0
+    enumerate_v1 = False
     
 End Function
 

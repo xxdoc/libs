@@ -1,30 +1,5 @@
 Attribute VB_Name = "Module1"
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSource As Any, ByVal ByteLen As Long)
-Private startTime As Long
-Private Declare Function GetTickCount Lib "kernel32" () As Long
-
-Sub StartBenchMark()
-    startTime = GetTickCount()
-End Sub
-
-Function EndBenchMark() As String
-    Dim endTime As Long, loadTime As Long
-    endTime = GetTickCount()
-    loadTime = endTime - startTime
-    EndBenchMark = loadTime / 1000 & " seconds"
-End Function
-
-
-
-Sub push(ary, value) 'this modifies parent ary object
-    On Error GoTo init
-    x = UBound(ary) '<-throws Error If Not initalized
-    ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
-    Exit Sub
-init:     ReDim ary(0): ary(0) = value
-End Sub
-
 
 Public Function keyForIndex(index, c) As String
     ' Get a key based on its index value.  Must be in range, or error.
