@@ -50,6 +50,7 @@ Begin VB.Form Form1
       _ExtentX        =   13758
       _ExtentY        =   4948
       _Version        =   393217
+      Enabled         =   -1  'True
       ScrollBars      =   3
       TextRTF         =   $"Form1.frx":0000
    End
@@ -78,7 +79,7 @@ Private Sub Form_Load()
     re.InitRtf rtf.hwnd, Me
     re.AllowTabs = True
     re.AutoIndent = True
-    rtf.LoadFile "C:\Documents and Settings\david\Desktop\Planet Source Code Shuts Down - YouTube.url"
+    'rtf.LoadFile "C:\Documents and Settings\david\Desktop\Planet Source Code Shuts Down - YouTube.url"
     
 End Sub
 
