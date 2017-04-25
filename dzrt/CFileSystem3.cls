@@ -310,7 +310,7 @@ End Function
 
 'web or file path
 Function FileNameFromPath(fullpath)
-    Dim tmp()
+    Dim tmp() As String
     Dim marker As String
     marker = "\"
     If InStr(fullpath, "/") > 0 Then marker = "/"
@@ -352,7 +352,7 @@ Sub SetAttribute(fPath, it As VbFileAttribute)
 End Sub
 
 Function GetExtension(path)
-    Dim tmp()
+   Dim tmp() As String
     Dim ub
     tmp = split(path, "\")
     ub = tmp(UBound(tmp))
@@ -364,7 +364,7 @@ Function GetExtension(path)
 End Function
 
 Function GetBaseName(path)
-    Dim tmp()
+    Dim tmp() As String
     Dim ub
     tmp = split(path, "\")
     ub = tmp(UBound(tmp))
@@ -388,7 +388,7 @@ Function ChangeExt(path, ext)
 End Function
 
 Function SafeFileName(proposed)
-  Dim badChars, bad(), i As Long
+  Dim badChars, bad() As String, i As Long
   badChars = ">,<,&,/,\,:,|,?,*,"""
   bad = split(badChars, ",")
   For i = 0 To UBound(bad)
@@ -480,7 +480,7 @@ Function buildPath(folderPath)
     
     If FolderExists(folderPath) Then buildPath = True: Exit Function
     
-    Dim tmp(), build, i As Long
+    Dim tmp() As String, build, i As Long
     
     tmp = split(folderPath, "\")
     build = tmp(0)
@@ -634,7 +634,7 @@ oops: AryIsEmpty = True
 End Function
 
 Function FolderName(folderPath)
-    Dim ret, tmp()
+    Dim ret, tmp() As String
     tmp = split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _
