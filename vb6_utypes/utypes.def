@@ -15,3 +15,5 @@ LIBRARY UTypes
 		Str2Long
 		crc32
 		crc32w
+		vc_srand
+		vc_rand

@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   6315
    ScaleWidth      =   12000
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command4 
+      Caption         =   "setv"
+      Height          =   375
+      Left            =   10440
+      TabIndex        =   11
+      Top             =   5640
+      Width           =   1455
+   End
    Begin VB.CommandButton cmdBenchMark 
       Caption         =   "benchmark"
       Height          =   375
@@ -233,6 +241,34 @@ Private Sub Command3_Click(index As Integer)
     MsgBox tmp
     
 End Sub
+
+Private Sub Command4_Click()
+    'this is another interesting lazy construct from python..
+    'a, b = val1, val2
+    Dim a As Long, b As Byte, c As Class1
+    Dim x As New Class1
+    
+    'honestly while this works.....it is to lazy, its not clean and just looks like shitty code
+    setv a, &HAABBCCDD, b, &HFF, c, x
+    
+    MsgBox Replace("a=" & Hex(a) & "\nb=" & Hex(b) & "\ntypename(c) = " & TypeName(c), "\n", vbCrLf)
+    
+End Sub
+
+Function setv(ParamArray v())
+    
+    If (UBound(v) + 1) Mod 2 <> 0 Then Err.Raise 0, "setv", "Must include an even number of arguments"
+    
+    For i = 0 To UBound(v) Step 2
+        If IsObject(v(i + 1)) Then
+            Set v(i) = v(i + 1)
+        Else
+            v(i) = v(i + 1)
+        End If
+    Next
+    
+End Function
+
 
 Private Sub Form_Load()
     Dim i, v, sample, colkey

@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 enum op{
 	op_add = 0,
@@ -28,6 +29,9 @@ struct x64{
 	unsigned int lo;
 	unsigned int hi;
 };
+
+void __stdcall vc_srand(unsigned int v1){srand(v1);}
+unsigned int __stdcall vc_rand(){return rand();}
 
 unsigned int __stdcall ULong(unsigned int v1, unsigned int v2, int operation){
 

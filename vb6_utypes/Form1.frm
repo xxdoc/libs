@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   3855
    ScaleWidth      =   7980
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command2 
+      Caption         =   "vc rand"
+      Height          =   375
+      Left            =   5880
+      TabIndex        =   2
+      Top             =   3360
+      Width           =   1095
+   End
    Begin VB.CommandButton Command1 
       Caption         =   "Native Tests"
       Height          =   330
@@ -88,6 +96,8 @@ Private Declare Sub fromU64 Lib "utypes.dll" (ByVal v0 As Currency, ByRef v1 As 
 'convert an unsigned long (or int) to unsigned string (vb6 hex and signed displays are fine so ommited..)
 Private Declare Function U2Str Lib "utypes.dll" (ByVal v1 As Long, ByVal buf As String, ByVal cBufferSize As Long) As Long
 
+Private Declare Sub srand Lib "utypes.dll" Alias "vc_srand" (ByVal v1 As Long)
+Private Declare Function rand Lib "utypes.dll" Alias "vc_rand" () As Long
 
 
 Private Sub Command1_Click()
@@ -121,6 +131,16 @@ Private Sub Command1_Click()
     Err.Clear
 
 
+End Sub
+
+Private Sub Command2_Click()
+    Dim i As Long
+    List1.Clear
+    List1.AddItem "seed: &h4b4"
+    srand &H4B4
+    For i = 0 To 25
+        List1.AddItem Hex(rand())
+    Next
 End Sub
 
 Private Sub Form_Load()

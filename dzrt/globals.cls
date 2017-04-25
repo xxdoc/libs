@@ -33,6 +33,9 @@ Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByV
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
  
+Private Declare Sub vc_srand Lib "utypes.dll" (ByVal v1 As Long)
+Private Declare Function vc_rand Lib "utypes.dll" () As Long
+ 
 'all but jet are odbc jet is ole
 Public Enum dbServers
     Access
@@ -58,6 +61,15 @@ Public hash As New CWinHash
 Public fso As New CFileSystem3
 Public cmdline As New CCmdLine
 Public zlib As New CZlib
+
+Sub srand(seed As Long)
+    If ensureUTypes() Then vc_srand seed
+End Sub
+
+Function rand() As Long
+    If ensureUTypes() Then rand = vc_rand()
+End Function
+
 
 'this function will convert any of the following to a byte array:
 '   read a file if path supplied and allowFilePaths = true
@@ -348,7 +360,7 @@ Function RandomNum() As Long
     
 End Function
 
-Function ReadFile(filename) As String 'this one should be binary safe...
+Function ReadFile(filename, ByRef Data) As Boolean 'this one should be binary safe...
   On Error GoTo hell
   Dim f As Long
   Dim b() As Byte
@@ -358,9 +370,17 @@ Function ReadFile(filename) As String 'this one should be binary safe...
   ReDim b(LOF(f) - 1)
   Get f, , b()
   Close #f
-  ReadFile = StrConv(b(), vbUnicode, LANG_US)
+  
+  If TypeName(Data) = "Byte()" Then 'Or TypeName(data) = "Variant"
+        Data = b()
+  Else
+        Data = CStr(StrConv(b(), vbUnicode, LANG_US))
+  End If
+  
+  ReadFile = True
+  
   Exit Function
-hell:   ReadFile = ""
+hell:   ReadFile = False
 End Function
 
 Function WriteFile(path, it) As Boolean 'this one should be binary safe...
@@ -369,12 +389,20 @@ Function WriteFile(path, it) As Boolean 'this one should be binary safe...
     
     If FileExists(path) Then Kill path
     f = FreeFile
-    b() = StrConv(it, vbFromUnicode, LANG_US)
+    
+    If TypeName(it) = "Byte()" Then
+        b() = it
+    Else
+        b() = StrConv(it, vbFromUnicode, LANG_US)
+    End If
+    
     Open path For Binary As #f
     Put f, , b()
     Close f
+    
     WriteFile = True
     Exit Function
+    
 hell: WriteFile = False
 End Function
 
@@ -439,9 +467,8 @@ End Function
 Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
   Dim x
-  
-    x = UBound(ary)
-    AryIsEmpty = False
+    If IsObject(UBound(ary)) Then AryIsEmpty = False
+    'x = UBound(ary)
   Exit Function
 oops: AryIsEmpty = True
 End Function
