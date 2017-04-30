@@ -40,7 +40,7 @@ Attribute VB_Exposed = True
 Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 
-Function GetFolderFiles(folderPath As String, Optional filter As String = "*", Optional retFullPath As Boolean = True, Optional recursive As Boolean = False) As String()
+Function GetFolderFiles(folderPath As String, Optional Filter As String = "*", Optional retFullPath As Boolean = True, Optional recursive As Boolean = False) As String()
    Dim fnames() As String
    Dim fs As String
    Dim folders() As String
@@ -54,7 +54,7 @@ Function GetFolderFiles(folderPath As String, Optional filter As String = "*", O
    
    folderPath = IIf(Right(folderPath, 1) = "\", folderPath, folderPath & "\")
    
-   fs = Dir(folderPath & filter, vbHidden Or vbNormal Or vbReadOnly Or vbSystem)
+   fs = Dir(folderPath & Filter, vbHidden Or vbNormal Or vbReadOnly Or vbSystem)
    While fs <> ""
      If fs <> "" Then push fnames(), IIf(retFullPath = True, folderPath & fs, fs)
      fs = Dir()
@@ -64,7 +64,7 @@ Function GetFolderFiles(folderPath As String, Optional filter As String = "*", O
         folders() = GetSubFolders(folderPath)
         If Not AryIsEmpty(folders) Then
             For i = 0 To UBound(folders)
-                FolderEngine folders(i), fnames(), filter
+                FolderEngine folders(i), fnames(), Filter
             Next
         End If
         If Not retFullPath Then
@@ -78,13 +78,13 @@ Function GetFolderFiles(folderPath As String, Optional filter As String = "*", O
 End Function
 
 
-Private Sub FolderEngine(fldrpath As String, ary() As String, Optional filter As String = "*")
+Private Sub FolderEngine(fldrpath As String, ary() As String, Optional Filter As String = "*")
 
     Dim files() As String
     Dim folders() As String
     Dim i As Long
      
-    files = GetFolderFiles(fldrpath, filter)
+    files = GetFolderFiles(fldrpath, Filter)
     folders = GetSubFolders(fldrpath)
         
     If Not AryIsEmpty(files) Then
@@ -95,7 +95,7 @@ Private Sub FolderEngine(fldrpath As String, ary() As String, Optional filter As
     
     If Not AryIsEmpty(folders) Then
         For i = 0 To UBound(folders)
-             FolderEngine folders(i), ary, filter
+             FolderEngine folders(i), ary, Filter
         Next
     End If
     
@@ -131,6 +131,7 @@ Function FolderExists(path As String) As Boolean
   Dim tmp As String
   tmp = path & "\"
   If Len(tmp) = 1 Then Exit Function
+  If Asc(Left(tmp, 1)) = 0 Then Exit Function
   If Dir(tmp, vbDirectory) <> "" Then FolderExists = True
   Exit Function
 hell:
@@ -141,6 +142,7 @@ Function FileExists(path As String) As Boolean
   On Error GoTo hell
     
   If Len(path) = 0 Then Exit Function
+  If Asc(Left(path, 1)) = 0 Then Exit Function
   If Right(path, 1) = "\" Then Exit Function
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
   
@@ -161,7 +163,7 @@ Function GetParentFolder(path) As String
         my_path = Mid(my_path, 1, Len(my_path) - 1)
     Wend
     
-    tmp = Split(my_path, "\")
+    tmp = split(my_path, "\")
     tmp(UBound(tmp)) = Empty
     my_path = Replace(Join(tmp, "\"), "\\", "\")
     If VBA.Right(my_path, 1) = "\" Then my_path = Mid(my_path, 1, Len(my_path) - 1)
@@ -186,7 +188,7 @@ End Function
 Function FileNameFromPath(fullpath As String) As String
     Dim tmp() As String
     If InStr(fullpath, "\") > 0 Then
-        tmp = Split(fullpath, "\")
+        tmp = split(fullpath, "\")
         FileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
@@ -194,23 +196,23 @@ End Function
 Function WebFileNameFromPath(fullpath As String)
     Dim tmp() As String
     If InStr(fullpath, "/") > 0 Then
-        tmp = Split(fullpath, "/")
+        tmp = split(fullpath, "/")
         WebFileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
 
-Function DeleteFile(fpath As String) As Boolean
+Function DeleteFile(fPath As String) As Boolean
  On Error GoTo hadErr
     
     Dim attributes As VbFileAttribute
 
-    attributes = GetAttr(fpath)
+    attributes = GetAttr(fPath)
     If (attributes And vbReadOnly) Then
         attributes = attributes - vbReadOnly
-        SetAttr fpath, attributes
+        SetAttr fPath, attributes
     End If
 
-    Kill fpath
+    Kill fPath
     DeleteFile = True
     
  Exit Function
@@ -225,14 +227,14 @@ Sub Rename(fullpath As String, newName As String)
   Name fullpath As pf & "\" & newName
 End Sub
 
-Sub SetAttribute(fpath, it As VbFileAttribute)
-   SetAttr fpath, it
+Sub SetAttribute(fPath, it As VbFileAttribute)
+   SetAttr fPath, it
 End Sub
 
 Function GetExtension(path) As String
     Dim tmp() As String
     Dim ub As String
-    tmp = Split(path, "\")
+    tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
        GetExtension = Mid(ub, InStrRev(ub, "."), Len(ub))
@@ -244,7 +246,7 @@ End Function
 Function GetBaseName(path As String) As String
     Dim tmp() As String
     Dim ub As String
-    tmp = Split(path, "\")
+    tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
        GetBaseName = Mid(ub, 1, InStrRev(ub, ".") - 1)
@@ -268,7 +270,7 @@ End Function
 Function SafeFileName(proposed As String) As String
   Dim badChars As String, bad() As String, i As Long
   badChars = ">,<,&,/,\,:,|,?,*,"""
-  bad = Split(badChars, ",")
+  bad = split(badChars, ",")
   For i = 0 To UBound(bad)
     proposed = Replace(proposed, bad(i), "")
   Next
@@ -360,7 +362,7 @@ Function buildPath(folderPath As String) As Boolean
     
     Dim tmp() As String, build As String, i As Long
     
-    tmp = Split(folderPath, "\")
+    tmp = split(folderPath, "\")
     build = tmp(0)
     For i = 1 To UBound(tmp)
         build = build & "\" & tmp(i)
@@ -402,38 +404,38 @@ Sub AppendFile(path, it)
 End Sub
 
 
-Function Copy(fpath As String, toFolder As String)
+Function Copy(fPath As String, toFolder As String)
    Dim baseName As String, newName As String
    If FolderExists(toFolder) Then
-       baseName = FileNameFromPath(fpath)
+       baseName = FileNameFromPath(fPath)
        toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
        newName = toFolder & baseName
-       FileCopy fpath, newName
+       FileCopy fPath, newName
        Copy = newName
    Else 'assume tofolder is actually new desired file path
-       FileCopy fpath, toFolder
+       FileCopy fPath, toFolder
        Copy = toFolder
    End If
 End Function
 
-Function Move(fpath As String, toFolder As String)
-    Dim fname As String
-    fname = FileNameFromPath(fpath)
+Function Move(fPath As String, toFolder As String)
+    Dim fName As String
+    fName = FileNameFromPath(fPath)
     toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
     
-    Name fpath As toFolder & fname
-    Move = toFolder & fname
+    Name fPath As toFolder & fName
+    Move = toFolder & fName
     
 End Function
 
-Function CreateFile(fpath As String) As Boolean
+Function CreateFile(fPath As String) As Boolean
     On Error GoTo hell
     Dim f As Long
     f = FreeFile
-    If FileExists(fpath) Then Exit Function
-    Open fpath For Binary As f
+    If FileExists(fPath) Then Exit Function
+    Open fPath For Binary As f
     Close f
-    If FileExists(fpath) Then CreateFile = True
+    If FileExists(fPath) Then CreateFile = True
 hell:
 End Function
 
@@ -464,14 +466,14 @@ Private Sub delTree(folderPath As String, Optional force As Boolean = True)
    End If
 End Sub
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init: ReDim ary(0): ary(0) = value
+init: ReDim ary(0): ary(0) = Value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean
@@ -485,7 +487,7 @@ End Function
 
 Function FolderName(folderPath) As String
     Dim ret As String, tmp() As String
-    tmp = Split(folderPath, "\")
+    tmp = split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _
         Else ret = tmp(UBound(tmp) - 1)

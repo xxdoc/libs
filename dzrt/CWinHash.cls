@@ -27,9 +27,9 @@ Private Declare Function CryptAcquireContext Lib "advapi32.dll" _
 Private Declare Function CryptReleaseContext Lib "advapi32.dll" (ByVal hProv As Long, ByVal dwFlags As Long) As Long
 Private Declare Function CryptCreateHash Lib "advapi32.dll" (ByVal hProv As Long, ByVal Algid As Long, ByVal hKey As Long, ByVal dwFlags As Long, phHash As Long) As Long
 Private Declare Function CryptDestroyHash Lib "advapi32.dll" (ByVal hHash As Long) As Long
-Private Declare Function CryptHashData Lib "advapi32.dll" (ByVal hHash As Long, ByVal pbdata As String, ByVal dwDataLen As Long, ByVal dwFlags As Long) As Long
-Private Declare Function CryptBinHashData Lib "advapi32.dll" Alias "CryptHashData" (ByVal hHash As Long, pbdata As Any, ByVal dwDataLen As Long, ByVal dwFlags As Long) As Long
-Private Declare Function CryptGetHashParam Lib "advapi32.dll" (ByVal hHash As Long, ByVal dwParam As Long, pbdata As Any, pdwDataLen As Long, ByVal dwFlags As Long) As Long
+Private Declare Function CryptHashData Lib "advapi32.dll" (ByVal hHash As Long, ByVal pbData As String, ByVal dwDataLen As Long, ByVal dwFlags As Long) As Long
+Private Declare Function CryptBinHashData Lib "advapi32.dll" Alias "CryptHashData" (ByVal hHash As Long, pbData As Any, ByVal dwDataLen As Long, ByVal dwFlags As Long) As Long
+Private Declare Function CryptGetHashParam Lib "advapi32.dll" (ByVal hHash As Long, ByVal dwParam As Long, pbData As Any, pdwDataLen As Long, ByVal dwFlags As Long) As Long
 
 Private Const MS_DEF_PROV = "Microsoft Base Cryptographic Provider v1.0"
 Private Const MS_ENH_PROV = "Microsoft Enhanced Cryptographic Provider v1.0"
@@ -60,10 +60,10 @@ Private Const CALG_SHA_512 As Long = &H800E&
 'CALG_SHA_512    0x0000800e
 
 Public Enum HashTypes
-    MD2 = CALG_MD2
-    MD4 = CALG_MD4
-    MD5 = CALG_MD5
-    SHA = CALG_SHA
+    hMD2 = CALG_MD2
+    hMD4 = CALG_MD4
+    hmd5 = CALG_MD5
+    hSHA = CALG_SHA
 End Enum
 
 Enum HashFormats
@@ -141,7 +141,7 @@ Private Function InitHash() As Boolean
     
 End Function
 
-Function HashString(sData As String, Optional method As HashTypes = MD5, Optional returnFormat As HashFormats = HexFormat) As String
+Function HashString(sData As String, Optional method As HashTypes = hmd5, Optional returnFormat As HashFormats = HexFormat) As String
 On Error GoTo hadErr
 
     'is NOT binary unicode safe!
@@ -162,7 +162,7 @@ hadErr:
 End Function
 
 
-Function HashBytes(bytes() As Byte, Optional method As HashTypes = MD5, Optional returnFormat As HashFormats = HexFormat) As String
+Function HashBytes(bytes() As Byte, Optional method As HashTypes = hmd5, Optional returnFormat As HashFormats = HexFormat) As String
 On Error GoTo hell
     
     'binary unicode safe!
@@ -191,7 +191,7 @@ Private Function AryElems(x As Variant) As Long
 hell: AryElems = -1
 End Function
 
-Function HashFile(sFilePath As String, Optional method As HashTypes = MD5, Optional returnFormat As HashFormats = HexFormat) As String
+Function HashFile(sFilePath As String, Optional method As HashTypes = hmd5, Optional returnFormat As HashFormats = HexFormat) As String
     On Error GoTo hadErr
 
     If Not FileExists(sFilePath) Then errLog "HashFile - File not found"

@@ -251,21 +251,23 @@ Private Sub SubFoldersInternal(pc As Collection, parentDir)
 End Sub
 
 
-Function FolderExists(path)
+Function FolderExists(path) As Boolean
   On Error GoTo hell
   Dim tmp As String
   tmp = path & "\"
   If Len(tmp) = 1 Then Exit Function
+  If Asc(Left(tmp, 1)) = 0 Then Exit Function
   If Dir(tmp, vbDirectory) <> "" Then FolderExists = True
   Exit Function
 hell:
     FolderExists = False
 End Function
 
-Function FileExists(path)
+Function FileExists(path) As Boolean
   On Error GoTo hell
     
   If Len(path) = 0 Then Exit Function
+  If Asc(Left(path, 1)) = 0 Then Exit Function
   If Right(path, 1) = "\" Then Exit Function
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
   

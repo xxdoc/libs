@@ -53,6 +53,19 @@ Public Enum CompressTypes
     ct_LZNT1_MAX = 2  'the decompress works with other known samples, but not with one compressed with our compress..havent been able to fix the error yet!
 End Enum
 
+Public Enum InputFormats
+    ifHex = 1
+    ifDecimal = 2
+    ifString = 3
+    ifHexDump = 4
+End Enum
+
+Public Enum hexOutFormats
+    hoDump
+    hoSpaced
+    hoHexOnly
+End Enum
+
 Private OnBits(0 To 31) As Long
 Private crc_table() As Long
 
@@ -323,18 +336,27 @@ Function GetMySetting(key, Optional defaultval = "")
 End Function
 
 Function FolderExists(path) As Boolean
-  If Len(path) = 0 Then Exit Function
-  If Dir(path, vbDirectory) <> "" Then FolderExists = True _
-  Else FolderExists = False
+  On Error GoTo hell
+  Dim tmp As String
+  tmp = path & "\"
+  If Len(tmp) = 1 Then Exit Function
+  If Asc(Left(tmp, 1)) = 0 Then Exit Function
+  If Dir(tmp, vbDirectory) <> "" Then FolderExists = True
+  Exit Function
+hell:
+    FolderExists = False
 End Function
 
 Function FileExists(path) As Boolean
-  On Error Resume Next
+  On Error GoTo hell
+    
   If Len(path) = 0 Then Exit Function
-  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then
-     If Err.Number <> 0 Then Exit Function
-     FileExists = True
-  End If
+  If Asc(Left(path, 1)) = 0 Then Exit Function
+  If Right(path, 1) = "\" Then Exit Function
+  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+  
+  Exit Function
+hell: FileExists = False
 End Function
 
 Function RandomNum() As Long
@@ -847,15 +869,17 @@ Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     h2l = (Err.Number = 0)
 End Function
 
-Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As Long = 1, Optional ByVal length As Long = -1) As String
+Function HexDump(bAryOrStrData, Optional ByVal length As Long = -1, Optional ByVal startAt As Long = 1, Optional hexFormat As hexOutFormats = hoDump) As String
     Dim s() As String, chars As String, tmp As String
     On Error Resume Next
     Dim ary() As Byte
     Dim offset As Long
     Const LANG_US = &H409
     Dim i As Long, tt, h, x
-
+    Dim hexOnly As Long
+    
     offset = 0
+    If hexFormat <> hoDump Then hexOnly = 1
     
     If TypeName(bAryOrStrData) = "Byte()" Then
         ary() = bAryOrStrData
@@ -915,13 +939,13 @@ Function HexDump(bAryOrStrData, Optional hexOnly = 0, Optional ByVal startAt As 
     HexDump = Join(s, vbCrLf)
     
     If hexOnly <> 0 Then
-        HexDump = Replace(HexDump, " ", "")
+        If hexFormat = hoHexOnly Then HexDump = Replace(HexDump, " ", "")
         HexDump = Replace(HexDump, vbCrLf, "")
     End If
     
 End Function
 
-Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optional isDecimal As Boolean = False)
+Public Function toBytes(ByVal hexstr, ByRef outVar, Optional ByVal inputformat As InputFormats = ifHex) As Boolean
 
 'supports:
 '11 22 33 44   spaced hex chars
@@ -941,6 +965,17 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
     Dim pos As Long, marker As String
     
     On Error GoTo hell
+    
+    If inputformat = ifHexDump Then
+        x = ExtractHexFromDump(hexstr)      'returns just the hex string
+        If Not toBytes(x, r) Then GoTo hell 'now we convert it to actual bytes..
+        GoTo retNow
+    End If
+    
+    If inputformat = ifString Then
+        r() = StrConv(hexstr, vbFromUnicode, LANG_US)
+        GoTo retNow
+    End If
     
     str = Replace(hexstr, vbCr, Empty)
     str = Replace(str, vbLf, Empty)
@@ -991,7 +1026,7 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
         If pos > 0 And pos < 5 Then   'make sure all are double digit hex chars...(also account for decimal 1,11,111,
             tmp = split(hexstr, marker)
             
-            If isDecimal Then
+            If inputformat = ifDecimal Then
                 For i = 0 To UBound(tmp)
                     tmp(i) = Hex(CLng(tmp(i)))
                 Next
@@ -1015,13 +1050,19 @@ Public Function toBytes(ByVal hexstr, Optional strRet As Boolean = True, Optiona
         bpush r(), b
     Next
     
-    If strRet Then
-        toBytes = StrConv(r, vbUnicode, LANG_US)
+retNow:
+    If TypeName(outVar) = "Byte()" Then
+        outVar = r
     Else
-        toBytes = r
+        outVar = StrConv(r, vbUnicode, LANG_US)
     End If
     
+    toBytes = True
+    Exit Function
+    
 hell:
+    toBytes = False
+    
 End Function
 
 Function FirstOccurance(it, ByVal csvFind As String, ByRef outFoundVal) As Long
@@ -1086,7 +1127,7 @@ nope:
     isHexChar = False
 End Function
 
-Public Function rc4(fileByteOrString As Variant, ByVal Password As Variant) As String
+Public Function rc4(fileByteOrString As Variant, ByVal Password As Variant, Optional strRet As Boolean = True)
 On Error Resume Next
     Dim RB(0 To 255) As Integer, x As Long, y As Long, Z As Long, key() As Byte, ByteArray() As Byte, temp As Byte
     
@@ -1140,7 +1181,11 @@ On Error Resume Next
         ByteArray(x) = ByteArray(x) Xor (RB((RB(y) + RB(Z)) Mod 256))
     Next x
     
-    rc4 = StrConv(ByteArray, vbUnicode, LANG_US)
+    If strRet Then
+        rc4 = StrConv(ByteArray, vbUnicode, LANG_US)
+    Else
+        rc4 = ByteArray
+    End If
     
 End Function
 
