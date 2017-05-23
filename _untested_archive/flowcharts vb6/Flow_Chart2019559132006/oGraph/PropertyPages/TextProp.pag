@@ -1,0 +1,184 @@
+VERSION 5.00
+Begin VB.PropertyPage TextProp 
+   Caption         =   "Text"
+   ClientHeight    =   2595
+   ClientLeft      =   0
+   ClientTop       =   0
+   ClientWidth     =   6135
+   PaletteMode     =   0  'Halftone
+   ScaleHeight     =   2595
+   ScaleWidth      =   6135
+   Begin VB.HScrollBar HScTransparency 
+      Height          =   285
+      LargeChange     =   10
+      Left            =   3090
+      Max             =   255
+      TabIndex        =   7
+      Top             =   1020
+      Width           =   2745
+   End
+   Begin VB.CheckBox chkIsOutlined 
+      Caption         =   "IsOutlined"
+      Height          =   285
+      Left            =   3120
+      TabIndex        =   6
+      Top             =   1440
+      Width           =   2730
+   End
+   Begin VB.CheckBox chkIsTransparent 
+      Caption         =   "IsTransparent"
+      Height          =   285
+      Left            =   3120
+      TabIndex        =   4
+      Top             =   270
+      Width           =   2700
+   End
+   Begin VB.TextBox txtCaption 
+      Height          =   1230
+      Left            =   180
+      MultiLine       =   -1  'True
+      ScrollBars      =   3  'Both
+      TabIndex        =   3
+      Top             =   510
+      Width           =   2700
+   End
+   Begin VB.TextBox txtToolTipText 
+      Height          =   330
+      Left            =   1290
+      TabIndex        =   1
+      Top             =   2160
+      Width           =   4590
+   End
+   Begin VB.Label Label2 
+      Caption         =   "*"
+      ForeColor       =   &H000000FF&
+      Height          =   225
+      Left            =   210
+      TabIndex        =   9
+      Top             =   1800
+      Width           =   195
+   End
+   Begin VB.Label Label1 
+      Caption         =   "Use Ctrl + Enter for new line"
+      Height          =   255
+      Left            =   480
+      TabIndex        =   8
+      Top             =   1800
+      Width           =   2055
+   End
+   Begin VB.Label lblTransparency 
+      Caption         =   "Transparency (0-255):"
+      Enabled         =   0   'False
+      Height          =   240
+      Left            =   3120
+      TabIndex        =   5
+      Top             =   690
+      Width           =   1560
+   End
+   Begin VB.Label lblCaption 
+      Caption         =   "Caption:"
+      Height          =   240
+      Left            =   180
+      TabIndex        =   2
+      Top             =   255
+      Width           =   2700
+   End
+   Begin VB.Label lblToolTipText 
+      Caption         =   "ToolTipText:"
+      Height          =   240
+      Left            =   180
+      TabIndex        =   0
+      Top             =   2220
+      Width           =   990
+   End
+End
+Attribute VB_Name = "TextProp"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
+Option Explicit
+
+Private m_IsOutlined As Boolean
+Private m_Transparency As Byte
+Private m_IsTransparent As Boolean
+Private m_Caption As String
+Private m_ToolTipText As String
+    
+Private Sub chkIsOutlined_Click()
+    Changed = True
+    SelectedControls(0).IsOutlined = (chkIsOutlined.value = vbChecked)
+    SelectedControls(0).Activate
+    SelectedControls(0).Paint
+End Sub
+
+
+Private Sub chkIsTransparent_Click()
+    Changed = True
+    If chkIsTransparent.value = vbChecked Then
+        lblTransparency.Enabled = True
+        HScTransparency.Enabled = True
+    Else
+        lblTransparency.Enabled = False
+        HScTransparency.Enabled = False
+    End If
+    SelectedControls(0).IsTransparent = (chkIsTransparent.value = vbChecked)
+End Sub
+
+
+Private Sub HScTransparency_Change()
+     Changed = True
+    lblTransparency.Caption = "Transparency (" & HScTransparency.value & "):"
+    SelectedControls(0).Transparency = CByte(HScTransparency.value)
+    SelectedControls(0).Paint
+End Sub
+
+Private Sub PropertyPage_Terminate()
+    If Changed Then
+        SelectedControls(0).IsOutlined = m_IsOutlined
+        SelectedControls(0).Transparency = m_Transparency
+        SelectedControls(0).IsTransparent = m_IsTransparent
+        SelectedControls(0).Caption = m_Caption
+        SelectedControls(0).ToolTipText = m_ToolTipText
+    End If
+End Sub
+
+Private Sub txtCaption_Change()
+    Changed = True
+    SelectedControls(0).Caption = txtCaption.Text
+    SelectedControls(0).Activate
+    SelectedControls(0).Paint
+End Sub
+
+Private Sub txtToolTipText_Change()
+    Changed = True
+End Sub
+
+Private Sub PropertyPage_ApplyChanges()
+    SelectedControls(0).IsOutlined = (chkIsOutlined.value = vbChecked)
+    SelectedControls(0).Transparency = CByte(HScTransparency.value)
+    SelectedControls(0).IsTransparent = (chkIsTransparent.value = vbChecked)
+    SelectedControls(0).Caption = txtCaption.Text
+    SelectedControls(0).ToolTipText = txtToolTipText.Text
+    SelectedControls(0).Activate
+    SelectedControls(0).Paint
+    Changed = False
+End Sub
+
+
+
+Private Sub PropertyPage_SelectionChanged()
+    chkIsOutlined.value = (SelectedControls(0).IsOutlined And vbChecked)
+    chkIsTransparent.value = (SelectedControls(0).IsTransparent And vbChecked)
+    HScTransparency.Enabled = (SelectedControls(0).IsTransparent And vbChecked)
+    HScTransparency.value = SelectedControls(0).Transparency
+    txtCaption.Text = SelectedControls(0).Caption
+    txtToolTipText.Text = SelectedControls(0).ToolTipText
+    m_IsOutlined = (SelectedControls(0).IsOutlined And vbChecked)
+    m_Transparency = SelectedControls(0).Transparency
+    m_IsTransparent = (SelectedControls(0).IsTransparent And vbChecked)
+    m_Caption = SelectedControls(0).Caption
+    m_ToolTipText = SelectedControls(0).ToolTipText
+End Sub
+
+

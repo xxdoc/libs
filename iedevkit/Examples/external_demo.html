@@ -1,0 +1,48 @@
+
+
+<table cellpadding=5 cellspacing=0 bordercolor=black border=1 width=500>
+<tr><td align=center><font size=+2>Window.External Demo </td></tr>
+<tr><td>
+
+	Window.External Javascript function allows a pages scripts to 
+	access objects and functions from the webbrowsers parent 
+	makes available. In our code, you can see clsExtender_GetExternal
+	returns a reference to its main form. This gives the html scripting
+	access to all of that forms objects and functions.
+	<br><br>
+	Below are 3 buttons, the first read the current url from the 
+	navigation textbox. The second, calls a function on the main 
+	form and receives an object reference to the textbox. The 3rd
+	button, will call a function on the main form passing in a value
+	and receiving back a modified value.
+	<br><br>
+</td></tr>
+<tr><td align=center>
+	<INPUT TYPE=button onclick="GetTextBoxValue()" value="Read form1.txtUrl">
+	
+	<INPUT TYPE=button onclick="GetTextBoxRef()" value="Get ObjRef to form1.txtUrl">
+	<br><br>
+	
+	<INPUT TYPE=button onclick="callFunction()" value="Call Function from form1.txtUrl">
+	<br><br>
+</TD></TR>
+</TABLE>
+
+<script>
+
+function GetTextBoxValue(){
+	alert(window.external.txtUrl.text)
+}
+
+function GetTextBoxRef(){
+	otxtUrl = window.external.txtUrl
+	alert(otxtUrl.text)
+	otxtUrl.text = "Setting VB Textbox Text from WebPage"
+}
+
+function callFunction(){
+	ret = window.external.myExternalFunction("this is my string")
+	alert(ret)
+}
+
+</script>

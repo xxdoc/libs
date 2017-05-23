@@ -1,9 +1,0 @@
-cSelfSub = 0, 0, 0, 0, C
-uSelfSub = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-fSelfSub = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-mMain = 0, 0, 0, 0, C
-cSubclass = 22, 22, 927, 702, 
-iSubclass = 0, 0, 0, 0, C
-fCallback = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-cCallback = 0, 0, 0, 0, C
-uCallback = 0, 0, 0, 0, C, 0, 0, 0, 0, C

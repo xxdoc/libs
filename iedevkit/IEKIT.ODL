@@ -1,0 +1,1061 @@
+[
+    uuid(FF90C48D-79F8-40c3-A592-F880BE4ADB83),
+    helpstring("ieKit table"),
+    version(1.0)
+]
+library ieKit{
+
+    importlib("stdole2.tlb");
+    interface IUnknown;
+    interface IEnumFORMATETC;  
+    interface IDataObject;  
+    interface IDropTarget;  
+    interface IOleWindow;
+    interface IOleCommandTarget; 
+    interface IServiceProvider;
+    interface IOleInPlaceUIWindow;
+    interface IOleInPlaceActiveObject;
+    interface IOleInPlaceFrame;
+    interface IDocHostUIHandler;
+    interface ICustomDoc;
+    interface IMalloc;
+    interface IServiceProvider;
+    interface IInternetZoneManager;
+
+    /*
+    // Interfaces
+    const LPSTR IIDSTR_IUnknown                 = "{00000000-0000-0000-C000-000000000046}";
+    const LPSTR IIDSTR_IDocHostShowUI           = "{C4D244B0-D43E-11CF-893B-00AA00BDCE1A}";
+    const LPSTR IIDSTR_IDocHostUIHandler        = "{BD3F23C0-D43E-11CF-893B-00AA00BDCE1A}";
+    const LPSTR IIDSTR_IServiceProvider         = "{6D5140C1-7436-11CE-8034-00AA006009FA}";
+    const LPSTR IIDSTR_IWebBrowserApp           = "{0002DF05-0000-0000-C000-000000000046}";
+    const LPSTR IIDSTR_IInternetSecurityManager = "{79eac9ee-baf9-11ce-8c82-00aa004ba90b}";
+    // CLSIDs
+    const LPSTR CLSIDSTR_InternetSecurityManager = "{7B8A2D94-0AC9-11D1-896C-00C04FB6BFC4}";
+    const LPSTR CLSIDSTR_InternetZoneManager     = "{7B8A2D95-0AC9-11D1-896C-00C04FB6BFC4}";
+    */
+
+    typedef unsigned char BYTE;
+    typedef [public] LONG BOOL;
+    
+    typedef struct OLEMENUGROUPWIDTHS {
+        LONG width[6];
+    } OLEMENUGROUPWIDTHS;
+
+    typedef enum DROPEFFECTS {
+        DROPEFFECT_NONE = 0,
+        DROPEFFECT_COPY = 1,
+        DROPEFFECT_MOVE = 2,
+        DROPEFFECT_LINK = 4,
+        DROPEFFECT_SCROLL = 0x80000000,
+    } DROPEFFECTS;
+    
+    typedef enum DATADIR {
+        DATADIR_GET = 1,
+        DATADIR_SET = 2
+    } DATADIR;
+
+    typedef enum DVASPECT {
+        DVASPECT_CONTENT = 1,
+        DVASPECT_THUMBNAIL = 2,
+        DVASPECT_ICON = 4,
+        DVASPECT_DOCPRINT = 8,
+        DVASPECT_OPAQUE = 16,
+        DVASPECT_TRANSPARENT = 32
+    } DVASPECT;
+
+    typedef enum TYMED {
+        TYMED_HGLOBAL = 1,
+        TYMED_FILE = 2,
+        TYMED_ISTREAM = 4,
+        TYMED_ISTORAGE = 8,
+        TYMED_GDI = 16,
+        TYMED_MFPICT = 32,
+        TYMED_ENHMF = 64,
+        TYMED_NULL = 0
+    } TYMED;
+
+    typedef struct STGMEDIUM {
+       TYMED TYMED;
+       long data;
+       long pUnkForRelease;
+    } STGMEDIUM;
+
+    typedef struct FORMATETC {
+        short cfFormat;
+        long pDVTARGETDEVICE;
+        DVASPECT dwAspect;
+        long lindex;
+        TYMED TYMED;
+    } FORMATETC;
+
+    typedef enum HRESULTS {
+        S_OK = 0,
+        S_FALSE = 1,
+
+        E_NOTIMPL = 0x80004001,
+        E_OUTOFMEMORY = 0x8007000E,
+        E_INVALIDARG = 0x80070057,
+        E_NOINTERFACE = 0x80004002,
+        E_POINTER = 0x80004003,
+        E_HANDLE = 0x80070006,
+        E_ABORT = 0x80004004,
+        E_FAIL = 0x80004005,
+        E_ACCESSDENIED = 0x80070005,
+    } HRESULTS;
+
+    typedef struct UUID {
+        LONG Data1;
+        SHORT Data2;
+        SHORT Data3;
+        BYTE Data4[8];
+    } UUID;
+
+    typedef struct RECT {
+        long Left;
+        long Top;
+        long Right;
+        long Bottom;
+    } RECT;
+
+    typedef struct POINT {
+        LONG x;
+        LONG y;
+    } POINT;
+
+
+    typedef struct MSG {
+        long hwnd;
+        long message;
+        long wParam;
+        long lParam;
+        long time;
+        long pt_x;
+        long pt_y;
+    } MSG;    
+    
+    typedef [helpstring("DISP_E_EXCEPTION Error info")] struct EXCEPINFO {
+        [helpstring("Error number")]
+        short wCode;
+        short wReserved;
+        [helpstring("Source")]
+        BSTR Source;
+        [helpstring("Description")]
+        BSTR Description;
+        [helpstring("Help file")]
+        BSTR HelpFile;
+        [helpstring("Help context")]
+        BSTR dwHelpContext;
+        LONG pvReserved;
+        [helpstring("HRESULT (__stdcall *pfnDeferredFillIn)(struct EXCEPINFO *);")]
+        LONG pfnDeferredFillIn;
+        LONG scode;
+    } EXCEPINFO;
+
+    typedef struct DISPPARAMS {
+        [helpstring("Parameters")]
+        LONG rgPointerToVariantArray;
+        [helpstring("Named parameters")]
+        LONG rgPointerToLONGNamedArgs;
+        [helpstring("Parameter count")]
+        LONG cArgs;
+        [helpstring("Named parameter count")]
+        LONG cNamedArgs;
+    } DISPPARAMS;
+
+    typedef enum ContextMenuTarget {
+        cmDefault = 0,
+        cmImage = 1,
+        cmControl = 2,
+        cmTable = 3,
+        cmSelection = 4,
+        cmLink= 5,
+        cmAnchor = 6,
+        cmImgDynsrc = 7,
+        cmImgart = 8,
+    } ContextMenuTarget;
+    
+    typedef enum GMEM {
+            GMEM_FIXED          = 0x0000,
+            GMEM_MOVEABLE       = 0x0002,
+            GMEM_NOCOMPACT      = 0x0010,
+            GMEM_NODISCARD      = 0x0020,
+            GMEM_ZEROINIT       = 0x0040,
+            GMEM_MODIFY         = 0x0080,
+            GMEM_DISCARDABLE    = 0x0100,
+            GMEM_NOT_BANKED     = 0x1000,
+            GMEM_SHARE          = 0x2000,
+            GMEM_DDESHARE       = 0x2000,
+            GMEM_NOTIFY         = 0x4000,
+            GMEM_LOWER          = 0x1000,
+            GMEM_VALID_FLAGS    = 0x7F72,
+            GMEM_INVALID_HANDLE = 0x8000,
+            /* Flags returned by GlobalFlags (in addition to GMEM_DISCARDABLE) */
+            GMEM_DISCARDED      = 0x4000,
+            GMEM_LOCKCOUNT      = 0x00FF,
+     } GMEM;
+
+     typedef enum MEMCTX {
+             MEMCTX_TASK = 1,
+             MEMCTX_SHARED = 2,
+             MEMCTX_MACSYSTEM = 3,
+             MEMCTX_UNKNOWN = -1,
+             MEMCTX_SAME = -2
+         } MEMCTX;
+
+     typedef enum CLSCTX {
+        CLSCTX_INPROC_SERVER = 0x1,
+        CLSCTX_INPROC_HANDLER = 0x2,
+        CLSCTX_LOCAL_SERVER = 0x4,
+        CLSCTX_INPROC_SERVER16 = 0x8,
+        CLSCTX_REMOTE_SERVER = 0x10,
+        CLSCTX_INPROC_HANDLER16 = 0x20,
+        CLSCTX_INPROC_SERVERX86 = 0x40,
+        CLSCTX_INPROC_HANDLERX86 = 0x80,
+        CLSCTX_ESERVER_HANDLER = 0x100,
+        CLSCTX_RESERVED = 0x200,
+        CLSCTX_NO_CODE_DOWNLOAD = 0x400,
+        CLSCTX_NO_WX86_TRANSLATION = 0x800,
+        CLSCTX_NO_CUSTOM_MARSHAL = 0x1000,
+        CLSCTX_ENABLE_CODE_DOWNLOAD = 0x2000,
+        CLSCTX_NO_FAILURE_LOG = 0x4000
+    } CLSCTX;
+
+    typedef enum URLACTIONS {
+    URLACTION_DOWNLOAD_MIN                                 = 0x00001000,
+    URLACTION_DOWNLOAD_SIGNED_ACTIVEX                      = 0x00001001,
+    URLACTION_DOWNLOAD_UNSIGNED_ACTIVEX                    = 0x00001004,
+    URLACTION_DOWNLOAD_CURR_MAX                            = 0x00001004,
+    URLACTION_DOWNLOAD_MAX                                 = 0x000011FF,
+
+    URLACTION_ACTIVEX_MIN                                  = 0x00001200,
+    URLACTION_ACTIVEX_RUN                                  = 0x00001200,
+    URLACTION_ACTIVEX_OVERRIDE_OBJECT_SAFETY               = 0x00001201,
+    URLACTION_ACTIVEX_OVERRIDE_DATA_SAFETY                 = 0x00001202,
+    URLACTION_ACTIVEX_OVERRIDE_SCRIPT_SAFETY               = 0x00001203,
+    URLACTION_SCRIPT_OVERRIDE_SAFETY                       = 0x00001401,
+    URLACTION_ACTIVEX_CONFIRM_NOOBJECTSAFETY               = 0x00001204,
+    URLACTION_ACTIVEX_TREATASUNTRUSTED                     = 0x00001205,
+    URLACTION_ACTIVEX_CURR_MAX                             = 0x00001205,
+    URLACTION_ACTIVEX_MAX                                  = 0x000013ff,
+
+    URLACTION_SCRIPT_MIN                                   = 0x00001400,
+    URLACTION_SCRIPT_RUN                                   = 0x00001400,
+    URLACTION_SCRIPT_JAVA_USE                              = 0x00001402,
+    URLACTION_SCRIPT_SAFE_ACTIVEX                          = 0x00001405,
+    URLACTION_CROSS_DOMAIN_DATA                            = 0x00001406,
+    URLACTION_SCRIPT_PASTE                                 = 0x00001407,
+    URLACTION_SCRIPT_CURR_MAX                              = 0x00001407,
+    URLACTION_SCRIPT_MAX                                   = 0x000015ff,
+
+    URLACTION_HTML_MIN                                     = 0x00001600,
+    URLACTION_HTML_SUBMIT_FORMS                            = 0x00001601,
+    URLACTION_HTML_SUBMIT_FORMS_FROM                       = 0x00001602,
+    URLACTION_HTML_SUBMIT_FORMS_TO                         = 0x00001603,
+    URLACTION_HTML_FONT_DOWNLOAD                           = 0x00001604,
+    URLACTION_HTML_JAVA_RUN                                = 0x00001605,
+    URLACTION_HTML_USERDATA_SAVE                           = 0x00001606,
+    URLACTION_HTML_SUBFRAME_NAVIGATE                       = 0x00001607,
+    URLACTION_HTML_CURR_MAX                                = 0x00001607,
+    URLACTION_HTML_MAX                                     = 0x000017ff,
+
+    URLACTION_SHELL_MIN                                    = 0x00001800,
+    URLACTION_SHELL_INSTALL_DTITEMS                        = 0x00001800,
+    URLACTION_SHELL_MOVE_OR_COPY                           = 0x00001802,
+    URLACTION_SHELL_FILE_DOWNLOAD                          = 0x00001803,
+    URLACTION_SHELL_VERB                                   = 0x00001804,
+    URLACTION_SHELL_WEBVIEW_VERB                           = 0x00001805,
+    URLACTION_SHELL_CURR_MAX                               = 0x00001805,
+    URLACTION_SHELL_MAX                                    = 0x000019ff,
+
+    URLACTION_NETWORK_MIN                                  = 0x00001A00,
+
+    URLACTION_CREDENTIALS_USE                              = 0x00001A00,
+
+    URLACTION_AUTHENTICATE_CLIENT                          = 0x00001A01,
+
+    URLACTION_COOKIES                                      = 0x00001A02,
+    URLACTION_COOKIES_SESSION                              = 0x00001A03,
+
+    URLACTION_CLIENT_CERT_PROMPT                           = 0x00001A04,
+
+    URLACTION_NETWORK_CURR_MAX                             = 0x00001A04,
+    URLACTION_NETWORK_MAX                                  = 0x00001Bff,
+
+    URLACTION_JAVA_MIN                                     = 0x00001C00,
+    URLACTION_JAVA_PERMISSIONS                             = 0x00001C00,
+    URLACTION_JAVA_CURR_MAX                                = 0x00001C00,
+    URLACTION_JAVA_MAX                                     = 0x00001Cff,
+
+    URLACTION_INFODELIVERY_MIN                           = 0x00001D00,
+    URLACTION_INFODELIVERY_NO_ADDING_CHANNELS            = 0x00001D00,
+    URLACTION_INFODELIVERY_NO_EDITING_CHANNELS           = 0x00001D01,
+    URLACTION_INFODELIVERY_NO_REMOVING_CHANNELS          = 0x00001D02,
+    URLACTION_INFODELIVERY_NO_ADDING_SUBSCRIPTIONS       = 0x00001D03,
+    URLACTION_INFODELIVERY_NO_EDITING_SUBSCRIPTIONS      = 0x00001D04,
+    URLACTION_INFODELIVERY_NO_REMOVING_SUBSCRIPTIONS     = 0x00001D05,
+    URLACTION_INFODELIVERY_NO_CHANNEL_LOGGING            = 0x00001D06,
+    URLACTION_INFODELIVERY_CURR_MAX                      = 0x00001D06,
+    URLACTION_INFODELIVERY_MAX                           = 0x00001Dff,
+    URLACTION_CHANNEL_SOFTDIST_MIN                       = 0x00001E00,
+    URLACTION_CHANNEL_SOFTDIST_PERMISSIONS               = 0x00001E05,
+    URLACTION_CHANNEL_SOFTDIST_MAX                       = 0x00001Eff,
+} URLACTIONS;
+
+typedef enum URLPOLICIES {
+    URLPOLICY_ACTIVEX_CHECK_LIST                 = 0x00010000,
+
+    URLPOLICY_CREDENTIALS_SILENT_LOGON_OK        = 0x00000000,
+    URLPOLICY_CREDENTIALS_MUST_PROMPT_USER       = 0x00010000,
+    URLPOLICY_CREDENTIALS_CONDITIONAL_PROMPT     = 0x00020000,
+    URLPOLICY_CREDENTIALS_ANONYMOUS_ONLY         = 0x00030000,
+
+    URLPOLICY_AUTHENTICATE_CLEARTEXT_OK          = 0x00000000,
+    URLPOLICY_AUTHENTICATE_CHALLENGE_RESPONSE    = 0x00010000,
+    URLPOLICY_AUTHENTICATE_MUTUAL_ONLY           = 0x00030000,
+
+    URLPOLICY_JAVA_PROHIBIT                      = 0x00000000,
+    URLPOLICY_JAVA_HIGH                          = 0x00010000,
+    URLPOLICY_JAVA_MEDIUM                        = 0x00020000,
+    URLPOLICY_JAVA_LOW                           = 0x00030000,
+    URLPOLICY_JAVA_CUSTOM                        = 0x00800000,
+
+    URLPOLICY_CHANNEL_SOFTDIST_PROHIBIT          = 0x00010000,
+    URLPOLICY_CHANNEL_SOFTDIST_PRECACHE          = 0x00020000,
+    URLPOLICY_CHANNEL_SOFTDIST_AUTOINSTALL       = 0x00030000,
+
+    URLPOLICY_ALLOW                = 0x00,
+    URLPOLICY_QUERY                = 0x01,
+    URLPOLICY_DISALLOW             = 0x03,
+    URLPOLICY_NOTIFY_ON_ALLOW      = 0x10,
+    URLPOLICY_NOTIFY_ON_DISALLOW   = 0x20,
+    URLPOLICY_LOG_ON_ALLOW         = 0x40,
+    URLPOLICY_LOG_ON_DISALLOW      = 0x80,
+    URLPOLICY_MASK_PERMISSIONS     = 0x0f,
+    URLPOLICY_DONTCHECKDLGBOX     = 0x100,
+
+} URLPOLICIES;
+
+    typedef enum DOCHOSTUIDBLCLK {
+        DOCHOSTUIDBLCLK_DEFAULT = 0,
+        DOCHOSTUIDBLCLK_SHOWPROPERTIES = 1,
+        DOCHOSTUIDBLCLK_SHOWCODE = 2,
+    } DOCHOSTUIDBLCLK ;
+
+    typedef enum DOCHOSTUIFLAG {
+        DOCHOSTUIFLAG_DIALOG = 1,
+        DOCHOSTUIFLAG_DISABLE_HELP_MENU = 2,
+        DOCHOSTUIFLAG_NO3DBORDER = 4,
+        DOCHOSTUIFLAG_SCROLL_NO = 8,
+        DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE = 0x10,
+        DOCHOSTUIFLAG_OPENNEWUI = 0x20,
+        DOCHOSTUIFLAG_DISABLE_OFFSCREEN = 0x40,
+        DOCHOSTUIFLAG_FLAT_SCROLLBAR = 0x80,
+        DOCHOSTUIFLAG_DIV_BLOCKDEFAULT = 0x0100,
+        DOCHOSTUIFLAG_ACTIVATE_CLIENTHIT_ONLY = 0x0200,
+        DOCHOSTUIFLAG_OVERRIDEBEHAVIORFACTORY = 0x0400,
+        DOCHOSTUIFLAG_CODEPAGELINKEDFONTS = 0x0800,
+        DOCHOSTUIFLAG_URL_ENCODING_DISABLE_UTF8 = 0x1000,
+        DOCHOSTUIFLAG_URL_ENCODING_ENABLE_UTF8 = 0x2000,
+        DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE = 0x4000,
+        DOCHOSTUIFLAG_ENABLE_INPLACE_NAVIGATION = 0x10000,
+        DOCHOSTUIFLAG_IME_ENABLE_RECONVERSION = 0x20000,
+        DOCHOSTUIFLAG_BROWSER = 0x12,
+        DOCHOSTUIFLAG_DESKTOP = 0x2E,
+   } DOCHOSTUIFLAG ;
+
+    typedef struct DOCHOSTUIINFO {
+        LONG cbSize;
+        DOCHOSTUIFLAG dwFlags;
+        DOCHOSTUIDBLCLK dwDoubleClick;
+        LONG pchHostCss;
+        LONG pchHostNS;
+    } DOCHOSTUIINFO;
+
+
+   [
+    odl,
+    uuid(00000000-0000-0000-C000-000000000046),
+    ]
+    interface IUnknown{
+
+        LONG QueryInterface(
+            [in, out] UUID *riid,
+            [in, out] void *ppvObject);
+
+        LONG AddRef();
+        LONG Release();
+    }
+    
+    [
+    odl,
+    uuid(00000103-0000-0000-C000-000000000046),
+    ]
+    interface IEnumFORMATETC : stdole.IUnknown {
+
+        LONG Next(
+            [in] LONG celt,
+            [in, out] FORMATETC *rgelt,
+            [out, defaultvalue(0)] LONG *pceltFetched);
+
+        HRESULT Skip(
+            [in] LONG celt);
+
+        HRESULT Reset();
+
+        HRESULT Clone(
+            [out, retval] IEnumFORMATETC **ppenum);
+}
+
+[
+  odl,
+  uuid(0000010E-0000-0000-C000-000000000046)
+]
+interface IDataObject : stdole.IUnknown {
+
+    LONG GetData(
+        [in, out] FORMATETC *pformatetcIn,
+        [in, out] STGMEDIUM *pmedium);
+
+    HRESULT GetDataHere(
+        [in, out] FORMATETC *pformatetc,
+        [in, out] STGMEDIUM *pmedium);
+
+    LONG QueryGetData(
+        [in, out] FORMATETC* pformatetc);
+
+    HRESULT GetCanonicalFormatEtc(
+        [in, out] FORMATETC *pformatectIn,
+        [in, out] FORMATETC *pformatetcOut);
+
+    HRESULT SetData(
+        [in, out] FORMATETC *pformatetc,
+        [in, out] STGMEDIUM *pmedium,
+        [in] BOOL fRelease);
+
+    HRESULT EnumFormatEtc(
+        [in] DATADIR dwDirection,
+        [out, retval] IEnumFORMATETC **ppenumFormatEtc);
+
+    HRESULT DAdvise(
+        [in, out] FORMATETC *pformatetc,
+        [in] long advf,
+        [in] long pAdvSink,
+        [in, out] long *pdwConnection);
+
+    HRESULT DUnadvise(
+        [in] long dwConnection);
+
+    HRESULT EnumDAdvise(
+        [in, out] long* pIEnumAdvise);
+
+};
+
+
+[
+    odl,
+    uuid(00000122-0000-0000-C000-000000000046),
+]
+interface IDropTarget : stdole.IUnknown {
+
+    HRESULT DragEnter(
+        [in] IDataObject *pDataObj,
+        [in] LONG grfKeyState,
+        [in] LONG ptX,
+        [in] LONG ptY,
+        [in, out] DROPEFFECTS *pdwEffect);
+
+    HRESULT DragOver(
+        [in] LONG grfKeyState,
+        [in] LONG ptX,
+        [in] LONG ptY,
+        [in, out] DROPEFFECTS *pdwEffect);
+
+    HRESULT DragLeave();
+
+    HRESULT Drop(
+        [in] IDataObject *pDataObj,
+        [in] LONG grfKeyState,
+        [in] LONG ptX,
+        [in] LONG ptY,
+        [in, out] DROPEFFECTS *pdwEffect);
+};
+
+[
+    odl,
+    uuid(00000114-0000-0000-C000-000000000046)
+]
+interface IOleWindow : stdole.IUnknown {
+
+    HRESULT GetWindow(
+        [out, retval] long *phwnd);
+
+    HRESULT ContextSensitiveHelp(
+        [in] BOOL fEnterMode);
+
+};
+
+[
+    odl,
+    uuid(b722bccb-4e68-101b-a2bc-00aa00404770),
+]
+interface IOleCommandTarget : stdole.IUnknown {
+
+    typedef enum OLECMDF {
+        OLECMDF_SUPPORTED       = 0x00000001,
+        OLECMDF_ENABLED         = 0x00000002,
+        OLECMDF_LATCHED         = 0x00000004,
+        OLECMDF_NINCHED         = 0x00000008,
+        OLECMDF_INVISIBLE       = 0x00000010,
+        OLECMDF_DEFHIDEONCTXTMENU = 0x00000020,
+    } OLECMDF;
+
+    typedef struct OLECMD {
+        LONG cmdID;
+        OLECMDF cmdf;
+    } OLECMD;
+
+    typedef enum OLECMDTEXTF {
+        OLECMDTEXTF_NONE        = 0,
+        OLECMDTEXTF_NAME        = 1,
+        OLECMDTEXTF_STATUS      = 2,
+    } OLECMDTEXTF;
+
+    typedef struct OLECMDTEXT{
+        OLECMDTEXTF cmdtextf;
+        LONG cwActual;
+        LONG cwBuf;     // size in wide chars of the buffer for text
+        BYTE rgwz[512]; // Array into which callee writes the text
+    } OLECMDTEXT;
+
+    typedef enum OLECMDEXECOPT {
+        OLECMDEXECOPT_DODEFAULT         = 0,
+        OLECMDEXECOPT_PROMPTUSER        = 1,
+        OLECMDEXECOPT_DONTPROMPTUSER    = 2,
+        OLECMDEXECOPT_SHOWHELP          = 3
+    } OLECMDEXECOPT;
+
+    typedef enum OLECMDID {
+        OLECMDID_OPEN                           = 1,
+        OLECMDID_NEW                            = 2,
+        OLECMDID_SAVE                           = 3,
+        OLECMDID_SAVEAS                         = 4,
+        OLECMDID_SAVECOPYAS                     = 5,
+        OLECMDID_PRINT                          = 6,
+        OLECMDID_PRINTPREVIEW                   = 7,
+        OLECMDID_PAGESETUP                      = 8,
+        OLECMDID_SPELL                          = 9,
+        OLECMDID_PROPERTIES                     = 10,
+        OLECMDID_CUT                            = 11,
+        OLECMDID_COPY                           = 12,
+        OLECMDID_PASTE                          = 13,
+        OLECMDID_PASTESPECIAL                   = 14,
+        OLECMDID_UNDO                           = 15,
+        OLECMDID_REDO                           = 16,
+        OLECMDID_SELECTALL                      = 17,
+        OLECMDID_CLEARSELECTION                 = 18,
+        OLECMDID_ZOOM                           = 19,
+        OLECMDID_GETZOOMRANGE                   = 20,
+        OLECMDID_UPDATECOMMANDS                 = 21,
+        OLECMDID_REFRESH                        = 22,
+        OLECMDID_STOP                           = 23,
+        OLECMDID_HIDETOOLBARS                   = 24,
+        OLECMDID_SETPROGRESSMAX                 = 25,
+        OLECMDID_SETPROGRESSPOS                 = 26,
+        OLECMDID_SETPROGRESSTEXT                = 27,
+        OLECMDID_SETTITLE                       = 28,
+        OLECMDID_SETDOWNLOADSTATE               = 29,
+        OLECMDID_STOPDOWNLOAD                   = 30,
+        OLECMDID_ONTOOLBARACTIVATED             = 31,
+        OLECMDID_FIND                           = 32,
+        OLECMDID_DELETE                         = 33,
+        OLECMDID_HTTPEQUIV                      = 34,
+        OLECMDID_HTTPEQUIV_DONE                 = 35,
+        OLECMDID_ENABLE_INTERACTION             = 36,
+        OLECMDID_ONUNLOAD                       = 37,
+        OLECMDID_PROPERTYBAG2                   = 38,
+        OLECMDID_PREREFRESH                     = 39,
+        OLECMDID_SHOWSCRIPTERROR                = 40,
+        OLECMDID_SHOWMESSAGE                    = 41,
+        OLECMDID_SHOWFIND                       = 42,
+        OLECMDID_SHOWPAGESETUP                  = 43,
+        OLECMDID_SHOWPRINT                      = 44,
+        OLECMDID_CLOSE                          = 45,
+        OLECMDID_ALLOWUILESSSAVEAS              = 46,
+        OLECMDID_DONTDOWNLOADCSS                = 47,
+    } OLECMDID;
+
+    typedef enum OLECMDERR {
+        OLECMDERR_E_FIRST            = 0x80040100,
+        OLECMDERR_E_NOTSUPPORTED     = 0x80040100,
+        OLECMDERR_E_DISABLED         = 0x80040101,
+        OLECMDERR_E_NOHELP           = 0x80040102,
+        OLECMDERR_E_CANCELED         = 0x80040103,
+        OLECMDERR_E_UNKNOWNGROUP     = 0x80040104,
+    } OLECMDERR;
+
+    HRESULT QueryStatus(
+        [in] void *pguidCmdGroup,
+        [in] LONG cCmds,
+        [in, out] OLECMD *prgCmds,
+        [in, out] OLECMDTEXT *pCmdText);
+
+
+    HRESULT Exec(
+        [in] void *pguidCmdGroup,
+        [in] LONG nCmdID,
+        [in, defaultvalue(0)] OLECMDEXECOPT nCmdexecopt,
+        [in, defaultvalue(0)] VARIANT *pvaIn,
+        [in, out, defaultvalue(0)] VARIANT *pvaOut);
+}
+    
+[
+    odl,
+    uuid(6d5140c1-7436-11ce-8034-00aa006009fa),
+    helpstring("interface IServiceProvider ")
+]
+interface IServiceProvider : stdole.IUnknown {
+
+    HRESULT QueryService(
+        [in, out] UUID *guidService,
+        [in, out] UUID *riid,
+        [in, out] void *ppvObject);
+
+}
+
+[
+    odl,
+    uuid(00000115-0000-0000-C000-000000000046)
+]
+interface IOleInPlaceUIWindow : IOleWindow {
+
+    LONG GetBorder(
+        [in, out] RECT* lprectBorder);
+
+    LONG RequestBorderSpace(
+        [in, out] RECT* pborderwidths);
+
+    LONG SetBorderSpace(
+        [in, out] RECT* pborderwidths);
+
+    LONG SetActiveObject(
+        [in] IOleInPlaceActiveObject* pActiveObject,
+        [in] LONG pszObjName);
+};
+
+[
+    odl,
+    uuid(00000117-0000-0000-C000-000000000046)
+]
+interface IOleInPlaceActiveObject : IOleWindow {
+
+    long TranslateAccelerator(
+        [in] MSG* lpmsg);
+
+    long OnFrameWindowActivate(
+        [in] BOOL fActivate);
+
+    long OnDocWindowActivate(
+        [in] BOOL fActivate);
+
+    long ResizeBorder(
+        [in] RECT* prcBorder,
+        [in] IOleInPlaceUIWindow *pUIWindow,
+        [in] BOOL fFrameWindow);
+
+    long EnableModeless(
+        [in] BOOL fEnable);
+};
+    
+ [
+    odl,
+    uuid(00000116-0000-0000-C000-000000000046),
+]
+interface IOleInPlaceFrame : IOleInPlaceUIWindow {
+    LONG InsertMenus(
+        [in] LONG hmenuShared,
+        [in, out] OLEMENUGROUPWIDTHS *lpMenuWidths);
+    LONG SetMenu(
+        [in] LONG hmenuShared,
+        [in] LONG holemenu,
+        [in] LONG hwndActiveObject);
+    LONG RemoveMenus(
+        [in] LONG hmenuShared);
+    LONG SetStatusText(
+        [in] LONG pszStatusText);
+    LONG EnableModeless(
+        [in] BOOL fEnable);
+    LONG TranslateAccelerator(
+        [in, out] MSG *lpmsg,
+        [in] short wID);
+};
+
+[
+    odl,
+    uuid(bd3f23c0-d43e-11cf-893b-00aa00bdce1a),
+]
+interface IDocHostUIHandler : stdole.IUnknown{
+
+    HRESULT ShowContextMenu(
+        [in] ContextMenuTarget dwContext,
+        [in, out] POINT *pPOINT,
+        [in] IOleCommandTarget *pCommandTarget,
+        [in] IDispatch *HTMLTagElement);
+
+    HRESULT GetHostInfo(
+        [in, out] DOCHOSTUIINFO * pInfo);
+
+    HRESULT ShowUI(
+        [in] LONG dwID,
+        [in] IOleInPlaceActiveObject *pActiveObject,
+        [in] IOleCommandTarget *pCommandTarget,
+        [in] IOleInPlaceFrame *pFrame,
+        [in] IOleInPlaceUIWindow *pDoc);
+
+    HRESULT HideUI();
+
+    HRESULT UpdateUI();
+
+    HRESULT EnableModeless(
+        [in] BOOL fEnable);
+
+    HRESULT OnDocWindowActivate(
+        [in] BOOL fActivate);
+
+    HRESULT OnFrameWindowActivate(
+        [in] BOOL fActivate);
+
+    HRESULT ResizeBorder(
+        [in, out] RECT *prcBorder,
+        [in] IOleInPlaceUIWindow *pUIWindow,
+        [in] BOOL fRameWindow);
+
+    HRESULT TranslateAccelerator(
+        [in, out] MSG *lpMsg,
+        [in, out] UUID *pguidCmdGroup,
+        [in] LONG nCmdID);
+
+    HRESULT GetOptionKeyPath(
+        [in, out] LONG *pOLESTRchKey,
+        [in] LONG dw);
+
+    HRESULT GetDropTarget(
+        [in] IDropTarget *pDropTarget,
+        [out, retval] IDropTarget **ppDropTarget);
+
+    HRESULT GetExternal(
+        [out, retval] IDispatch** ppDispatch);
+
+    HRESULT TranslateUrl(
+        [in] LONG dwTranslate,
+        [in] LONG pchURLIn,
+        [out, retval] LONG *ppchURLOut);
+
+    HRESULT FilterDataObject(
+        [in] IDataObject *pDO,
+        [out, retval] IDataObject **ppDORet);
+}
+
+
+[
+    odl,
+    uuid(3050f3f0-98b5-11cf-bb82-00aa00bdce0b)
+]
+interface ICustomDoc : stdole.IUnknown{
+
+    HRESULT SetUIHandler(
+        [in] IDocHostUIHandler *pUIHandler);
+}
+
+
+[
+    odl,
+    uuid(00000002-0000-0000-C000-000000000046)
+]
+
+interface IMalloc : stdole.IUnknown {
+
+    LONG Alloc(
+        [in] LONG cb);
+
+    LONG Realloc(
+        [in] void *pv,
+        [in] LONG cb);
+
+    LONG Free(
+        [in] LONG pv);
+
+    LONG GetSize(
+        [in] LONG pv);
+
+    LONG DidAlloc(
+        [in] LONG pv);
+
+    void HeapMinimize(void);
+
+}
+
+[
+    odl,
+    uuid(79eac9ef-baf9-11ce-8c82-00aa004ba90b),
+]
+interface IInternetZoneManager : stdole.IUnknown {
+
+    typedef enum URLZONE {
+        URLZONE_PREDEFINED_MIN = 0,
+        URLZONE_LOCAL_MACHINE  = 0,         // local machine zone is not exposed in UI")
+        URLZONE_INTRANET,                   // My Intranet zone")
+        URLZONE_TRUSTED,                    // Trusted Web sites zone")
+        URLZONE_INTERNET,                   // The Internet zone")
+        URLZONE_UNTRUSTED,                  // Untrusted sites zone
+        URLZONE_PREDEFINED_MAX = 999,
+        URLZONE_USER_MIN = 1000,
+        URLZONE_USER_MAX = 10000,
+    }  URLZONE;
+
+    typedef enum URLTEMPLATE {
+
+        // This value is just used to indicate the current set
+        // of policies are not based on any template.
+        URLTEMPLATE_CUSTOM  =   0x000000,
+        URLTEMPLATE_PREDEFINED_MIN =    0x10000,
+        URLTEMPLATE_LOW =               0x10000,
+        URLTEMPLATE_MEDLOW =            0x10500,
+        URLTEMPLATE_MEDIUM =            0x11000,
+        URLTEMPLATE_HIGH  =             0x12000,
+        URLTEMPLATE_PREDEFINED_MAX =    0x20000
+    } URLTEMPLATE ;
+
+    typedef enum ZAFLAGS{
+        ZAFLAGS_CUSTOM_EDIT                 = 0x00000001,
+        ZAFLAGS_ADD_SITES                   = 0x00000002,
+        ZAFLAGS_REQUIRE_VERIFICATION        = 0x00000004,
+        ZAFLAGS_INCLUDE_PROXY_OVERRIDE      = 0x00000008,  // Intranet only.
+        ZAFLAGS_INCLUDE_INTRANET_SITES      = 0x00000010,  // Intranet only.
+        ZAFLAGS_NO_UI                       = 0x00000020,  // Don't display UI (used for local machine)
+        ZAFLAGS_SUPPORTS_VERIFICATION       = 0x00000040,  // Supports server verification.
+        ZAFLAGS_UNC_AS_INTRANET             = 0x00000080,
+    } ZAFLAGS;
+
+    typedef struct ZONEATTRIBUTES {
+        LONG cbSize;
+        BYTE szDisplayName[520];
+        BYTE szDescription[400];
+        BYTE szIconPath[520];
+        URLTEMPLATE dwTemplateMinLevel;
+        URLTEMPLATE dwTemplateRecommended;
+        URLTEMPLATE dwTemplateCurrentLevel;
+        ZAFLAGS dwFlags;                     // ZAFLAGS.
+    } ZONEATTRIBUTES;
+
+    HRESULT GetZoneAttributes(
+        [in] URLZONE dwZone,
+        [in, out] ZONEATTRIBUTES *pZoneAttributes);
+
+    HRESULT SetZoneAttributes(
+        [in] URLZONE dwZone,
+        [in] ZONEATTRIBUTES *pZoneAttributes);
+
+    typedef enum URLZONEREG {
+        URLZONEREG_DEFAULT=0,
+        URLZONEREG_HKLM,
+        URLZONEREG_HKCU
+    } URLZONEREG;
+
+    HRESULT GetZoneCustomPolicy(
+        [in] URLZONE dwZone,         // zone index
+        [in] UUID *guidKey,          // key to lookup value
+        [in, out] void *ppPolicy,    // pointer to output buffer pointer
+        [in, out] LONG *pcbPolicy,   // pointer to output buffer size
+        [in] URLZONEREG urlZoneReg); // effective, HKCU, or HKLM
+
+    HRESULT SetZoneCustomPolicy(
+        [in] URLZONE dwZone,         // zone index
+        [in] UUID *guidKey,          // key to lookup value
+        [in, out] void *pPolicy,     // input buffer pointer
+        [in] LONG cbPolicy,          // input data size
+        [in] URLZONEREG urlZoneReg); // default, HKCU, or HKLM
+
+    HRESULT GetZoneActionPolicy(
+        [in] URLZONE dwZone,        // zone index
+        [in] URLACTIONS dwAction,   // index number of action
+        [in, out] void *pPolicy,    // output buffer pointer
+        [in] LONG cbPolicy,         // output buffer size
+        [in] URLZONEREG urlZoneReg);// effective, HKCU, or HKLM
+
+    HRESULT SetZoneActionPolicy (
+        [in] URLZONE dwZone,         // zone index
+        [in] URLACTIONS dwAction,    // index number of action
+        [in, out] void *pPolicy,     // input buffer pointer
+        [in] LONG cbPolicy,          // input data size
+        [in] URLZONEREG urlZoneReg); // HKCU, or HKLM
+
+    HRESULT PromptAction(
+        [in] LONG dwAction,       // action type
+        [in] LONG hwndParent,     // parent window handle
+        [in] LPWSTR pwszUrl,      // URL to display
+        [in] LPWSTR pwszText,     // dialog text
+        [in, defaultvalue(0)] LONG dwPromptFlags); // reserved, pass 0
+
+    HRESULT LogAction(
+        [in] URLACTIONS dwAction,  // action type
+        [in] LPWSTR pwszUrl,       // URL to log
+        [in] LPWSTR pwszText,      // associated text
+        [in, defaultvalue(0)] LONG dwLogFlags);   // reserved, pass 0
+
+    HRESULT CreateZoneEnumerator(
+        [in, out] LONG *pdwEnumHandle,  // enum handle
+        [in, out] LONG *pdwCount, // # of elements in the list.
+        [in, defaultvalue(0)] LONG dwFlags);       // reserved, pass 0
+
+    HRESULT GetZoneAt(
+        [in] LONG dwEnumHandle,           // returned by CreateZoneEnumerator
+        [in] LONG dwIndex,                // 0-based
+        [out, retval] URLZONE *pdwZone);  // absolute zone index.
+
+    HRESULT DestroyZoneEnumerator(
+        [in] LONG dwEnumHandle);         // enum handle
+
+    HRESULT CopyTemplatePoliciesToZone(
+        [in] URLTEMPLATE dwTemplate,       // High, medium or low
+        [in] URLZONE dwZone,        // Zone to copy policies to.
+        [in, defaultvalue(0)] LONG dwReserved);
+
+}
+
+
+  
+  
+[
+    dllname("KERNEL32.DLL")
+]
+module kernel32 {
+
+    [entry("RtlMoveMemory")]
+    void MoveMemory(
+           [in] void *pDest,
+           [in] void *pSource,
+           [in] LONG ByteLen);
+
+    [entry("GlobalAlloc")]
+    LONG GlobalAlloc(
+        [in] GMEM uFlags,
+        [in] LONG dwBytes);
+
+
+    [entry("GlobalFree")]
+    LONG GlobalFree(
+        [in] LONG hMem);
+}
+
+
+
+
+[
+    dllname("OLE32.DLL"),
+
+]
+module ole32 {
+
+    [entry("CoCreateGuid")]
+    HRESULT CoCreateGuid(
+        [out] UUID *pguid);
+
+    [entry("CoTaskMemAlloc")]
+    LONG CoTaskMemAlloc(
+        [in] LONG cb);
+
+    [entry("CoTaskMemRealloc")]
+    LONG CoTaskMemRealloc(
+        [in] LONG pv,
+        [in] LONG cb);
+
+    [entry("CoTaskMemFree")]
+    LONG CoTaskMemFree(
+        [in] LONG Ptr);
+
+    [entry("CLSIDFromProgID")]
+    HRESULT CLSIDFromProgID(
+        [in] LPWSTR lpszProgID,
+        [in, out] UUID *lpclsid);
+
+    [entry("CLSIDFromString")]
+    HRESULT CLSIDFromString(
+        [in] LPWSTR lpszProgID,
+        [in, out] UUID *lpclsid);
+
+    [entry("ProgIDFromCLSID")]
+    void ProgIDFromCLSID(
+        [in] UUID *clsid,
+        [in, out] LONG *lplpszProgID);
+
+    [entry("StringFromGUID2")]
+    LONG StringFromGUID2(
+        [in] UUID *UUID,
+        [in, out] LPWSTR lplpsz,
+        [in] LONG cbMax);
+
+    [entry("IsEqualGUID")]
+    BOOL IsEqualGUID(
+      [in] UUID *rguid1,
+      [in] UUID *rguid2);
+
+
+    [entry("CoInitialize")]
+    HRESULT CoInitialize(
+        [in] void *pvReserved);
+
+    [entry("CoUninitialize")]
+    void CoUninitialize();
+
+    [entry("CoGetMalloc")]
+    HRESULT CoGetMalloc(
+        [in] MEMCTX dwMemContext,
+        [out, retval] IMalloc **ppMalloc);
+
+    [entry("CoCreateInstance")]
+    LONG CoCreateInstance(
+        [in] UUID *CLSID,
+        [in] stdole.IUnknown *pUnkOuter,
+        [in] CLSCTX dwClsContext,
+        [in] UUID *IID,
+        [out] void *ppv);
+
+}
+
+
+
+[
+    dllname("OLEAUT32.DLL")
+]
+module oleaut32 {
+
+    [entry("SysAllocString")]
+    BSTR SysAllocString(
+        [in] LONG pStr);
+
+    [entry("SysAllocString")]
+    LONG SysAllocStringPtrPtr(
+        [in] LONG pStr);
+
+    [entry("SysAllocString")]
+    LONG SysAllocStringPtr(
+        [in] LPWSTR pStr);
+
+}
+
+
+[
+    dllname ("URLMON.DLL")
+]
+module urlmon {
+
+    [entry("CoInternetCreateZoneManager")]
+    LONG CoInternetCreateZoneManager(
+        [in] IServiceProvider *pSP,
+        [in, out] IInternetZoneManager **ppZM,
+        [in] LONG dwReserved);
+               
+}
+
+};

@@ -1,0 +1,193 @@
+<HTML><HEAD><TITLE>clsCustomWb Documentation</TITLE>
+<STYLE>
+.title{ font-family:Arial-black;font-size:18pt;color:#7A7A7A;font-weight:bolder }
+</STYLE>
+</HEAD>
+<BODY>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" width=700>
+<TBODY>
+<TR>
+<TD>
+<CENTER><FONT class=title>clsCustomWb</FONT></CENTER><IN_PUT onclick=window.external.edit(mainDescription) type="blahblah" value="Edit"> <BR><BR>
+<P>&nbsp; &nbsp; 
+      <DIV>This is the main class that lets you hook into Internet Explorer's advanced functionality. This class will augment the standard Internet Explorer Object and give you access to a host of new events that will let you really make&nbsp;the most out of it. <BR><BR></DIV>
+<P>&nbsp; &nbsp; Extended functionality 
+      includes:&nbsp;&nbsp;&nbsp; 
+      <UL>
+<LI>Disable Selections and command keys
+        <LI>Disable Right click menus
+        <LI>Replace Right Click menus
+        <LI>Determine what HTML object was right clicked on
+        <LI>Intercept/ Block/ Override keypress events
+        <LI>Set visible features such as scrollbars and 3d borders 
+        <LI>Intercept and Edit urls before navigation
+        <LI>Hook HTML Object events
+        <LI>Allow&nbsp;Web Scripts Access to your forms objects and&nbsp;code
+        <LI>and more!&nbsp;</LI></UL><BR>
+      <P>&nbsp; &nbsp; Review the help documentation below for descriptions on 
+      each member&nbsp;fuction. Then view the example project and see just how 
+      easy&nbsp;it is to add all of these advanced capabilities to your 
+      applications.&nbsp;</P>
+      <P>The possibilities are limited only by your creativity and 
+      imagination.&nbsp;&nbsp;&nbsp;<BR></P></TD></TR></TBODY></TABLE>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" borderColor=black cellSpacing=0 cellPadding=8 width=700 border=1>
+<TBODY>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>HookWebBrowser( oWb<FONT color=#000088> As</FONT> Object)<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT></B> <IN_PUT onclick=window.external.edit(div11) type="blahblah" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div11>         This is the main function of the class that sets up the actual hook used to extend the&nbsp;web browser control. </DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>For the hook to be successful, the webrowser control must be 
+      initalized to a page and the page must be fully loaded before the hook is 
+      preformed.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>In sample code, this is done by preloading "about:blank" into the 
+      control</DIV>
+      <DIV>in the form_load event. about:blank is a special url that IE loads 
+      almost instantly and allows the control to be properly initalized. For IE 
+      5.5 &amp; 6 once</DIV>
+      <DIV>the webbrowser control is hooked once, it will remain hooked until it 
+      is destroyed. The clsExtender reference should be declared global to the 
+      form it is on or to the project to make sure it does not go out fo 
+      scope.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>If successfull it reutrns true. </DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>
+      <HR>
+      </DIV>
+      <DIV><STRONG>Note</STRONG>: If you plan on supporting IE5.0 you will need 
+      to preform the hook operation after ever html page is loaded. This is 
+      necessary because of the way IE5 was designed. After navigating to a page, 
+      it is easiest to just enter a feedback loop that blocks until the page is 
+      fully loaded to set the hook.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>Ex.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>Webbrowser1.Navigate2 "<A 
+      href="http://sandsprite.com">http://sandsprite.com</A>"</DIV>
+      <DIV>While Webbrowser1.READYSTATE &lt;&gt; READYSTATE_COMPLETE</DIV>
+      <DIV>&nbsp;&nbsp;&nbsp; doevents</DIV>
+      <DIV>wend</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>Adding a call to sleep api for 60ms is also recommended in the loop 
+      to prevent a spike in processor usage.</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B>Event 
+      EditUrlBeforeNavigate( url<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>)</B> <IN_PUT onclick=window.external.edit(div0) type="blahblah" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div0>The standard BeforeNavigate Event does 
+      not&nbsp;allow you to edit the Url only cancle navigation.&nbsp;There are 
+      times when this really is not enough. This event gives you that 
+      capability.<BR>                                                 </DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B>Event 
+      OnContextMenu( cancel<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT>)</B> <IN_PUT onclick=window.external.edit(div1) type="blahblah" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div1>One of the most sought after features 
+      for the web browser control is the ability to disable the right click 
+      menu. There is no standard functionality for us to do this in VB, but with 
+      the IE Dev kit, this too is within your reach. By just setting cancel =                                                  true, all right click menus are disabled. <BR><BR>
+<P>&nbsp; &nbsp; This event also gives you the chance 
+      to replace the popup menu with your own. Two extra features are also 
+      available:
+      <P>&nbsp;&nbsp;&nbsp; By accessing the ContextMenuTargetType property, you 
+      can easily determine what type of html element was clicked on
+      
+<P>  &nbsp; &nbsp; The ContextMenuTargetHtmlObject property gives you a direct object reference to the html object that was right clicked. </P>
+      <HR>
+      <P>&nbsp;&nbsp; <STRONG>Note</STRONG>: You cannot disable right click 
+      menus for ActiveX controls that the web browser control is hosting. This 
+      means this event will not fire when viewing doc's, .pdf's, or when 
+      browsing the file system. </P>
+      <P>&nbsp;</P></DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7>
+      <P><B>Event KeyPress( keyCode<FONT color=#000088> As Integer</FONT>, 
+      _&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      &nbsp;</B><B> Accelerator <FONT color=#000088> As Integer</FONT>, _ 
+      <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Blockinput<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT>)</B> <IN_PUT onclick=window.external.edit(div2) type="blahblah" value="Edit"></P> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div2>                                 The KeyPress event notifies you when the user is entering data into the web page document. Here you can&nbsp;read the characters as they type&nbsp;&nbsp;allowing you to intercept, block, or&nbsp;edit&nbsp;thier input.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>The Accelerator argument allows you to test if the control or Alt 
+      keys are depressed.</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B>Event 
+      WbCommand( cmdId<FONT color=#000088> As</FONT> 
+      WbCommands, _ 
+      <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BlockCommand<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT>)</B> <IN_PUT onclick=window.external.edit(div3) type="blahblah" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+      <DIV>&nbsp;&nbsp; Web browser commands are actions such as GoBack, 
+      GoForward, Find, Print, Select All ect.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>             &nbsp;&nbsp;&nbsp; A basic list of available commands is contained in the WbCommands enumeration. Giving you friendly names to work with.&nbsp; <BR></DIV>
+      <DIV>&nbsp;&nbsp;&nbsp; The BlockCommand parameter allows you to 
+      disable&nbsp;whatever feature you need to. The demo application has a good 
+      sample on how to work with this event.</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B>Event 
+      GetExternal( oIDispatch<FONT color=#000088> As</FONT> 
+      Object )</B> <IN_PUT onclick=window.external.edit(div4) type="blahblah" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div4>&nbsp;&nbsp; The GetExternal event allows web page scripts access to the functions and objects of the Object you return from this function. <BR><BR>
+<P>&nbsp; &nbsp; This is a very powerful technique allowing web page scripting to&nbsp;directly access or automate&nbsp;your interface. This feature also allows&nbsp;access to all of your public&nbsp;subs and functions. </P>
+      <P>&nbsp;&nbsp; Think of the possibilities of seamless integration from 
+      the power of your VB code with the&nbsp;incredable display techniques of 
+      DHTML and Javascript !<BR></P></DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Public </FONT>WbAttributes<FONT color=#000088> As</FONT> HostAttributes</B> <IN_PUT onclick=window.external.edit(div5) type="blahblah" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div5>&nbsp;&nbsp; This variable holds the 
+      combined attributes you want the browser to exhibit. These include the 
+      ability to turn off borders, scroll bars and a multitude of other 
+      features.</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Enum </FONT>HostAttributes</B> <IN_PUT onclick=window.external.edit(div6) type="blahblah" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div6></DIV>This enumeration contains the values you can set to control the interface appearance of the control. Multiple values are added together by OR'ing them together, and removed by the XOR operator. See the demo for example usage.<BR></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Enum </FONT>WbCommands</B> <IN_PUT onclick=window.external.edit(div7) type="blahblah" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD>
+      <P><BR>This enumeration holds a listing of shortcut 
+      key commands that can now be blocked. They include Print, 
+      Find,&nbsp;etc...</P>
+      <P>The only one commonly needed that is not contained in the list is the 
+      "New&nbsp;Window (Ctrl+N)" command,&nbsp;which must be blocked in the 
+      keypress event. (Example code provided)</P>
+      <P>&nbsp;</P>                                            </TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Enum </FONT>ContextMenuTargets</B> <IN_PUT onclick=window.external.edit(div8) type="blahblah" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div8>This enumeration lists the context menu target type that was clicked on to fire the OnContextMenu event. Elements include images, links, etc..</DIV><BR></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Public </FONT>ContextMenuTargetType<FONT color=#000088> As</FONT> ContextMenuTargets</B> <IN_PUT onclick=window.external.edit(div9) type="blahblah" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div9> This variable holds the type of html element that was right clicked on to fire the OnContextMenu event. It is a value from the Enum ContextMenuTargets </DIV><BR></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Public </FONT>ContextMenuTargetHtmlObject<FONT color=#000088> As</FONT> Object</B> <IN_PUT onclick=window.external.edit(div10) type="blahblah" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div10>This varbable holds an object reference 
+      to the html element that was right clicked on to fire the OnContextMenu 
+      event.<BR>                   </DIV></TD></TR>
+</TBODY></TABLE></BODY></HTML>

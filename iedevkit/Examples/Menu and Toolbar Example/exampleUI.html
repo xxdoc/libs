@@ -1,0 +1,55 @@
+
+<h2><center>Remote Page Editor</center></h2>
+
+<textarea id=fred name=fred cols=56 rows=25>
+</textarea>
+
+<center>
+<input type=button value="Update Parent Document" onclick="updateit()" >
+<input type=button value="Save Source As" onclick="saveSource()" >
+</center>
+
+<SCRIPT LANGUAGE="JavaScript">
+     var parentwin = external.menuArguments;
+     var doc = parentwin.document;
+     
+     fred.value = doc.body.innerHTML
+     
+     function updateit(){ doc.body.innerHTML = fred.value }
+          
+ </SCRIPT>
+
+<script language=vbs>
+    
+   bYes = 6
+   bYesNo = 4
+  
+   function saveSource()
+   
+	    set fso = CreateObject("Scripting.FileSystemObject")
+	    
+	    set ts = fso.OpenTextFile("c:\menuExample.html",2 ,true)
+   
+        ts.WriteLine  "Source code saved from: " & doc.location 
+        ts.WriteLine  "Saved by IE menu demo from Sandsprite.com"
+        ts.WriteLine  string(70,"-")
+        ts.WriteBlankLines 2     
+        ts.WriteLine  doc.body.innerHTML
+        ts.Close
+         
+        ret =Msgbox ("Document Saved to c:\menuExample.html" & vbcrlf & vbcrlf & _
+			         "Would you like to view this document in Notepad?", bYesNo,"Save Complete")
+			         
+		if ret = bYes then 
+			set wsh = CreateObject("Wscript.Shell")
+			wsh.Run "notepad c:\menuExample.html"
+			set wsh = nothing
+		end if 
+   
+        set ts= nothing
+        set fso = nothing
+   
+   end function
+
+
+</script>

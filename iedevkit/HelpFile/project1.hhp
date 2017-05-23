@@ -1,0 +1,23 @@
+[Options]
+Compatibility = 1.1 Or later
+Compiled file = project1.chm
+Contents file= TOC.hhc
+Default topic = Introduction.html
+Display compile progress=Yes
+Enhanced decompilation=Yes
+Language=0x409 English (United States)
+Title=Created with Chm Spider - http://sandsprite.com/
+
+[Files]
+
+Introduction.html
+clsDhtmlEvent.html
+clsIEIntegrate.html
+clsSecurityManager.html
+clsWbExtender.html
+LICENSE.html
+
+
+[INFOTYPES]
+
+

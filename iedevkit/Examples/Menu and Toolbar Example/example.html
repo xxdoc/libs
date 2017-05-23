@@ -1,0 +1,16 @@
+
+
+<SCRIPT LANGUAGE="JavaScript">
+     var parentwin = external.menuArguments;
+     var doc = parentwin.document;
+     
+     s = "Link.Length: " + doc.links.length + '\n\n'
+
+	for(i=0;i<doc.links.length;i++){
+		s+= doc.links[i].href + '\n'
+	}
+
+	alert(s)	
+
+</SCRIPT>
+

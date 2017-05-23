@@ -1,0 +1,18 @@
+ÿÇThe context menu demo will add 2 context menus. One on the defualt menu called "Always there" and one on the links right click menu called "Only for Links" both of these actions will run a  demo script that has the same access described above. The Links script will show a sample UI.
+
+The remove button will remove the toolbars added in this demo.
+
+the Enumerate button will show a listing of all the menu items added in this manner on your machine.
+ÿ
+After clicking add, open up a new instance of Internet Explorer and you should see the new icon on the toolbar. 
+
+If you have ever customized yout toolbar, the icon will not appear. This is IE default behavior...i do not know how to work around it yet.
+
+Modify will change its tooltip
+
+Remove will remove it. Open up New IE windows for each test. Because this example
+code only stores the last toolbar button identity you added, and only in memory if you add multiple toolbars or close between runs you will have to remove them manually.
+
+The toolbar button action is to run a html script that executes with full
+access to the parent Ie window as well as executing in the local machine zone
+so that you can use the filesystem object and any other custom active x controls.

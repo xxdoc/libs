@@ -1,0 +1,69 @@
+<HTML><HEAD><TITLE>clsSecurityManager Documentation</TITLE>
+<STYLE>
+.title{ font-family:Arial-black;font-size:18pt;color:#7A7A7A;font-weight:bolder }
+</STYLE>
+</HEAD>
+<BODY>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" width=700>
+<TBODY>
+<TR>
+<TD>
+<CENTER><FONT class=title>clsSecurityManager</FONT></CENTER><IN_PUT onclick=window.external.edit(mainDescription) type="hidden" value="Edit"> <BR><BR>
+<P>&nbsp; &nbsp; 
+<DIV id=mainDescription>The Security Manager class allows you to set the global Internet Explorer options for the host machine. You can set &nbsp;any of the options available in the standard IE options dialog and for any security zone.</DIV><BR><BR></TD></TR></TBODY></TABLE>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" borderColor=black cellSpacing=0 cellPadding=8 width=700 border=1>
+<TBODY>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Enum </FONT>ZoneTemplates</B> <IN_PUT onclick=window.external.edit(div0) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div0>enumeration of the templates you can set, these are the low, medium and high zones you see on the inital IE options page.</DIV><BR></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Enum </FONT>urlZone</B> <IN_PUT onclick=window.external.edit(div1) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div1>enumeration of all of the security zones you can manipulate</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Enum </FONT>urlActions</B> <IN_PUT onclick=window.external.edit(div2) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div2>this is an enumeration of a host of the options in the IE set custom panel. </DIV><BR></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Sub </FONT>ShowInternetOptions()</B> <IN_PUT onclick=window.external.edit(div3) type="hidden" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div3>shows the standard IE options dialog </DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Sub </FONT>SetPolicyToTemlpate( 
+      template<FONT color=#000088> As</FONT> 
+      ZoneTemplates,<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Optional Zone<FONT color=#000088> As</FONT> urlZone =   zInternet)</B> <IN_PUT onclick=window.external.edit(div4) type="hidden" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div4>allows you to set a security zone to a default machine template</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>IsPolicyActive( p<FONT color=#000088> As</FONT> urlActions, 
+      <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Optional Zone<FONT color=#000088> As</FONT> urlZone = 
+      zInternet _&nbsp;< BR > )<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT></B> <IN_PUT onclick=window.external.edit(div5) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div5>Allows you to check to see if a certain 
+      feature is enabled for the security zone you are intrested in. This is how 
+      you could determine if javascript is currently enabled, or if safe for 
+      scripting checks were active.<BR>                                       </DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7>
+      <P><B><FONT color=#000088>Sub </FONT>SetPolicy(&nbsp; p<FONT color=#000088> As</FONT> urlActions, 
+      _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; active<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT> ,  _</B><B>&nbsp;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Optional Zone<FONT color=#000088> As</FONT> urlZone = 
+      zInternet)</B> <IN_PUT onclick=window.external.edit(div6) type="hidden" value="Edit"></P> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div6>this sub allows you to set the value for the security zone you choose. Here is where you could turn scripts on for you clients etc...</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+</TBODY></TABLE></BODY></HTML>

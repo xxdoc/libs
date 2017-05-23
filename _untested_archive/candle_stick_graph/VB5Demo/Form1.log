@@ -1,0 +1,4 @@
+Line 2: Could not create reference: '{42FF43C8-F73C-11D3-83DC-00A0CC355595}#1.0#0'.
+Line 32: Class BarChartControl.BarChart of control BarChart1 was not a loaded control class.
+Line 38: The property name _ExtentX in BarChart1 is invalid.
+Line 39: The property name _ExtentY in BarChart1 is invalid.

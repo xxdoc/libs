@@ -1,0 +1,43 @@
+<HTML><HEAD><TITLE>clsDhtmlEvent Documentation</TITLE>
+<STYLE>
+.title{ font-family:Arial-black;font-size:18pt;color:#7A7A7A;font-weight:bolder }
+</STYLE>
+</HEAD>
+<BODY>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" width=700>
+<TBODY>
+<TR>
+<TD>
+<CENTER><FONT class=title>clsDhtmlEvent</FONT></CENTER><IN_PUT onclick=window.external.edit(mainDescription) type="hidden" value="Edit"> <BR><BR>
+<P>&nbsp; &nbsp; 
+<DIV id=mainDescription>&nbsp;&nbsp;&nbsp; This is a light class thrown in because it has definate times when it can come to the rescue. <BR><BR>
+<P>&nbsp; &nbsp; This class will allow you to attach VB functions to Web page events through html objects event handlers. <BR><BR>
+<P>          &nbsp; &nbsp; For example, you can make a html button in a web page directly call a function in your VB code.&nbsp;</P>
+      <P>&nbsp;&nbsp; With this method, this can be done&nbsp;without having to 
+      expose your entire forms objects and classes to manipulation through the 
+      GetExternal Method.</P>
+      <P>&nbsp;</P></DIV></TD></TR></TBODY></TABLE>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" borderColor=black cellSpacing=0 cellPadding=8 width=700 border=1>
+<TBODY>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Sub </FONT>SetReference(&nbsp; 
+      parent<FONT color=#000088> As</FONT> Object, 
+      _&nbsp;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sFunction<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, 
+      _&nbsp;<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<FONT 
+      color=#000088>Optional</FONT>  CallingArgument<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>)</B> <IN_PUT onclick=window.external.edit(div0) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div0>parent is an object reference to the form or class that holds the&nbsp;function you are attaching. <BR><BR>
+      <P>sFunction, is the exact string name of the function you wish 
+      called&nbsp;when the event fires.</P>
+      <P>               &nbsp; <BR>CallingArgument is the argument to be 
+      passed to the function.</P>
+      <P>See the example code for the exact usage of this class and 
+      technique.</P></DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>DefaultFunction()</B> <IN_PUT onclick=window.external.edit(div1) type="hidden" value="Edit"> </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div1>This is the function that will be called by the webpage event. You do not call this function manually unless you want to test the reference you initally set. See the code example for how to set this class up to use it .</DIV><BR></TD></TR>
+</TBODY></TABLE></BODY></HTML>

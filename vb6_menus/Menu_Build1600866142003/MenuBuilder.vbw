@@ -1,9 +1,0 @@
-frmMenuEditor = 66, 66, 853, 639, , 22, 22, 809, 595, C
-VBMenu = 0, 0, 0, 0, C
-VBMenus = 0, 0, 0, 0, C
-VBParser = 0, 0, 0, 0, C
-frmPreview = 0, 0, 0, 0, C, 0, 0, 0, 0, C
-modAPIMenu = 88, 88, 1167, 593, Z
-modMenuPreview = 0, 0, 0, 0, C
-CodeEdit = 22, 22, 809, 595, , 132, 132, 919, 705, C
-CString = 0, 0, 0, 0, C

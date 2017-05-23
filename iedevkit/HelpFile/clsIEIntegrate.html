@@ -1,0 +1,116 @@
+<HTML><HEAD><TITLE>clsIeIntegration Documentation</TITLE>
+<STYLE>
+.title{ font-family:Arial-black;font-size:18pt;color:#7A7A7A;font-weight:bolder }
+</STYLE>
+</HEAD>
+<BODY>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" width=700>
+<TBODY>
+<TR>
+<TD>
+<CENTER><FONT class=title>clsIeIntegration</FONT></CENTER><IN_PUT onclick=window.external.edit(mainDescription) type="hidden" value="Edit"> <BR><BR>
+<P>&nbsp; &nbsp; 
+<DIV id=mainDescription>                            This class gives you easy access to IE integration tools that allow you to add your own custom icons to the toolbars,&nbsp;and&nbsp;custom entries to the right click menus.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>The right click menu entries are context ensitive and&nbsp;allowing 
+      you to&nbsp;specify&nbsp;for what types of objects menus they will show 
+      on. (Images show one set of right click menu options, links another 
+      etc)</DIV><BR></TD></TR></TBODY></TABLE>
+<TABLE style="FONT-SIZE: 13pt; font-face: arial" borderColor=black cellSpacing=0 cellPadding=8 width=700 border=1>
+<TBODY>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Enum </FONT>MenuShowWhen</B> <IN_PUT onclick=window.external.edit(div0) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div0>This enumeration holds all of the possible menu types defined and allows you to easily choose when your new menu item will appear. All of the enumeration names are intutive and define what action they are relating to.</DIV><BR></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Sub </FONT>AddToRightClickMenu( _ 
+      <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      menuText<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sFilePath<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      Optional showWhen<FONT color=#000088> As</FONT> MenuShowWhen = swDefault, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      Optional showWindow<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT> = <FONT color=#000088>False)</FONT></B> <IN_PUT onclick=window.external.edit(div1) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR><BR>
+<DIV id=div1>This sub will allow you to create you 
+      own menu item. Menu text is the text to appear on the menu, sFilepath is 
+      the physical path to the file you wish to run when the user selects your 
+      menu item. It must be a html file. This method of integration will execute 
+      the script contained in the file within the context of the parent page (or 
+      frame of parent page if that is where click initated) <BR><BR>
+<P>&nbsp; &nbsp; ShowWhen allows you to define what right click menu your item will appear on. It is defined from the ShowWhen enumeration. <BR><BR>
+      <P>&nbsp;&nbsp;&nbsp; If the argument showWindow is true, then Internet 
+      explorer will create a html dialog window for your script and it can 
+      present its own UI. If false, the script simply runs in without a 
+      window.</P>
+      <P>&nbsp;&nbsp;&nbsp; Scripts run in this manner are given full security 
+      access meaning that you can use the Scripting.FileSystemObject and other 
+      controls&nbsp;that are not specifically &nbsp;marked as safe for 
+      scripting.<BR></P></DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>RemoveFromRightClickMenu(menuText<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>)<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT></B> <IN_PUT onclick=window.external.edit(div2) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div2>this function will remove the specified menu item. The argument menuText is the text string of the menu item. Returns false if the item was not found.</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>ShowInstalledMenuExtensions()<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>()</B> <IN_PUT onclick=window.external.edit(div3) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div3>Enumerates all of the menu items added to IE in this manner. Returns a string array of menu names.</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>IntegrateWithIEToolbar( 
+      buttonText<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      hotIconPath<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      defaultIconPath<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      exeOrScriptPath<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      Optional isVisible<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT> = <FONT color=#000088>True </FONT>_<BR>)<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT></B> <IN_PUT onclick=window.external.edit(div4) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR><BR>
+      <DIV>This function allows you to easily add your own custom icons to the IE toolbar <BR></DIV>
+      <P>buttonText is the tooltip to show<BR>hoticonPath is the mouseover icon 
+      <BR>defaulticonpath is the standard display icon&nbsp;<BR>                   <BR>exeorscriptpath is the path to the file you want 
+      executed when the user presses the button. If it is a html file, it will 
+      be executed with no parent window as a menu item would. If it is an 
+      executable it will be marked with the Exec flag.&nbsp;<BR>                                                  <BR>  isVisible marks whether the icon appears by default on the toolbar tab. <BR></P>
+      <P>
+      <HR>
+      </P>
+<P>&nbsp; &nbsp; <B>Note:</B> If the user has customized the tool at all, it will not become visible by default unless they reset thier toolbar or manually add it. I am researching how to get around this.</P>
+      <DIV>
+      <HR>
+      </DIV>
+      <DIV><B>                              </B>&nbsp;</DIV>
+      <DIV><B>This function returns a text string that is your key to its entry. 
+      If you ever plan on modifying or removing entries added you should save 
+      this return value somewhere. </B></DIV><BR><BR></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>RemoveIEToolBar(sGuid<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>)<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT></B> <IN_PUT onclick=window.external.edit(div5) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div5>sGuid is the key returned from the Integrate funciton. Returns false if entry is not found.</DIV>
+      <DIV>&nbsp;</DIV></TD></TR>
+<TR>
+<TD bgColor=#a7a7a7><B><FONT color=#000088>Function </FONT>ModifyToolBarSetting(sGuid<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      Optional buttonText<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      &nbsp;Optional hotIconPath<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      Optional defaultIconPath<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      Optional exeOrScriptPath<FONT color=#000088> As</FONT> <FONT color=#000088>String</FONT>, _<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+      Optional isVisible<FONT color=#000088> As</FONT> <FONT color=#000088>Boolean</FONT> = <FONT color=#000088>True)</FONT></B> <IN_PUT onclick=window.external.edit(div6) type="hidden" value="Edit" 
+     > </TD></TR>
+<TR>
+<TD><BR>
+<DIV id=div6>                    This function allows you modify portions of the toolbar configuration.</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>All of the arguments are the same as in the Integrate function. 
+</DIV>
+      <DIV>&nbsp;</DIV>
+      <DIV>sGuid is the key passed back from 
+Integrate.</DIV></TD></TR>
+</TBODY></TABLE></BODY></HTML>
