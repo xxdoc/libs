@@ -1127,7 +1127,38 @@ nope:
     isHexChar = False
 End Function
 
-Public Function rc4(fileByteOrString As Variant, ByVal Password As Variant, Optional strRet As Boolean = True)
+Public Function xorDecode(fileByteOrString As Variant, ByVal password As Variant, Optional strRet As Boolean = True)
+    Dim key() As Byte, ByteArray() As Byte, ko As Long, i As Long
+    
+    Dim plen As Long
+    
+    ByteArray() = LoadData(fileByteOrString)
+    
+    If TypeName(password) = "Byte()" Then
+        key() = password
+    ElseIf TypeName(password) = "Byte" Then
+        ReDim key(0)
+        key(0) = password
+    Else
+        If Len(password) = 0 Then Exit Function
+         key() = StrConv(CStr(password), vbFromUnicode, LANG_US)
+    End If
+    
+    For i = 0 To UBound(ByteArray)
+        ko = i Mod (UBound(key) + 1)
+        ByteArray(i) = ByteArray(i) Xor key(ko)
+    Next
+    
+    If strRet Then
+        xorDecode = StrConv(ByteArray, vbUnicode, LANG_US)
+    Else
+        xorDecode = ByteArray
+    End If
+    
+End Function
+
+
+Public Function rc4(fileByteOrString As Variant, ByVal password As Variant, Optional strRet As Boolean = True)
 On Error Resume Next
     Dim RB(0 To 255) As Integer, x As Long, y As Long, Z As Long, key() As Byte, ByteArray() As Byte, temp As Byte
     
@@ -1135,18 +1166,18 @@ On Error Resume Next
     
     ByteArray() = LoadData(fileByteOrString)
     
-    If TypeName(Password) = "Byte()" Then
-        key() = Password
+    If TypeName(password) = "Byte()" Then
+        key() = password
         If UBound(key) > 255 Then ReDim Preserve key(255)
     Else
-        If Len(Password) = 0 Then
+        If Len(password) = 0 Then
             Exit Function
         End If
 
-        If Len(Password) > 256 Then
-            key() = StrConv(Left$(CStr(Password), 256), vbFromUnicode, LANG_US)
+        If Len(password) > 256 Then
+            key() = StrConv(Left$(CStr(password), 256), vbFromUnicode, LANG_US)
         Else
-            key() = StrConv(CStr(Password), vbFromUnicode, LANG_US)
+            key() = StrConv(CStr(password), vbFromUnicode, LANG_US)
         End If
     End If
     
