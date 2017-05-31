@@ -1,0 +1,150 @@
+File naming conventions
+
+There's really no major difference between the NTFS5 and FAT(32)
+file naming conventions. Both file systems support long filenames
+up to 255 characters in length. These filenames can contain any
+characters, including spaces; however, there are a few
+exceptions, which vary for each file system. In general, each
+file system will preserve the case of a filename, but neither is
+case-sensitive. In other words, HELP.txt and Help.txt are
+considered the same file.
+
+
+
+Which is faster?
+
+It's difficult to determine which file system is faster, NTFS5 or
+FAT(32). The decision is complicated because speed depends on the
+size of the folder, and the location of the file in the folder.
+When used on an appropriate volume size (and for small folders),
+FAT(32) may be faster than NTFS because of its more basic
+structure. FAT(32) also may be able to access files faster
+because it doesn't have to first check file permissions, as NTFS5
+does.
+
+However, if the accessed file is badly fragmented, NTFS5 requires
+fewer disk accesses to find the fragments because of its B-tree
+folder structure. This B-tree structure also makes it faster to
+access files in large folders on a NTFS5 volume than on a FAT(32)
+one.
+
+
+
+Support for large volumes
+
+Microsoft designed NTFS5 for volumes larger than 500 MB to
+eliminate the inefficiencies that result from using the FAT file
+system. Microsoft doesn't recommend that you use NTFS on a volume
+any smaller than 500 MB because of the overhead caused by the
+system files and log file. As a result of this overhead, which
+totals about 4MB, it's impossible to format a floppy disk with
+the NTFS5 file system.
+
+The practical size limit for an NTFS5 volume is 2TB and the
+maximum file size is between 4GB and 64GB, depending on the
+system's hardware. Because of these generous limitations, NTFS5
+is much more accommodating than the FAT file system for today's
+powerful systems.
+
+
+
+Maximum File Size
+
+FAT supports up to 2GB and FAT32 supports up to 4GB per single
+file size. However, the way that NTFS first attempts to store
+files entirely within the MFT record for the file. If the file is
+too big, it extends the file's data using structures such as
+external attributes and data runs. This flexible system allows
+files to be extended in size virtually indefinitely. In fact,
+under NTFS, there is no maximum file size. A single file can be
+made to take up the entire contents of a volume (less the space
+used for the MFT itself and other internal structures and
+overhead.)
+
+
+
+Security
+
+Besides providing larger volume support, NTFS5 also excels in its
+security features. Unlike the FAT file system, NTFS allows
+permissions to be assigned to individual files and folders. It's
+not a requirement that the files or folders be shared for them to
+have NTFS5 permissions assigned to them. These permissions apply
+to the local users as well as those users accessing the file over
+the network.
+
+NTFS5 also offers a variety of permissions, which allows for some
+flexibility with your security policy. These permissions include
+Read (R), Write (W), Execute (X), Delete (D), Change Permission
+(P), and Take Ownership (O). For further explanation of
+permissions and NTFS5 security, see the article "Combining NTFS
+and shared permissions for network security."
+
+
+
+Recoverability
+
+Perhaps one of the most impressive features of the NTFS5 file
+system is its recoverability. Through transaction-based
+recoverability, NTFS5 guarantees the consistency of the volume.
+Transaction logging allows Windows NT to undo or redo any failed
+operations. NTFS5 will undo any incomplete transaction or
+transactions that receive errors. Because of the strong
+reliability of the NTFS5 file system, you're not required to run
+any disk repair utilities to maintain the volume Microft says.
+However, I noticed a difference in performance after running
+Diskeeper which is a disk defragmentation utility.
+
+
+
+FAT/FAT32/NTFS File System Default Cluster Size
+
+FAT32 is made automatically by FDISK when you answer [Y] to Large
+Disk Support. When answering [N], the file system is made to FAT
+with a defult size of 1.99GB.
+
+The advantage of FAT32 over FAT is that FAT32 will use lot less
+space to save the same amount of data since FAT32 cluster size is
+smaller than FAT file system. Among the file systems that's used
+by Microsoft OS, NTFS & NTFS5 utilizes the least space for save
+data and offer additional enhancements such as Compression,
+Security, MFT. However, NTFS runs a bit slower than FAT32 since
+features such as Security and Compression features must be check
+when a NTFS partition is accessed...
+
+
+FAT
+
+0 to 15MB = 4KB
+16MB ~ 31MB = 0.5KB
+32MB ~ 63MB = 1KB
+64MB ~ 127MB = 2KB
+128MB ~ 255MB = 4KB
+256MB ~ 511MB = 8KB
+512MB ~ 1023MB = 16KB
+1024MB ~ 2047MB = 32KB
+2048MB ~ 4095MB = 64KB
+4096MB ~ 8191MB = 128KB**
+8192MB or larger = 256KB**
+
+**To support 4GB or larger FAT partitions that use 128KB or 256KB
+clusters, the drives must use sectors larger than 512 bytes.
+
+
+FAT32
+
+512MB ~ 8191MB = 4KB
+8192MB ~ 16,383MB = 8KB
+16,384MB ~ 32,767MB = 16KB
+32,768MB or larger = 32KB
+
+
+NTFS5
+
+0 ~ 512MB = 0.5KB
+513MB ~ 1024MB = 1KB
+1025MB ~ 2048MB = 2KB
+2049MB or larger = 4KB
+__________________
+
+End of File

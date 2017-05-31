@@ -20,9 +20,11 @@ Private Declare Function NtAllocateVirtualMemory Lib "ntdll.dll" (ByVal ProcHand
 Private Declare Function RtlCompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, ByVal UNKNOWN_PARAMETER As Long, OutputSize As Long, ByVal WorkSpace As Long) As Long
 Private Declare Function RtlDecompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, OutputSize As Long) As Long
 Private Declare Function NtFreeVirtualMemory Lib "ntdll.dll" (ByVal ProcHandle As Long, BaseAddress As Long, regionsize As Long, ByVal flags As Long) As Long
+Public Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
  
 Public hUTypes As Long
  
+Global Const LANG_US = &H409
 Const STATUS_SUCCESS = 0
 Const STATUS_BUFFER_ALL_ZEROS = &H117
 Const STATUS_INVALID_PARAMETER = &HC000000D
@@ -86,13 +88,18 @@ Function ensureUTypes() As Boolean
 End Function
 
 Function FileExists(path) As Boolean
-  On Error Resume Next
+  On Error GoTo hell
+    
+  '.(0), ..(0) etc cause dir to read it as cwd!
   If Len(path) = 0 Then Exit Function
-  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then
-     If Err.Number <> 0 Then Exit Function
-     FileExists = True
-  End If
+  If Right(path, 1) = "\" Then Exit Function
+  If InStr(path, Chr(0)) > 0 Then Exit Function
+  If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+  
+  Exit Function
+hell: FileExists = False
 End Function
+
 
 Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
@@ -192,4 +199,45 @@ Public Function RTLDeCompress(ByRef bytBuf() As Byte, BitOut() As Byte, Optional
     
 End Function
 
-
+ Sub CopyMemory(Destination As Long, Source As Long, ByVal length As Long)
+     CopyMemory_ ByVal Destination, ByVal Source, length
+ End Sub
+ 
+'this function will convert any of the following to a byte array:
+'   read a file if path supplied and allowFilePaths = true
+'   byte(), integer() or long() arrays
+'   all other data types it will attempt to convert them to string, then to byte array
+'   if the data type you pass can not be converted with cstr() it will throw an error.
+'   no other types make sense to support explicitly
+'   this assumes all arrays are 0 based..
+Function LoadData(fileStringOrByte, Optional allowFilePaths As Boolean = True) As Byte()
+    
+    Dim f As Long
+    Dim size As Long
+    Dim b() As Byte
+    Dim l() As Long    ' must cast to specific array type or
+    Dim i() As Integer ' else you are reading part of the variant structure..
+    
+    If allowFilePaths And FileExists(fileStringOrByte) Then
+         f = FreeFile
+         Open fileStringOrByte For Binary As f
+         ReDim b(LOF(f) - 1)
+         Get f, , b()
+         Close f
+    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
+        b() = fileStringOrByte
+    ElseIf TypeName(fileStringOrByte) = "Integer()" Then
+        i() = fileStringOrByte
+        ReDim b((UBound(i) * 2) - 1)
+        CopyMemory VarPtr(b(0)), VarPtr(i(0)), UBound(b) + 1
+    ElseIf TypeName(fileStringOrByte) = "Long()" Then
+        l() = fileStringOrByte
+        ReDim b((UBound(l) * 4) - 1)
+        CopyMemory VarPtr(b(0)), VarPtr(l(0)), UBound(b) + 1
+    Else
+        b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
+    End If
+    
+    LoadData = b()
+    
+End Function

@@ -1,0 +1,14 @@
+kiCrypt Test data                       Kenneth Ives  kenaso@tx.rr.com
+
+Test data provided to test either hash or cipher:
+
+	TestPhrase.txt  ASCII text phrase    (Copy & paste phrase for string test)
+  API32.txt       ASCII text file      1.24 MB (1,308,504 bytes)
+	TestFile.txt    ASCII text file      5.23 KB (5,360 bytes)          
+	
+  Binary test files:	
+	KB_32.dat       32,768 binary zeros       	
+	OneMil_0.dat    One million binary zeros  (FIPS 180-3)
+	OneMil_a.dat    One million letter "a"    (FIPS 180-2)
+	
+	

@@ -36,6 +36,7 @@ Attribute VB_Exposed = True
 ' 11.14.13- bugfix in FileExists,FolderExists, GetFolderFiles recursive filter, GetParentFolder trailing \ bugfix
 '  1.21.14- bugfix deletefile detects readonly attribute and removes
 ' 11.15.15- bugfix GetParentFolder could fail is ub folder name was repeated in path (sloppy replace)
+' 5.31.17 = bugfix GetSubFolders.GetAttr could fail, FileExists could fail with embedded nulls (.\0file)
 
 Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
@@ -104,6 +105,7 @@ End Sub
 Function GetSubFolders(folderPath As String, Optional retFullPath As Boolean = True) As String()
     Dim fnames() As String
     Dim fd As String
+    On Error Resume Next
     
     If Not FolderExists(folderPath) Then
         'returns empty array if fails
@@ -117,7 +119,11 @@ Function GetSubFolders(folderPath As String, Optional retFullPath As Boolean = T
    While fd <> ""
      If Left(fd, 1) <> "." Then
         If (GetAttr(folderPath & fd) And vbDirectory) = vbDirectory Then
-           push fnames(), IIf(retFullPath = True, folderPath & fd, fd)
+           If Err.Number = 0 Then
+                push fnames(), IIf(retFullPath = True, folderPath & fd, fd)
+           Else
+                Err.Clear
+           End If
         End If
      End If
      fd = Dir()
@@ -144,6 +150,7 @@ Function FileExists(path As String) As Boolean
   If Len(path) = 0 Then Exit Function
   If Asc(Left(path, 1)) = 0 Then Exit Function
   If Right(path, 1) = "\" Then Exit Function
+  If InStr(path, Chr(0)) > 0 Then Exit Function
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
   
   Exit Function
@@ -466,14 +473,14 @@ Private Sub delTree(folderPath As String, Optional force As Boolean = True)
    End If
 End Sub
 
-Private Sub push(ary, Value) 'this modifies parent ary object
+Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init: ReDim ary(0): ary(0) = Value
+init: ReDim ary(0): ary(0) = value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean

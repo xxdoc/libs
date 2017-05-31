@@ -1,0 +1,519 @@
+==========================================================================
+16 Mar 2017         Twofish P-box (Primary Key) Values          4:41:29 PM
+                      Kenneth Ives  kenaso@tx.rr.com
+==========================================================================
+Twofish P-Box (Primary key) values are input sets for alternate loading.
+Below are 10 table sets from which to choose.
+
+Each data set:
+    1.  Consists of all ASCII values (0-255) in two
+        character hex equivalent with no duplicates
+    2.  Mixed 100-200 iterations using Knuth Shuffle
+
+Highlight table set you desire.  Then copy and paste into the appropriate
+algorithm source code under LoadWorkArrays() routine.
+==========================================================================
+
+Table set no. 1
+    strData = strData & "15 34 D8 6C 71 97 53 45 B0 4B 4C 27 96 D1 30 39 "
+    strData = strData & "61 1E 2C 7B 1C 51 79 18 03 2A 84 DD FB 72 C9 CC "
+    strData = strData & "33 5F 3E 21 76 E5 50 DF EE 9F CE D4 D0 DB 5A 99 "
+    strData = strData & "2E 4D C8 6A F6 9D B1 86 A1 83 D5 56 6B C6 3B 5C "
+    strData = strData & "10 AA 0A B2 A5 5E 67 7E E4 E0 BB 65 9A 90 BC 04 "
+    strData = strData & "3D 57 D9 0F D2 32 7C 1B 8B FC AC F9 BF A6 22 BA "
+    strData = strData & "3C 82 1A 62 55 9E E2 7D CF 19 05 06 02 C4 D3 8C "
+    strData = strData & "EB 0D 0C 47 6D CB 91 14 69 8D 36 EA 81 FA C3 B4 "
+    strData = strData & "4E 89 D7 B5 7F 93 52 17 6F 88 54 5D A8 F5 B3 B7 "
+    strData = strData & "35 E8 D6 CD 60 EF A0 E7 8E 94 11 95 F7 A2 25 37 "
+    strData = strData & "48 8F F3 9B 09 66 4A 98 E3 EC C5 38 63 B9 13 AF "
+    strData = strData & "BE DC 70 C0 85 FE 3A 77 20 F0 7A A9 2B 58 29 A3 "
+    strData = strData & "AE DE 74 0E 3F 44 01 B8 AB 24 68 F1 46 AD 23 C1 "
+    strData = strData & "FD 26 16 43 00 4F A7 1D DA 75 2D CA B6 40 5B 41 "
+    strData = strData & "42 E6 E1 1F F8 28 12 08 ED 49 E9 07 9C 8A F4 31 "
+    strData = strData & "A4 0B 73 87 80 78 59 BD 64 FF 2F 92 C2 6E C7 F2 "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "F2 67 69 34 96 1D EC 5E B6 60 80 4C 63 55 39 CC "
+    strData = strData & "7A 50 73 F9 14 78 E6 9D CF 53 1E 5D 3A E1 00 CE "
+    strData = strData & "64 5B D8 DD B5 51 82 CD 27 87 C6 3B 59 C2 49 3E "
+    strData = strData & "BD 90 24 AF E9 CA 72 66 4F AD F3 7E 29 28 7F F7 "
+    strData = strData & "CB E7 DB 5F 94 62 3C 95 0F F4 DA EF EE 6C 42 BE "
+    strData = strData & "93 2A 4D 45 11 0C A2 76 E4 2B FB C9 2D 3D 9B 75 "
+    strData = strData & "F5 17 FE A8 26 DC D7 C7 56 EB 4B D2 EA FA 58 10 "
+    strData = strData & "C8 2F A0 7B 47 86 C4 9C 05 0A 8B 21 A4 06 E3 A7 "
+    strData = strData & "02 A3 37 18 1F E0 77 B1 33 D9 B8 70 54 0B B0 1C "
+    strData = strData & "0D D1 97 6A A9 48 35 38 85 F1 15 A5 DF 0E 8C F6 "
+    strData = strData & "7C 71 E2 ED 01 31 B3 9A E8 09 FC 13 BC D3 9F B7 "
+    strData = strData & "C5 FD BF 52 DE 20 68 AB 12 5A 88 6B 08 C1 46 83 "
+    strData = strData & "B2 2C FF 8E 98 99 16 F0 C0 2E 7D AE B9 79 19 5C "
+    strData = strData & "40 57 91 4A E5 03 A1 92 32 8A B4 AA C3 43 74 30 "
+    strData = strData & "6D 61 22 81 6F 1A D0 44 BA 41 3F AC 07 D4 9E 89 "
+    strData = strData & "36 4E 8D A6 23 D5 84 BB 8F 25 1B 04 65 D6 F8 6E "
+
+
+Table set no. 2
+    strData = strData & "AE 22 E9 0E 72 EF 28 59 B8 A9 EA B2 88 18 93 80 "
+    strData = strData & "4C 2A 3E BD 69 DF C5 34 E5 0D 92 13 8D 10 9A AC "
+    strData = strData & "05 2E 5A 04 4F 41 D6 AD 78 D5 DA 67 B7 95 1B CB "
+    strData = strData & "24 DD ED B9 2B FA 74 7B E7 8F 81 B4 D1 A5 44 86 "
+    strData = strData & "99 CC 5C F5 CD 17 5B 82 C7 AB 94 EB BF 35 48 C1 "
+    strData = strData & "2F F4 7C 58 06 E0 55 3D 15 9C 45 A4 03 A1 8C 0F "
+    strData = strData & "51 CE 36 14 4D B0 30 08 50 16 FF 31 8A 1C 11 AA "
+    strData = strData & "D0 66 DC D7 71 37 68 83 2C 0B 3F BC 46 D3 BE 4B "
+    strData = strData & "D9 EE 76 09 60 49 EC A8 0C 87 F7 E6 29 1A B6 F9 "
+    strData = strData & "B3 40 32 A6 26 25 DE 98 57 C6 4E 1E 0A 42 27 A7 "
+    strData = strData & "F0 61 96 20 7D E2 6B E8 FE 85 43 C2 C9 6A 1D 5E "
+    strData = strData & "FB 64 A2 C0 79 75 E4 21 FC 77 90 7F F1 39 CA CF "
+    strData = strData & "B5 9F F2 54 1F 9D 02 01 12 A3 5D 6E 6F DB 2D B1 "
+    strData = strData & "9B 8E 62 38 91 65 A0 89 9E C8 C3 7A 6D 73 53 3B "
+    strData = strData & "F3 52 5F 97 47 84 33 6C BB 3A 7E E1 FD E3 4A 07 "
+    strData = strData & "D4 56 D8 19 23 BA 63 70 8B F8 F6 D2 00 3C AF C4 "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "24 8A 5C BC 17 93 8D 95 72 26 6F 81 FA B9 FF 28 "
+    strData = strData & "4F A3 0F 11 D0 B3 87 2E 39 7F 42 09 75 99 1C 29 "
+    strData = strData & "65 76 2A 00 EB D1 91 AF C6 7C EA 5E AD 23 A9 9E "
+    strData = strData & "E8 D7 E2 92 13 D2 AC 78 1E 36 EE F8 50 AE 22 F7 "
+    strData = strData & "4B D3 62 8B 6D 74 9D 41 46 84 10 FD CC 82 98 A8 "
+    strData = strData & "15 E9 9B BA 8C 5D 2B 66 A4 C5 44 BD E7 73 A7 BB "
+    strData = strData & "CD FB 6B 4D AA F3 89 6A A6 90 B2 5F 40 C2 C3 55 "
+    strData = strData & "05 F0 71 2D D4 DE 19 B0 1D EC F5 67 AB 20 51 16 "
+    strData = strData & "64 4A A1 63 35 A2 49 E4 E5 8F 7B 85 BE B8 52 8E "
+    strData = strData & "B6 4E 4C DC 53 04 F2 6E 3F FC DF 0A A5 CE C4 31 "
+    strData = strData & "79 3C 54 18 7A B5 1A B7 D6 12 80 56 58 34 21 0E "
+    strData = strData & "F4 C8 5B 25 A0 E0 EF B4 47 03 7E 01 FE 9F 7D 0C "
+    strData = strData & "9C CF D9 48 D5 DA 45 E1 3E C7 C0 3D DB 33 43 6C "
+    strData = strData & "E3 97 07 88 BF 83 02 E6 38 5A 94 1B 27 F1 B1 69 "
+    strData = strData & "14 96 32 F9 0B 9A 3B 57 30 08 C9 77 1F 86 61 59 "
+    strData = strData & "F6 D8 2C ED 70 0D 06 C1 DD 37 60 CB CA 2F 68 3A "
+
+
+Table set no. 3
+    strData = strData & "91 2C 6E 9B AB D9 28 8D 86 AA 90 AE 5E AC 71 82 "
+    strData = strData & "1B DA 1A CB 3E 5F 05 4B 0C E1 DF B2 23 5A D0 15 "
+    strData = strData & "79 6B B5 9C 68 BD D3 0A F2 A2 3C 44 9E A4 07 21 "
+    strData = strData & "24 10 EA 29 A1 DC 37 FF 40 FA 76 31 8C 26 CF B1 "
+    strData = strData & "3B 8E 62 D2 CC B8 42 41 F7 C6 6C 89 FE 32 5D E8 "
+    strData = strData & "35 57 80 1D E3 FB 58 D6 C2 50 59 B4 F5 61 88 6A "
+    strData = strData & "BE 08 06 83 CA 70 FC E4 7D FD 0E 4E 36 54 2D 66 "
+    strData = strData & "A0 8A BF 72 D8 9F EF 92 53 C4 0F 48 96 67 63 4A "
+    strData = strData & "F0 93 39 2A F6 19 85 09 64 04 6F B6 34 DD 1C 99 "
+    strData = strData & "A5 00 60 02 0D 49 E0 74 3D 7E 7B 3F BA C0 F3 B0 "
+    strData = strData & "EC E5 43 47 BB 17 DE 84 8B 18 01 9A 3A A9 A3 25 "
+    strData = strData & "75 D5 BC C1 2F F8 55 C8 98 E9 B3 22 81 D7 27 F9 "
+    strData = strData & "52 03 B7 5B 4C D1 C3 46 4F 4D 0B 13 95 6D B9 CE "
+    strData = strData & "A8 51 EB 94 20 CD 73 F4 33 E6 F1 E2 65 DB AF 16 "
+    strData = strData & "7C 9D C7 1E 38 A6 7F 78 8F 2E 11 7A 97 30 87 5C "
+    strData = strData & "A7 EE 77 AD 12 14 C5 D4 E7 C9 ED 56 1F 69 2B 45 "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "6A AF B9 D8 33 80 BD 7C B2 CF A9 3C FC ED 81 88 "
+    strData = strData & "21 D4 4E D1 6D C3 5B 74 16 5F E6 B5 C2 97 D9 19 "
+    strData = strData & "F3 75 31 E0 8D 15 B3 98 00 0E 1D 49 F8 B6 5A 69 "
+    strData = strData & "72 F9 7F 05 44 84 E3 A4 96 0A 9C 2E A2 46 A5 25 "
+    strData = strData & "D5 50 8A 1E 2C CE 01 C9 1F 55 22 59 EA 8B C6 11 "
+    strData = strData & "38 FE 73 2D CD 1C E8 B1 61 41 D6 B0 08 68 30 BE "
+    strData = strData & "94 F0 A8 36 E4 71 6B 91 85 95 F7 E7 83 70 DB 27 "
+    strData = strData & "B4 12 D0 F6 35 C1 DA C4 FF DE 7A 2F 0B EC 5D 48 "
+    strData = strData & "9D E1 14 A6 EB 17 E2 64 99 3A DD CA F1 CC 24 07 "
+    strData = strData & "18 53 AD A0 4A AB C5 40 EE DF AE 3B D7 26 51 0D "
+    strData = strData & "1A C8 4D DC 32 6F 76 BA A3 43 8C 0F 89 FD 52 47 "
+    strData = strData & "F2 A1 4F FA B8 D2 3E 09 7D 78 3D 92 9E 93 8E 28 "
+    strData = strData & "4B 45 9A 06 2B 58 C7 F4 13 F5 60 39 B7 63 79 86 "
+    strData = strData & "E5 66 62 9F 82 0C 03 02 04 42 56 1B E9 5E 77 AC "
+    strData = strData & "54 AA 7E 9B 57 D3 BB 6E 90 EF 34 6C 7B C0 5C 23 "
+    strData = strData & "8F 37 BC 67 A7 3F 65 FB 87 4C BF 20 29 10 CB 2A "
+
+
+Table set no. 4
+    strData = strData & "FA 57 5D 84 14 BE B9 38 89 DD 1E D9 5F 9A A0 A8 "
+    strData = strData & "29 8E F5 E7 C3 6F 2E EC C7 18 D2 6D 56 0A 69 9E "
+    strData = strData & "58 A1 83 92 35 4A DF 45 C1 10 DB 21 CA EE 3D 87 "
+    strData = strData & "F6 7F 7E 3E 28 1A 4C 24 F3 33 16 55 BF 48 C6 C5 "
+    strData = strData & "60 3A F0 FF 4D 53 3F 8A BB FE 72 31 C9 61 8D 0B "
+    strData = strData & "6C 51 90 23 0D 37 FC 50 9C A4 12 79 93 7B 39 96 "
+    strData = strData & "A6 62 5B 66 98 13 1B B1 17 FD 88 9B CC 67 22 64 "
+    strData = strData & "81 F2 7D E3 F8 E5 3B C0 CF 8F 15 71 7A 0E 68 BC "
+    strData = strData & "4E 04 65 B0 36 1C F1 46 00 1F 2A 78 B8 9D 80 73 "
+    strData = strData & "1D 9F CB 5A AB 08 86 BD 75 B3 E2 D8 74 7C 34 0F "
+    strData = strData & "ED CE 94 F9 A9 32 EA D5 2B E8 E0 E1 2D 05 5C E9 "
+    strData = strData & "07 EF 27 AF 2F C2 54 A5 59 49 77 8B D3 C8 CD 70 "
+    strData = strData & "01 B2 D0 D7 DA 4B 40 25 3C BA 11 AE DE 91 DC 97 "
+    strData = strData & "44 A2 0C D6 B4 A7 6E 6B C4 06 A3 B7 2C AD F7 D1 "
+    strData = strData & "B6 52 E4 41 AA 76 E6 99 47 4F 85 09 43 19 26 8C "
+    strData = strData & "D4 AC 5E 42 95 03 EB 30 B5 02 82 6A 20 63 F4 FB "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "C9 29 04 87 8C 05 20 39 B8 70 A4 FF A8 C5 CB 7C "
+    strData = strData & "C4 96 B2 01 28 1C 52 21 84 38 63 A2 81 0A 1E 4C "
+    strData = strData & "AE EA 37 71 10 03 17 E1 47 69 97 83 45 3A 66 CD "
+    strData = strData & "07 64 2B 16 34 C0 F0 62 B6 FC 78 80 A3 85 57 F4 "
+    strData = strData & "C8 E8 AA 50 1A 0F 74 44 A7 DD 2E FE 2D B1 55 9C "
+    strData = strData & "23 7B 12 BC 4B 36 41 82 86 75 9D AC E6 E2 7E 14 "
+    strData = strData & "27 EF 02 C2 7D B9 DE 06 C6 D3 F5 6E B4 1B 7A 08 "
+    strData = strData & "73 33 8D 51 15 59 98 BD 0C DC 8F D0 2F 46 18 1D "
+    strData = strData & "76 E4 D8 5D C3 4F 6A 24 42 4D 32 F7 E3 9B A9 A1 "
+    strData = strData & "77 58 00 6C D4 C7 3C 95 C1 5F E5 90 3B 91 5A 8A "
+    strData = strData & "19 99 65 9E E7 9A 53 FB D5 D6 13 B5 ED 94 1F 40 "
+    strData = strData & "8E FA 3D F9 89 54 5E 25 F8 CF A0 09 0D E0 B7 61 "
+    strData = strData & "B0 3F 30 8B 2C EE BE 56 FD CA 43 49 E9 F1 D2 60 "
+    strData = strData & "F3 0B 48 AF DA DB 79 A6 92 CE F2 D1 4A 5C 0E 93 "
+    strData = strData & "6B 9F 67 A5 BB 26 31 BA BF AD CC B3 3E EB EC 68 "
+    strData = strData & "DF D9 D7 6D 2A 5B 22 7F 72 6F 88 4E 11 35 F6 AB "
+
+
+Table set no. 5
+    strData = strData & "A0 D0 54 D5 A5 CA 79 31 A7 C9 78 A2 D1 F7 3B 74 "
+    strData = strData & "88 2F 20 A6 7E 73 98 7B 8E 69 07 DD 21 A4 32 94 "
+    strData = strData & "5B 2B CB 10 37 FB 45 7D 39 C2 83 E7 A8 9F 04 09 "
+    strData = strData & "4F DB B7 0F 61 75 08 E1 65 36 CE 3F ED 0C 1B F9 "
+    strData = strData & "97 90 E5 55 F1 47 E6 76 B3 FC F8 93 3D 2A AD 14 "
+    strData = strData & "81 89 95 D8 3E 9A A9 4A 0A BB C4 6A 6B B0 FD B9 "
+    strData = strData & "E8 99 F3 06 02 4C 4B 0D AB C5 D7 BC 27 F0 F2 18 "
+    strData = strData & "50 53 E4 8C CF 6E C6 62 DA 85 D6 34 11 AA 66 1A "
+    strData = strData & "5E FF DE 8A 96 87 FA D2 86 56 EA 6F 5C B6 5A 9D "
+    strData = strData & "AC 00 1D 12 2D 48 DF AE EE 68 0B 84 E0 77 CC 8B "
+    strData = strData & "3A 60 38 70 6D 2E 46 7C 0E 44 6C E2 35 72 C7 BE "
+    strData = strData & "B4 1E 57 BA 17 E9 33 A1 F5 BD C0 63 D9 C3 9B 64 "
+    strData = strData & "E3 59 8D B5 7F 40 13 F4 F6 01 DC 2C 28 29 92 41 "
+    strData = strData & "CD B2 24 05 22 58 B8 82 26 4E 16 EB 51 9E EC EF "
+    strData = strData & "52 30 C8 1F 5D 71 4D 25 67 5F 15 D3 42 23 1C AF "
+    strData = strData & "80 D4 A3 03 B1 43 19 C1 7A 91 FE 9C BF 49 8F 3C "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "EF DE C5 8B DC 68 E4 CD 10 8A 63 E3 28 C2 7E C6 "
+    strData = strData & "0F 2F B8 DD DF 86 F6 AC 95 54 88 72 F4 3E E2 71 "
+    strData = strData & "67 7B 73 65 6C 56 29 3C D6 84 3A 59 1C C4 4E 4A "
+    strData = strData & "C1 4B AB 47 11 60 FD 2C 03 E8 81 0B 90 89 2A D5 "
+    strData = strData & "6F 80 75 52 A1 C8 F2 6A A6 9A 09 30 EA 13 ED E6 "
+    strData = strData & "F0 FF 33 F7 E7 66 93 D9 B0 AE 74 97 32 12 92 6D "
+    strData = strData & "B4 00 42 A9 DA D4 EB FC 22 53 B9 25 77 70 96 78 "
+    strData = strData & "A5 39 62 41 A4 06 F9 7D 27 05 20 44 E1 2D 87 2E "
+    strData = strData & "7A 3B 17 38 2B 98 08 1F E5 F3 5C 35 F8 BF 61 F5 "
+    strData = strData & "5E 58 31 76 7F 0D FB B1 FA F1 34 CF EC BC 8E 23 "
+    strData = strData & "8C D2 46 D8 82 D3 48 1E 99 AF 83 1A 18 8D BA A0 "
+    strData = strData & "15 B6 CA FE E9 E0 79 45 01 16 91 A7 64 BD 3F B7 "
+    strData = strData & "9D 0A 1B 14 BB D7 DB 9E 19 4D 4C 85 8F C7 B5 CC "
+    strData = strData & "C9 B3 24 CE 0C 6B A3 7C 6E BE 02 AD AA 43 40 EE "
+    strData = strData & "D1 26 21 9B 51 37 5A 0E C0 1D 69 A8 55 3D 57 C3 "
+    strData = strData & "D0 5D 4F 9F B2 94 5F 07 A2 49 5B 04 36 CB 50 9C "
+
+
+Table set no. 6
+    strData = strData & "D9 61 EE 6C B7 51 2D FA 96 C6 62 4A 9B 27 55 1A "
+    strData = strData & "CF E8 EC 69 F3 E9 58 8A 11 B6 BF 10 60 63 21 12 "
+    strData = strData & "6B BE C4 8C 53 AA 5F 5B 47 88 15 44 98 5E FE 4D "
+    strData = strData & "66 23 77 C2 4C 72 65 90 AC BD C7 16 46 1E D5 AD "
+    strData = strData & "2E B9 0F 4B 34 0E 6A F1 59 5C AB 08 C9 7F EA E6 "
+    strData = strData & "93 84 79 D6 52 C0 F7 9A 1C FF 22 70 85 CB 31 CA "
+    strData = strData & "E7 CC 18 FD 05 7E A2 37 82 14 19 43 F6 83 2A 99 "
+    strData = strData & "D0 9D DC 02 17 30 09 C5 45 A6 A3 74 33 5D F9 C8 "
+    strData = strData & "DF 73 01 7A E0 E2 28 BC FB 6F 6E A8 95 0D B1 C3 "
+    strData = strData & "00 AF E1 81 2B A9 B2 A7 56 8E 2C 4E 8D F2 39 FC "
+    strData = strData & "92 76 F8 71 8B 04 26 F5 7B A1 2F 57 AE 3C 42 B0 "
+    strData = strData & "DB 75 9C 4F A0 68 03 3A A4 3E 1B 48 EB 35 BB DE "
+    strData = strData & "B3 7D 38 6D 67 0A 13 3B 0B 91 D7 64 D1 A5 5A E4 "
+    strData = strData & "86 8F 87 94 D4 E3 9E 40 B4 1F 3D DD 29 DA 7C 25 "
+    strData = strData & "CE D2 1D 89 EF CD E5 32 3F 97 C1 49 50 9F B5 F0 "
+    strData = strData & "D8 D3 F4 07 80 24 06 36 20 0C BA 54 ED B8 78 41 "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "46 D4 89 78 45 05 C3 FA 21 8F 7B B5 48 94 BC 0E "
+    strData = strData & "56 44 22 0C C7 07 95 69 92 CB 02 41 93 16 E3 3F "
+    strData = strData & "32 DB 9B 63 74 96 84 D3 7C FD 98 3E AD F1 88 1D "
+    strData = strData & "D9 D7 B2 7D 61 EC EE 7F A7 43 E2 F5 A5 D0 0A B3 "
+    strData = strData & "C2 CA AA 4F 81 1C 52 6E 39 5F 33 E7 C8 D8 1E 8B "
+    strData = strData & "3D 13 A3 31 90 79 3C 8A DC 67 23 D5 73 2A 8E B7 "
+    strData = strData & "ED C6 40 F4 FC 60 5A 9C C5 A9 AF 91 50 09 25 5D "
+    strData = strData & "C0 06 A8 6A 4E F2 38 CE 2C 8D 34 7A 30 20 71 03 "
+    strData = strData & "B4 59 68 6C 53 A6 D2 6D A0 9E C9 70 12 6B B1 11 "
+    strData = strData & "17 DF BA CC 1F B8 28 29 FB 86 75 CD 66 E1 99 A1 "
+    strData = strData & "E0 72 87 B6 97 00 F9 3B B0 BB AB 1A 1B 9A A4 3A "
+    strData = strData & "2F 65 E4 47 26 C4 DA BF 27 AE B9 BE 49 64 4A 7E "
+    strData = strData & "57 E6 80 0F 58 E8 C1 37 D6 0D AC 9D 5C 4D 51 76 "
+    strData = strData & "DD E9 CF 5E 42 8C 01 2B F0 14 FF F3 E5 4C 18 EB "
+    strData = strData & "85 83 36 DE D1 9F FE 5B EF BD 0B 10 F8 54 A2 2D "
+    strData = strData & "04 19 EA 82 15 24 35 62 77 F6 6F 08 2E 4B 55 F7 "
+
+
+Table set no. 7
+    strData = strData & "41 42 C7 DB 76 03 FD EE 5C FA 67 BB 6D 10 DC F7 "
+    strData = strData & "F6 17 35 90 47 4E 8A 3D E2 61 A0 51 13 9A 4B 49 "
+    strData = strData & "E6 DF D7 E7 A5 BE AF 6E 22 D6 29 68 ED 24 7A 58 "
+    strData = strData & "33 94 F5 1B DD D5 50 5E 1A C0 CA 53 28 0C 09 AB "
+    strData = strData & "D8 AD 1E 20 A1 75 CD 74 31 D1 83 26 F4 52 00 84 "
+    strData = strData & "4F BC 72 7D 37 C1 E1 16 1C C8 B0 B5 A9 BD 78 FE "
+    strData = strData & "A4 23 93 E4 19 D4 98 8E 5D 32 CC F2 25 CB A6 C5 "
+    strData = strData & "F8 27 8F 5F 79 9F 77 FB 2D CE 8B 12 2B E5 07 1D "
+    strData = strData & "EC C9 2C FF 85 F1 B8 B4 EA 43 7C 73 0B 4C 04 21 "
+    strData = strData & "E8 9D 8C 4D 96 11 71 95 F0 5A EB 2E AA 7E D2 57 "
+    strData = strData & "55 B1 E9 99 DA AE 46 CF 6A F9 64 B9 C4 0F 3F 0A "
+    strData = strData & "4A 45 48 A2 82 87 BF 2F 0D 0E 9C 97 C3 02 59 7F "
+    strData = strData & "7B 05 9B 30 69 3E 40 DE 39 70 3A C6 6C 54 06 89 "
+    strData = strData & "92 A3 B2 9E 15 65 E0 AC 44 E3 EF 34 6F 91 88 3C "
+    strData = strData & "60 36 86 01 1F 18 D3 8D BA A8 80 5B 3B 2A F3 66 "
+    strData = strData & "B6 81 56 B7 D0 D9 08 A7 62 FC 38 C2 14 63 6B B3 "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "7E 88 78 DD A1 C9 56 D5 A2 90 CE F5 0C 26 E2 92 "
+    strData = strData & "DC E5 5C 5B 1F A0 29 09 DB F0 15 DE B3 BC F8 E4 "
+    strData = strData & "8F D4 B1 19 7D 86 5A 00 59 47 03 2B C1 E0 3B 96 "
+    strData = strData & "9F 57 3E BD 82 61 16 1E D1 D3 C2 8D 02 B4 4F 37 "
+    strData = strData & "89 36 BA 69 F7 06 FA 22 9E 3A 8C ED 39 4B 4D 14 "
+    strData = strData & "C3 83 CC 8E E3 11 7C 3D B8 5F 2A 91 0E 42 62 D9 "
+    strData = strData & "CF 05 B0 FC 3C 54 AA 53 04 B5 A8 9D 76 4C BE 28 "
+    strData = strData & "DA 97 C8 E6 A6 4A 2C FF 84 40 2F F3 B6 C7 CB 4E "
+    strData = strData & "FD B9 87 E1 1A C4 32 75 18 CA 21 85 D0 49 43 77 "
+    strData = strData & "3F 68 6C 2D 73 64 50 6E 99 13 08 38 FB EA 8A 55 "
+    strData = strData & "27 C0 A7 41 E8 10 65 E9 98 71 72 01 AB 81 6F 93 "
+    strData = strData & "80 AD 6A 67 DF 74 F1 1C AC EB EF D2 7A 30 34 79 "
+    strData = strData & "51 58 20 F4 0A BF 46 BB A5 94 D8 A3 C5 C6 24 5D "
+    strData = strData & "1D F6 25 6B 2E 33 8B 12 D7 5E AF 60 7F 0F 9A 6D "
+    strData = strData & "A4 FE EE 95 A9 D6 1B 52 23 45 9B 63 0D 07 70 0B "
+    strData = strData & "44 F9 AE B2 F2 66 EC 31 7B B7 9C E7 35 48 CD 17 "
+
+
+Table set no. 8
+    strData = strData & "82 03 33 B6 65 F0 6C 34 E1 D9 77 E6 08 E9 9C C2 "
+    strData = strData & "2D 7C F7 AD FB C5 09 C9 9F D5 C3 BD 9A 51 ED 1B "
+    strData = strData & "43 FE 4D 35 40 54 B4 98 14 76 8B E3 7E 02 83 1A "
+    strData = strData & "6D C6 59 28 52 EA 89 45 79 8F 36 1F 87 42 DA 88 "
+    strData = strData & "D4 73 5F E4 6A D6 17 AA 5C 4C 60 74 15 D2 BC 11 "
+    strData = strData & "FC 50 66 F8 DE 1E 3F C0 B9 DC A2 9B D0 97 1D 80 "
+    strData = strData & "FD 9D CB A1 D3 7D 12 46 19 5A C4 41 4B 23 7A 2C "
+    strData = strData & "6E BE 0F EF 56 A6 21 F6 5B 84 90 B5 04 CE 0D 37 "
+    strData = strData & "E2 DD 5E 05 49 A0 A7 2B 63 EB DF 2E 61 0E AE A9 "
+    strData = strData & "8D 58 E5 AF 38 FA 32 0A CD 25 FF 72 C7 48 3D B8 "
+    strData = strData & "6F 93 8E 01 39 16 B3 64 27 7B AC F3 99 22 3A BB "
+    strData = strData & "24 68 E7 85 96 B2 2A 4E 55 D1 0C 31 A8 30 EC 8C "
+    strData = strData & "29 DB 9E F5 78 06 AB 94 4F 71 44 7F 13 A4 E8 75 "
+    strData = strData & "26 CC 6B E0 CF A5 3E 4A EE 8A 0B B0 53 C8 70 91 "
+    strData = strData & "F2 D7 C1 B1 D8 F1 3B 67 A3 18 3C 62 00 95 B7 69 "
+    strData = strData & "2F 81 47 5D BA 92 1C 57 07 F9 BF 20 F4 10 86 CA "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "76 F3 69 43 58 2A AC A5 D7 A1 1E 53 BE 6A C0 EC "
+    strData = strData & "09 37 B8 CE 6B 01 80 CA 39 D5 B6 AE 26 6F 7B E8 "
+    strData = strData & "38 06 34 EA 70 85 8D 28 30 45 9F 3E B3 A3 44 FD "
+    strData = strData & "9B B2 E5 33 E4 FC BC AF D2 77 E9 66 59 7C BF 8E "
+    strData = strData & "6D 5D 55 A7 12 DD A6 56 78 1B 5A 86 61 4A 2C 57 "
+    strData = strData & "CD 98 FA C2 CF 74 16 83 07 1F 2B F8 D3 6C 79 EB "
+    strData = strData & "A8 36 B0 9A 8A 96 DE 11 0F D0 D1 73 AA 35 64 65 "
+    strData = strData & "0D 14 54 2F D8 91 A9 29 7E 25 C5 E7 C9 08 92 AB "
+    strData = strData & "E2 1D FF 90 4C 68 93 ED 22 0A 03 B4 4F F0 10 F6 "
+    strData = strData & "C6 31 C3 13 21 42 B1 F1 27 F2 C8 BD FB 75 E0 51 "
+    strData = strData & "CB 19 DC 7A 0B 48 72 3B A0 8C 71 00 DF 41 9D 4D "
+    strData = strData & "FE 4B 6E E1 3A 63 52 17 3F 47 23 67 1A 4E 1C 60 "
+    strData = strData & "50 BB C1 02 99 18 B9 95 F4 EE 84 46 C7 2E D6 8F "
+    strData = strData & "CC D4 F5 32 9C 81 8B A2 EF 24 7D 9E 87 DA 88 B5 "
+    strData = strData & "0E 89 2D C4 40 F7 15 82 62 3D E3 04 94 0C F9 3C "
+    strData = strData & "05 BA B7 5E 5B 49 E6 A4 7F DB AD 5C D9 20 5F 97 "
+
+
+Table set no. 9
+    strData = strData & "B9 93 4F 00 8A E7 B3 47 82 EF 32 39 23 6D C5 6B "
+    strData = strData & "0E 3D 7B B0 9A 91 5E 98 17 06 DE 2C F8 28 64 E2 "
+    strData = strData & "80 A6 B2 5C 3A 03 E3 F0 A4 55 9B A7 EB 15 EC 63 "
+    strData = strData & "8C BB 7D 52 10 9C 8F 27 CA 56 83 50 42 C8 33 30 "
+    strData = strData & "C9 46 8D B1 1B 0C 4B F3 25 1F C2 2B D9 FE 09 EE "
+    strData = strData & "77 BE A0 BD AE 14 FD 5A 29 49 9E 3F 0B D5 85 7F "
+    strData = strData & "34 94 73 AA 71 53 02 C1 22 E1 C7 E9 D6 89 81 6C "
+    strData = strData & "5B 07 1C A5 D2 4C AF 48 B5 4E 99 A1 97 BF A9 5F "
+    strData = strData & "60 D3 18 2F 78 3C 43 AC 90 05 CB 8E 66 D4 7E E5 "
+    strData = strData & "3B 13 B7 58 74 75 24 DD DB 76 11 AD 69 F1 7C 3E "
+    strData = strData & "35 DC F6 A3 61 A2 84 FF 0A CD 9F 01 4A CE AB 41 "
+    strData = strData & "0D F5 F4 B4 FB 68 87 B8 57 BA 12 F7 16 62 F9 6F "
+    strData = strData & "67 C4 E4 FC 2D ED B6 1E 08 F2 E8 C3 8B 19 D1 6E "
+    strData = strData & "0F BC 4D 6A 9D 70 E6 54 1A A8 37 C6 2A 31 FA 59 "
+    strData = strData & "5D 21 E0 D8 D7 86 79 88 92 D0 DF DA 1D 38 45 40 "
+    strData = strData & "20 51 2E 7A CF 26 36 96 C0 04 44 72 CC 95 65 EA "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "AF 21 4E F5 18 80 E0 01 C5 83 81 45 35 69 C7 D9 "
+    strData = strData & "FB B8 66 89 DA BD 47 50 4F 2C BF AC 8A 16 64 08 "
+    strData = strData & "9B 44 5B A5 B2 25 FE E9 9F EF 74 E2 4D 0D 9C F6 "
+    strData = strData & "56 1D 9E B1 5F DB 09 6D DC C8 C3 CD C6 6B 57 06 "
+    strData = strData & "FF 95 15 A6 F2 ED 75 02 8B 90 6F 0C DE 79 A7 42 "
+    strData = strData & "F3 7D BB 0B CF 7E FD 73 EA 29 07 FA 43 76 77 2D "
+    strData = strData & "19 6E 4B 7F 63 F7 7A 82 46 49 D6 8C 85 CB F1 BC "
+    strData = strData & "91 60 54 B9 1C 51 72 E8 1B 4C 3E CC B5 A2 41 55 "
+    strData = strData & "C1 92 9D 37 99 1F 58 AB 7C 61 38 00 3C B7 D3 0F "
+    strData = strData & "40 20 11 71 A8 6A 10 3A 36 65 CA F8 34 BE C9 94 "
+    strData = strData & "84 31 A9 23 30 26 DD F0 27 2F 04 2E E6 67 E5 5C "
+    strData = strData & "8E 22 88 D4 A3 3F CE 3B 1A EE A1 28 2A AD 52 2B "
+    strData = strData & "13 E4 7B BA 5A 3D B4 F9 9A AA C0 0E FC B3 5E 4A "
+    strData = strData & "8F D1 87 AE D2 93 17 96 6C 05 C4 86 68 D5 EB 24 "
+    strData = strData & "14 0A 48 1E 78 C2 B6 E3 E7 33 D7 03 97 5D 32 A0 "
+    strData = strData & "B0 59 12 D0 EC DF 98 E1 39 D8 A4 F4 8D 53 62 70 "
+
+
+Table set no. 10
+    strData = strData & "D3 0A DB FB A8 A9 BF CE AA 69 7A 5D 00 64 C8 17 "
+    strData = strData & "C5 95 7B AB 61 22 F0 D4 FD AF 3D 78 1B E2 4D BC "
+    strData = strData & "CF 1F B2 14 9D 3E F1 84 65 23 B6 C4 B9 E5 88 A3 "
+    strData = strData & "36 C3 9A 99 A2 60 18 EC F9 0C 5E 44 56 AD BE 71 "
+    strData = strData & "5B 3F 13 12 8C AE 34 28 97 5F 49 72 79 5C 32 66 "
+    strData = strData & "4C F6 A4 92 FF CA F8 80 BB 03 26 9B 8E 05 51 5A "
+    strData = strData & "C2 27 D7 58 F7 DC CD D9 DF 3A 85 BD 9C 42 86 D1 "
+    strData = strData & "E7 52 2B D0 BA F2 A0 6B 8B 24 EB 11 EF 73 CB 30 "
+    strData = strData & "F3 9E 47 6A 2F A7 C1 7C B0 C0 4B 16 2A E9 A5 55 "
+    strData = strData & "0E DD 20 B1 1A 7E D6 67 57 6D E4 0F 87 07 8F 83 "
+    strData = strData & "15 70 40 19 6E ED 0B 7D F4 1D 89 C9 B3 FE AC 94 "
+    strData = strData & "91 59 E0 35 37 90 39 6C 2D CC E1 DE 2C 77 04 E6 "
+    strData = strData & "09 8A 54 31 A1 FA 25 4A D2 9F 48 53 FC 2E DA 4E "
+    strData = strData & "E3 62 02 1C B4 75 F5 A6 B8 C6 D5 96 43 D8 68 29 "
+    strData = strData & "45 01 81 B5 B7 EE 3C 82 33 21 08 63 6F C7 10 E8 "
+    strData = strData & "8D 98 0D 06 4F EA 7F 74 41 46 3B 1E 76 38 50 93 "
+
+    ' Separate into a variant array
+    avntData = Split(strData, Chr$(32))
+
+    ' Transfer variant array to the P-box array
+    For lngIndex = 0 To (MAX_BYTE - 1)
+        mabytPBox(0, lngIndex) = CByte("&H" & avntData(lngIndex))
+    Next lngIndex
+
+    avntData = Empty         ' Always start with empty variants
+    strData = vbNullString   ' Verify data string is empty
+
+    ' Data for mabytPBox(1, 255) array is ASCII
+    ' decimal 0-255 mixed 100-200 times with no
+    ' duplicates displayed here in hex format
+    strData = strData & "02 9D C3 B6 FE C5 00 07 7D C4 45 4A 4E 98 D9 3B "
+    strData = strData & "15 CE 19 70 E1 8D BB 94 F1 AF 04 FB 2B F3 6A 51 "
+    strData = strData & "1E CF C0 DE 9E 3C F7 A7 E7 A3 F8 5A 78 FF BE E6 "
+    strData = strData & "1C 33 E0 67 AD DF 99 E4 08 46 75 CB A4 A0 43 50 "
+    strData = strData & "BF 77 EF 68 F4 3A 5C 87 FC 62 48 7A 35 D4 34 58 "
+    strData = strData & "81 23 79 8C 96 82 D6 11 27 4D A2 1A B5 4C E9 47 "
+    strData = strData & "97 EA 7F 18 F2 0A D8 03 25 6B 9B D2 37 9F 73 17 "
+    strData = strData & "4B 12 49 B8 CA AC 24 64 5D 7E 21 1D E2 2E 29 6C "
+    strData = strData & "8B F0 74 5F A9 38 85 63 E8 89 AE 61 0D CC 0C 54 "
+    strData = strData & "3F 88 B2 76 A6 05 8A 5E BC F9 40 6F A5 95 8E DA "
+    strData = strData & "16 2C B1 3D 13 1B 42 DD BD 5B CD 7C 1F 6D 14 2F "
+    strData = strData & "36 F6 80 A1 32 AA 22 71 31 DC 26 83 41 ED 0E BA "
+    strData = strData & "D1 92 C6 A8 66 39 9C FA 72 91 44 2D 09 3E EC D7 "
+    strData = strData & "B3 10 C9 30 06 B4 53 52 7B 8F 86 EB 93 C8 56 57 "
+    strData = strData & "B9 EE B0 6E B7 90 01 D3 F5 C1 2A E5 20 69 28 C7 "
+    strData = strData & "AB D5 65 9A DB E3 84 0F 55 0B 60 FD 59 4F C2 D0 "
+
+
+--- End of file ---
+
+Elapsed time:  00:00:02.0677

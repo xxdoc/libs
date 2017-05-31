@@ -1,0 +1,396 @@
+==========================================================================
+16 Mar 2017         Blowfish P-box (Primary Key) Values         4:41:23 PM
+                      Kenneth Ives  kenaso@tx.rr.com
+==========================================================================
+Blowfish P-Box (Primary Key) values are cryptographic values in hex
+created using Microsoft's CryptoAPI Random Number Generator with optional
+SHA-512 hashed seeding.  Below are 10 table sets from which to choose.
+
+Highlight table set you desire starting with "Select Case" and ending
+with "End Select".  Then copy and paste into the appropriate algorithm
+source code under LoadWorkArrays() routine.
+==========================================================================
+
+Table set no. 1
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "C2D58416 C2078A32 4F980E3F 40E5C997 DB1519A2 627A63B5 "
+                strData = strData & "D1400F10 BA371346 C16C4862 74553960 C9587E30 520CE9C8 "
+                strData = strData & "F30702D7 7E4BAF62 3EE88FCF 7A82C1CC 55E4B293 3C8977C8 "
+
+           Case 64, 288
+                strData = strData & "51569CF2 FF9F4660 D6CAA472 CFC09EBD 80D77109 0479A344 "
+                strData = strData & "A10404B8 0EE7A882 5D042B31 C7ECCAD9 C95D9B7A 2001D921 "
+                strData = strData & "2B9B1152 4CAEFEE1 A0BDFCB4 5F216345 BA0221B3 3B291168 "
+
+           Case 96, 320
+                strData = strData & "D40AF608 B2574211 49DD8057 D03F868B 85F60DCC 848AF0A8 "
+                strData = strData & "91B06FDD D6D09085 EAA5979D F0415095 FFFE6742 F994C9F8 "
+                strData = strData & "72C290B4 D8B0FC5F E875503C 14130252 77AE3423 78AB76D3 "
+
+           Case 128, 352
+                strData = strData & "8C6E7F28 0B1AAAA5 ED63F257 FAFF5E3F 0A0A669E 809BAFBD "
+                strData = strData & "B72C2B2F 64CCCF87 7F07E478 7D971516 89AF39DA A43136BE "
+                strData = strData & "4C99AD44 89711A21 B64A2B4E E1093A99 6C6F537A FD1ED6B9 "
+
+           Case 160, 384
+                strData = strData & "721AE203 8B792CF9 E106F34C 4D642432 A6E3A633 3D05217C "
+                strData = strData & "9EC725A8 F4071AAD 48F6E712 7A3047D0 A854C900 80DFF567 "
+                strData = strData & "75C38552 881F0153 86CD5D3E D2CB82E6 93E403DC A15FC136 "
+
+           Case 192, 416
+                strData = strData & "47E0B0CB C4E440BC 1A0B9937 8CC4AE51 C8D8AEBB 1C39C7C2 "
+                strData = strData & "4320A519 CE75EFDD 768EF76A 6D57DB54 10956CF4 B8B3452A "
+                strData = strData & "A4ED09F9 22CB566C 1DA8766A 0EF92177 B916D998 A80957E7 "
+
+           Case 224, 448
+                strData = strData & "85472901 379C70E3 8039873A 02167837 F1BD75F2 ED4420AB "
+                strData = strData & "E17F54F5 FA123E17 369885FA D88CF580 C388D719 35F56D44 "
+                strData = strData & "9ECC53FD 23DA7A47 19952A7E 1838932D F4F17476 96BC9F50 "
+    End Select
+
+Table set no. 2
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "544E8597 39753E4E B184EDCC B308319F F3807850 2852E11A "
+                strData = strData & "8EC8E5A6 67032C4F 70D879C4 BAFE5ADB 0F992671 570894F2 "
+                strData = strData & "B86850C4 5123C090 33D620A4 5930300C D2A98C4E 5BCBAC74 "
+
+           Case 64, 288
+                strData = strData & "3019B0F2 E8AC11B0 EA7AACFB 23D7792D 9A9D33D9 C88B18BF "
+                strData = strData & "252A704A FB2206B0 E8B273E5 2791BCBD 85BA7BEE D4990265 "
+                strData = strData & "E33A0CD1 9929257F FABB120F B33EBB62 24A8C967 A936AF1A "
+
+           Case 96, 320
+                strData = strData & "C18FA640 FF05DF8E BA80ACDC 04B8EE02 B5DD7081 C90FB552 "
+                strData = strData & "83651503 C0DCE732 88973D55 699F2D0F E24C371E 351D180D "
+                strData = strData & "01718F19 050F0763 D3AC0153 662B1833 EF445E80 97F8F268 "
+
+           Case 128, 352
+                strData = strData & "012F5A9A 0E7FBB65 DC815F6E A2EFC7E3 FD0DCFB8 C9B8AADA "
+                strData = strData & "2BC99386 84909328 6CF5B17B D18EAFEF 94609A74 864B793F "
+                strData = strData & "2BBB40D0 3A430D12 B9046725 A27E2D6F 736E8224 85247004 "
+
+           Case 160, 384
+                strData = strData & "488A1878 C5FDF7EC 0C2E1FB7 B87869AB 754D728A 5BDE648E "
+                strData = strData & "06166D11 EB6E33A3 B96EC220 C12AC45E 612702C0 57625FE0 "
+                strData = strData & "E2E08C88 4B65C3D4 5CCF9D14 FDCE40B5 AF7BE2B7 C2470630 "
+
+           Case 192, 416
+                strData = strData & "FCB29999 E4DCC1A5 9D02361C 8DDB92E8 23418FB7 CB926FE6 "
+                strData = strData & "31D5FD21 7BBFCF8E 68E92AC2 3534FB55 6801FFF4 D60BDE29 "
+                strData = strData & "C998AD1A 3D7E0BF3 10B1B87B BD6F8AF4 FC91DAFD 4A12CD78 "
+
+           Case 224, 448
+                strData = strData & "3F1CBEF7 A18074A8 EB26D5C6 8CDF1440 98457859 84F0747C "
+                strData = strData & "AAE411A0 66267218 D2CDBF8F 3DA80F80 1B3BBFB3 DE157179 "
+                strData = strData & "E957A198 93C1F1A8 3F1125CC 90E3E6C8 3853B9BB 568C21E7 "
+    End Select
+
+Table set no. 3
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "B91732A7 B0653E50 0CBCFDD3 B2F1CBD9 456425EC 9EE4EE92 "
+                strData = strData & "A4110E1B 826DE866 B3879DA5 3185BE84 7A2A4328 66D94CD6 "
+                strData = strData & "2B14FE96 BDBE2341 FB99434F 1A689968 9BAAC781 11F1E8BE "
+
+           Case 64, 288
+                strData = strData & "A8D04348 5C263A64 B69EB671 DFE89CAE 23AE9ED5 86FFF7E1 "
+                strData = strData & "46CAAFE3 C276AC57 6CC0F76B C9453825 6770A4D5 C1ADCDB1 "
+                strData = strData & "FE475B5C 23E086A7 1380C976 A16F82A8 96AD3FF6 2452AC28 "
+
+           Case 96, 320
+                strData = strData & "95B5EAC8 8C424DD0 B71393FA 8CA20F7B 34B53BE6 B5218261 "
+                strData = strData & "F761B84B 7F852FE1 06E082FD 9A795692 32479FAF AD93A15E "
+                strData = strData & "44D19570 BAC7E496 F609DFF3 83DF842D A7C368B6 15D8714B "
+
+           Case 128, 352
+                strData = strData & "BA0E2E6F EDF43CAA B2F0CB7D F2311CF9 895766EB 1C91333A "
+                strData = strData & "07EC0866 CD09947E 57B9EEB8 B8385141 D0A75D44 E2B81B0B "
+                strData = strData & "3DD89C45 8525A4B1 564706E3 B1D188DE 40C482DF 0EAB523D "
+
+           Case 160, 384
+                strData = strData & "4BAA615E AD60B31D 4152DD07 3232716B 8078C9EE 6DC79C23 "
+                strData = strData & "0BE16329 8DC53CA6 DB797C01 AEE581EA 21A14228 D5065038 "
+                strData = strData & "A2104287 4A785EE8 9237285D 6103A1DE 5FAEAEE2 4C92EA58 "
+
+           Case 192, 416
+                strData = strData & "D2890E0B CE80D89B E5079675 13F90A19 C6843820 C05C8EE2 "
+                strData = strData & "6963B96E BAAE3A18 66F5F5CA 4C468F3B 8679D78F 2AA4E883 "
+                strData = strData & "E038957E E752711F B5C6BC60 B367DE0B 86C8A5D3 012223AA "
+
+           Case 224, 448
+                strData = strData & "57BBD915 740C8977 5B49863E 46C95B9F 26B3C23C 76600961 "
+                strData = strData & "36744A8D A8765744 0EFB174D C153617A DB1FAA7C C09DCDA1 "
+                strData = strData & "E6EBBF62 FA047232 6B5C3213 F7D325CE AFDDB2B7 2E2CC3FD "
+    End Select
+
+Table set no. 4
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "187BFF64 64BFF019 71C7A051 D425E9C4 05B47703 DB8EB9CF "
+                strData = strData & "7B705B68 D7E7D329 D68FF0F3 67E14740 19949B5E E686995E "
+                strData = strData & "846979F0 D3573292 2B646385 FBD9DCCA 82E4A732 A29DDA53 "
+
+           Case 64, 288
+                strData = strData & "ACFA78A5 373AD525 3A5E6790 3750C639 3B52836F F4165C4A "
+                strData = strData & "41655454 AAA58A49 E193A6F1 28B8EDB8 535224A2 637B178A "
+                strData = strData & "F708C377 81C5D28A 548FEDDE 18E82E21 8B8E200E A48A0022 "
+
+           Case 96, 320
+                strData = strData & "9006171C 44BD4EF1 29864B85 5C3A62FB E631A9FF A91301B7 "
+                strData = strData & "65B599E0 07D19C0D E618710F F3703572 DA1CFE65 B888B487 "
+                strData = strData & "1CF878EF 57DDF1DB BE4795AB D47CC4F0 B36879A9 7DCBAB3C "
+
+           Case 128, 352
+                strData = strData & "6E25BF98 6792AD41 C99AE531 3BAE7F60 DFB48F95 3DBD8347 "
+                strData = strData & "1811DF61 78F69E04 9A549CEB 770055B2 7C54B141 DF15EACF "
+                strData = strData & "35F800EA 6335A9E4 31BFB020 0762A223 A9C754C2 1D77FBF4 "
+
+           Case 160, 384
+                strData = strData & "75DD45DE 099BF829 AC4F1DCE 0E8132DB 75B660EC 01CAC19F "
+                strData = strData & "A00F0CF4 8B526508 93C001A8 2CE6ABA0 569DF61B 67152B89 "
+                strData = strData & "AA32E18C 622DE59E 9EB77B8B 6F832C3B C0C0CC47 2059F178 "
+
+           Case 192, 416
+                strData = strData & "1E6090C0 F4B51605 38F7D0A2 B09A22FD 83028682 CC03519B "
+                strData = strData & "50068934 B279F70A 790F32BE E0BB4A68 1DD2CC89 952888B0 "
+                strData = strData & "C061FBE7 9D638A66 9E389525 B9FBEC2B 3D450AA6 C0676CCC "
+
+           Case 224, 448
+                strData = strData & "22D1E7D1 123DC570 D4370E72 8F19ACE7 2D11BC09 40692BDD "
+                strData = strData & "1196AD93 DC6D9486 17196ABA 93F4F245 3D45E71B 502EEA25 "
+                strData = strData & "DB69F1C7 36CA2553 014EEEDE 0C30117F 1C5E68FA B5AA8033 "
+    End Select
+
+Table set no. 5
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "DD409F53 16DDB0A0 E0281134 07994928 52F552F2 267112FD "
+                strData = strData & "79938E95 5DEBD818 FA52A4B4 47C9C599 173A1822 73B10D6E "
+                strData = strData & "A00087CB 9E2E94E5 7F4F0E3D 84FEE66E A742A80E A3F6F910 "
+
+           Case 64, 288
+                strData = strData & "4D787408 8906E3B5 8AE8BA96 CA29DE02 BBA7093D 16B17841 "
+                strData = strData & "A6EB9084 5D36982E 38DD5D56 2106DA56 A98DA2BA B141848F "
+                strData = strData & "19658E02 CE24F8B7 99282E55 F5B39F6B 56AF54C2 96B8C52D "
+
+           Case 96, 320
+                strData = strData & "E2294D9D E5D3C86D B7D9FAF7 1D3595A8 575A6945 2C5530C5 "
+                strData = strData & "B1DE44C1 FAA3A4A6 00FE8EF6 2809BF2A FE663B95 5502AF7E "
+                strData = strData & "CCA1E4E1 86F982E5 FBBC8AF9 CA00D8A2 9123B897 F15F1E97 "
+
+           Case 128, 352
+                strData = strData & "59C7EBD3 4D774483 F8EBDA45 F57177FD 50626B96 3F7A4682 "
+                strData = strData & "2406D325 DBBF8541 A0B2E124 C0F7269C 4BF29442 6CF99EC3 "
+                strData = strData & "58C4204B 63A8F518 1F60777B 87804760 C93CDCB3 63377501 "
+
+           Case 160, 384
+                strData = strData & "E4F79816 E79ED97D 2AF09D23 E6064F9A 46171096 5807046B "
+                strData = strData & "8A313ACE 52A6288C E9B93F90 600E7AD1 840223CD 56FA1A88 "
+                strData = strData & "423486FB 14549B72 60554E76 7A37C75B B874C066 1F03A56B "
+
+           Case 192, 416
+                strData = strData & "E5BDC705 1CD4E563 1CC8B687 D9EEBFBA BC45261D 17BF020E "
+                strData = strData & "D47E3180 2D15B4EA ECF000CE 9B3FE9E7 FEAFA17E E4F0BF87 "
+                strData = strData & "F698D5C1 8381B14F 8F37E654 95B0C608 F9E9E453 0CF0E766 "
+
+           Case 224, 448
+                strData = strData & "6369F1FB 85B25D39 EDE6717D EC25073F AF2BA028 4C55BA03 "
+                strData = strData & "CB8C34CA B4F9AC06 8D5A627F 199CB2FF A5FD6226 A6F33569 "
+                strData = strData & "6AFBFAD3 6888F979 4B49742D A4645872 5D87CDB0 ECBA28D2 "
+    End Select
+
+Table set no. 6
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "345C2F67 A6FD9247 6AFE2CA3 41A8B575 CEA43F85 3ACBF73D "
+                strData = strData & "91E7375F C97994C6 A12491C5 79B89C28 FDBD8894 02A7226B "
+                strData = strData & "369A6155 6E989D08 4688C332 EC046B4F A1ADA876 78707887 "
+
+           Case 64, 288
+                strData = strData & "20CC402B 5296207D D539F7AF 600E2400 9F2F9B9D 86B089F6 "
+                strData = strData & "6DDF6C81 984A2672 07508FE7 075D1ED3 C4AD0740 63F73BB8 "
+                strData = strData & "26DA288B E77BD123 1C51284A 16561976 D16B1F6D 3C0B64A4 "
+
+           Case 96, 320
+                strData = strData & "96F7CACE F4F39785 F2ACC675 DB45FEB3 E292C026 DC35AED7 "
+                strData = strData & "B01C29F4 A2B6367C 5D8654E6 F8EA41C2 C8B84B4C 3F6B757A "
+                strData = strData & "B1213013 0932D8C1 48F2C6B9 77C47CF5 A0279148 3EF4161B "
+
+           Case 128, 352
+                strData = strData & "57720847 6C52CC08 F9A22733 CA4046B0 853CA51C 14038ACC "
+                strData = strData & "6E2ADAD8 3FBA8D97 D88B44E0 96D1F032 C4691345 6E37345C "
+                strData = strData & "28250727 B86EFAD5 E25BF5BE 38C82AF9 AD7C4269 ADAFE68D "
+
+           Case 160, 384
+                strData = strData & "56FFD420 1ABFF013 3019CC15 6DCAF925 8131A9A8 7F382577 "
+                strData = strData & "06E1692D 4182D402 D6B0DD86 326A75AD A24F7AF1 69B2DA50 "
+                strData = strData & "6AD16CD5 34D6356B 51A9370F 9926EFBD 828C19BD 99CCD86C "
+
+           Case 192, 416
+                strData = strData & "CF71F5EB E403FA7F 5D61C50A 5FFE1231 95CC2127 0262A515 "
+                strData = strData & "01311E97 F73ED4B7 FE002ED5 3AA349DA 29765630 C9C6E5A6 "
+                strData = strData & "91666FCB 20BA0323 1990D2E8 930766A0 2E91B2A6 6B6E3A4A "
+
+           Case 224, 448
+                strData = strData & "4AE27654 27C3D453 DF27DDD4 D88922C5 0AF422C3 61AD3D47 "
+                strData = strData & "54A8D4C0 80D9E16E FD19B548 F53DA465 A855702A 06AD9F2A "
+                strData = strData & "0612B81A 70483D67 A67761AB 17CF2363 A24DCC2B D71FE87A "
+    End Select
+
+Table set no. 7
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "D899BEE7 C50ACDBD E2C08FDE EDFCFA90 CBEC4B77 94863CBA "
+                strData = strData & "4F8CF962 6EC21540 19056C8A 584E2F12 FC6B5FE0 2D1905ED "
+                strData = strData & "E81EA092 D3D75535 CB844629 D5D6895C 37CC6074 C6AAFAFC "
+
+           Case 64, 288
+                strData = strData & "59AE71BA 0FA7FB69 EEE1BBAB 71022652 57FB4E4A 5DBEF487 "
+                strData = strData & "AB691BDF C04ED200 4BC00439 3D4BA059 21CBD0F1 E6BAA89D "
+                strData = strData & "55940AE3 0D577FCF B5B718BC C9EF1C31 277D593B E131D1E0 "
+
+           Case 96, 320
+                strData = strData & "56CD5C0A B52FA109 9C4DAE1F 9B994F8A DF5F1D07 AF1A72CF "
+                strData = strData & "81FE7D3B 9695946A FA9710A5 9124D67A 8256F469 73FAA67D "
+                strData = strData & "69EC47B3 34FC655D 5B7061EA 56218C11 32E9DBC8 69F21010 "
+
+           Case 128, 352
+                strData = strData & "19541C85 A58ECB16 3936A40C 403D37EB B73EBD3F 581938D5 "
+                strData = strData & "D353EC20 FE295302 EA9A9E6D 79DDD9DD 5B2EC693 D8229A0A "
+                strData = strData & "0AED2784 850D5565 89ADD831 279589D5 1BC3DCDD D7E05E3C "
+
+           Case 160, 384
+                strData = strData & "33687E85 8B5D7DAA C373F39E E5559C53 5587BDF9 C2E9E031 "
+                strData = strData & "49B4F7A2 1DD4066F 400EB776 C2F73240 547071BD 790C3F93 "
+                strData = strData & "99A57166 5BC9F422 55E7D33C CA56A1F4 CD4D18AF F2E2BDD7 "
+
+           Case 192, 416
+                strData = strData & "3E2E7E2E D73FB5DB 217C97FF 938B1632 BF1600C1 9EE0712A "
+                strData = strData & "29DFD16E C11CBDE5 30184759 81F79C5A F3CA0B70 416B37F7 "
+                strData = strData & "3A63B3CE 29D9E574 DB383E32 ABE90017 D95812FC 7E83AB8E "
+
+           Case 224, 448
+                strData = strData & "2F38D832 3217525A 91093FCD 4D26B76C B07806AB 7E96760C "
+                strData = strData & "CA1E092C 8C12415D 2F802271 0A8B078E F61E9ED7 8513A5F2 "
+                strData = strData & "A09055C7 A3AA00CD C7FD68F5 19136194 2AE018CB 2487BC28 "
+    End Select
+
+Table set no. 8
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "AE4CB687 6104D554 8A5B2D8B ABD0A7BB 5B02A342 68FF9203 "
+                strData = strData & "36DB8161 F5D871C3 1CF7280F 52ABD712 4089B9B5 7B1D5A16 "
+                strData = strData & "3AC849AA E347ACE9 547C5C42 06F20ECB 806F5EC2 2510D946 "
+
+           Case 64, 288
+                strData = strData & "B600942D C8434578 B9EEF1BD 297E26CF 9C7F87D3 9EE4BB3E "
+                strData = strData & "7ABC4EFD 92122D7E BC1D87A0 F198A048 7801BC73 11FC7E9B "
+                strData = strData & "83EAF59D 64EB4D0F 18ED5E3A 30A9EF28 86A55CAE EC632194 "
+
+           Case 96, 320
+                strData = strData & "73EE7E75 48BD80FD BD7FB5B6 128E7957 6D9DFC4B 0B59E87E "
+                strData = strData & "76226A30 BAAE5824 A7FD0B7D A344CE1E 8751F1B8 35BAC8D7 "
+                strData = strData & "3100CEFF 74C79059 6328BD82 5FF54502 8BF97D24 6E7CED7E "
+
+           Case 128, 352
+                strData = strData & "630E9831 72D88864 8BDBD10E D8D65881 1503284F D743D969 "
+                strData = strData & "BF0D3102 40BFF185 67154570 4DEEA704 0904CDE0 2BE74810 "
+                strData = strData & "C6C03405 39A18FD2 3F0FFE95 31CB6C28 732DA673 45B79BBD "
+
+           Case 160, 384
+                strData = strData & "41179D91 84E62EBE B3539745 99D209D5 CFEEF593 1B1C01D4 "
+                strData = strData & "B608BC1D CE38CDF8 F9E9AEB3 A9093ADD FE3BB043 DD5B525B "
+                strData = strData & "B575AA99 EE9AEE95 94FB4988 3C40FACE C730FA53 A761F72D "
+
+           Case 192, 416
+                strData = strData & "79B9C8E3 050FFAFC D26C65EC 30695A7F CCD357B2 76C00117 "
+                strData = strData & "32155D0E FD6E4153 6B94D4CB BC5DCD21 6A3252FC B7E3F2B8 "
+                strData = strData & "328B1383 D7A981DC 295064DC B648C236 7EDB9201 E7B4440A "
+
+           Case 224, 448
+                strData = strData & "9A429CB0 16325A6E 57C20539 5C305645 571D5596 0753E8E4 "
+                strData = strData & "71FD0DE6 A99FA4CC FAB5545D 3EB54F8A 6F388DEA A23EAE36 "
+                strData = strData & "BD191352 44094930 F1FAB49B 16BB784E 8532A286 ACA0D518 "
+    End Select
+
+Table set no. 9
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "F954D31A 7FAE1D8E 104E83CC 31633E14 E631CB55 724D2B5F "
+                strData = strData & "E7863640 6F5B2E45 01B1BC34 E5BC2CE5 C0AD0AEB FE477C63 "
+                strData = strData & "DC15FA6A 76D914BE 2D64D9C3 82ECDCC7 6257F335 05A9F229 "
+
+           Case 64, 288
+                strData = strData & "13346206 27114A84 99415577 42C1FAAA 99F2492E 5500B307 "
+                strData = strData & "9F0E0957 CB30E349 1187F3C4 C5E7D02D 0AAA8394 BDAE7310 "
+                strData = strData & "E7449928 B6DA2A4E 30FDB98E 996952C7 0F6CBC34 96638F9C "
+
+           Case 96, 320
+                strData = strData & "2D40C01E 1B2C8E4C B8D51A4D 79B023A2 11CCB045 D9D6E5FA "
+                strData = strData & "100758B4 A819A658 BC19267F BED62FE5 198A0B27 61297A9C "
+                strData = strData & "A4A7F831 74649E82 8960A7E9 B2775A43 2515CAAF F205EEE9 "
+
+           Case 128, 352
+                strData = strData & "8A54C265 42040F12 2412690A EECEE165 C4E2CCBB 778A7C71 "
+                strData = strData & "D5D9B1A7 3904B3AE 82B0DFD8 2BEB6DF1 00403368 7749CF60 "
+                strData = strData & "99499BF8 BA82ADB4 BCB669A5 5C208585 68280DAA 4B7D6E28 "
+
+           Case 160, 384
+                strData = strData & "9844B05D 9FD60930 7A4D09CA 1894CE30 2EF43309 FA2064F6 "
+                strData = strData & "629DFCD5 2461DF20 88C431CC 7F58028A 66C0B776 EB49C40E "
+                strData = strData & "192E227D E6555514 355011E6 9010493B D008F927 6D908350 "
+
+           Case 192, 416
+                strData = strData & "B8D554CD AE939FE5 ABD85BF6 867BF376 EB9FA0C8 54272F41 "
+                strData = strData & "C6A709D8 291CDAFC 07CAFBD8 368D5E72 C74017E7 8BC28ECA "
+                strData = strData & "43FE157D 77953184 B93DCFD9 C2E0FBE9 B9BF8C78 270BC69E "
+
+           Case 224, 448
+                strData = strData & "E3B0FF20 EB9B51C6 A7781A2F 7360B5B5 6B6BA0EE 1B8D3110 "
+                strData = strData & "DA28CB41 A23D8103 42F174DD 6CC2B1E4 9B15D871 BF6222AC "
+                strData = strData & "A80D4930 BEA1BEDC C5FE3CB3 9AB70DCD A9F878B9 440D6956 "
+    End Select
+
+Table set no. 10
+    Select Case mlngKeyLength
+           Case 32, 256
+                strData = strData & "A2BCAF8F BFFAC5FF 1FF05EDE 1FF76FD8 5AC53C01 3126A092 "
+                strData = strData & "5D1436D5 D0A80A6D 1407F877 CE8E032A 14183873 BBA82AB9 "
+                strData = strData & "5A2EEC57 6AB816C9 F49F5715 941EFE84 B2B61701 E304AEF9 "
+
+           Case 64, 288
+                strData = strData & "57E22EBE FBDC4429 E776A8D0 15263060 5B7F85ED 1588D2DD "
+                strData = strData & "D6CA6A31 CF8D259B C83E5FDD F450C074 601375E2 5BA9CF81 "
+                strData = strData & "6DAB524E 3AE7772F B58D18A1 532BEA11 09D0D54A 14BECDB8 "
+
+           Case 96, 320
+                strData = strData & "BE4A8F62 9BA058AF 7973B437 3BF489B7 119A7955 6E7E2A2B "
+                strData = strData & "892C3AB0 94AEEA3A A1C6524C 5EBFEAA2 92D24A5F E46B7264 "
+                strData = strData & "6EFBD2A0 FE830924 38CA59C1 025A6FC7 57388272 D80C69AE "
+
+           Case 128, 352
+                strData = strData & "1EF1C394 AB05B067 0AF594E0 A3CA0B88 C1C2DBD6 AD273FB5 "
+                strData = strData & "508B7FE0 521C6703 28BF5219 D89A072E 0F686AA4 F2C718E2 "
+                strData = strData & "E827C6E7 75E68EDD 15EEE955 91905FCF E52B07D6 5A1FA6CA "
+
+           Case 160, 384
+                strData = strData & "604CE280 19D4D8BE A6FBCAA8 FCFA6EE3 7178E6DE 3295E80F "
+                strData = strData & "BA37F9E0 A112A9B3 A128B662 8D0B0D39 AD113748 0654F7E6 "
+                strData = strData & "CCA3C3B5 364EE504 80A1820F 4AA1EC44 4DFC1B62 DD4D168D "
+
+           Case 192, 416
+                strData = strData & "4F0F419B BC875D10 3E7DB9DC 26D3B743 6DEB350F 9099B313 "
+                strData = strData & "E8367786 278291E0 CE1594AF 06A17A58 881FDB23 4A5DD17B "
+                strData = strData & "AA11AF67 84C6E223 44F36B70 DAB70450 852FAEDE 54E774B3 "
+
+           Case 224, 448
+                strData = strData & "B308FD24 FC7911A3 F941887F 73E9B46B 051FF499 280C22CC "
+                strData = strData & "D2EB85EE 4FEF2D33 A72F9350 E5F21862 A9A20DAF C7EC2B3B "
+                strData = strData & "32E3E546 2F44B3CF 66F20968 452B14D1 E5040100 9BACBDFC "
+    End Select
+
+--- End of file ---
+
+Elapsed time:  00:00:02.8019

@@ -36,11 +36,12 @@ Attribute VB_Exposed = True
 ' 11.14.13- bugfix in FileExists,FolderExists, GetFolderFiles recursive filter, GetParentFolder trailing \ bugfix
 '  1.21.14- bugfix deletefile detects readonly attribute and removes
 ' 11.15.15- bugfix GetParentFolder could fail is ub folder name was repeated in path (sloppy replace)
+' 5.31.17 = bugfix GetSubFolders.GetAttr could fail, FileExists could fail with embedded nulls (.\0file)
 
 Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 
-Function GetFolderFiles(folderPath As String, Optional filter As String = "*", Optional retFullPath As Boolean = True, Optional recursive As Boolean = False) As String()
+Function GetFolderFiles(folderPath As String, Optional Filter As String = "*", Optional retFullPath As Boolean = True, Optional recursive As Boolean = False) As String()
    Dim fnames() As String
    Dim fs As String
    Dim folders() As String
@@ -54,7 +55,7 @@ Function GetFolderFiles(folderPath As String, Optional filter As String = "*", O
    
    folderPath = IIf(Right(folderPath, 1) = "\", folderPath, folderPath & "\")
    
-   fs = Dir(folderPath & filter, vbHidden Or vbNormal Or vbReadOnly Or vbSystem)
+   fs = Dir(folderPath & Filter, vbHidden Or vbNormal Or vbReadOnly Or vbSystem)
    While fs <> ""
      If fs <> "" Then push fnames(), IIf(retFullPath = True, folderPath & fs, fs)
      fs = Dir()
@@ -64,7 +65,7 @@ Function GetFolderFiles(folderPath As String, Optional filter As String = "*", O
         folders() = GetSubFolders(folderPath)
         If Not AryIsEmpty(folders) Then
             For i = 0 To UBound(folders)
-                FolderEngine folders(i), fnames(), filter
+                FolderEngine folders(i), fnames(), Filter
             Next
         End If
         If Not retFullPath Then
@@ -78,13 +79,13 @@ Function GetFolderFiles(folderPath As String, Optional filter As String = "*", O
 End Function
 
 
-Private Sub FolderEngine(fldrpath As String, ary() As String, Optional filter As String = "*")
+Private Sub FolderEngine(fldrpath As String, ary() As String, Optional Filter As String = "*")
 
     Dim files() As String
     Dim folders() As String
     Dim i As Long
      
-    files = GetFolderFiles(fldrpath, filter)
+    files = GetFolderFiles(fldrpath, Filter)
     folders = GetSubFolders(fldrpath)
         
     If Not AryIsEmpty(files) Then
@@ -95,7 +96,7 @@ Private Sub FolderEngine(fldrpath As String, ary() As String, Optional filter As
     
     If Not AryIsEmpty(folders) Then
         For i = 0 To UBound(folders)
-             FolderEngine folders(i), ary, filter
+             FolderEngine folders(i), ary, Filter
         Next
     End If
     
@@ -104,6 +105,7 @@ End Sub
 Function GetSubFolders(folderPath As String, Optional retFullPath As Boolean = True) As String()
     Dim fnames() As String
     Dim fd As String
+    On Error Resume Next 'getattr can barf on weird file names..
     
     If Not FolderExists(folderPath) Then
         'returns empty array if fails
@@ -117,7 +119,11 @@ Function GetSubFolders(folderPath As String, Optional retFullPath As Boolean = T
    While fd <> ""
      If Left(fd, 1) <> "." Then
         If (GetAttr(folderPath & fd) And vbDirectory) = vbDirectory Then
-           push fnames(), IIf(retFullPath = True, folderPath & fd, fd)
+           If Err.Number = 0 Then
+                push fnames(), IIf(retFullPath = True, folderPath & fd, fd)
+           Else
+                Err.Clear
+           End If
         End If
      End If
      fd = Dir()
@@ -142,6 +148,7 @@ Function FileExists(path As String) As Boolean
     
   If Len(path) = 0 Then Exit Function
   If Right(path, 1) = "\" Then Exit Function
+  If InStr(path, Chr(0)) > 0 Then Exit Function
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
   
   Exit Function
@@ -417,12 +424,12 @@ Function Copy(fpath As String, toFolder As String)
 End Function
 
 Function Move(fpath As String, toFolder As String)
-    Dim fname As String
-    fname = FileNameFromPath(fpath)
+    Dim fName As String
+    fName = FileNameFromPath(fpath)
     toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
     
-    Name fpath As toFolder & fname
-    Move = toFolder & fname
+    Name fpath As toFolder & fName
+    Move = toFolder & fName
     
 End Function
 

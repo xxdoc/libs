@@ -1,0 +1,14 @@
+You acknowledge that this software is subject to the export control
+laws and regulations of the United States ("U.S.") and agree to abide
+by those laws and regulations. Under U.S. law, this software may not
+be downloaded or otherwise exported, reexported, or transferred to
+restricted countries, restricted end-users, or for restricted
+end-uses. The U.S. currently has embargo restrictions against Cuba,
+Iran, Iraq, Libya, North Korea, Sudan, and Syria. The lists of
+restricted end-users are maintained on the U.S. Commerce Department's
+Denied Persons List, the Commerce Department's Entity List, the
+Commerce Department's List of Unverified Persons, and the U.S.
+Treasury Department's List of Specially Designated Nationals and
+Blocked Persons. In addition, this software may not be downloaded or
+otherwise exported, reexported, or transferred to an end-user engaged
+in activities related to weapons of mass destruction.

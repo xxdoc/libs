@@ -28,6 +28,7 @@ Attribute VB_Exposed = True
 '  8.27.16 - !breaking change! -> GetFolderFiles/SubFolders now returns a collection
 '  8.28.16 - GetSubFolders added recursive option, buffix to include hidden and hidden system folders..
 '  8.28.16 - +GetDrives, DriveType, DriveTypeString, GetSpecialFolder, GetShortName,
+'  5.31.17 = bugfix GetSubFolders.GetAttr could fail, FileExists could fail with embedded nulls (.\0file)
 
 Option Explicit
 Private Declare Function GetTickCount Lib "kernel32" () As Long
@@ -210,7 +211,11 @@ Function GetSubFolders(folderPath, Optional retFullPath = True, Optional recursi
         If Left(fd, 1) <> "." Then
             atr = GetAttr(folderPath & fd) 'things like pagefile.sys that are locked can throw an error...
             If (atr And vbDirectory) = vbDirectory Then
-               tmp.add folderPath & fd 'always add full path we filter latter..(needed for recursive option)
+               If Err.Number = 0 Then
+                    tmp.add folderPath & fd 'always add full path we filter latter..(needed for recursive option)
+               Else
+                    Err.Clear
+               End If
             End If
         End If
         fd = Dir()
@@ -267,8 +272,8 @@ Function FileExists(path) As Boolean
   On Error GoTo hell
     
   If Len(path) = 0 Then Exit Function
-  If Asc(Left(path, 1)) = 0 Then Exit Function
   If Right(path, 1) = "\" Then Exit Function
+  If InStr(path, Chr(0)) > 0 Then Exit Function
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
   
   Exit Function
@@ -616,14 +621,14 @@ Private Sub delTree(folderPath, Optional force = True)
    
 End Sub
 
-Private Sub push(ary, Value) 'this modifies parent ary object
+Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init: ReDim ary(0): ary(0) = Value
+init: ReDim ary(0): ary(0) = value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean

@@ -14,7 +14,7 @@ Attribute VB_Exposed = True
 
 Option Explicit
 
-Private Declare Sub SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long)
+Private Declare Sub SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long)
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
@@ -28,7 +28,6 @@ Private startTime As Long
 Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () As Long
 Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
-Private Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
 Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
@@ -92,35 +91,7 @@ End Function
 '   no other types make sense to support explicitly
 '   this assumes all arrays are 0 based..
 Function LoadData(fileStringOrByte, Optional allowFilePaths As Boolean = True) As Byte()
-    
-    Dim f As Long
-    Dim size As Long
-    Dim b() As Byte
-    Dim l() As Long    ' must cast to specific array type or
-    Dim i() As Integer ' else you are reading part of the variant structure..
-    
-    If allowFilePaths And FileExists(fileStringOrByte) Then
-         f = FreeFile
-         Open fileStringOrByte For Binary As f
-         ReDim b(LOF(f) - 1)
-         Get f, , b()
-         Close f
-    ElseIf TypeName(fileStringOrByte) = "Byte()" Then
-        b() = fileStringOrByte
-    ElseIf TypeName(fileStringOrByte) = "Integer()" Then
-        i() = fileStringOrByte
-        ReDim b((UBound(i) * 2) - 1)
-        CopyMemory VarPtr(b(0)), VarPtr(i(0)), UBound(b) + 1
-    ElseIf TypeName(fileStringOrByte) = "Long()" Then
-        l() = fileStringOrByte
-        ReDim b((UBound(l) * 4) - 1)
-        CopyMemory VarPtr(b(0)), VarPtr(l(0)), UBound(b) + 1
-    Else
-        b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
-    End If
-    
-    LoadData = b()
-    
+    LoadData = modGeneral.LoadData(fileStringOrByte, allowFilePaths)
 End Function
 
 Function cast(varIn, varOut, Optional allowFilePaths As Boolean = False) As Boolean
@@ -327,8 +298,8 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     
 End Sub
 
-Sub SaveMySetting(key, Value)
-    SaveSetting App.EXEName, "Settings", key, Value
+Sub SaveMySetting(key, value)
+    SaveSetting App.EXEName, "Settings", key, value
 End Sub
 
 Function GetMySetting(key, Optional defaultval = "")
@@ -350,9 +321,10 @@ End Function
 Function FileExists(path) As Boolean
   On Error GoTo hell
     
+  '.(0), ..(0) etc cause dir to read it as cwd!
   If Len(path) = 0 Then Exit Function
-  If Asc(Left(path, 1)) = 0 Then Exit Function
   If Right(path, 1) = "\" Then Exit Function
+  If InStr(path, Chr(0)) > 0 Then Exit Function
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
   
   Exit Function
@@ -382,10 +354,13 @@ Function RandomNum() As Long
     
 End Function
 
+'can load a byte array, string, or string array of lines split at either crlf or lf
 Function ReadFile(filename, ByRef Data) As Boolean 'this one should be binary safe...
   On Error GoTo hell
   Dim f As Long
   Dim b() As Byte
+  Dim tmp As String
+  Dim t2() As String
   
   f = FreeFile
   Open filename For Binary As #f
@@ -395,7 +370,16 @@ Function ReadFile(filename, ByRef Data) As Boolean 'this one should be binary sa
   
   If TypeName(Data) = "Byte()" Then 'Or TypeName(data) = "Variant"
         Data = b()
+  ElseIf TypeName(Data) = "String()" Then
+        tmp = CStr(StrConv(b(), vbUnicode, LANG_US))
+        If InStr(tmp, vbCrLf) > 0 Then
+            t2 = split(tmp, vbCrLf)
+        Else
+            t2 = split(tmp, vbLf)
+        End If
+        Data = t2
   Else
+  
         Data = CStr(StrConv(b(), vbUnicode, LANG_US))
   End If
   
@@ -438,26 +422,26 @@ Function AppendFile(path, it) As Boolean  'not binary safe
     AppendFile = (Err.Number = 0)
 End Function
 
-Sub push(ary, Value) 'this modifies parent ary object
+Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x
        
     x = UBound(ary)
     ReDim Preserve ary(x + 1)
     
-    If IsObject(Value) Then
-        Set ary(x + 1) = Value
+    If IsObject(value) Then
+        Set ary(x + 1) = value
     Else
-        ary(x + 1) = Value
+        ary(x + 1) = value
     End If
     
     Exit Sub
 init:
     ReDim ary(0)
-    If IsObject(Value) Then
-        Set ary(0) = Value
+    If IsObject(value) Then
+        Set ary(0) = value
     Else
-        ary(0) = Value
+        ary(0) = value
     End If
 End Sub
 
@@ -1160,7 +1144,7 @@ End Function
 
 Public Function rc4(fileByteOrString As Variant, ByVal password As Variant, Optional strRet As Boolean = True)
 On Error Resume Next
-    Dim RB(0 To 255) As Integer, x As Long, y As Long, Z As Long, key() As Byte, ByteArray() As Byte, temp As Byte
+    Dim RB(0 To 255) As Integer, x As Long, Y As Long, Z As Long, key() As Byte, ByteArray() As Byte, temp As Byte
     
     Dim plen As Long
     
@@ -1191,25 +1175,25 @@ On Error Resume Next
     Next x
     
     x = 0
-    y = 0
+    Y = 0
     Z = 0
     For x = 0 To 255
-        y = (y + RB(x) + key(x Mod plen)) Mod 256
+        Y = (Y + RB(x) + key(x Mod plen)) Mod 256
         temp = RB(x)
-        RB(x) = RB(y)
-        RB(y) = temp
+        RB(x) = RB(Y)
+        RB(Y) = temp
     Next x
     
     x = 0
-    y = 0
+    Y = 0
     Z = 0
     For x = 0 To UBound(ByteArray)
-        y = (y + 1) Mod 256
-        Z = (Z + RB(y)) Mod 256
-        temp = RB(y)
-        RB(y) = RB(Z)
+        Y = (Y + 1) Mod 256
+        Z = (Z + RB(Y)) Mod 256
+        temp = RB(Y)
+        RB(Y) = RB(Z)
         RB(Z) = temp
-        ByteArray(x) = ByteArray(x) Xor (RB((RB(y) + RB(Z)) Mod 256))
+        ByteArray(x) = ByteArray(x) Xor (RB((RB(Y) + RB(Z)) Mod 256))
     Next x
     
     If strRet Then
@@ -1350,7 +1334,7 @@ End Function
 Function ExtractHexFromDump(dump) As String
     
     On Error Resume Next
-    Dim y() As String, tmp() As String, i As Long
+    Dim Y() As String, tmp() As String, i As Long
     Dim dat As String
     Dim a As Long
     Dim x
@@ -1376,10 +1360,10 @@ Function ExtractHexFromDump(dump) As String
             End If
             
             
-            push y, Replace(x, " ", Empty)
+            push Y, Replace(x, " ", Empty)
 nextone:
         Next
-        dat = Join(y, "")
+        dat = Join(Y, "")
     End If
     
     ExtractHexFromDump = dat
