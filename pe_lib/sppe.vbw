@@ -1,5 +1,5 @@
 modPEStructs = 44, 44, 1033, 769, 
-CExport = 0, 0, 0, 0, C
+CExport = 286, 286, 1066, 906, 
 CImport = 154, 154, 1030, 764, 
 CLoadExports = 127, 73, 1035, 898, 
 CLoadImports = 153, 96, 1029, 706, 
@@ -8,6 +8,6 @@ CPEEditor = 88, 88, 887, 629,
 CSection = 176, 176, 915, 752, 
 frmOffsets = 66, 66, 865, 607, , 154, 154, 953, 695, C
 CAssembler = 44, 44, 869, 585, 
-CDisassembler = 22, 22, 847, 563, C
-CInstruction = 0, 0, 0, 0, C
+CDisassembler = 22, 22, 847, 563, 
+CInstruction = 264, 264, 1044, 884, 
 CFileProperties = 88, 88, 896, 629, 

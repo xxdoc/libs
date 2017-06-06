@@ -150,7 +150,7 @@ Function OpenDialog(Optional initDir = "", Optional title = "Open File") As Stri
     o.lpstrTitle = CStr(title)
     o.flags = 0
 
-    OpenDialog = IIf(GetOpenFileName(o), Trim$(o.lpstrFile), "")
+    OpenDialog = IIf(GetOpenFileName(o), trim$(o.lpstrFile), "")
     OpenDialog = Replace(OpenDialog, Chr(0), Empty)
     
 End Function
@@ -185,13 +185,13 @@ Function OpenMulti(Optional initDir = "", Optional title = "Open File") As Colle
     
     If lResult > 0 Then
         With tOPENFILENAME
-            vFiles = Split(Left(.lpstrFile, InStr(.lpstrFile, Chr(0) & Chr(0)) - 1), Chr(0))
+            vFiles = split(Left(.lpstrFile, InStr(.lpstrFile, Chr(0) & Chr(0)) - 1), Chr(0))
             If UBound(vFiles) = 0 Then
-                c.Add vFiles(0)
+                c.add vFiles(0)
             Else
                 'otherwise the first element (0) is the folder path, and the rest are file names
                 For lIndex = 1 To UBound(vFiles)
-                    c.Add vFiles(0) & "\" & vFiles(lIndex)
+                    c.add vFiles(0) & "\" & vFiles(lIndex)
                 Next
             End If
         End With
@@ -222,7 +222,7 @@ Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optio
     End If
 
     Dim tmp As String
-    tmp = IIf(GetSaveFileName(o), Trim$(o.lpstrFile), "")
+    tmp = IIf(GetSaveFileName(o), trim$(o.lpstrFile), "")
     If tmp <> "" Then
         If FileExists(tmp) Then
             If MsgBox("File Already Exists" & vbCrLf & vbCrLf & "Are you sure you wish to overwrite existing file?", vbYesNo + vbExclamation, "Confirm Overwrite") = vbYes Then SaveDialog = tmp
@@ -282,6 +282,10 @@ End Function
 Function FolderDialog2(Optional initDir = "") As String
     If Len(initDir) <> 0 Then lastDir = initDir
     FolderDialog2 = frmDlg.BrowseForFolder(lastDir)
+End Function
+
+Function ChooseFont(Optional obj As Object) As CFont
+    Set ChooseFont = frmSelectFont.SelectFont(Me, obj)
 End Function
 
 Private Function GetSpecialFolder(sf As SpecialFolders) As String
