@@ -14,6 +14,7 @@ Class=Cx64; Cx64.cls
 Class=CPEEditor; CPEEditor.cls
 Class=CSection; CSection.cls
 Class=CMemory; CMemory.cls
+Form=frmListProcess2.frm
 Startup="(None)"
 HelpFile=""
 Title="procLib"

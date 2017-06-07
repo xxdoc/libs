@@ -362,7 +362,17 @@ Function ShowDllsFor(pid As Long, Optional owner As Object)
 End Function
 
 Function SelectProcess() As CProcess
+
+    On Error Resume Next
+    
+    'requires mscomctl
     Set SelectProcess = frmListProcess.SelectProcess(GetRunningProcesses())
+    
+    If Err.Number = 339 Then 'Error 339 Component 'xxx' not correctly registered: file is missing or invalid."
+        'oops not installed, lets use a older listbox only version...
+        Set SelectProcess = frmListProcess2.SelectProcess(GetRunningProcesses())
+    End If
+    
 End Function
 
 Function RunCmdGetOutput(cmdLine As String, Optional maxExecSecs As Long = 0) As String
@@ -978,7 +988,7 @@ End Function
 Function GetMemoryMap(pid As Long) As Collection 'of CMem
 
     Dim hProc As Long
-    Dim x As Long
+    Dim X As Long
     Dim meminfo As MEMORY_BASIC_INFORMATION
     Dim cur As Long
     Dim ret As New Collection
@@ -993,14 +1003,14 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ Or SYNCHRONIZE), False, pid)
     If hProc = 0 Then
         Set GetMemoryMap = ret
-        x = GetLastError
+        X = GetLastError
         Exit Function
     End If
            
     Do While cur < &H7FFEFFFF
     
          If Not IsProcHandleValid(hProc) Then Exit Do
-         x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
+         X = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
          If meminfo.state <> MEM_FREE Then
             Set cMem = New CMemory
@@ -1015,8 +1025,8 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
                        
             If cur > 0 Then
                n = String(256, Chr(0))
-               x = GetModuleFileNameExA(hProc, cur, n, 255)
-               If x <> 0 Then cMem.ModuleName = ToNull(n)
+               X = GetModuleFileNameExA(hProc, cur, n, 255)
+               If X <> 0 Then cMem.ModuleName = ToNull(n)
             End If
             
             ret.Add cMem
@@ -1035,10 +1045,10 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
     
 End Function
 Private Function ToNull(v As String) As String
-    Dim x As Integer
+    Dim X As Integer
     ToNull = v
-    x = InStr(v, Chr(0))
-    If x > 0 Then ToNull = Left(v, x - 1)
+    X = InStr(v, Chr(0))
+    If X > 0 Then ToNull = Left(v, X - 1)
 End Function
 
 Private Function GetStringFromLP(ByVal StrPtr As Long) As String
@@ -1653,13 +1663,13 @@ Private Function FileExists(path As String) As Boolean
 hell: FileExists = False
 End Function
 
-Private Function ReadFile(filename) As Variant
+Private Function ReadFile(fileName) As Variant
   Dim f As Long
   Dim temp As Variant
   f = FreeFile
   temp = ""
-   Open filename For Binary As #f        ' Open file.(can be text or image)
-     temp = Input(FileLen(filename), #f) ' Get entire Files data
+   Open fileName For Binary As #f        ' Open file.(can be text or image)
+     temp = Input(FileLen(fileName), #f) ' Get entire Files data
    Close #f
    ReadFile = temp
 End Function
