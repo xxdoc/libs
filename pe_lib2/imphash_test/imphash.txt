@@ -1,0 +1,68 @@
+
+https://www.fireeye.com/blog/threat-research/2014/01/tracking-malware-import-hashing.html
+
+import pefile
+pe = pefile.PE(sys.argv[1])
+print "Import Hash: %s" % pe.get_imphash()
+
+
+https://github.com/erocarrera/pefile/blob/8d60469de3b70109ac603c68c48fb3e7b84261e8/pefile.py
+
+
+def get_imphash(self):
+        impstrs = []
+        exts = ['ocx', 'sys', 'dll']
+        if not hasattr(self, "DIRECTORY_ENTRY_IMPORT"):
+            return ""
+        for entry in self.DIRECTORY_ENTRY_IMPORT:
+            if isinstance(entry.dll, bytes):
+                libname = entry.dll.decode().lower()
+            else:
+                libname = entry.dll.lower()
+            parts = libname.rsplit('.', 1)
+            if len(parts) > 1 and parts[1] in exts:
+                libname = parts[0]
+
+            for imp in entry.imports:
+                funcname = None
+                if not imp.name:
+                    funcname = ordlookup.ordLookup(entry.dll.lower(), imp.ordinal, make_name=True)
+                    if not funcname:
+                        raise Exception("Unable to look up ordinal %s:%04x" % (entry.dll, imp.ordinal))
+                else:
+                    funcname = imp.name
+
+                if not funcname:
+                    continue
+
+                if isinstance(funcname, bytes):
+                    funcname = funcname.decode()
+                impstrs.append('%s.%s' % (libname.lower(),funcname.lower()))
+
+return md5( ','.join( impstrs ).encode() ).hexdigest()
+
+
+
+https://github.com/erocarrera/pefile/blob/8d60469de3b70109ac603c68c48fb3e7b84261e8/ordlookup/__init__.py
+
+ords = {
+    b'ws2_32.dll': ws2_32.ord_names,
+    b'wsock32.dll': ws2_32.ord_names,
+    b'oleaut32.dll': oleaut32.ord_names,
+}
+
+
+def ordLookup(libname, ord, make_name=False):
+    '''
+    Lookup a name for the given ordinal if it's in our
+    database.
+    '''
+    names = ords.get(libname.lower())
+    if names is None:
+        if make_name is True:
+            return b'ord%d' % ord
+        return None
+    name = names.get(ord)
+    if name is None:
+        return b'ord%d' % ord
+return name

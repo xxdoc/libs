@@ -3,16 +3,30 @@ Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form Form1 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "VB PE Framework v .2 - dzzie  http://sandsprite.com"
-   ClientHeight    =   4440
+   ClientHeight    =   4995
    ClientLeft      =   45
    ClientTop       =   330
    ClientWidth     =   7890
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   4440
+   ScaleHeight     =   4995
    ScaleWidth      =   7890
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   1  'CenterOwner
+   Begin VB.TextBox txtLoadTime 
+      Height          =   315
+      Left            =   5700
+      TabIndex        =   25
+      Top             =   2700
+      Width           =   1575
+   End
+   Begin VB.TextBox txtImpHash 
+      Height          =   285
+      Left            =   1020
+      TabIndex        =   23
+      Top             =   2760
+      Width           =   3555
+   End
    Begin VB.CommandButton cmdRes 
       Caption         =   "Res"
       Height          =   375
@@ -62,7 +76,7 @@ Begin VB.Form Form1
       Height          =   1755
       Left            =   0
       TabIndex        =   15
-      Top             =   2640
+      Top             =   3180
       Width           =   7815
       _ExtentX        =   13785
       _ExtentY        =   3096
@@ -142,6 +156,22 @@ Begin VB.Form Form1
       Top             =   0
       Width           =   4395
    End
+   Begin VB.Label Label5 
+      Caption         =   "Load time"
+      Height          =   255
+      Left            =   4740
+      TabIndex        =   24
+      Top             =   2760
+      Width           =   855
+   End
+   Begin VB.Label Label4 
+      Caption         =   "ImpHash"
+      Height          =   315
+      Left            =   180
+      TabIndex        =   22
+      Top             =   2760
+      Width           =   795
+   End
    Begin VB.Label Label3 
       Caption         =   "Compiled"
       Height          =   255
@@ -217,31 +247,37 @@ Public pe As New CPEEditor
 Dim isLoaded As Boolean
 
 
+Private Declare Function GetTickCount Lib "kernel32" () As Long
+
+
+
 Private Sub cmdRes_Click()
     Dim res As CResources
     Dim b() As Byte, r As String, fp As String, f As Long
     Dim cre As CResourceEntry
     
-    Set res = pe.Resources
+    Form2.ShowResources pe
     
-    For Each cre In res.Entries
-        r = r & "   " & cre.path & " - Size: " & cre.Size & vbCrLf
-    Next
-    
-    MsgBox "Resources: " & res.Entries.Count & vbCrLf & r
-    
-    r = "\ICON\30001\0"
-    'r = "\VERSION\1\1033"
-    
-    fp = "C:\res.bin"
-    If res.GetResourceData(r, b) Then
-        MsgBox "Size: " & UBound(b) & vbCrLf & HexDump2(b)
-        If res.SaveResource(fp, r) Then
-            MsgBox "Saved as " & fp
-        Else
-            MsgBox "Save to file failed?"
-        End If
-    End If
+'    Set res = pe.Resources
+'
+'    For Each cre In res.Entries
+'        r = r & "   " & cre.path & " - Size: " & cre.Size & vbCrLf
+'    Next
+'
+'    MsgBox "Resources: " & res.Entries.Count & vbCrLf & r
+'
+'    r = "\ICON\30001\0"
+'    'r = "\VERSION\1\1033"
+'
+'    fp = "C:\res.bin"
+'    If res.GetResourceData(r, b) Then
+'        MsgBox "Size: " & UBound(b) & vbCrLf & HexDump2(b)
+'        If res.SaveResource(fp, r) Then
+'            MsgBox "Saved as " & fp
+'        Else
+'            MsgBox "Save to file failed?"
+'        End If
+'    End If
     
 End Sub
 
@@ -251,7 +287,8 @@ End Sub
 
 Private Sub Form_Load()
     ConfigureListView lvSects
-    txtFile = App.path & "\sppe_demo.exe"
+    'txtFile = App.path & "\sppe_demo.exe"
+    txtFile = App.path & "\..\_sppe2.dll"
 End Sub
 
 Private Sub cmdListImports_Click()
@@ -293,12 +330,18 @@ Private Sub cmdListExports_Click()
 End Sub
 
 Private Sub Command1_Click()
+    Dim st As Long, et As Long
+    
+    st = GetTickCount
     
     If Not pe.LoadFile(txtFile) Then
         MsgBox pe.errMessage
         isLoaded = False
     Else
         isLoaded = True
+        txtImpHash = pe.impHash
+        et = GetTickCount
+        txtLoadTime = ((et - st) / 1000) & "s"
         
         chkx64.value = IIf(pe.is64Bit, 1, 0)
         txtEntryPoint = pe.OptionalHeader.EntryPoint
@@ -308,7 +351,7 @@ Private Sub Command1_Click()
         txtImportAddressTable = pe.OptionalHeader.ddVirtualAddress(Import_Address_Table)
         txtCompiled = pe.CompiledDate
         toHex txtImageBase, txtEntryPoint, txtExportTable, txtImportTable, txtImportAddressTable
-        
+    
         FilloutListView lvSects, pe.Sections
         
     End If

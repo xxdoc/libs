@@ -1,0 +1,79 @@
+The HyperLabel is an ActiveX control that can be used to show static text just like a 
+normal VB Label control. The difference is that the HyperLabel is able to show 
+formatted text and hyperlinks.
+
+The Caption property supports a subset of BB tags normally found on Internet Forums, 
+you include these tags inside the Caption property and the text will be formatted 
+accordingly. These are the supported tags:
+
+[b]Bold[/b] - All text inside the [b] and [/b] tags will be shown in bold.
+
+[i]Italic[/i] - Gives italic text.
+
+[u]Underline[/u] - Underlines the text inside the tags.
+
+[color=#RRGGBB]colorize text[/color] - The [color] tag requires an argument, the color to be used, which is specified directly after the equal sign. This argument can be one of the following named constants:
+
+black
+white
+red
+green
+blue
+yellow
+cyan
+magenta
+
+... or you can use a hexadecimal value that specifies the RGB value. The control also expose a ConvertWinColor method that you may use to convert a Windows color into this hexadecimal string. This method also handles Windows system colors.
+
+[url=http://www.domainname.com]Hyperlink[/url] - Creates a hyperlink inside the label. This tag requires the argument after the equal sign so this simplified format: [url]www.domainname.com[/url] is *not* supported and will be ignored. No other tags can exist inside an [url] tag, if any is found they are ignored. The control will automatically show the hand cursor when the user hover the mouse over a hyperlink. If the AutoNavigate property is set to True (default value) the control will automatically try to navigate to the argument specified, if it's set to False the HyperlinkClick event will be raised and the URL is passed as an argument. You can use this format to create an e-mail link: [url=mailto:john.doe@somewhere.com]Mail me[/url]
+
+[list] [/list] - Creates a bullet list. After the opening tag a new bullet is created by using the [*] tag. Like this:
+  [list][*]First item in the list [*]Second bullet [/list]
+
+[] - An empty tag will insert a newline so you don't need to concatenate the caption with the vbCrLf constant (even if you can if you want).
+
+
+PROPERTIES
+==========
+
+Caption - (String) The caption of the label, supports the above mentioned formatting tags.
+
+AutoNavigate - (Boolean) If set to True (default setting) the control will automatically try to navigate to the specified URL or open the specified application when the user click on a hyperlink in the control. If set to False the HyperlinkClick event is raised instead.
+
+BorderStyle - None, or Fixed Single
+
+Font - Standard font object.
+
+ForeColor - Standard text color for the Font, used when no [color] tags are available.
+
+BackColor - Back color of the control.
+
+WordWrap - (Boolean) If set to True (default setting) the text will automatically word wrap.
+
+AutoSize - (Boolean) If set to True (False is default) the width and height of the label is automatically resized to fit the text. If WordWrap is set to True only the Height of the Label is adjusted.
+
+PlainCaption - (String) Returns the Caption text without any formatting tags (Read-Only)
+
+
+METHODS
+=======
+
+ConvertWinColor(nColor As Long) As String - Converts a Windows color (including system colors) to a hex string supported by the [color] tag.
+
+
+EVENTS
+======
+
+Click - Raised when you click on the control. If the AutoNavigate event is set to False this event is not raised when clicking inside hyperlinks.
+
+HyperlinkClick - Raised when clicking on a hyperlink but only if the AutoNavigate property is set to False.
+
+DblClick - Raised when double clicking inside the control.
+
+
+LIMITATIONS
+===========
+
+Since the [ and ] characters are used as formatting tags they can *not* (currently) be used by themself as part of the Caption text.
+
+There is (currently) *no* support for the &-mnemonic character to create a shortcut key together with the ALT key.

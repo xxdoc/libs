@@ -37,7 +37,7 @@ Private Type IMAGE_EXPORT_DIRECTORY
     TimeDateStamp As Long
     MajorVersion As Integer
     MinorVersion As Integer
-    name As Long
+    Name As Long
     base As Long
     NumberOfFunctions As Long
     NumberOfNames As Long
@@ -51,6 +51,23 @@ Public errMessage As String
 Public CurrentImage As String
 
 Private mParent As CPEEditor
+
+Function dumpNames() As Collection
+    On Error Resume Next
+    Dim c As New Collection
+    Dim e As CExport
+    
+    Set dumpNames = c
+    
+    For Each e In functions
+        If Len(e.FunctionName) > 0 Then
+            c.Add e.FunctionName
+        Else
+            c.Add "@" & e.FunctionOrdial
+        End If
+    Next
+    
+End Function
 
 Friend Sub LoadExports(fhandle As Long, ByVal rvaExportDirectoryTable As Long, parent As CPEEditor)
     
@@ -229,10 +246,10 @@ Private Function ExtractExportName(f As Long, pointer As Long) As String
 End Function
 
 
-Private Sub AddExport(address As Long, name As String, Optional ordial As Long)
+Private Sub AddExport(address As Long, Name As String, Optional ordial As Long)
     Dim m  As New CExport
     m.FunctionAddress = address
-    m.FunctionName = name
+    m.FunctionName = Name
     m.FunctionOrdial = ordial
     On Error GoTo hell
     If Not objKeyExistsInCollection(functions, "ordial:" & ordial) Then
@@ -247,14 +264,14 @@ End Sub
 
 
 
-Private Sub push(ary, Value) 'this modifies parent ary object
+Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init:     ReDim ary(0): ary(0) = Value
+init:     ReDim ary(0): ary(0) = value
 End Sub
 
 

@@ -241,3 +241,114 @@ Function LoadData(fileStringOrByte, Optional allowFilePaths As Boolean = True) A
     LoadData = b()
     
 End Function
+
+
+'ported from Detect It Easy - Binary::calculateEntropy
+'   https://github.com/horsicq/DIE-engine/blob/master/binary.cpp#L2319
+Function fileEntropy(pth As String, Optional offset As Long = 0, Optional leng As Long = -1) As Single
+    
+    Dim sz As Long
+    Dim fEntropy As Single
+    Dim bytes(255) As Single
+    Dim temp As Single
+    Dim nSize As Long
+    Dim nTemp As Long
+    Const BUFFER_SIZE = &H1000
+    Dim buf() As Byte
+    Dim f As Long
+    Dim i As Long
+    
+    On Error Resume Next
+    
+    f = FreeFile
+    Open pth For Binary Access Read As f
+    If Err.Number <> 0 Then GoTo ret0
+    
+    sz = LOF(f) - 1
+    
+    If leng = 0 Then GoTo ret0
+    
+    If leng = -1 Then
+        leng = sz - offset
+        If leng = 0 Then GoTo ret0
+    End If
+    
+    If offset >= sz Then GoTo ret0
+    If offset + leng > sz Then GoTo ret0
+    
+    Seek f, offset
+    nSize = leng
+    fEntropy = 1.44269504088896
+    ReDim buf(BUFFER_SIZE)
+    
+    'read the file in chunks and count how many times each byte value occurs
+    While (nSize > 0)
+        nTemp = IIf(nSize < BUFFER_SIZE, nSize, BUFFER_SIZE)
+        If nTemp <> BUFFER_SIZE Then ReDim buf(nTemp) 'last chunk, partial buffer
+        Get f, , buf()
+        For i = 0 To UBound(buf)
+            bytes(buf(i)) = bytes(buf(i)) + 1
+        Next
+        nSize = nSize - nTemp
+    Wend
+    
+    For i = 0 To UBound(bytes)
+        temp = bytes(i) / CSng(leng)
+        If temp <> 0 Then
+            fEntropy = fEntropy + (-Log(temp) / Log(2)) * bytes(i)
+        End If
+    Next
+    
+    Close f
+    fileEntropy = Round(fEntropy / CSng(leng), 3)
+    
+Exit Function
+ret0:
+    Close f
+End Function
+
+
+Function memEntropy(buf() As Byte, Optional offset As Long = 0, Optional leng As Long = -1) As Single
+    
+    Dim sz As Long
+    Dim fEntropy As Single
+    Dim bytes(255) As Single
+    Dim temp As Single
+    Const BUFFER_SIZE = &H1000
+    Dim i As Long
+    
+    sz = UBound(buf)
+    
+    If leng = 0 Then GoTo ret0
+    If leng = -1 Then
+        leng = sz - offset
+        If leng = 0 Then GoTo ret0
+    End If
+    
+    If offset >= sz Then GoTo ret0
+    If offset + leng > sz Then GoTo ret0
+    
+    fEntropy = 1.44269504088896
+    
+    While (offset < sz)
+        'count each byte value occurance
+        bytes(buf(offset)) = bytes(buf(offset)) + 1
+        offset = offset + 1
+    Wend
+    
+    For i = 0 To UBound(bytes)
+        temp = bytes(i) / CSng(leng)
+        If temp <> 0 Then
+            fEntropy = fEntropy + (-Log(temp) / Log(2)) * bytes(i)
+        End If
+    Next
+    
+    memEntropy = Round(fEntropy / CSng(leng), 3)
+    
+Exit Function
+ret0:
+End Function
+
+
+
+

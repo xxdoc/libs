@@ -86,6 +86,8 @@ Public LinkerVersion As String
 Public ImageVersion As String
 Public SubSysVersion As String
 
+Private hash As CWinHash
+
 Property Get dotNetVersion(Optional full As Boolean = False) As String
     On Error Resume Next
     If full Then
@@ -381,7 +383,22 @@ Function RvaToOffset(ByVal rva As Long, Optional ByRef VirtualSectionBase As Lon
     
 End Function
 
-Function OffsetToRVA(ByVal fOffset As Long, Optional sectName As String) As Long
+Function OffsetToVA(ByVal foffset As Long, Optional sectName As String) As Double
+    Dim rva As Long
+    
+    rva = OffsetToRVA(foffset, sectName)
+    
+    If rva <> 0 Then
+        'If is64Bit Then
+            OffsetToVA = rva + OptionalHeader.ImageBase
+        'Else
+        '    OffsetToVA = rva + OptionalHeader.ImageBase
+        'End If
+    End If
+    
+End Function
+
+Function OffsetToRVA(ByVal foffset As Long, Optional sectName As String) As Long
     
     If Sections.Count = 0 Then
         MsgBox "No Sections Loaded", vbInformation
@@ -396,8 +413,8 @@ Function OffsetToRVA(ByVal fOffset As Long, Optional sectName As String) As Long
        rSize = c.SizeOfRawData
        rMax = rBase + rSize
        
-       If fOffset >= rBase And fOffset < rMax Then 'right section
-            OffsetToRVA = c.VirtualAddress + fOffset - rBase
+       If foffset >= rBase And foffset < rMax Then 'right section
+            OffsetToRVA = c.VirtualAddress + foffset - rBase
             sectName = c.nameSec
             Exit Function
        End If
@@ -428,6 +445,42 @@ Function GetSectionFromRVA(rva As Long) As CSection
     
 End Function
 
+'this is compatiable with pefile.imphash
+'   https://www.fireeye.com/blog/threat-research/2014/01/tracking-malware-import-hashing.html
+'   https://github.com/erocarrera/pefile/blob/8d60469de3b70109ac603c68c48fb3e7b84261e8/pefile.py
+Function impHash() As String
+    
+    Dim e As CImport
+    Dim dll, y, fx() As String, f, tmp As String
+    
+    If hash Is Nothing Then Set hash = New CWinHash
+    
+    For Each e In Me.Imports.Modules
+        dll = LCase(e.DllName)
+        y = Split(dll, ".", 2)
+        If UBound(y) > 0 Then
+            If y(1) = "ocx" Or y(1) = "sys" Or y(1) = "dll" Then
+                dll = y(0)
+            End If
+        Else
+            dll = dll
+        End If
+        
+        For Each f In e.functions
+            'check is first character is @ for ordinal (note numbers in hex)
+            If VBA.Left(f, 1) = "@" Then
+               push fx, dll & "." & ordLookup(dll, f)
+            Else
+                push fx, dll & "." & LCase(f)
+            End If
+        Next
+        
+    Next
+    
+    tmp = Join(fx, ",")
+    impHash = hash.HashString(tmp)
+    
+End Function
 
 Private Function getMachineType(m As Integer) As String
     

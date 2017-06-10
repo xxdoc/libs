@@ -76,7 +76,7 @@ Private Sub LoadModuleImports(iid As IMAGE_IMPORT_DIRECTORY)
     While ImportLookup > 0 Or isOrdial
     
         If isOrdial Then
-            ImportFx = "@" & Hex(ImportLookup)
+            ImportFx = "@" & Hex(ImportLookup) 'if we switch to decimal change ordLookup for impHash
             'Debug.Print ImportFx
             m.functions.Add ImportFx
         Else
@@ -122,12 +122,12 @@ Private Function ScanString(offset As Long, Optional getHint As Boolean = False)
 End Function
 
 
-Private Sub push(ary, Value) 'this modifies parent ary object
+Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init:     ReDim ary(0): ary(0) = Value
+init:     ReDim ary(0): ary(0) = value
 End Sub

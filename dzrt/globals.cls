@@ -14,7 +14,7 @@ Attribute VB_Exposed = True
 
 Option Explicit
 
-Private Declare Sub SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long)
+Private Declare Sub SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long)
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
@@ -28,7 +28,7 @@ Private startTime As Long
 Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () As Long
 Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
-Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
  
@@ -191,8 +191,8 @@ End Function
      CopyMemory_ ByVal Destination, ByVal Source, length
  End Sub
  
- Function SendMessage(ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-    SendMessage = SendMessage_(hwnd, Msg, wParam, lParam)
+ Function SendMessage(ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+    SendMessage = SendMessage_(hWnd, Msg, wParam, lParam)
  End Function
 
 Property Get MAX_LONG() As Long
@@ -248,7 +248,7 @@ Function TopMost(frm As Object, Optional ontop As Boolean = True)
     On Error Resume Next
     Dim s
     s = IIf(ontop, HWND_TOPMOST, HWND_NOTOPMOST)
-    SetWindowPos frm.hwnd, s, frm.Left / 15, frm.Top / 15, frm.Width / 15, frm.Height / 15, 0
+    SetWindowPos frm.hWnd, s, frm.Left / 15, frm.Top / 15, frm.Width / 15, frm.Height / 15, 0
 End Function
 
 Public Function GetShortName(ByVal sFile As String) As String
@@ -288,10 +288,10 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     For i = 1 To sz
         If save_mode Then
             ff = CallByName(fform, f(i), VbGet)
-            SaveSetting App.EXEName, fform.name & ".FormPos", f(i), ff
+            SaveSetting App.EXEName, fform.Name & ".FormPos", f(i), ff
         Else
             def = CallByName(fform, f(i), VbGet)
-            ff = GetSetting(App.EXEName, fform.name & ".FormPos", f(i), def)
+            ff = GetSetting(App.EXEName, fform.Name & ".FormPos", f(i), def)
             CallByName fform, f(i), VbLet, ff
         End If
     Next
@@ -1210,6 +1210,19 @@ End Function
 
 Function b64Decode(bArrayStringOrFile, ByRef dataOut As Variant, Optional retAsString As Boolean = True) As Boolean
      b64Decode = base64.Decode(bArrayStringOrFile, dataOut, retAsString)
+End Function
+
+Function entropy(fileByteOrString, Optional offset As Long = 0, Optional leng As Long = -1) As Single
+    
+    If FileExists(fileByteOrString) Then
+        entropy = fileEntropy(CStr(fileByteOrString), offset, leng)
+        Exit Function
+    End If
+    
+    Dim b() As Byte
+    b() = LoadData(fileByteOrString, False)
+    entropy = memEntropy(b, offset, leng)
+        
 End Function
 
 Function crc32(fileByteOrString) As String

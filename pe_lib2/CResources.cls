@@ -13,6 +13,8 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 'do not hang onto a ref of this class and reload the pe editor with something else
 
+'the paths this returns arent quite right yet... :(
+
 'example paths: \ICON\30001\0
 '               \VERSION\1\1033
 
@@ -45,10 +47,29 @@ End Enum
 
 Public rva As Long
 Public fileOffset As Long
-Public size As Long
+Public Size As Long
 Public hadRecursive As Boolean
 
+
 Private EntryOffsets As New Collection 'make sure no recursive loops..
+
+Function dumpNames(Optional includeSize As Boolean = True) As Collection
+    On Error Resume Next
+    Dim c As New Collection
+    Dim e As CResourceEntry
+    
+    Set dumpNames = c
+    
+    For Each e In Entries
+        If includeSize Then
+            c.Add rpad(e.Size, 8) & e.path
+        Else
+            c.Add e.path
+        End If
+    Next
+    
+End Function
+
 
 Friend Sub LoadSelf(owner As CPEEditor)
     
@@ -59,10 +80,10 @@ Friend Sub LoadSelf(owner As CPEEditor)
     Dim cre As CResourceEntry
     
     rva = owner.OptionalHeader.ddVirtualAddress(Resource_Table)
-    size = owner.OptionalHeader.ddSize(Resource_Table)
+    Size = owner.OptionalHeader.ddSize(Resource_Table)
     fileOffset = owner.RvaToOffset(rva)
     
-    If rva = 0 Or size = 0 Or fileOffset = 0 Then Exit Sub
+    If rva = 0 Or Size = 0 Or fileOffset = 0 Then Exit Sub
     fileOffset = fileOffset + 1
     
     hfile = FreeFile
@@ -73,7 +94,7 @@ Friend Sub LoadSelf(owner As CPEEditor)
     'collapsed down final entries list
     For Each cre In Entries
         cre.LoadSelf hfile, fileOffset
-        Debug.Print cre.Report
+        'Debug.Print cre.Report
     Next
 
     Close hfile
@@ -84,20 +105,24 @@ End Sub
 Private Sub LoadSubDir(hfile As Long, resDir As RESDIRECTORY, Optional path As String)
     
     Dim cre As CResourceEntry
-    Dim subDirs As New Collection
+    
     Dim childDir As RESDIRECTORY
     Dim resDirEntry As RESOURCE_DIRECTORY_ENTRY
     Dim childOffset As Long
     Dim childPath As String
+    Dim subDirs As New Collection
     
     'all of these structures are sequential in the file..
     'so load them one after another, no need to track file pointer..
+    
+    Debug.Print "Loading resdir: idEntries:" & resDir.NumberOfIdEntries & "   NamedEntries:" & resDir.NumberOfNamedEntries
     
     For i = 1 To resDir.NumberOfNamedEntries
         Get hfile, , resDirEntry
         
         Set cre = New CResourceEntry
         cre.setSubDirOffset resDirEntry.DataEntry_orSubDir_Offset
+        cre.timeStamp = timeStampToDate(resDir.TimeDateStamp)
         cre.NameOffset = resDirEntry.NameOffset_or_ID
         cre.path = path
         
@@ -125,6 +150,7 @@ Private Sub LoadSubDir(hfile As Long, resDir As RESDIRECTORY, Optional path As S
         
         Set cre = New CResourceEntry
         cre.setSubDirOffset resDirEntry.DataEntry_orSubDir_Offset
+        cre.timeStamp = timeStampToDate(resDir.TimeDateStamp)
         cre.ID = resDirEntry.NameOffset_or_ID
         cre.path = path
         
@@ -174,10 +200,10 @@ Private Function EntryExists(offset As Long) As Boolean
     End If
 End Function
 
-Private Sub DumpFile(hfile As Long, offset As Long, Optional size As Long = 16)
+Private Sub DumpFile(hfile As Long, offset As Long, Optional Size As Long = 16)
     Dim curPos As Long
     Dim b() As Byte
-    ReDim b(1 To size)
+    ReDim b(1 To Size)
     
     curPos = Seek(hfile)
     Get hfile, offset, b()
@@ -209,9 +235,9 @@ Public Function GetResourceData(path As String, ByRef bArray) As Boolean
     If Not GetResource(path, cre) Then Exit Function
     
     fOffset = parent.RvaToOffset(cre.Data_RVA)
-    If cre.size = 0 Or cre.Data_RVA = 0 Or fOffset = 0 Then Exit Function
+    If cre.Size = 0 Or cre.Data_RVA = 0 Or fOffset = 0 Then Exit Function
     
-    ReDim b(cre.size - 1)
+    ReDim b(cre.Size - 1)
     f = FreeFile
     Open parent.LoadedFile For Binary As f
     Get f, fOffset + 1, b

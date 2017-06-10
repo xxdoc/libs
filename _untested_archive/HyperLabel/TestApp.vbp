@@ -1,18 +1,14 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Reference=*\G{9C4F6F85-F5DB-46F3-AF9A-DCC8A0D8C72D}#2.0#0#..\sppe2.dll#Sandsprite PE File Format Library v2
-Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; mscomctl.ocx
-Form=frmMain.frm
-Form=frmLister.frm
-ResFile32="test.RES"
-Form=Form2.frm
+Object=*\AHyperLbl.vbp
+Form=Form1.frm
+Object={F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0; COMDLG32.OCX
 IconForm="Form1"
 Startup="Form1"
 HelpFile=""
-Title="sppe_demo"
-ExeName32="sppe_demo.exe"
+Title="TestApp"
 Command32=""
-Name="sppe_demo"
+Name="TestApp"
 HelpContextID="0"
 CompatibleMode="0"
 MajorVer=1
@@ -20,8 +16,7 @@ MinorVer=0
 RevisionVer=0
 AutoIncrementVer=0
 ServerSupportFiles=0
-VersionCompanyName="sandsprite.com"
-VersionLegalCopyright="sandsprite.com"
+VersionCompanyName="Brixoft Software"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
@@ -37,10 +32,6 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
-DebugStartupOption=0
 
 [MS Transaction Server]
 AutoRefresh=1
-
-[fastBuild]
-fullPath=%ap%\sppe_demo.exe

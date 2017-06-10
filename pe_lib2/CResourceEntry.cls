@@ -18,28 +18,29 @@ Public DataEntryOffset As Long
 Public SubDirOffset As Long
 
 Public Data_RVA As Long
-Public size As Long
+Public Size As Long
 Public CodePage As Long
 Public Reserved As Long
 
 Public path As String
 Public Name As String
+Public timeStamp
 
 Function Report() As String
     Dim tmp() As String
     
-    If ID = 0 Then
+    'If ID = 0 Then
         push tmp, "Named Entry offset: " & Hex(NameOffset) & " " & Name
-    Else
+    'Else
         push tmp, "ID Entry: " & ID
-    End If
+    'End If
     
     If SubDirOffset <> 0 Then
         push tmp, "Directory Offset: " & Hex(SubDirOffset)
     Else
         push tmp, "DataEntry offset: " & Hex(DataEntryOffset)
         push tmp, "Data_RVA: " & Hex(Data_RVA)
-        push tmp, "Size: " & Hex(size)
+        push tmp, "Size: " & Hex(Size)
     End If
         
     push tmp, "Path: " & path
@@ -96,7 +97,7 @@ Property Get DirectoryToName() As String
 
 End Property
 
-Friend Sub LoadSelf(fHandle As Long, base As Long)
+Friend Sub LoadSelf(fhandle As Long, base As Long)
     
     On Error Resume Next
     
@@ -107,11 +108,11 @@ Friend Sub LoadSelf(fHandle As Long, base As Long)
     If DataEntryOffset = 0 Then Exit Sub
     
     Dim rde As RESOURCE_DATAENTRY
-    Get fHandle, base + DataEntryOffset, rde
+    Get fhandle, base + DataEntryOffset, rde
     
     CodePage = rde.CodePage
     Data_RVA = rde.Data_RVA   'we will let the user load the data on demand to save memory..they only want what they want..
-    size = rde.size
+    Size = rde.Size
     Reserved = rde.Reserved
     
     path = path & "\" & NameOrID()
