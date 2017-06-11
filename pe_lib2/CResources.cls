@@ -8,7 +8,7 @@ BEGIN
 END
 Attribute VB_Name = "CResources"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
+Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 'do not hang onto a ref of this class and reload the pe editor with something else
@@ -20,46 +20,31 @@ Attribute VB_Exposed = True
 
 Private parent As CPEEditor
 
-Public Entries As New Collection 'of CResourceEntry
-
-Public Enum ResTypes
-   RT_CURSOR = 1&
-   RT_BITMAP = 2&
-   RT_ICON = 3&
-   RT_MENU = 4&
-   RT_DIALOG = 5&
-   RT_STRING = 6&
-   RT_FONTDIR = 7&
-   RT_FONT = 8&
-   RT_ACCELERATOR = 9&
-   RT_RCDATA = 10&
-   RT_MESSAGETABLE = 11&
-   RT_GROUP_CURSOR = 12&
-   RT_GROUP_ICON = 14&
-   RT_VERSION = 16&
-   RT_DLGINCLUDE = 17&
-   RT_PLUGPLAY = 19&
-   RT_VXD = 20&
-   RT_ANICURSOR = 21&
-   RT_ANIICON = 22&
-   RT_HTML = 23&
-End Enum
-
 Public rva As Long
 Public fileOffset As Long
 Public Size As Long
 Public hadRecursive As Boolean
 
+Dim hFile As Long
 
-Private EntryOffsets As New Collection 'make sure no recursive loops..
+Public Entries As New Collection 'of final collected CResData with flat path..
+Private RootDir As New CResDir
+
+Friend Property Get pe() As CPEEditor
+    Set pe = parent
+End Property
+
+Friend Property Get fhandle() As Long
+    fhandle = hFile
+End Property
 
 Function dumpNames(Optional includeSize As Boolean = True) As Collection
     On Error Resume Next
     Dim c As New Collection
-    Dim e As CResourceEntry
-    
+    Dim e As CResData
+
     Set dumpNames = c
-    
+
     For Each e In Entries
         If includeSize Then
             c.Add rpad(e.Size, 8) & e.path
@@ -67,18 +52,13 @@ Function dumpNames(Optional includeSize As Boolean = True) As Collection
             c.Add e.path
         End If
     Next
-    
-End Function
 
+End Function
 
 Friend Sub LoadSelf(owner As CPEEditor)
     
     Set parent = owner
-    
-    Dim hfile As Long, i As Long
-    Dim resRootDir As RESDIRECTORY
-    Dim cre As CResourceEntry
-    
+        
     rva = owner.OptionalHeader.ddVirtualAddress(Resource_Table)
     Size = owner.OptionalHeader.ddSize(Resource_Table)
     fileOffset = owner.RvaToOffset(rva)
@@ -86,134 +66,34 @@ Friend Sub LoadSelf(owner As CPEEditor)
     If rva = 0 Or Size = 0 Or fileOffset = 0 Then Exit Sub
     fileOffset = fileOffset + 1
     
-    hfile = FreeFile
-    Open owner.LoadedFile For Binary Access Read As #hfile
-    Get hfile, fileOffset, resRootDir
-    LoadSubDir hfile, resRootDir 'this is recursive...
-       
-    'collapsed down final entries list
-    For Each cre In Entries
-        cre.LoadSelf hfile, fileOffset
-        'Debug.Print cre.Report
-    Next
-
-    Close hfile
+    hFile = FreeFile
+    Open owner.LoadedFile For Binary Access Read As #hFile
+    
+    'this will walk the directory/sub directories and entries tree and record the path as it goes.
+    'when it finally gets to an actual data entry..the data will be added to our entries collection of CResData
+    'we use the simplified path to references the resources so clients dont have to walk the tree themselves..
+    'CresDir and CResEntry do not need to be used publically by clients...
+    RootDir.LoadDir Me, fileOffset
+    
+    Close hFile
 
 
 End Sub
 
-Private Sub LoadSubDir(hfile As Long, resDir As RESDIRECTORY, Optional path As String)
-    
-    Dim cre As CResourceEntry
-    
-    Dim childDir As RESDIRECTORY
-    Dim resDirEntry As RESOURCE_DIRECTORY_ENTRY
-    Dim childOffset As Long
-    Dim childPath As String
-    Dim subDirs As New Collection
-    
-    'all of these structures are sequential in the file..
-    'so load them one after another, no need to track file pointer..
-    
-    Debug.Print "Loading resdir: idEntries:" & resDir.NumberOfIdEntries & "   NamedEntries:" & resDir.NumberOfNamedEntries
-    
-    For i = 1 To resDir.NumberOfNamedEntries
-        Get hfile, , resDirEntry
-        
-        Set cre = New CResourceEntry
-        cre.setSubDirOffset resDirEntry.DataEntry_orSubDir_Offset
-        cre.timeStamp = timeStampToDate(resDir.TimeDateStamp)
-        cre.NameOffset = resDirEntry.NameOffset_or_ID
-        cre.path = path
-        
-        If cre.SubDirOffset <> 0 Then
-            If EntryExists(cre.SubDirOffset) Then
-                hadRecursive = True
-                Debug.Print "We caught one with a recursive SubDirOffset!"
-            Else
-                subDirs.Add cre
-            End If
-        Else
-            If EntryExists(cre.DataEntryOffset) Then
-                hadRecursive = True
-                Debug.Print "We caught one with a recursive DataEntryOffset!"
-            Else
-                Entries.Add cre
-            End If
-        End If
-        
-        'Debug.Print cre.Report
-    Next
-    
-    For i = 1 To resDir.NumberOfIdEntries
-        Get hfile, , resDirEntry
-        
-        Set cre = New CResourceEntry
-        cre.setSubDirOffset resDirEntry.DataEntry_orSubDir_Offset
-        cre.timeStamp = timeStampToDate(resDir.TimeDateStamp)
-        cre.ID = resDirEntry.NameOffset_or_ID
-        cre.path = path
-        
-        If cre.SubDirOffset <> 0 Then
-            If EntryExists(cre.SubDirOffset) Then
-                hadRecursive = True
-                Debug.Print "We caught one with a recursive SubDirOffset!"
-            Else
-                subDirs.Add cre
-            End If
-        Else
-            If EntryExists(cre.DataEntryOffset) Then
-                hadRecursive = True
-                Debug.Print "We caught one with a recursive DataEntryOffset!"
-            Else
-                Entries.Add cre
-            End If
-        End If
-        
-        'Debug.Print cre.Report
-    Next
- 
-    For Each cre In subDirs
-        childOffset = fileOffset + cre.SubDirOffset
-        'DumpFile hfile, childOffset
-        Get hfile, childOffset, childDir
-        
-        If Len(path) = 0 Then
-            childPath = "\" & cre.DirectoryToName()
-        Else
-            childPath = path & "\" & cre.NameOrID
-        End If
-        
-        LoadSubDir hfile, childDir, childPath
-    Next
-    
-    
-End Sub
-
-Private Function EntryExists(offset As Long) As Boolean
-    On Error Resume Next
-    Dim o
-    o = EntryOffsets("o:" & offset)
-    If Err.Number = 0 Then
-        EntryExists = True
-        EntryOffsets.Add "o:" & offset
-    End If
-End Function
-
-Private Sub DumpFile(hfile As Long, offset As Long, Optional Size As Long = 16)
+Private Sub DumpFile(hFile As Long, offset As Long, Optional Size As Long = 16)
     Dim curPos As Long
     Dim b() As Byte
     ReDim b(1 To Size)
     
-    curPos = Seek(hfile)
-    Get hfile, offset, b()
-    Seek hfile, curPos
+    curPos = Seek(hFile)
+    Get hFile, offset, b()
+    Seek hFile, curPos
     
     Debug.Print Right("00000000" & Hex(offset), 8) & HexDump(StrConv(b, vbUnicode))
     
 End Sub
 
-Public Function GetResource(path As String, ByRef outRetVal As CResourceEntry) As Boolean
+Public Function GetResource(path As String, ByRef outRetVal As CResData) As Boolean
     Set outRetVal = Nothing
     For Each outRetVal In Entries
         If LCase(outRetVal.path) = LCase(path) Then
@@ -225,7 +105,7 @@ Public Function GetResource(path As String, ByRef outRetVal As CResourceEntry) A
 End Function
 
 Public Function GetResourceData(path As String, ByRef bArray) As Boolean
-    Dim cre As CResourceEntry
+    Dim cre As CResData
     Dim f As Long
     Dim b() As Byte
     Dim fOffset As Long
@@ -234,8 +114,8 @@ Public Function GetResourceData(path As String, ByRef bArray) As Boolean
     If Not FileExists(parent.LoadedFile) Then Exit Function
     If Not GetResource(path, cre) Then Exit Function
     
-    fOffset = parent.RvaToOffset(cre.Data_RVA)
-    If cre.Size = 0 Or cre.Data_RVA = 0 Or fOffset = 0 Then Exit Function
+    fOffset = parent.RvaToOffset(cre.OffsetToDataRVA)
+    If cre.Size = 0 Or cre.OffsetToDataRVA = 0 Or fOffset = 0 Then Exit Function
     
     ReDim b(cre.Size - 1)
     f = FreeFile
