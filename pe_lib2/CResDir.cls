@@ -87,7 +87,7 @@ Friend Sub LoadDir(p As CResources, fileOffset As Long, Optional pth As String)
         Set r = New CResEntry
         
         If i < resRootDir.NumberOfNamedEntries Then
-            r.setName p.fhandle, fileOffset, e(i).NameOffset_or_ID
+            r.setName p.fhandle, p.fileOffset, e(i).NameOffset_or_ID
             r.path = pth & "\" & r.Name
         Else
             r.id = e(i).NameOffset_or_ID
@@ -103,7 +103,8 @@ Friend Sub LoadDir(p As CResources, fileOffset As Long, Optional pth As String)
         If r.isSubDir Then
             r.subDir.LoadDir p, p.fileOffset + r.SubDirOffset, r.path
         Else
-            'finally!
+            'finally!, note we add the actual data entry to top level parent.Entries collection for simplicity
+            'the path property could be used to recreate the tree if a client really wanted..I dont want to deal with that though..
             Get p.fhandle, p.fileOffset + r.DataOffset, d
             Set cd = New CResData
             cd.CodePage = d.CodePage

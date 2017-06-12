@@ -29,8 +29,8 @@ Friend Sub setName(hFile As Long, base As Long, NameOffset As Long)
     Dim b() As Byte
     
     no = NameOffset And &H7FFFFFFF
-    no = base + no
     dbg = Hex(no)
+    no = base + no
     
     Get hFile, no, sz 'two byte size of unicode string..
     ReDim b(1 To (sz * 2))
