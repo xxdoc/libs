@@ -31,6 +31,7 @@ Public Sections As New Collection
 'loaded on demand
 Private relocs As CRelocations
 Private res As CResources
+Private dbgDir As CDebugDir
 
 Public CanAddSection As Boolean
 Public errMessage As String
@@ -150,7 +151,7 @@ Property Get Resources() As CResources
     
     Set res = New CResources
     
-    If isLoaded Then res.LoadSelf Me
+    If isLoaded Then res.loadSelf Me
     Set Resources = res
     
 End Property
@@ -174,6 +175,28 @@ Property Get Relocations() As CRelocations
     Set Relocations = relocs
     
 End Property
+
+'we load it on demand..
+Property Get DebugDirectory() As CDebugDir
+
+    If Not isLoaded Then
+        Set DebugDirectory = New CDebugDir
+        Exit Property
+    End If
+    
+    If Not dbgDir Is Nothing Then
+        Set DebugDirectory = dbgDir
+        Exit Property
+    End If
+    
+    Set dbgDir = New CDebugDir
+    
+    dbgDir.loadSelf Me
+    Set DebugDirectory = dbgDir
+    
+End Property
+
+
 
 Sub ShowOffsetCalculator(Optional modal As Boolean = False)
     frmOffsets.Initilize Me, modal
@@ -219,6 +242,7 @@ Function LoadFile(fpath As String) As Boolean
         Set Sections = New Collection
         Set res = Nothing
         Set relocs = Nothing
+        Set dbgDir = Nothing
         
         If Not FileExists(fpath) Then Err.Raise 1
 
@@ -383,10 +407,10 @@ Function RvaToOffset(ByVal rva As Long, Optional ByRef VirtualSectionBase As Lon
     
 End Function
 
-Function OffsetToVA(ByVal foffset As Long, Optional sectName As String) As Double
+Function OffsetToVA(ByVal fOffset As Long, Optional sectName As String) As Double
     Dim rva As Long
     
-    rva = OffsetToRVA(foffset, sectName)
+    rva = OffsetToRVA(fOffset, sectName)
     
     If rva <> 0 Then
         'If is64Bit Then
@@ -398,7 +422,7 @@ Function OffsetToVA(ByVal foffset As Long, Optional sectName As String) As Doubl
     
 End Function
 
-Function OffsetToRVA(ByVal foffset As Long, Optional sectName As String) As Long
+Function OffsetToRVA(ByVal fOffset As Long, Optional sectName As String) As Long
     
     If Sections.Count = 0 Then
         MsgBox "No Sections Loaded", vbInformation
@@ -413,8 +437,8 @@ Function OffsetToRVA(ByVal foffset As Long, Optional sectName As String) As Long
        rSize = c.SizeOfRawData
        rMax = rBase + rSize
        
-       If foffset >= rBase And foffset < rMax Then 'right section
-            OffsetToRVA = c.VirtualAddress + foffset - rBase
+       If fOffset >= rBase And fOffset < rMax Then 'right section
+            OffsetToRVA = c.VirtualAddress + fOffset - rBase
             sectName = c.nameSec
             Exit Function
        End If

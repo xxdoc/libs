@@ -1,7 +1,7 @@
 clsCmnDlg = 22, 22, 912, 684, 
 clsFileStream = 132, 132, 591, 462, 
 clsFileSystem = 33, 7, 679, 600, 
-clsRegistry = 22, 22, 872, 739, 
+clsRegistry = 22, 22, 872, 739, Z
 clsIniFile = 33, 20, 471, 448, 
 clsCmdLine = 154, 154, 596, 582, 
 clsLicense = 6, 6, 672, 602, 

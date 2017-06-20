@@ -23,6 +23,7 @@ Class=CWinHash; CWinHash.cls
 Class=CResEntry; CResEntry.cls
 Class=CResDir; CResDir.cls
 Class=CResData; CResData.cls
+Class=CDebugDir; CDebugDir.cls
 Startup="(None)"
 HelpFile=""
 Title="sppe2"
