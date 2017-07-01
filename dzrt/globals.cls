@@ -364,7 +364,7 @@ Function ReadFile(filename, ByRef Data) As Boolean 'this one should be binary sa
   
   f = FreeFile
   Open filename For Binary As #f
-  ReDim b(LOF(f) - 1)
+  ReDim b(lof(f) - 1)
   Get f, , b()
   Close #f
   
@@ -628,138 +628,8 @@ hell:
     End If
 End Function
 
-'supports %x, %c, %s, %d, %10d \t \n %%
 Function printf(ByVal Msg As String, ParamArray vars()) As String
-
-    Dim t
-    Dim ret As String
-    Dim i As Long, base, marker
-    
-    Msg = Replace(Msg, Chr(0), Empty)
-    Msg = Replace(Msg, "\t", vbTab)
-    Msg = Replace(Msg, "\n", vbCrLf) 'simplified
-    Msg = Replace(Msg, "%%", Chr(0))
-    
-    t = split(Msg, "%")
-    If UBound(t) <> UBound(vars) + 1 Then
-        MsgBox "Format string mismatch.."
-        Exit Function
-    End If
-    
-    ret = t(0)
-    For i = 1 To UBound(t)
-        base = t(i)
-        marker = ExtractSpecifier(base)
-        If Len(marker) > 0 Then
-            ret = ret & HandleMarker(base, marker, vars(i - 1))
-        Else
-            ret = ret & base
-        End If
-    Next
-    
-    ret = Replace(ret, Chr(0), "%")
-    printf = ret
-    
-End Function
-
-Private Function HandleMarker(base, ByVal marker, var) As String
-    Dim newBase As String
-    Dim mType As Integer
-    Dim nVal As String
-    Dim spacer As String
-    Dim prefix As String
-    Dim count As Long
-    
-    If Len(base) > Len(marker) Then
-        newBase = Mid(base, Len(marker) + 1) 'remove the marker..
-    End If
-    
-    mType = Asc(Mid(marker, Len(marker), 1))  'last character
-    
-    Select Case mType
-        Case Asc("x"): nVal = Hex(var)
-        Case Asc("X"): nVal = UCase(Hex(var))
-        Case Asc("s"): nVal = var
-        Case Asc("S"): nVal = UCase(var)
-        Case Asc("c"): nVal = Chr(var)
-        Case Asc("d"): nVal = var
-        
-        Case Else: nVal = var
-    End Select
-    
-    If Len(marker) > 1 Then 'it has some more formatting involved..
-        marker = Mid(marker, 1, Len(marker) - 1) 'trim off type
-        If Left(marker, 1) = "0" Then
-            spacer = "0"
-            marker = Mid(marker, 2)
-        Else
-            spacer = " "
-        End If
-        count = CLng(marker) - Len(nVal)
-        If count > 0 Then prefix = String(count, spacer)
-    End If
-    
-    HandleMarker = prefix & nVal & newBase
-            
-End Function
-
-Private Function ExtractSpecifier(v)
-    
-    Dim ret As String
-    Dim b() As Byte
-    Dim i As Long
-    If Len(v) = 0 Then Exit Function
-    
-    b() = StrConv(v, vbFromUnicode, LANG_US)
-    
-    For i = 0 To UBound(b)
-        ret = ret & Chr(b(i))
-        If b(i) = Asc("x") Then Exit For
-        If b(i) = Asc("X") Then Exit For
-        If b(i) = Asc("c") Then Exit For
-        If b(i) = Asc("s") Then Exit For
-        If b(i) = Asc("S") Then Exit For
-        If b(i) = Asc("d") Then Exit For
-    Next
-    
-    ExtractSpecifier = ret
-    
-End Function
-
-Public Function ado_ConnectionString(dbServer As dbServers, dbName As String, Optional server As String, Optional Port = 3306, Optional user As String, Optional pass As String) As String
-    Dim dbPath As String, baseString As String, blnInlineAuth As Boolean
-    
-    Select Case dbServer
-        Case Access
-            baseString = "Provider=MSDASQL;Driver={Microsoft Access Driver (*.mdb)};DBQ=____;"
-        Case FileDsn
-            baseString = "FILEDSN=____;"
-        Case DSN
-            baseString = "DSN=____;"
-        Case dBase
-            baseString = "Driver={Microsoft dBASE Driver (*.dbf)};DriverID=277;Dbq=____;"
-        Case mysql
-            baseString = "Driver={mySQL};Server=" & server & ";Port=" & Port & ";Stmt=;Option=16834;Database=____;"
-        Case MsSql2k
-            baseString = "Driver={SQL Server};Server=" & server & ";Database=____;"
-        Case JetAccess2k
-            baseString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=____;" & _
-                         "User Id=" & user & ";" & _
-                         "Password=" & pass & ";"
-                         blnInlineAuth = True
-    End Select
-                         
-        
-    If Not blnInlineAuth Then
-        If user <> Empty Then baseString = baseString & "Uid:" & user & ";"
-        If pass <> Empty Then baseString = baseString & "Pwd:" & user & ";"
-    End If
-       
-    '%AP% is like enviromental variable for app.path i am lazy :P
-    dbPath = Replace(dbName, "%AP%", App.path)
-    
-    ado_ConnectionString = Replace(baseString, "____", dbPath)
-    
+    printf = modGeneral.printf(Msg, paramsToArray(vars))
 End Function
 
 Function ado_buildInsert(tblName, fields, ParamArray params()) As String

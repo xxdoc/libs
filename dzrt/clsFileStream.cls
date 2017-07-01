@@ -14,44 +14,44 @@ Attribute VB_Exposed = True
 Option Explicit
 
 Enum openType
-    otreading = 0
-    otwriting = 1
-    otappend = 2
-    otbinary = 3
+    otRead = 0
+    otWrite = 1
+    otAppend = 2
+    otBinary = 3
 End Enum
 
 Private isBinary As Boolean
 Private fHandle As Long
 
-Property Get FileHandle() As Long
-    FileHandle = fHandle
+Property Get h() As Long
+    h = fHandle
 End Property
 
-Property Get EndOfFile() As Boolean
-    EndOfFile = EOF(fHandle)
+Property Get eof() As Boolean
+    eof = VBA.eof(fHandle)
 End Property
 
-Property Get LengthOfFile() As Long
-    LengthOfFile = LOF(fHandle)
+Property Get lof() As Long
+    lof = VBA.lof(fHandle)
 End Property
 
-Sub fClose()
+Sub Close_()
     Close fHandle
     fHandle = 0
 End Sub
 
-Sub fOpen(path, t As openType)
+Sub Open_(path, Optional t As openType = otRead)
     Dim f As Long
 
     f = FreeFile
     Select Case t
-        Case otreading: Open path For Input As f
-        Case otwriting: Open path For Output As f
-        Case otappend: Open path For Append As f
-        Case otbinary: Open path For Binary As f
+        Case otRead: Open path For Input As f
+        Case otWrite: Open path For Output As f
+        Case otAppend: Open path For Append As f
+        Case otBinary: Open path For Binary As f
     End Select
     
-    isBinary = (t = otbinary)
+    isBinary = (t = otBinary)
     fHandle = f
             
 End Sub
@@ -72,6 +72,13 @@ Sub WriteExpandedString(ByVal str)
     str = Replace(str, "\t", vbTab)
     str = Replace(str, "\n", vbCrLf)
     WriteLine str
+End Sub
+
+Sub fprintf(formatStr, ParamArray vars())
+    Dim tmp As String, args() As Variant
+    args() = vars()
+    tmp = modGeneral.printf(formatStr, args)
+    WriteLine tmp
 End Sub
 
 Sub WriteDivider(Optional divChar = "-", Optional num = 75)
@@ -131,7 +138,3 @@ Sub BinWriteNChar(b As Byte, Optional num As Long = 0)
     Next
 End Sub
 
-
-Private Sub Class_Initialize()
-    ' If Not isRegistered And Not isInitalized Then TellThemAllAboutIt
-End Sub

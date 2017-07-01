@@ -161,7 +161,7 @@ Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath 
    If recursive Then
         Set folders = GetSubFolders(folderPath)
         For Each f In folders
-            FolderEngine f, tmp, Filter
+            FolderEngine f, fnames, Filter
         Next
         If Not retFullPath Then
             For Each f In tmp
