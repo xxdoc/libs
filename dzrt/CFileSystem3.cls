@@ -280,13 +280,14 @@ Function FileExists(path) As Boolean
 hell: FileExists = False
 End Function
 
-Function GetParentFolder(path)
+Function GetParentFolder(path, Optional levelUp = 1)
     Dim tmp() As String
     Dim my_path
-    Dim ub As String
+    Dim ub As String, i As Long
     
     On Error GoTo hell
     If Len(path) = 0 Then Exit Function
+    If levelUp < 1 Then levelUp = 1
     
     my_path = path
     While Len(my_path) > 0 And Right(my_path, 1) = "\"
@@ -294,10 +295,17 @@ Function GetParentFolder(path)
     Wend
     
     tmp = split(my_path, "\")
-    tmp(UBound(tmp)) = Empty
-    my_path = Replace(Join(tmp, "\"), "\\", "\")
-    If VBA.Right(my_path, 1) = "\" Then my_path = Mid(my_path, 1, Len(my_path) - 1)
+    If levelUp > UBound(tmp) Then levelUp = UBound(tmp)
     
+    For i = 0 To levelUp - 1
+        If InStr(tmp(UBound(tmp) - i), ":") < 1 Then tmp(UBound(tmp) - i) = Empty
+    Next
+    
+    my_path = Join(tmp, "\")
+    While Len(my_path) > 0 And Right(my_path, 1) = "\"
+        my_path = Mid(my_path, 1, Len(my_path) - 1)
+    Wend
+        
     GetParentFolder = my_path
     Exit Function
     
@@ -519,7 +527,7 @@ Function ReadBinaryFile(filename) As Byte()
     Dim b() As Byte
     f = FreeFile
     Open filename For Binary As f
-    ReDim b(LOF(f) - 1)
+    ReDim b(lof(f) - 1)
     Get f, , b()
     Close f
     ReadBinaryFile = b()
@@ -640,8 +648,9 @@ Private Function AryIsEmpty(ary) As Boolean
 oops: AryIsEmpty = True
 End Function
 
-Function FolderName(folderPath)
+Function FolderName(ByVal folderPath)
     Dim ret, tmp() As String
+    If FileExists(folderPath) Then folderPath = GetParentFolder(folderPath)
     tmp = split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _

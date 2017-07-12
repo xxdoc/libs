@@ -172,7 +172,7 @@ Private Declare Function SHAutoComplete Lib "shlwapi.dll" (ByVal hwndEdit As Lon
 Private Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidl As Long, ByVal pszPath As String) As Long
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 Private Declare Sub CoTaskMemFree Lib "ole32" (ByVal pv As Long)
-Private Declare Sub mouse_event Lib "user32" (ByVal dwFlags As Long, ByVal dX As Long, ByVal dY As Long, ByVal cButtons As Long, ByVal dwExtraInfo As Long)
+Private Declare Sub mouse_event Lib "user32" (ByVal dwFlags As Long, ByVal dX As Long, ByVal dy As Long, ByVal cButtons As Long, ByVal dwExtraInfo As Long)
 Private Const LEFTDOWN = &H2, LEFTUP = &H4, MIDDLEDOWN = &H20, MIDDLEUP = &H40, RIGHTDOWN = &H8, RIGHTUP = &H10
 Private Const SHACF_FILESYS_DIRS = &H20
 
@@ -293,15 +293,16 @@ Const sf_DRIVES = &H11    'My Computer
 
 
 Private Sub cmdNewFolder_Click()
-    Dim fName As String
-    fName = InputBox("Create new folder in: " & vbCrLf & vbCrLf & Dir1.path)
-    If Len(fName) = 0 Then Exit Sub
+    Dim fname As String, fPath As String
+    fname = InputBox("Create new folder in: " & vbCrLf & vbCrLf & Dir1.path)
+    If Len(fname) = 0 Then Exit Sub
     On Error Resume Next
-    MkDir Dir1.path & "\" & fName
+    fPath = Dir1.path & "\" & fname
+    If Not FolderExists(fPath) Then MkDir fPath
     If Err.Number <> 0 Then
         MsgBox Err.Description
     Else
-        Text1 = Dir1.path & "\" & fName
+        Text1 = fPath
         'Dir1.Refresh
     End If
 End Sub
@@ -450,10 +451,10 @@ Private Sub Text1_Change()
     End If
 End Sub
 
-Private Sub Text1_OLEDragDrop(Data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Text1_OLEDragDrop(data As DataObject, Effect As Long, Button As Integer, Shift As Integer, x As Single, Y As Single)
     On Error Resume Next
     Dim f As String
-    f = Data.files(1)
+    f = data.files(1)
     If FileExists(f) Then Text1 = GetParentFolder(f)
     If FolderExists(f) Then Text1 = f
 End Sub
@@ -500,7 +501,7 @@ End Function
 
 Private Function GetParentFolder(path) As String
     Dim tmp, ub
-    tmp = Split(path, "\")
+    tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
     If Right(GetParentFolder, 1) = ":" Then GetParentFolder = GetParentFolder & "\"
@@ -552,14 +553,14 @@ End Sub
 
 
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 Private Function pop(ary) 'this modifies parent ary obj

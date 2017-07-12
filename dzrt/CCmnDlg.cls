@@ -77,9 +77,9 @@ Private Declare Function ChooseColor Lib "comdlg32.dll" Alias "ChooseColorA" (pC
 Private Declare Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As Long
 Private Declare Function SHBrowseForFolder Lib "shell32" (lpbi As BrowseInfo) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
-Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hMem As Long)
+Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hmem As Long)
 Private Declare Function LocalAlloc Lib "kernel32" (ByVal uFlags As Long, ByVal uBytes As Long) As Long
-Private Declare Function LocalFree Lib "kernel32" (ByVal hMem As Long) As Long
+Private Declare Function LocalFree Lib "kernel32" (ByVal hmem As Long) As Long
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 
 Private Const OFN_ALLOWMULTISELECT = &H200
@@ -279,8 +279,9 @@ Function FolderDialog() As String
 
 End Function
 
-Function FolderDialog2(Optional initDir = "") As String
+Function FolderDialog2(Optional ByVal initDir = "") As String
     If Len(initDir) <> 0 Then lastDir = initDir
+    If FileExists(initDir) Then initDir = GetParentFolder(initDir)
     FolderDialog2 = frmDlg.BrowseForFolder(lastDir)
 End Function
 

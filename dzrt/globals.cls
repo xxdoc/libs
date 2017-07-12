@@ -28,13 +28,25 @@ Private startTime As Long
 Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () As Long
 Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
-Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
  
 Private Declare Sub vc_srand Lib "utypes.dll" (ByVal v1 As Long)
 Private Declare Function vc_rand Lib "utypes.dll" () As Long
  
+Private Declare Function URLDownloadToFile Lib "urlmon" _
+   Alias "URLDownloadToFileA" _
+  (ByVal pCaller As Long, _
+   ByVal szURL As String, _
+   ByVal szFileName As String, _
+   ByVal dwReserved As Long, _
+   ByVal lpfnCB As Long) As Long
+
+Private Const ERROR_SUCCESS As Long = 0
+Private Const BINDF_GETNEWESTVERSION As Long = &H10
+Private Const INTERNET_FLAG_RELOAD As Long = &H80000000
+
 'all but jet are odbc jet is ole
 Public Enum dbServers
     Access
@@ -187,12 +199,12 @@ End Function
     Sleep_ dwMilliseconds
  End Sub
  
- Sub CopyMemory(Destination As Long, Source As Long, ByVal length As Long)
-     CopyMemory_ ByVal Destination, ByVal Source, length
+ Sub CopyMemory(Destination As Long, Source As Long, ByVal Length As Long)
+     CopyMemory_ ByVal Destination, ByVal Source, Length
  End Sub
  
- Function SendMessage(ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-    SendMessage = SendMessage_(hWnd, Msg, wParam, lParam)
+ Function SendMessage(ByVal hWnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+    SendMessage = SendMessage_(hWnd, msg, wParam, lParam)
  End Function
 
 Property Get MAX_LONG() As Long
@@ -298,8 +310,8 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     
 End Sub
 
-Sub SaveMySetting(key, value)
-    SaveSetting App.EXEName, "Settings", key, value
+Sub SaveMySetting(key, Value)
+    SaveSetting App.EXEName, "Settings", key, Value
 End Sub
 
 Function GetMySetting(key, Optional defaultval = "")
@@ -355,7 +367,7 @@ Function RandomNum() As Long
 End Function
 
 'can load a byte array, string, or string array of lines split at either crlf or lf
-Function ReadFile(filename, ByRef Data) As Boolean 'this one should be binary safe...
+Function ReadFile(filename, ByRef data) As Boolean 'this one should be binary safe...
   On Error GoTo hell
   Dim f As Long
   Dim b() As Byte
@@ -368,19 +380,19 @@ Function ReadFile(filename, ByRef Data) As Boolean 'this one should be binary sa
   Get f, , b()
   Close #f
   
-  If TypeName(Data) = "Byte()" Then 'Or TypeName(data) = "Variant"
-        Data = b()
-  ElseIf TypeName(Data) = "String()" Then
+  If TypeName(data) = "Byte()" Then 'Or TypeName(data) = "Variant"
+        data = b()
+  ElseIf TypeName(data) = "String()" Then
         tmp = CStr(StrConv(b(), vbUnicode, LANG_US))
         If InStr(tmp, vbCrLf) > 0 Then
             t2 = split(tmp, vbCrLf)
         Else
             t2 = split(tmp, vbLf)
         End If
-        Data = t2
+        data = t2
   Else
   
-        Data = CStr(StrConv(b(), vbUnicode, LANG_US))
+        data = CStr(StrConv(b(), vbUnicode, LANG_US))
   End If
   
   ReadFile = True
@@ -422,26 +434,26 @@ Function AppendFile(path, it) As Boolean  'not binary safe
     AppendFile = (Err.Number = 0)
 End Function
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x
        
     x = UBound(ary)
     ReDim Preserve ary(x + 1)
     
-    If IsObject(value) Then
-        Set ary(x + 1) = value
+    If IsObject(Value) Then
+        Set ary(x + 1) = Value
     Else
-        ary(x + 1) = value
+        ary(x + 1) = Value
     End If
     
     Exit Sub
 init:
     ReDim ary(0)
-    If IsObject(value) Then
-        Set ary(0) = value
+    If IsObject(Value) Then
+        Set ary(0) = Value
     Else
-        ary(0) = value
+        ary(0) = Value
     End If
 End Sub
 
@@ -494,12 +506,12 @@ Exit Function
 hell:
 End Function
 
-Function anyOfTheseInstr(Data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
+Function anyOfTheseInstr(data, match, Optional compare As VbCompareMethod = vbTextCompare) As Boolean
     Dim tmp() As String
     Dim x
     tmp = split(match, ",")
     For Each x In tmp
-        If InStr(1, Data, x, compare) > 0 Then
+        If InStr(1, data, x, compare) > 0 Then
             anyOfTheseInstr = True
             Exit Function
         End If
@@ -628,8 +640,8 @@ hell:
     End If
 End Function
 
-Function printf(ByVal Msg As String, ParamArray vars()) As String
-    printf = modGeneral.printf(Msg, paramsToArray(vars))
+Function printf(ByVal msg As String, ParamArray vars()) As String
+    printf = modGeneral.printf(msg, paramsToArray(vars))
 End Function
 
 Function ado_buildInsert(tblName, fields, ParamArray params()) As String
@@ -723,7 +735,7 @@ Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     h2l = (Err.Number = 0)
 End Function
 
-Function HexDump(bAryOrStrData, Optional ByVal length As Long = -1, Optional ByVal startAt As Long = 1, Optional hexFormat As hexOutFormats = hoDump) As String
+Function HexDump(bAryOrStrData, Optional ByVal Length As Long = -1, Optional ByVal startAt As Long = 1, Optional hexFormat As hexOutFormats = hoDump) As String
     Dim s() As String, chars As String, tmp As String
     On Error Resume Next
     Dim ary() As Byte
@@ -742,7 +754,7 @@ Function HexDump(bAryOrStrData, Optional ByVal length As Long = -1, Optional ByV
     End If
     
     If startAt < 1 Then startAt = 1
-    If length < 1 Then length = -1
+    If Length < 1 Then Length = -1
     
     While startAt Mod 16 <> 0
         startAt = startAt - 1
@@ -770,9 +782,9 @@ Function HexDump(bAryOrStrData, Optional ByVal length As Long = -1, Optional ByV
             tmp = Empty
             chars = "   "
         End If
-        If length <> -1 Then
-            length = length - 1
-            If length = 0 Then Exit For
+        If Length <> -1 Then
+            Length = Length - 1
+            If Length = 0 Then Exit For
         End If
     Next
     
@@ -1191,11 +1203,11 @@ Function paramsToArray(ParamArray values()) As Variant()
     paramsToArray = values
 End Function
 
-Function max(values() As Variant)
+Function Max(values() As Variant)
    On Error Resume Next
    Dim Item
    For Each Item In values
-      max = IIf(max < Item, Item, max)
+      Max = IIf(Max < Item, Item, Max)
    Next
 End Function
 
@@ -1308,5 +1320,9 @@ Function DeCompress(fileStringOrByte, ByRef outVal, Optional method As CompressT
     
     DeCompress = success
          
+End Function
+
+Function DownloadFile(url, localPath) As Boolean
+    DownloadFile = (URLDownloadToFile(0&, url, localPath, BINDF_GETNEWESTVERSION, 0&) = ERROR_SUCCESS)
 End Function
 

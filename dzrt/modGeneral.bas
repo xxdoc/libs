@@ -20,7 +20,8 @@ Private Declare Function NtAllocateVirtualMemory Lib "ntdll.dll" (ByVal ProcHand
 Private Declare Function RtlCompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, ByVal UNKNOWN_PARAMETER As Long, OutputSize As Long, ByVal WorkSpace As Long) As Long
 Private Declare Function RtlDecompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, OutputSize As Long) As Long
 Private Declare Function NtFreeVirtualMemory Lib "ntdll.dll" (ByVal ProcHandle As Long, BaseAddress As Long, regionsize As Long, ByVal flags As Long) As Long
-Public Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal length As Long)
+Public Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
+Public Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
  
 Public hUTypes As Long
  
@@ -36,6 +37,65 @@ Const STATUS_BAD_COMPRESSION_BUFFER = &HC0000242
 Const COMPRESSION_FORMAT_LZNT1 = &H2
 Const COMPRESSION_ENGINE_STANDARD = &H0   '// Standard compression
 Const COMPRESSION_ENGINE_MAXIMUM = &H100  '// Maximum compression
+ 
+
+Function ensureDll(dllName) As Boolean
+    
+    On Error Resume Next
+    Dim hDll As Long, pth As String, b() As Byte, f As Long, a As Long, basename As String
+    
+    hDll = GetModuleHandle(dllName)
+    
+    If hDll <> 0 Then
+        ensureDll = True
+        Exit Function
+    End If
+    
+    a = InStrRev(dllName, ".")
+    If a < 1 Then
+        basename = dllName
+        dllName = dllName & ".dll"
+    Else
+        basename = Mid(dllName, 1, a)
+    End If
+    
+    pth = App.path & "\" & dllName
+    If Not FileExists(pth) Then pth = App.path & "\..\" & dllName
+    If Not FileExists(pth) Then pth = App.path & "\..\..\" & dllName
+    If Not FileExists(pth) Then pth = App.path & "\..\..\..\" & dllName
+    
+    If Not FileExists(pth) Then
+        pth = App.path & "\" & dllName
+        b() = LoadResData(basename, "DLLS")
+        
+        If AryIsEmpty(b) Then
+            MsgBox "Failed to find " & dllName & " in resource?"
+            Exit Function
+        End If
+        
+        f = FreeFile
+        Open pth For Binary As f
+        Put f, , b()
+        Close f
+        
+        'MsgBox "Dropped zlib.dll to: " & pth & " - Err: " & Err.Number
+    End If
+    
+    If Not FileExists(pth) Then
+        MsgBox "Failed to write " & dllName & " to disk from resource?"
+        Exit Function
+    End If
+        
+    hDll = LoadLibrary(pth)
+        
+    If hDll = 0 Then
+        MsgBox "Failed to load " & dllName & " library?"
+        Exit Function
+    End If
+    
+    ensureDll = True
+    
+End Function
  
  
 Function ensureUTypes() As Boolean
@@ -138,22 +198,22 @@ End Function
 '   End If
 'End Function
 
-Public Function RTLCompress(Data() As Byte, bOut() As Byte, Optional max As Boolean = False) As Boolean
+Public Function RTLCompress(data() As Byte, bOut() As Byte, Optional max As Boolean = False) As Boolean
     Dim WorkSpaceSize As Long
     Dim WorkSpace As Long
     Dim lCompress As Long
     Dim flags As Long
     Dim ret As Long
     
-    If AryIsEmpty(Data) Then Exit Function
+    If AryIsEmpty(data) Then Exit Function
 
     flags = COMPRESSION_FORMAT_LZNT1
     If max Then flags = flags Or COMPRESSION_ENGINE_MAXIMUM
     
-    ReDim bOut(UBound(Data) * 1.13 + 4)
+    ReDim bOut(UBound(data) * 1.13 + 4)
     RtlGetCompressionWorkSpaceSize 2, WorkSpaceSize, 0
     NtAllocateVirtualMemory -1, WorkSpace, 0, WorkSpaceSize, 4096, 64
-    ret = RtlCompressBuffer(flags, VarPtr(Data(0)), UBound(Data) + 1, VarPtr(bOut(0)), (UBound(Data) * 1.13 + 4), 0, lCompress, WorkSpace)
+    ret = RtlCompressBuffer(flags, VarPtr(data(0)), UBound(data) + 1, VarPtr(bOut(0)), (UBound(data) * 1.13 + 4), 0, lCompress, WorkSpace)
     NtFreeVirtualMemory -1, WorkSpace, 0, 16384
     
     If ret = STATUS_SUCCESS Then
@@ -199,8 +259,8 @@ Public Function RTLDeCompress(ByRef bytBuf() As Byte, BitOut() As Byte, Optional
     
 End Function
 
- Sub CopyMemory(Destination As Long, Source As Long, ByVal length As Long)
-     CopyMemory_ ByVal Destination, ByVal Source, length
+ Sub CopyMemory(Destination As Long, Source As Long, ByVal Length As Long)
+     CopyMemory_ ByVal Destination, ByVal Source, Length
  End Sub
  
 'this function will convert any of the following to a byte array:
@@ -484,3 +544,28 @@ Public Function ado_ConnectionString(dbServer As dbServers, dbName As String, Op
     
 End Function
 
+Function GetParentFolder(path) As String
+    Dim tmp() As String
+    Dim my_path
+    Dim ub As String
+    
+    On Error GoTo hell
+    If Len(path) = 0 Then Exit Function
+    
+    my_path = path
+    While Len(my_path) > 0 And Right(my_path, 1) = "\"
+        my_path = Mid(my_path, 1, Len(my_path) - 1)
+    Wend
+    
+    tmp = split(my_path, "\")
+    tmp(UBound(tmp)) = Empty
+    my_path = Replace(Join(tmp, "\"), "\\", "\")
+    If VBA.Right(my_path, 1) = "\" Then my_path = Mid(my_path, 1, Len(my_path) - 1)
+    
+    GetParentFolder = my_path
+    Exit Function
+    
+hell:
+    GetParentFolder = Empty
+    
+End Function

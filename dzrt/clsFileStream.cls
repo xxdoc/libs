@@ -64,6 +64,10 @@ Function ReadLine(Optional LineCount = 0) As String
     Next
 End Function
 
+Sub Write_(str)
+    Print #fHandle, str;
+End Sub
+
 Sub WriteLine(str)
     Print #fHandle, str
 End Sub
