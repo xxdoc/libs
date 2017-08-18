@@ -546,6 +546,22 @@ Function lbCopy(lstBox As Object) As String
     
 End Function
 
+Sub lbAppend(lstBox As Object, txt, Optional ByVal index = -1)
+    On Error GoTo hell
+    If index = -1 Then index = lstBox.ListCount - 1
+    If index < 0 Then Exit Sub
+    lstBox.List(index) = lstBox.List(index) & txt
+hell:
+End Sub
+
+Sub lbUpdate(lstBox As Object, txt, Optional ByVal index = -1)
+    On Error GoTo hell
+    If index = -1 Then index = lstBox.ListCount - 1
+    If index < 0 Then Exit Sub
+    lstBox.List(index) = txt
+hell:
+End Sub
+
 
 Public Sub lvColumnSort(ListViewControl As Object, Column As Object)
     On Error Resume Next
@@ -656,12 +672,12 @@ Function ado_buildInsert(tblName, fields, ParamArray params()) As String
     For i = 0 To UBound(values)
         tn = LCase(TypeName(values(i)))
         If tn = "string" Or tn = "textbox" Or tn = "date" Then
-            values(i) = "'" & Replace(values(i), "'", "''") & "'"
+            values(i) = "'" & replace(values(i), "'", "''") & "'"
         End If
     Next
     
     sTmp = Join(values, ",")
-    ado_buildInsert = Replace(sSql, "____", sTmp)
+    ado_buildInsert = replace(sSql, "____", sTmp)
      
     
 End Function
@@ -678,7 +694,7 @@ Function ado_buildUpdate(tblName, criteria, fields, ParamArray params()) As Stri
     For i = 0 To UBound(values)
         tn = LCase(TypeName(values(i)))
         If tn = "string" Or tn = "textbox" Or tn = "date" Then
-            values(i) = "'" & Replace(values(i), "'", "''") & "'"
+            values(i) = "'" & replace(values(i), "'", "''") & "'"
         End If
     Next
     
@@ -692,7 +708,7 @@ Function ado_buildUpdate(tblName, criteria, fields, ParamArray params()) As Stri
     Next
     
     sTmp = Join(tmp, ",")
-    ado_buildUpdate = Replace(sSql, "____", sTmp)
+    ado_buildUpdate = replace(sSql, "____", sTmp)
     
 End Function
 
@@ -729,8 +745,8 @@ End Function
 
 Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     On Error Resume Next
-    x = trim(Replace(x, "0x", Empty, , , vbTextCompare))
-    x = trim(Replace(x, "&h", Empty, , , vbTextCompare))
+    x = trim(replace(x, "0x", Empty, , , vbTextCompare))
+    x = trim(replace(x, "&h", Empty, , , vbTextCompare))
     outVal = CLng("&h" & x)
     h2l = (Err.Number = 0)
 End Function
@@ -805,8 +821,8 @@ Function HexDump(bAryOrStrData, Optional ByVal Length As Long = -1, Optional ByV
     HexDump = Join(s, vbCrLf)
     
     If hexOnly <> 0 Then
-        If hexFormat = hoHexOnly Then HexDump = Replace(HexDump, " ", "")
-        HexDump = Replace(HexDump, vbCrLf, "")
+        If hexFormat = hoHexOnly Then HexDump = replace(HexDump, " ", "")
+        HexDump = replace(HexDump, vbCrLf, "")
     End If
     
 End Function
@@ -843,19 +859,19 @@ Public Function toBytes(ByVal hexstr, ByRef outVar, Optional ByVal inputformat A
         GoTo retNow
     End If
     
-    str = Replace(hexstr, vbCr, Empty)
-    str = Replace(str, vbLf, Empty)
-    str = Replace(str, vbTab, Empty)
-    str = Replace(str, Chr(0), Empty)
-    str = Replace(str, "{", Empty)
-    str = Replace(str, "}", Empty)
-    str = Replace(str, ";", Empty)
-    str = Replace(str, "+", Empty)
-    str = Replace(str, """""", Empty)
-    str = Replace(str, "'", Empty)
+    str = replace(hexstr, vbCr, Empty)
+    str = replace(str, vbLf, Empty)
+    str = replace(str, vbTab, Empty)
+    str = replace(str, Chr(0), Empty)
+    str = replace(str, "{", Empty)
+    str = replace(str, "}", Empty)
+    str = replace(str, ";", Empty)
+    str = replace(str, "+", Empty)
+    str = replace(str, """""", Empty)
+    str = replace(str, "'", Empty)
     hexstr = str
     
-    If InStr(hexstr, "\u") > 0 Then hexstr = Replace(hexstr, "\u", "%u")
+    If InStr(hexstr, "\u") > 0 Then hexstr = replace(hexstr, "\u", "%u")
     
     If InStr(hexstr, "%u") > 0 Then
         tmp = split(hexstr, "%u")
@@ -906,9 +922,9 @@ Public Function toBytes(ByVal hexstr, ByRef outVar, Optional ByVal inputformat A
         End If
     End If
         
-    str = Replace(hexstr, " ", Empty)
-    str = Replace(str, "0x", Empty)
-    str = Replace(str, ",", Empty)
+    str = replace(hexstr, " ", Empty)
+    str = replace(str, "0x", Empty)
+    str = replace(str, ",", Empty)
     
     For i = 1 To Len(str) Step 2
         x = Mid(str, i, 2)
@@ -1203,11 +1219,11 @@ Function paramsToArray(ParamArray values()) As Variant()
     paramsToArray = values
 End Function
 
-Function Max(values() As Variant)
+Function max(values() As Variant)
    On Error Resume Next
    Dim Item
    For Each Item In values
-      Max = IIf(Max < Item, Item, Max)
+      max = IIf(max < Item, Item, max)
    Next
 End Function
 
@@ -1255,7 +1271,7 @@ Function ExtractHexFromDump(dump) As String
             End If
             
             
-            push Y, Replace(x, " ", Empty)
+            push Y, replace(x, " ", Empty)
 nextone:
         Next
         dat = Join(Y, "")
@@ -1324,5 +1340,36 @@ End Function
 
 Function DownloadFile(url, localPath) As Boolean
     DownloadFile = (URLDownloadToFile(0&, url, localPath, BINDF_GETNEWESTVERSION, 0&) = ERROR_SUCCESS)
+End Function
+
+Function a2c(ary) As Collection
+    Dim a As New Collection, x
+    For Each x In ary
+        a.add x
+    Next
+    Set a2c = a
+End Function
+
+Function c2a(c As Collection) As String()
+    Dim t() As String, f
+    For Each f In c
+        push t, f
+    Next
+    c2a = t
+End Function
+
+Function c2s(c As Collection, Optional delimiter = vbCrLf) As String
+    c2s = Join(c2a(c), delimiter)
+End Function
+
+Function cjoin(a As Collection, b As Collection) As Collection
+    Dim ret As New Collection, f
+    For Each f In a
+        ret.add f
+    Next
+    For Each f In b
+        ret.add b
+    Next
+    Set cjoin = ret
 End Function
 

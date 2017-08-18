@@ -216,6 +216,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\crc64.cpp"
+				>
+			</File>
+			<File
 				RelativePath="utypes.cpp"
 				>
 				<FileConfiguration

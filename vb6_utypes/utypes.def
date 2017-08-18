@@ -17,3 +17,4 @@ LIBRARY UTypes
 		crc32w
 		vc_srand
 		vc_rand
+		crc64

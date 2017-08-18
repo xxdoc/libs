@@ -36,7 +36,7 @@ Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathName
 Private Declare Function GetLogicalDriveStrings Lib "kernel32" Alias "GetLogicalDriveStringsA" (ByVal nBufferLength As Long, ByVal lpBuffer As String) As Long
 Private Declare Function GetDriveType Lib "kernel32" Alias "GetDriveTypeA" (ByVal nDrive As String) As Long
 Private Declare Function SHGetPathFromIDList Lib "shell32" (ByVal pidList As Long, ByVal lpBuffer As String) As Long
-Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hMem As Long)
+Private Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hmem As Long)
 Private Declare Function SHGetSpecialFolderLocation Lib "shell32" (ByVal hWndOwner As Long, ByVal nFolder As Long, pidl As Long) As Long
 
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
@@ -45,7 +45,7 @@ Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA"
 Private Declare Function GetFileVersionInfo Lib "Version.dll" Alias "GetFileVersionInfoA" (ByVal lptstrFilename As String, ByVal dwhandle As Long, ByVal dwlen As Long, lpData As Any) As Long
 Private Declare Function GetFileVersionInfoSize Lib "Version.dll" Alias "GetFileVersionInfoSizeA" (ByVal lptstrFilename As String, lpdwHandle As Long) As Long
 Private Declare Function VerQueryValue Lib "Version.dll" Alias "VerQueryValueA" (pBlock As Any, ByVal lpSubBlock As String, lplpBuffer As Any, puLen As Long) As Long
-Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, ByVal Source As Long, ByVal length As Long)
+Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, ByVal Source As Long, ByVal Length As Long)
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 
 Enum DriveTypes
@@ -140,6 +140,14 @@ Public Enum SpecialFolders
 End Enum
 
 Public dlg As New CCmnDlg
+
+#If isDZRT Then
+    Function FileProperties(ByVal fPath As String, Optional checkSignature As Boolean = False) As CFileProperties
+        Dim f As New CFileProperties
+        f.LoadFileInfo fPath, checkSignature
+        Set FileProperties = f
+    End Function
+#End If
 
 Function GetFolderFiles(folderPath, Optional Filter = "*", Optional retFullPath = True, Optional recursive = False) As Collection
    Dim fnames As New Collection
@@ -366,13 +374,14 @@ Sub SetAttribute(fPath, it As VbFileAttribute)
    SetAttr fPath, it
 End Sub
 
-Function GetExtension(path)
-   Dim tmp() As String
-    Dim ub
+Function GetExtension(path, Optional withDot = True)
+    Dim tmp() As String, pos As Long, ub
     tmp = split(path, "\")
     ub = tmp(UBound(tmp))
-    If InStr(1, ub, ".") > 0 Then
-       GetExtension = Mid(ub, InStrRev(ub, "."), Len(ub))
+    pos = InStrRev(ub, ".")
+    If pos > 0 Then
+       If Not withDot Then pos = pos + 1
+       GetExtension = LCase(Mid(ub, pos))
     Else
        GetExtension = ""
     End If
@@ -390,16 +399,20 @@ Function GetBaseName(path)
     End If
 End Function
 
-Function ChangeExt(path, ext)
-    Dim bn
+Function ChangeExt(path, ByVal ext, Optional doit = True)
+    Dim bn, pf, np
+    
+    pf = GetParentFolder(path)
+    bn = GetBaseName(path)
     ext = IIf(Left(ext, 1) = ".", ext, "." & ext)
-    If FileExists(path) Then
-        Rename path, GetBaseName(path) & ext
-    Else
-        'hack to just accept a file name might not be worth supporting
-        bn = Mid(path, 1, InStr(1, path, ".") - 1)
-        ChangeExt = bn & ext
+    np = pf & "\" & bn & ext
+    
+    If FileExists(path) And doit Then
+        Name path As np
     End If
+    
+    ChangeExt = np
+    
 End Function
 
 Function SafeFileName(proposed)
@@ -565,11 +578,11 @@ End Sub
 
 
 Function Copy(fPath, toFolder)
-   Dim baseName, newName
+   Dim basename, newName
    If FolderExists(toFolder) Then
-       baseName = FileNameFromPath(fPath)
+       basename = FileNameFromPath(fPath)
        toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
-       newName = toFolder & baseName
+       newName = toFolder & basename
        FileCopy fPath, newName
        Copy = newName
    Else 'assume tofolder is actually new desired file path
@@ -579,12 +592,12 @@ Function Copy(fPath, toFolder)
 End Function
 
 Function Move(fPath, toFolder)
-    Dim fName As String
-    fName = FileNameFromPath(fPath)
+    Dim fname As String
+    fname = FileNameFromPath(fPath)
     toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
     
-    Name fPath As toFolder & fName
-    Move = toFolder & fName
+    Name fPath As toFolder & fname
+    Move = toFolder & fname
     
 End Function
 
@@ -600,28 +613,28 @@ hell:
 End Function
 
 
-Function DeleteFolder(folderPath, Optional force = True)
+Function DeleteFolder(folderPath, Optional Force = True)
  On Error GoTo failed
-   Call delTree(folderPath, force)
+   Call delTree(folderPath, Force)
    Call RmDir(folderPath)
    DeleteFolder = True
  Exit Function
 failed:  DeleteFolder = False
 End Function
 
-Private Sub delTree(folderPath, Optional force = True)
+Private Sub delTree(folderPath, Optional Force = True)
    Dim sfi As Collection, sfo As Collection, i As Integer, f
    
    Set sfi = GetFolderFiles(folderPath)
    Set sfo = GetSubFolders(folderPath)
    
-   If sfi.count > 0 And force = True Then
+   If sfi.count > 0 And Force = True Then
         For Each f In sfi
             DeleteFile f
         Next
    End If
    
-   If sfo.count > 0 And force = True Then
+   If sfo.count > 0 And Force = True Then
         For Each f In sfo
             Call DeleteFolder(f, True)
         Next
@@ -629,14 +642,14 @@ Private Sub delTree(folderPath, Optional force = True)
    
 End Sub
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init: ReDim ary(0): ary(0) = value
+init: ReDim ary(0): ary(0) = Value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean
@@ -763,11 +776,7 @@ Function GetSpecialFolder(sf As SpecialFolders) As String
   
 End Function
 
-Function FileProperties(ByVal fPath As String, Optional checkSignature As Boolean = False) As CFileProperties
-    Dim f As New CFileProperties
-    f.LoadFileInfo fPath, checkSignature
-    Set FileProperties = f
-End Function
+
 
 Public Function FileSize(fPath As String) As String
     Dim fsize As Long

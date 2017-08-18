@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   2265
    ScaleWidth      =   8265
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command4 
+      Caption         =   "With Captions"
+      Height          =   465
+      Left            =   4905
+      TabIndex        =   6
+      Top             =   990
+      Width           =   1815
+   End
    Begin VB.CheckBox chkVerticalLines 
       Caption         =   "Vertical lines"
       Height          =   195
@@ -112,6 +120,34 @@ Private Sub Command3_Click()
         .ShowPercent = True
         .AssumeMinHeight
         .setPercent 48
+    End With
+    
+End Sub
+
+Private Sub Command4_Click()
+
+     With ucProgress1
+        
+        .Max = 10
+        .fontSize = 12
+        .AssumeMinHeight
+        abort = False
+        
+        For i = 0 To 10
+            If abort Then Exit For
+            .caption = "Stage " & i
+            .Value = i
+            
+            For j = 0 To 10
+                If abort Then Exit For
+                Sleep 10
+                DoEvents
+            Next
+            
+        Next
+     
+        .reset
+        
     End With
     
 End Sub

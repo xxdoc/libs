@@ -37,7 +37,7 @@
 			Name="Debug|Win32"
 			>
 			<DebugSettings
-				Command="D:\_code\libs\vb6_utypes\class_wrappers\Project1.exe"
+				Command="D:\_code\libs\vb6_utypes\Project1.exe"
 				WorkingDirectory=""
 				CommandArguments=""
 				Attach="false"
@@ -50,7 +50,7 @@
 				SQLDebugging=""
 				Environment=""
 				EnvironmentMerge="true"
-				DebuggerFlavor=""
+				DebuggerFlavor="0"
 				MPIRunCommand=""
 				MPIRunArguments=""
 				MPIRunWorkingDirectory=""

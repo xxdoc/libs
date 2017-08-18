@@ -62,13 +62,31 @@ Attribute VB_Exposed = False
 'drop in replacement for mscomctl progressbar with some extras
 
 Option Explicit
-
+Private m_caption As String
 Private m_max As Long
 Private m_value As Long
 Private m_showPercent As Boolean
 Private lastRefresh As Long
 
 Private Declare Function GetTickCount Lib "kernel32" () As Long
+
+Property Get caption() As String
+    caption = m_caption
+End Property
+
+Property Let caption(text As String)
+    m_caption = text
+    m_showPercent = False
+    If Len(text) = 0 Then
+        lblPercent.Visible = False
+    Else
+        If UserControl.Height >= lblPercent.Height Then
+            lblPercent.caption = text
+            lblPercent.Left = (UserControl.Width / 2) - (lblPercent.Width / 2)
+             lblPercent.Visible = True
+        End If
+    End If
+End Property
 
 Private Sub UserControl_Initialize()
       s.Visible = False
@@ -83,7 +101,7 @@ Private Sub UserControl_Resize()
         s.Width = UserControl.Width
         s.Visible = True
    End If
-   lblPercent.Caption = "   "
+   lblPercent.caption = "   "
    lblPercent.Left = (UserControl.Width / 2) - (lblPercent.Width / 2)
    lblPercent.Top = (UserControl.Height / 2) - (lblPercent.Height / 2) - 25
 End Sub

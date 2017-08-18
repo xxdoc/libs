@@ -1,0 +1,33 @@
+Private Type OVERLAPPED
+    Internal As Long
+    InternalHigh As Long
+    Offset As Long
+    OffsetHigh As Long
+    hEvent As Long
+End Type
+
+Private Declare Sub SetLastError Lib "kernel32" (ByVal dwErrCode As Long)
+Private Declare Function GetOverlappedResult Lib "kernel32" (ByVal hFile As Long, lpOverlapped As OVERLAPPED, lpNumberOfBytesTransferred As Long, ByVal bWait As Long) As Long
+
+Private Function NtStatusToWin32Error(NTStatus As Long) As Long
+    Dim oldError    As Long
+    Dim result      As Long
+    Dim br          As Long
+    Dim o           As OVERLAPPED
+    
+    With o
+        .Internal = NTStatus
+        .InternalHigh = 0
+        .Offset = 0
+        .OffsetHigh = 0
+        .hEvent = 0
+    End With
+    
+    oldError = Err.LastDllError()
+    Call GetOverlappedResult(0&, o, br, 0&)
+    result = Err.LastDllError()
+    SetLastError (oldError)
+    
+    NtStatusToWin32Error = result
+
+End Function

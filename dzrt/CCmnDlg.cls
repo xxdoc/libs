@@ -93,6 +93,18 @@ Private extensions(6) As String
 Private filt As FilterTypes
 Private lastDir As String
 
+#If isDZRT Then
+    Function FolderDialog2(Optional ByVal initDir = "") As String
+        If Len(initDir) <> 0 Then lastDir = initDir
+        If FileExists(initDir) Then initDir = GetParentFolder(initDir)
+        FolderDialog2 = frmDlg.BrowseForFolder(lastDir)
+    End Function
+    
+    Function ChooseFont(Optional obj As Object) As CFont
+        Set ChooseFont = frmSelectFont.SelectFont(Me, obj)
+    End Function
+#End If
+
 Property Let Filter(x As FilterTypes)
     If x < 0 Or x > 5 Then x = 5
     filt = x
@@ -277,16 +289,6 @@ Function FolderDialog() As String
 
     FolderDialog = Replace(ret, Chr(0), Empty)
 
-End Function
-
-Function FolderDialog2(Optional ByVal initDir = "") As String
-    If Len(initDir) <> 0 Then lastDir = initDir
-    If FileExists(initDir) Then initDir = GetParentFolder(initDir)
-    FolderDialog2 = frmDlg.BrowseForFolder(lastDir)
-End Function
-
-Function ChooseFont(Optional obj As Object) As CFont
-    Set ChooseFont = frmSelectFont.SelectFont(Me, obj)
 End Function
 
 Private Function GetSpecialFolder(sf As SpecialFolders) As String

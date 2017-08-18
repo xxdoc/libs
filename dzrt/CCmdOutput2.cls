@@ -10,7 +10,7 @@ Attribute VB_Name = "CCmdOutput"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = True
+Attribute VB_Exposed = False
 Option Explicit
 
 'NOTE: to use the async data out event the console app you are reading from will have to
@@ -25,7 +25,8 @@ Public blnStdErr As Boolean
 Public blnOEMConvert As Boolean
 Public maxExecSecs As Long
 
-
+Private m_abort As Boolean
+Private m_terminateOnAbort As Boolean
 
 ''''''''''''''''''''''''''''''''''''''''
 ' Joacim Andersson, Brixoft Software
@@ -141,13 +142,17 @@ Private Declare Function PeekNamedPipe Lib "kernel32" (ByVal hNamedPipe As Long,
 
 Private Const WAIT_TIMEOUT = &H102
 
-
+Sub abort(Optional terminate As Boolean = True)
+    m_terminateOnAbort = terminate
+    m_abort = True
+End Sub
 
 Private Sub Class_Initialize()
     hideWindow = True
     blnStdOut = True
     blnStdErr = True
     blnOEMConvert = True
+    m_terminateOnAbort = True
 End Sub
 
 Sub CfgHandles(Optional stdOut As Boolean = True, Optional stdErr As Boolean = True, Optional oemConvert As Boolean = True)
@@ -191,6 +196,7 @@ Public Function GetCommandOutput( _
     exitCode = 0
     result = Empty
     startTime = Now
+    m_abort = False
     
     'see comment above..
     If Len(executable) > 0 And Len(sCommandLine) > 0 Then
@@ -309,7 +315,11 @@ Public Function GetCommandOutput( _
                     End If
                 End If
             End If
-                
+            
+            If m_abort Then
+                If m_terminateOnAbort Then TerminateProcess pi.hProcess, -22
+                Exit Do
+            End If
         Loop
 
         ' When the process terminates successfully, Err.LastDllError will be
@@ -335,8 +345,8 @@ End Function
 
 
 Public Function LaunchProcess( _
-        Optional executable As String = vbNullString, _
-        Optional sCommandLine As String = vbNullString, _
+        Optional ByVal executable As String = vbNullString, _
+        Optional ByVal sCommandLine As String = vbNullString, _
         Optional wait As Boolean = True _
 ) As Boolean
 
@@ -353,6 +363,7 @@ Public Function LaunchProcess( _
  
     Const BUFSIZE = 1024      ' pipe buffer size
     
+    m_abort = False
     exitCode = 0
     result = Empty
     startTime = Now
@@ -395,6 +406,11 @@ Public Function LaunchProcess( _
                 
                 Sleep 10
                 DoEvents
+                
+                If m_abort Then
+                    If m_terminateOnAbort Then TerminateProcess pi.hProcess, -22
+                    Exit Do
+                End If
             Loop
         End If
 

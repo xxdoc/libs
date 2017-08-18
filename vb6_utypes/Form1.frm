@@ -99,6 +99,8 @@ Private Declare Function U2Str Lib "utypes.dll" (ByVal v1 As Long, ByVal buf As 
 Private Declare Sub srand Lib "utypes.dll" Alias "vc_srand" (ByVal v1 As Long)
 Private Declare Function rand Lib "utypes.dll" Alias "vc_rand" () As Long
 
+Private Declare Function crc64s Lib "utypes.dll" Alias "crc64" (ByVal stream As String, ByVal sz As Long) As Currency
+Private Declare Function crc64 Lib "utypes.dll" (ByRef stream As Byte, ByVal sz As Long) As Currency
 
 Private Sub Command1_Click()
     On Error Resume Next
@@ -129,7 +131,7 @@ Private Sub Command1_Click()
     c = &HFF + 2
     MsgBox "Byte: &HFF + 2 = " & c & " Error: " & Err.Description
     Err.Clear
-
+   
 
 End Sub
 
@@ -181,6 +183,19 @@ Private Sub Form_Load()
     
     List1.AddItem "Byte &HFF + 2: " & UByte(&HFF, 2, op_add)
     List1.AddItem "Byte 0 - 2: " & UByte(0, 2, op_sub)
+    
+    Dim s As String, b() As Byte
+    s = Chr(&H80) '"IHATEMATH" '"99eb96dd94c88e975b585d2f28785e36"
+    'printf("taking CRC64 of \"99eb96dd94c88e975b585d2f28785e36\" (should be DB7AC38F63413C4E)\n");
+    'assert CRC64digest("IHATEMATH") == "E3DCADD69B01ADD1"
+    d = crc64s(s, Len(s))
+    List1.AddItem "crc64s(" & s & ") = " & Get64(d)
+    
+    b = StrConv(s, vbFromUnicode, &H409)
+    d = crc64(b(0), UBound(b) + 1)
+    List1.AddItem "crc64(" & s & ") = " & Get64(d)
+    
+ 
     
     
 End Sub
