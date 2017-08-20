@@ -34,7 +34,10 @@ Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEn
  
 Private Declare Sub vc_srand Lib "utypes.dll" (ByVal v1 As Long)
 Private Declare Function vc_rand Lib "utypes.dll" () As Long
- 
+'Private Declare Function crc64s Lib "utypes.dll" (ByVal wStrPtr As Long, Optional asciiOnly As Long = 1) As Currency
+Private Declare Function ut_crc64 Lib "utypes.dll" Alias "crc64" (ByRef stream As Byte, ByVal sz As Long) As Currency
+Private Declare Function GetMem4 Lib "msvbvm60" (Src As Any, Dst As Any) As Long
+
 Private Declare Function URLDownloadToFile Lib "urlmon" _
    Alias "URLDownloadToFileA" _
   (ByVal pCaller As Long, _
@@ -94,6 +97,23 @@ Function rand() As Long
     If ensureUTypes() Then rand = vc_rand()
 End Function
 
+Function crc64(fileByteOrString) As String
+    Dim b() As Byte
+    Dim v As Currency
+    Dim Hi&, Lo&
+    
+    If Not ensureUTypes() Then Exit Function 'use the C dll version its faster
+    
+    b() = LoadData(fileByteOrString)
+    If AryIsEmpty(b) Then Exit Function
+    
+    v = ut_crc64(b(0), UBound(b) + 1)
+    
+    GetMem4 ByVal VarPtr(v), Lo
+    GetMem4 ByVal VarPtr(v) + 4, Hi
+    crc64 = Hex$(Hi) & Right$("0000000" & Hex$(Lo), 8)
+    
+End Function
 
 'this function will convert any of the following to a byte array:
 '   read a file if path supplied and allowFilePaths = true
@@ -672,12 +692,12 @@ Function ado_buildInsert(tblName, fields, ParamArray params()) As String
     For i = 0 To UBound(values)
         tn = LCase(TypeName(values(i)))
         If tn = "string" Or tn = "textbox" Or tn = "date" Then
-            values(i) = "'" & replace(values(i), "'", "''") & "'"
+            values(i) = "'" & Replace(values(i), "'", "''") & "'"
         End If
     Next
     
     sTmp = Join(values, ",")
-    ado_buildInsert = replace(sSql, "____", sTmp)
+    ado_buildInsert = Replace(sSql, "____", sTmp)
      
     
 End Function
@@ -694,7 +714,7 @@ Function ado_buildUpdate(tblName, criteria, fields, ParamArray params()) As Stri
     For i = 0 To UBound(values)
         tn = LCase(TypeName(values(i)))
         If tn = "string" Or tn = "textbox" Or tn = "date" Then
-            values(i) = "'" & replace(values(i), "'", "''") & "'"
+            values(i) = "'" & Replace(values(i), "'", "''") & "'"
         End If
     Next
     
@@ -708,7 +728,7 @@ Function ado_buildUpdate(tblName, criteria, fields, ParamArray params()) As Stri
     Next
     
     sTmp = Join(tmp, ",")
-    ado_buildUpdate = replace(sSql, "____", sTmp)
+    ado_buildUpdate = Replace(sSql, "____", sTmp)
     
 End Function
 
@@ -745,8 +765,8 @@ End Function
 
 Function h2l(ByVal x, ByRef outVal As Long) As Boolean
     On Error Resume Next
-    x = trim(replace(x, "0x", Empty, , , vbTextCompare))
-    x = trim(replace(x, "&h", Empty, , , vbTextCompare))
+    x = trim(Replace(x, "0x", Empty, , , vbTextCompare))
+    x = trim(Replace(x, "&h", Empty, , , vbTextCompare))
     outVal = CLng("&h" & x)
     h2l = (Err.Number = 0)
 End Function
@@ -821,8 +841,8 @@ Function HexDump(bAryOrStrData, Optional ByVal Length As Long = -1, Optional ByV
     HexDump = Join(s, vbCrLf)
     
     If hexOnly <> 0 Then
-        If hexFormat = hoHexOnly Then HexDump = replace(HexDump, " ", "")
-        HexDump = replace(HexDump, vbCrLf, "")
+        If hexFormat = hoHexOnly Then HexDump = Replace(HexDump, " ", "")
+        HexDump = Replace(HexDump, vbCrLf, "")
     End If
     
 End Function
@@ -859,19 +879,19 @@ Public Function toBytes(ByVal hexstr, ByRef outVar, Optional ByVal inputformat A
         GoTo retNow
     End If
     
-    str = replace(hexstr, vbCr, Empty)
-    str = replace(str, vbLf, Empty)
-    str = replace(str, vbTab, Empty)
-    str = replace(str, Chr(0), Empty)
-    str = replace(str, "{", Empty)
-    str = replace(str, "}", Empty)
-    str = replace(str, ";", Empty)
-    str = replace(str, "+", Empty)
-    str = replace(str, """""", Empty)
-    str = replace(str, "'", Empty)
+    str = Replace(hexstr, vbCr, Empty)
+    str = Replace(str, vbLf, Empty)
+    str = Replace(str, vbTab, Empty)
+    str = Replace(str, Chr(0), Empty)
+    str = Replace(str, "{", Empty)
+    str = Replace(str, "}", Empty)
+    str = Replace(str, ";", Empty)
+    str = Replace(str, "+", Empty)
+    str = Replace(str, """""", Empty)
+    str = Replace(str, "'", Empty)
     hexstr = str
     
-    If InStr(hexstr, "\u") > 0 Then hexstr = replace(hexstr, "\u", "%u")
+    If InStr(hexstr, "\u") > 0 Then hexstr = Replace(hexstr, "\u", "%u")
     
     If InStr(hexstr, "%u") > 0 Then
         tmp = split(hexstr, "%u")
@@ -922,9 +942,9 @@ Public Function toBytes(ByVal hexstr, ByRef outVar, Optional ByVal inputformat A
         End If
     End If
         
-    str = replace(hexstr, " ", Empty)
-    str = replace(str, "0x", Empty)
-    str = replace(str, ",", Empty)
+    str = Replace(hexstr, " ", Empty)
+    str = Replace(str, "0x", Empty)
+    str = Replace(str, ",", Empty)
     
     For i = 1 To Len(str) Step 2
         x = Mid(str, i, 2)
@@ -1271,7 +1291,7 @@ Function ExtractHexFromDump(dump) As String
             End If
             
             
-            push Y, replace(x, " ", Empty)
+            push Y, Replace(x, " ", Empty)
 nextone:
         Next
         dat = Join(Y, "")

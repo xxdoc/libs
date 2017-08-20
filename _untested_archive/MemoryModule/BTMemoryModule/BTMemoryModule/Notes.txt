@@ -1,0 +1,2 @@
+Use BTMemoryModuleUnicode.pas with Delphi 2009 and above.
+Use BTMemoryModule.pas with Delphi 2007 and below.

@@ -1,44 +1,101 @@
-// 64-bit CRC implementation - andrewl
-//
-// history:
-// Aug 02, 2009 - test inputs added, some explanations corrected
-// Jul 08, 2009 - created
-//
-//http://andrewl.dreamhosters.com/filedump/crc64.cpp
+
+//https://chromium.googlesource.com/chromiumos/platform/punybench/+/4fb765d962b8009a75c94e3e6e10def5af201384/libpuny.b/crc64.c
 
 #include <windows.h>
 #include <stdio.h>
 
-// poly is: x^64 + x^62 + x^57 + x^55 + x^54 + x^53 + x^52 + x^47 + x^46 + x^45 + x^40 + x^39 + 
-//          x^38 + x^37 + x^35 + x^33 + x^32 + x^31 + x^29 + x^27 + x^24 + x^23 + x^22 + x^21 + 
-//          x^19 + x^17 + x^13 + x^12 + x^10 + x^9  + x^7  + x^4  + x^1  + 1
+/*
+ * Below are the various copyright notices from the original source.
+ * <http://www.mirrorservice.org/sites/download.sourceforge.net/pub/
+ *	sourceforge/l/li/libcore/libcore_0.22.7.tar.gz/libcore/lib/hash/Crc.cpp>
+ *
+ * The source has be substationally modified:
+ *	1. Unneeded code has been deleted.
+ *	2. The code was converted from C++ to C.
+ *	3. Routines optimized for hashing were added.
+ */
+///////////////////////////////////////////////////////////////////////////////////
 //
-// represented here with lsb = highest degree term
+//  Copyright (c) 2006 Anton Samokhvalov
 //
-// 1100100101101100010101111001010111010111100001110000111101000010_
-// ||  |  | || ||   | | ||||  | | ||| | ||||    |||    |||| |    | |
-// ||  |  | || ||   | | ||||  | | ||| | ||||    |||    |||| |    | +- x^64 (implied)
-// ||  |  | || ||   | | ||||  | | ||| | ||||    |||    |||| |    |
-// ||  |  | || ||   | | ||||  | | ||| | ||||    |||    |||| |    +--- x^62
-// ||  |  | || ||   | | ||||  | | ||| | ||||    |||    |||| +-------- x^57
-// .......................................................................
-// ||
-// |+---------------------------------------------------------------- x^1
-// +----------------------------------------------------------------- x^0 (1)
-UINT64 poly = 0xC96C5795D7870F42;
-
-// input is dividend: as 0000000000000000000000000000000000000000000000000000000000000000<8-bit byte>
-// where the lsb of the 8-bit byte is the coefficient of the highest degree term (x^71) of the dividend
-// so division is really for input byte * x^64
-
-// you may wonder how 72 bits will fit in 64-bit data type... well as the shift-right occurs, 0's are supplied
-// on the left (most significant) side ... when the 8 shifts are done, the right side (where the input
-// byte was placed) is discarded
-
-// when done, table[XX] (where XX is a byte) is equal to the CRC of 00 00 00 00 00 00 00 00 XX
+//  Permission is hereby  granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without  restriction, including without limitation the rights
+//  to use, copy, modify,  merge,  publish,  distribute,  sublicense, and/or sell
+//  copies  of  the  Software,  and  to  permit  persons  to whom the Software is
+//  furnished to do so, subject to the following conditions:
 //
-UINT64 table[256]={0};
+//  The  above copyright notice and  this permission  notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED  "AS IS",  WITHOUT WARRANTY  OF ANY KIND, EXPRESS OR
+//  IMPLIED,  INCLUDING BUT  NOT LIMITED TO  THE WARRANTIES  OF  MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR  PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+//  AUTHORS  OR  COPYRIGHT  HOLDERS  BE  LIABLE  FOR  ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN  CONNECTION  WITH THE  SOFTWARE OR THE USE OR  OTHER DEALINGS IN
+//  THE SOFTWARE.
+//
+///////////////////////////////////////////////////////////////////////////////////
+/*
+	[To some parts of this code]
+*/
+/*
+  Copyright (C) 1995-2004 Jean-loup Gailly and Mark Adler
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+  Jean-loup Gailly        Mark Adler
+  jloup@gzip.org          madler@alumni.caltech.edu
+*/
+/*
+	[To some parts of this code]
+*/
+/*
+ Copyright (c) 2003, Dominik Reichl <dominik.reichl@t-online.de>
+ All rights reserved.
+ LICENSE TERMS
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+ * Neither the name of ReichlSoft nor the names of its contributors may be used
+   to endorse or promote products derived from this software without specific
+   prior written permission.
+ DISCLAIMER
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
+//Note: you may see different crc64 values with different generators based on the 
+//      poly they use to generate the initial table and the initial_crc64 value they use.
+//      this one is not compatiable with common python implementations..
+
 typedef  unsigned char uint8_t;
+
+#define INITIAL_CRC64 0xffffffffffffffffULL
 
 static const UINT64 CRC64_Table[256] = {
 	0x0000000000000000, 0x42f0e1eba9ea3693,
@@ -170,115 +227,6 @@ static const UINT64 CRC64_Table[256] = {
 	0x5dedc41a34bbeeb2, 0x1f1d25f19d51d821,
 	0xd80c07cd676f8394, 0x9afce626ce85b507
 };
-/*
-VOID generate_table()
-{
-    for(INT i=0; i<256; ++i)
-    {
-    	UINT64 crc = i;
-
-    	for(UINT j=0; j<8; ++j)
-    	{
-            // is current coefficient set?
-    		if(crc & 1)
-            {
-                // yes, then assume it gets zero'd (by implied x^64 coefficient of dividend)
-                crc >>= 1;
-    
-                // and add rest of the divisor
-    			crc ^= poly;
-            }
-    		else
-    		{
-    			// no? then move to next coefficient
-    			crc >>= 1;
-            }
-    	}
-    
-        table[i] = crc;
-    }
-}*/
-
-// will give an example CRC calculation for input array {0xDE, 0xAD}
-//
-// each byte represents a group of 8 coefficients for 8 dividend terms
-//
-// the actual polynomial dividend is:
-//
-// = DE       AD       00 00 00 00 00 00 00 00 (hex)
-// = 11011110 10101101 0000000000000000000...0 (binary)
-//   || ||||  | | || |
-//   || ||||  | | || +------------------------ x^71
-//   || ||||  | | |+-------------------------- x^69
-//   || ||||  | | +--------------------------- x^68
-//   || ||||  | +----------------------------- x^66
-//   || ||||  +------------------------------- x^64
-//   || ||||  
-//   || |||+---------------------------------- x^78
-//   || ||+----------------------------------- x^77
-//   || |+------------------------------------ x^76
-//   || +------------------------------------- x^75
-//   |+--------------------------------------- x^73
-//   +---------------------------------------- x^72
-//
-
-// the basic idea behind how the table lookup results can be used with one
-// another is that:
-//
-// Mod(A * x^n, P(x)) = Mod(x^n * Mod(A, P(X) P(X))
-//
-// in other words, an input data shifted towards the higher degree terms
-// changes the pre-computed crc of the input data by shifting it also
-// the same amount towards higher degree terms (mod the polynomial)
-
-// here is an example:
-//
-// 1) input:
-//
-//    00 00 00 00 00 00 00 00 AD DE
-//          
-// 2) index crc table for byte DE (really for dividend 00 00 00 00 00 00 00 00 DE)
-//
-//    we get A8B4AFBDC5A6ACA4
-//
-// 3) apply that to the input stream:
-//
-//    00 00 00 00 00 00 00 00 AD DE 
-//       A8 B4 AF BD C5 A6 AC A4
-//    -----------------------------
-//    00 A8 B4 AF BD C5 A6 AC 09
-//
-// 4) index crc table for byte 09 (really for dividend 00 00 00 00 00 00 00 00 09)
-// 
-//    we get 448FCBB7FCB9E309
-//
-// 5) apply that to the input stream
-//
-//    00 A8 B4 AF BD C5 A6 AC 09
-//    44 8F CB B7 FC B9 E3 09
-//    --------------------------
-//    44 27 7F 18 41 7C 45 A5
-//
-/*
-UINT64 __stdcall crc64(PBYTE stream, UINT n)
-{
-
-    UINT64 crc = 0;
-	//if(table[1] == 0) generate_table();
-
-    for(INT i=0; i<n; ++i)
-    {
-        BYTE index = stream[i] ^ crc;
-        UINT64 lookup = CRC64_Table[index];
-
-        crc >>= 8;
-        crc ^= lookup;
-    }
-
-    return crc;
-}*/
-
-#define INITIAL_CRC64 0xffffffffffffffffULL
 
 UINT64 __stdcall crc64 (uint8_t *buf, unsigned int len)
 {
@@ -293,34 +241,20 @@ UINT64 __stdcall crc64 (uint8_t *buf, unsigned int len)
 	return crc;
 }
 
-
-
-/*
-VOID main(INT ac, PCHAR *av)
+UINT64 __stdcall crc64s (uint8_t *buf, int asciiOnly)
 {
-    generate_table();
+	uint8_t	*b = buf;
+	unsigned int i;
+	UINT64 crc = INITIAL_CRC64;
+	unsigned int len = wcslen((wchar_t*)buf);
 
-    UINT64 result;
-
-    printf("taking CRC64 of \"\x80\" (should be 0xC96C5795D7870F42)\n");
-    result = calculate_crc((PBYTE)"\x80", 1);
-    printf("result0: %016I64X\n", result);
-
-    printf("taking CRC64 of \"\\xDE\\xAD\\xBE\\xEF\" (should be FC232C18806871AF)\n");
-    result = calculate_crc((PBYTE)"\xDE\xAD\xBE\xEF", 4);
-    printf("result: %016I64X\n", result);
-
-    printf("taking CRC64 of \"99eb96dd94c88e975b585d2f28785e36\" (should be DB7AC38F63413C4E)\n");
-    result = calculate_crc((PBYTE)"\x99\xEB\x96\xDD\x94\xC8\x8E\x97\x5B\x58\x5D\x2F\x28\x78\x5E\x36", 16);
-    printf("result: %016I64X\n", result);
-
-    printf("taking CRC64 of \"\\DE\\xAD\" (should be 44277F18417C45A5\n");
-    result = calculate_crc((PBYTE)"\xDE\xAD", 2);
-    printf("result: %016I64X\n", result);
-
-    printf("ctrL+c to quit!\n");
-    while(1);
+	for (i = 0; i < len; i++) {
+		crc = CRC64_Table[ (uint8_t)(crc >> 56) ^ *b++ ] ^ (crc << 8);
+		if(asciiOnly)*b++;
+	}
+	crc =  ~crc;
+	return crc;
 }
-*/
+
 
 

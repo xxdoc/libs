@@ -1,0 +1,101 @@
+
+fafalone
+
+Re: Is there any way around the Long Data Type upper limit?
+
+    You can use the 8-byte Currency data type, which has a range of -922,337,203,685,477.5808 to 922,337,203,685,477.5807. After that, you can use strings; there's classes to perform math on numbers in string form. It's difficult to work with, as you can only use it within a Variant, but there's the Decimal type that can store +/-79,228,162,514,264,337,593,543,950,335. There's also floating point types; Single and Double, which use exponents and thus have limited precision- -1.79769313486232E308 to -4.94065645841247E-324 for negative values; 4.94065645841247E-324 to 1.79769313486232E308 for positive values, for Double.
+    That's all in normal 32-bit VB. There's no 64bit VB; but there is 64bit VBA in newer versions of Office. 
+
+
+Elroy
+
+In this case, I'd tend to use a Variant set as a Decimal data type.
+
+JohnMarch, when dealing with integers, there's a direct correspondence between decimal (base 10), binary (base 2), and hex (base 16). Internally, (with the exception of BCD, which VB6 doesn't do) everything is stored as binary. Therefore, the limits are always set by the number of bits we have for the integer. For a Long, we've got 4 bytes (32 bits) per variable. However, since it's signed, we lose one bit for the sign, leaving 31 bits for the actual integer. If you convert the binary number 1111111111111111111111111111111 (31 bits) to decimal, you'll find that it equals 2,147,483,647 (which is what you said above).
+
+Also, the reason there's one more negative than positive, is because zero is considered positive.
+
+Now, the Decimal type isn't one of the VB6 intrinsic types, but it is defined in the language. Because it's not intrinsic, you must use a Variant type to use it. A Decimal type uses a full 12 bytes (96 bits) just for the integer portion. Therefore, the largest binary number you can store is 111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111. I don't have a way to easily convert that to decimal, but Microsoft's webpage about Decimals says it's 79,228,162,514,264,337,593,543,950,335. That's quite a bit larger than 2,147,483,647.
+
+Also, you might ask about the sign bit. That's stored in another bit that's independent of the 96 bits used for the integer. In addition, a Decimal type can have a non-zero exponent (when, for a Long, it's always zero). What this means is that you could even have much larger (or much smaller) numbers. You just wouldn't have precision beyond that 79,... number I showed above.
+
+I've talked about the Decimal type in several threads in these forums, but I'll let you do the work to find them.
+
+Best Of Luck,
+Elroy
+
+EDIT1: Also, just as a further FYI, with Decimal variants, all of the standard mathematical operators work absolutely fine.
+
+EDIT2: Also, this approach completely circumvents all of the ugliness of dealing with the forced two-decimal-places of a Currency. And the integer portion of a Currency is only 63 bits.
+
+EDIT3: Just another FYI, the easiest way to get a Decimal Variant started is to do something like:
+
+
+Option Explicit
+
+Private Sub Form_Load()
+    Dim v As Variant
+    v = CDec("17,273,137,983,099") ' <--- Your number.
+    Debug.Print v
+End Sub
+
+Also, just to mention another alternative ... fafalone mentioned the LongLong type that's available in 64-bit VBA. That's also available in VB6 (again, when used in a Variant). And, as with the Decimal, all the mathematical operators still work on them.
+
+The only problem with the LongLong types is that there isn't a CLngLng function in VB6, so, getting them started and initialized is a bit trickier. (Again, I've discussed these in these forums, and I'll let you find them if you like.)
+
+And, just to be complete, a Variant can internally set up a variable such that it's either ByRef or ByVal. Typically, they're set up ByVal (such as what happens with CDec mentioned in the previous post). However, with a bit of work, you can have a Variant that's internally ByRef. The LongLong types only work in VB6 when set up as ByVal. (And this Variant ByVal/ByRef has little to do with passing arguments ByVal or ByRef.)
+
+Take Care,
+Elroy
+
+
+
+Option Explicit
+'
+Private Declare Function VariantChangeTypeEx Lib "oleaut32" (ByRef pvargDest As Variant, ByRef pvarSrc As Variant, ByVal lcid As Long, ByVal wFlags As Integer, ByVal vt As Integer) As Long
+Private Declare Function GetMem4 Lib "msvbvm60" (Src As Any, Dst As Any) As Long
+'
+Private Const vbLongLong As Integer = &H14
+'
+
+Public Function cLngLng(Expression As Variant) As Variant
+    ' This seems to work just fine with "&HFFFFFFFF".
+    Const LOCALE_INVARIANT As Long = &H7F&
+    Dim hr&
+    hr& = VariantChangeTypeEx(cLngLng, Expression, LOCALE_INVARIANT, 0, vbLongLong)
+    If hr < 0 Then Err.Raise hr
+End Function
+
+Public Function HexEx(Number As Variant) As String
+    Select Case VarType(Number)
+    Case vbLongLong
+        Dim Hi&, Lo&
+        GetMem4 ByVal VarPtr(Number) + 8, Lo
+        GetMem4 ByVal VarPtr(Number) + 12, Hi
+        HexEx = Hex$(Hi) & Right$("0000000" & Hex$(Lo), 8)
+    Case Else
+        HexEx = Hex$(Number)
+    End Select
+End Function
+
+Private Sub Form_Load()
+    Dim v1 As Variant
+    Dim v2 As Variant
+    Dim v3 As Variant
+
+
+    v1 = cLngLng("&H1111111111111111")
+    v2 = cLngLng("&H3333333333333333")
+
+    v3 = v1 + v2
+    MsgBox HexEx(v3)
+
+    v3 = v2 - v1
+    MsgBox HexEx(v3)
+
+    v3 = v2 \ v1
+    MsgBox HexEx(v3)
+
+    Unload Me
+
+End Sub

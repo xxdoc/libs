@@ -18,3 +18,4 @@ LIBRARY UTypes
 		vc_srand
 		vc_rand
 		crc64
+		crc64s
