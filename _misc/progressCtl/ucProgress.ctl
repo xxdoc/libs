@@ -62,32 +62,69 @@ Attribute VB_Exposed = False
 'drop in replacement for mscomctl progressbar with some extras
 
 Option Explicit
-Private m_caption As String
+
+Private m_showCount As Boolean
 Private m_max As Long
 Private m_value As Long
 Private m_showPercent As Boolean
 Private lastRefresh As Long
+Private m_leftJustify As Boolean
 
 Private Declare Function GetTickCount Lib "kernel32" () As Long
 
+Property Get LeftJustify() As Boolean
+    LeftJustify = m_leftJustify
+End Property
+
+Property Let LeftJustify(x As Boolean)
+    m_leftJustify = x
+    centerCaption
+End Property
+
+
+Property Let ShowCount(x As Boolean)
+    m_showCount = x
+    m_showPercent = False
+    lblPercent.Visible = x
+    If x Then
+        lblPercent = m_value & " / " & m_max
+        centerCaption
+    Else
+        lblPercent = Empty
+    End If
+End Property
+
+Property Get ShowCount() As Boolean
+    ShowCount = m_showCount
+End Property
+    
 Property Get caption() As String
-    caption = m_caption
+    caption = lblPercent.caption
 End Property
 
 Property Let caption(text As String)
-    m_caption = text
     m_showPercent = False
+    m_showCount = False
     If Len(text) = 0 Then
         lblPercent.Visible = False
     Else
         If UserControl.Height >= lblPercent.Height Then
             lblPercent.caption = text
-            lblPercent.Left = (UserControl.Width / 2) - (lblPercent.Width / 2)
-             lblPercent.Visible = True
+            centerCaption
+            lblPercent.Visible = True
         End If
     End If
 End Property
 
+Private Sub centerCaption()
+    If m_leftJustify Then
+        lblPercent.Left = 20
+    Else
+        lblPercent.Left = (UserControl.Width / 2) - (lblPercent.Width / 2)
+    End If
+End Sub
+    
+    
 Private Sub UserControl_Initialize()
       s.Visible = False
       s.Width = 0
@@ -103,7 +140,7 @@ Private Sub UserControl_Resize()
    End If
    lblPercent.caption = "   "
    lblPercent.Left = (UserControl.Width / 2) - (lblPercent.Width / 2)
-   lblPercent.Top = (UserControl.Height / 2) - (lblPercent.Height / 2) - 25
+   lblPercent.Top = (UserControl.Height / 2) - (lblPercent.Height / 2) - 10
 End Sub
 
 Sub reset()
@@ -144,7 +181,9 @@ Property Let Value(v As Long)
     
     If Not s.Visible Then
         s.Visible = True
-        If m_showPercent And UserControl.Height >= lblPercent.Height Then lblPercent.Visible = True
+        If (m_showPercent Or m_showCount) And UserControl.Height >= lblPercent.Height Then
+            lblPercent.Visible = True
+        End If
     End If
     
     If v = m_max Then
@@ -157,10 +196,15 @@ Property Let Value(v As Long)
     
     If m_showPercent Then updatePercentage
     
+    If m_showCount Then
+        lblPercent = m_value & " / " & m_max
+        centerCaption
+    End If
+    
     t = GetTickCount
     If t - lastRefresh > 150 Then 'eliminate some flicker use less cpu in tight loops
         UserControl.Refresh
-        If m_showPercent Then lblPercent.Refresh
+        If (m_showPercent Or m_showCount) Then lblPercent.Refresh
         DoEvents
     End If
     
@@ -179,6 +223,7 @@ End Property
 
 Property Let ShowPercent(v As Boolean)
     m_showPercent = v
+    m_showCount = False
     If Not v Then
         lblPercent.Visible = False
     Else
@@ -189,11 +234,12 @@ Property Let ShowPercent(v As Boolean)
     End If
 End Property
 
-Sub updatePercentage()
+Private Sub updatePercentage()
     On Error Resume Next
     Dim pcent As Long
     pcent = (m_value / m_max) * 100
     lblPercent = pcent & "%"
+    centerCaption
 End Sub
 
 Sub inc(Optional ticks As Long = 1)

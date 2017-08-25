@@ -100,7 +100,7 @@ End Function
 Function crc64(fileByteOrString) As String
     Dim b() As Byte
     Dim v As Currency
-    Dim Hi&, Lo&
+    Dim hi&, lo&
     
     If Not ensureUTypes() Then Exit Function 'use the C dll version its faster
     
@@ -109,9 +109,9 @@ Function crc64(fileByteOrString) As String
     
     v = ut_crc64(b(0), UBound(b) + 1)
     
-    GetMem4 ByVal VarPtr(v), Lo
-    GetMem4 ByVal VarPtr(v) + 4, Hi
-    crc64 = Hex$(Hi) & Right$("0000000" & Hex$(Lo), 8)
+    GetMem4 ByVal VarPtr(v), lo
+    GetMem4 ByVal VarPtr(v) + 4, hi
+    crc64 = Hex$(hi) & Right$("0000000" & Hex$(lo), 8)
     
 End Function
 
@@ -247,18 +247,18 @@ Property Get LANG_US() As Long
     LANG_US = &H409
 End Property
 
-Sub StartBenchMark(Optional ByRef t As Long)
-    If IsMissing(t) Then
+Sub StartBenchMark(Optional ByRef t As Long = -111)
+    If t = -111 Then
         startTime = GetTickCount()
     Else
         t = GetTickCount()
     End If
 End Sub
 
-Function EndBenchMark(Optional ByRef t As Long) As String
+Function EndBenchMark(Optional ByRef t As Long = -111) As String
     Dim endTime As Long, loadTime As Long
     endTime = GetTickCount()
-    If IsMissing(t) Then
+    If t = -111 Then
         loadTime = endTime - startTime
     Else
         loadTime = endTime - t

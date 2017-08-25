@@ -9,10 +9,26 @@ Begin VB.Form Form1
    ScaleHeight     =   2265
    ScaleWidth      =   8265
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox chkLeftJustify 
+      Caption         =   "left justify"
+      Height          =   240
+      Left            =   4500
+      TabIndex        =   8
+      Top             =   675
+      Width           =   1320
+   End
+   Begin VB.CommandButton Command5 
+      Caption         =   "With count"
+      Height          =   465
+      Left            =   6480
+      TabIndex        =   7
+      Top             =   990
+      Width           =   1680
+   End
    Begin VB.CommandButton Command4 
       Caption         =   "With Captions"
       Height          =   465
-      Left            =   4905
+      Left            =   4275
       TabIndex        =   6
       Top             =   990
       Width           =   1815
@@ -64,8 +80,8 @@ Begin VB.Form Form1
       TabIndex        =   0
       Top             =   300
       Width           =   7155
-      _ExtentX        =   12621
-      _ExtentY        =   556
+      _extentx        =   12621
+      _extenty        =   556
    End
 End
 Attribute VB_Name = "Form1"
@@ -76,6 +92,10 @@ Attribute VB_Exposed = False
 
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Dim abort As Boolean
+
+Private Sub chkLeftJustify_Click()
+    ucProgress1.LeftJustify = (chkLeftJustify.Value = 1)
+End Sub
 
 Private Sub chkVerticalLines_Click()
     ucProgress1.FillStyle = IIf(chkVerticalLines.Value = 1, 3, 5)
@@ -136,6 +156,35 @@ Private Sub Command4_Click()
         For i = 0 To 10
             If abort Then Exit For
             .caption = "Stage " & i
+            .Value = i
+            
+            For j = 0 To 10
+                If abort Then Exit For
+                Sleep 10
+                DoEvents
+            Next
+            
+        Next
+     
+        .reset
+        
+    End With
+    
+End Sub
+
+Private Sub Command5_Click()
+
+    With ucProgress1
+        
+        .Max = 10
+        .fontSize = 12
+        .AssumeMinHeight
+        .ShowCount = True
+        abort = False
+        
+        For i = 0 To 10
+            If abort Then Exit For
+            
             .Value = i
             
             For j = 0 To 10
