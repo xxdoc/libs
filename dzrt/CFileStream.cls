@@ -76,11 +76,12 @@ Sub Open_(path, Optional t As openType = otRead)
             
 End Sub
 
-Function ReadLine(Optional LineCount = 0) As String
+Function ReadLine(Optional LineCount = 0, Optional withCRLF As Boolean = False) As String
     Dim tmp As String, i As Integer
     For i = 0 To LineCount
         Line Input #fHandle, tmp
-        ReadLine = ReadLine & tmp & vbCrLf
+        ReadLine = ReadLine & tmp
+        If withCRLF Then ReadLine = ReadLine & vbCrLf
     Next
 End Function
 
