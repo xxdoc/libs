@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   6375
    ScaleWidth      =   10875
    StartUpPosition =   2  'CenterScreen
+   Begin VB.OptionButton Option7 
+      Caption         =   "Python"
+      Height          =   285
+      Left            =   6030
+      TabIndex        =   16
+      Top             =   3690
+      Width           =   1050
+   End
    Begin VB.Frame Frame1 
       Caption         =   "Vista+ Elevated Process Options"
       Height          =   1050
@@ -271,12 +279,24 @@ Private Sub cmdTest_Click()
     ElseIf Option6.Value Then
         'delphi client
         exe = Replace(exe, "wmcopy.exe", "delphi6_client.exe")
+    ElseIf Option7.Value Then
+        'python client
+        If InStr(1, Environ("path"), "python", vbTextCompare) < 1 Then
+            List1.AddItem "python must be in your path variable to run this example"
+            List1.AddItem "also make sure to pip install pypiwin32"
+            Exit Sub
+        End If
+         exe = Replace(exe, "wmcopy.exe", "python_example.py")
     ElseIf Option4.Value Then
         RunJavaExample 'java sample does not use the test message from this UI, uses hardcoded message..
         Exit Sub
     End If
     
-    cmdline = exe & " """ & Me.hwnd & "," & Text2 & """"
+    If Option7.Value Then
+        cmdline = "cmd /k python " & exe & " " & Me.hwnd & " """ & Text2 & """"
+    Else
+        cmdline = exe & " """ & Me.hwnd & "," & Text2 & """"
+    End If
     
     If Not FileExists(exe) Then
         MsgBox "Could not locate executable " & exe, vbExclamation

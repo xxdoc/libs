@@ -56,6 +56,7 @@ Attribute VB_Exposed = False
 Private Sub Form_Load()
     
     On Error Resume Next
+    'expected command line format: "hwnd,message with spaces possible"
     
     Dim tmp As String, msg As String
     tmp = Command

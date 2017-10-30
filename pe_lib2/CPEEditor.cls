@@ -199,7 +199,7 @@ End Property
 
 
 Sub ShowOffsetCalculator(Optional modal As Boolean = False)
-    frmOffsets.Initilize Me, modal
+    frmOffsets.Initilize Me ', modal
 End Sub
 
 Property Get CompiledDate() As String
@@ -475,16 +475,16 @@ End Function
 Function impHash() As String
     
     Dim e As CImport
-    Dim dll, y, fx() As String, f, tmp As String
+    Dim dll, Y, fx() As String, f, tmp As String
     
     If hash Is Nothing Then Set hash = New CWinHash
     
     For Each e In Me.Imports.Modules
         dll = LCase(e.DllName)
-        y = Split(dll, ".", 2)
-        If UBound(y) > 0 Then
-            If y(1) = "ocx" Or y(1) = "sys" Or y(1) = "dll" Then
-                dll = y(0)
+        Y = Split(dll, ".", 2)
+        If UBound(Y) > 0 Then
+            If Y(1) = "ocx" Or Y(1) = "sys" Or Y(1) = "dll" Then
+                dll = Y(0)
             End If
         Else
             dll = dll
