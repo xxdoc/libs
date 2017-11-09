@@ -2,6 +2,10 @@ Attribute VB_Name = "Module1"
 Private Declare Function lstrlen Lib "kernel32.dll" Alias "lstrlenA" (ByVal lpString As Long) As Long
 Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 
+Public Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
+Public Declare Function FreeLibrary Lib "kernel32" (ByVal hLibModule As Long) As Long
+Public Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
+
 Public Function StrFromPtr(ByVal lpStr As Long) As String
     Dim b() As Byte, x As Long
     On Error Resume Next

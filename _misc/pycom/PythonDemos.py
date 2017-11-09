@@ -1,9 +1,12 @@
+import sys
 import ctypes
 import win32com
 import string
 from ctypes import c_int, WINFUNCTYPE, windll
 from ctypes.wintypes import HWND, LPCSTR, UINT
 import win32com.client
+from win32com.server.exception import Exception
+import winerror
 
 prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, UINT)
 paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
@@ -18,16 +21,22 @@ class Class2:
 
     def test(self):
         #MsgBox(0,"in PythonDemos.Class2.test()")
-        return 42
+        return 40
         
 class PythonUtilities:
-    _public_methods_ = [ 'SplitString', 'CallVB', 'getPyObj' ]
+    _public_methods_ = [ 'SplitString', 'CallVB', 'getPyObj', 'Exec' ]
     _reg_progid_ = "PythonDemos.Utilities"
     # NEVER copy the following ID
     # Use "print pythoncom.CreateGuid()" to make a new one.
     _reg_clsid_ = "{41E24E95-D45A-11D2-852C-204C4F4F5020}"
 
+    def __init__(self):
+        self.dict = {}    
+
     def SplitString(self, val, item=None):
+        #file = open('c:\\testfile.txt','w') 
+        #file.write(str(sys.modules))
+        #file.close() 
         if item != None: item = str(item)
         return string.split(str(val), item)
 
@@ -58,7 +67,12 @@ class PythonUtilities:
         
         return x
     
-    
+    def Exec(self, exp):
+        """Execute a statement.
+        """
+        if type(exp) not in [str, unicode]:
+            raise Exception(desc="Must be a string",scode=winerror.DISP_E_TYPEMISMATCH)
+        exec str(exp) in self.dict    
 
 # Add code so that when this script is run by
 # Python.exe, it self-registers.
