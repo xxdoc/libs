@@ -53,6 +53,10 @@ Function IsIde() As Boolean
 out: IsIde = Err
 End Function
 
+Public Sub setText(x)
+    Text1.Text = x
+End Sub
+
 Private Sub Form_Load()
 
     'notes:
@@ -75,6 +79,8 @@ Private Sub Form_Load()
     '       any errors in your python script or callback it just silently dies
     '       you have to debug everything blindly? this includes byval/byref etc not helpful
     '       necessitates msgbox debugigng everything :-\
+    '
+    '       ref: http://www.icodeguru.com/WebServer/Python-Programming-on-Win32/ch12.htm
     
     On Error GoTo hell
     Dim o As Object, pyobj As Object
@@ -86,8 +92,13 @@ Private Sub Form_Load()
     
     Set pyobj = CreateObject("PythonDemos.Utilities")
     dbg "CreateObj(PythonDemos.Utilities) = " & Hex(ObjPtr(pyobj))
-
-    'call python method and reveive string array - working
+    
+    'test a property get/set
+    dbg "pyObj.Name = " & pyobj.Name
+    pyobj.Name = "Good snake"
+    dbg "pyObj.Name = " & pyobj.Name
+    
+    'call python method and receive string array - working
     y = pyobj.SplitString("hello from vb")
     dbg "Received type: " & TypeName(y)
     dbg Join(y, ", ")
@@ -101,6 +112,9 @@ Private Sub Form_Load()
     dbg "pyobj.getPyObj returns type = " & TypeName(o)
     dbg "newObj.test() = " & o.test()
     
+    'pass in a VB COM object to python, have it set our lower text box
+    'through Sub Me.setText(x) then Msgbox(me.Text1.Text)
+    Call pyobj.useVbObj(Me)
     
     dbg "tests complete"
     Set pyobj = Nothing
@@ -110,7 +124,7 @@ hell:
     If wMsgBox Then MsgBox Err.Description
     Text1 = Replace(Err.Description, vbLf, vbCrLf)
     If Not pyobj Is Nothing Then Set pyobj = Nothing
-    End
+    'End
     
 End Sub
 
