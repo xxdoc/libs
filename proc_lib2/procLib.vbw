@@ -1,5 +1,5 @@
 CProcess = 106, 238, 978, 774, 
-CProcessLib = 44, 44, 1233, 833, 
+CProcessLib = 44, 44, 1233, 833, Z
 CModule = 110, 110, 982, 646, 
 CMemory = -174, 78, 868, 847, 
 CProcessPort = 176, 176, 1013, 712, 
@@ -14,5 +14,5 @@ CTaskElem = 0, 0, 0, 0, C
 CPEEditor = 0, 0, 612, 565, 
 CSection = 0, 0, 0, 0, C
 CElevate = 220, 220, 933, 793, 
-CCmdOutput = 209, 136, 1171, 797, Z
+CCmdOutput = 209, 136, 1171, 797, 
 modUtil = 0, 0, 929, 661, 

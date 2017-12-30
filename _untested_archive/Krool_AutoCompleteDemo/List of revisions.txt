@@ -1,0 +1,10 @@
+List of revisions:
+
+29-Dec-2013
+- Enhancement of the Disable and Enable method.
+
+13-Aug-2013
+- Fixed a bug that the application will crash when there is an empty string in the custom source.
+
+12-Aug-2013
+- First release.

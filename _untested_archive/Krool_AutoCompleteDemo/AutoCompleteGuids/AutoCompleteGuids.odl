@@ -1,0 +1,130 @@
+#define CALLCONV __stdcall
+[
+	uuid(FE5AC260-FD2E-11E2-B778-0800200C9A66),
+	helpstring("AutoComplete Guid and interface definitions"),
+	lcid(0x0),
+	version(1.0)
+]
+
+library AutoCompleteGuids
+{
+	importlib("stdole2.tlb");
+	typedef struct
+	{
+    	LONG Data1;
+    	SHORT Data2;
+    	SHORT Data3;
+    	unsigned char Data4[8];
+	}_AC_GUID;
+	typedef	_AC_GUID *REFIID;
+	[
+	        uuid(00000101-0000-0000-C000-000000000046),
+	        odl
+	]
+	interface IEnumString : IUnknown
+	{
+		HRESULT Next([in] LONG cElt, [in] LONG rgElt, [in] LONG pcEltFetched);
+		HRESULT Skip([in] LONG cElt);
+		HRESULT Reset();
+		HRESULT Clone([in, out] IEnumString **ppEnum);
+	};
+	[
+		uuid(00020400-0000-0000-C000-000000000046),
+		odl
+	]
+	interface IDispatch : IUnknown
+	{
+		typedef IDispatch *LPDISPATCH;
+		HRESULT GetTypeInfoCount([out] LONG *pctInfo);
+    		HRESULT GetTypeInfo([in] LONG itinfo, [in] LONG lcid, [out] LONG *pptinfo);
+    		HRESULT GetIDsOfNames([in] REFIID riid, [in] LPSTR *rgszNames, [in] LONG cNames, [in] LONG lcid, [in, out] LONG *rgDispID);
+    		HRESULT Invoke([in] LONG DispIDMember, [in] REFIID riid, [in] LONG lcid, [in] SHORT wFlags, [in] DISPPARAMS *pdispparams, [in, out] VARIANT *pvarResult, [out] EXCEPINFO *pexcepinfo, [out] LONG *puArgErr);
+	}
+    	[
+      	uuid(E1EEF6A0-0378-11E3-8FFD-0800200C9A66),
+	odl,
+      	version(1.0),
+      	dual,
+      	nonextensible,
+      	oleautomation
+    	]
+    	interface IEnumStringVB : IDispatch
+	{
+       		[id(0x00000001)]
+        	HRESULT Next([in, out] LONG *RetVal, [in] LONG cElt, [in] LONG rgElt, [in] LONG pcEltFetched);
+       		[id(0x00000002)]
+		HRESULT Skip([in, out] LONG *RetVal, [in] LONG cElt);
+       		[id(0x00000003)]
+        	HRESULT Reset([in, out] LONG *RetVal);
+       		[id(0x00000004)]
+        	HRESULT Clone([in, out] LONG *RetVal, [in] LONG ppEnum);
+	};
+	[
+	        uuid(00BB2762-6A77-11D0-A535-00C04FD7D062),
+	        odl
+	]
+	interface IAutoComplete : IUnknown
+	{
+		HRESULT Init([in] LONG hWndEdit, [in] IUnknown *punkACL, [in] LONG pwszRegKeyPath, [in] LONG pwszQuickComplete);
+		HRESULT Enable([in] LONG fEnable);
+	};
+	[
+	        uuid(EAC04BC0-3791-11D2-BB95-0060977B464C),
+	        odl
+	]
+	interface IAutoComplete2 : IUnknown
+	{
+		HRESULT Init([in] LONG hWndEdit, [in] IUnknown *punkACL, [in] LONG pwszRegKeyPath, [in] LONG pwszQuickComplete);
+		HRESULT Enable([in] LONG fEnable);
+		HRESULT SetOptions([in] LONG dwFlags);
+		HRESULT GetOptions([in, out] LONG *pdwFlags);
+	};
+	[
+	        uuid(77A130B0-94FD-11D0-A544-00C04FD7d062),
+	        odl
+	]
+	interface IACList : IUnknown
+	{
+		HRESULT Expand([in] LONG pszExpand);
+	};
+	[
+	        uuid(470141A0-5186-11D2-BBB6-0060977B464C),
+	        odl
+	]
+	interface IACList2 : IUnknown
+	{
+		HRESULT Expand([in] LONG pszExpand);
+		HRESULT SetOptions([in] LONG dwFlags);
+		HRESULT GetOptions([in, out] LONG *pdwFlags);
+	};
+	[
+    		uuid(3CD141F4-3C6A-11d2-BCAA-00C04FD929DB),
+    		odl
+	]
+	interface IAutoCompleteDropDown : IUnknown
+	{
+		HRESULT GetDropDownStatus([out] LONG *pdwFlags, [out] LPWSTR *ppwszString);
+		HRESULT ResetEnumerator();
+	};
+	[
+	        uuid(00BB2761-6A77-11D0-A535-00C04FD7D062),
+	        odl
+	]
+	interface IObjMgr : IUnknown
+	{
+		HRESULT Append([in] IUnknown *punk);
+		HRESULT Remove([in] IUnknown *punk);
+	};
+	[dllname("KERNEL32.DLL")]
+	module _AC_KERNEL32
+	{
+	[entry("RtlMoveMemory")]
+	void _CopyMemory([in] void *Destination, [in] void *Source, [in] LONG Length);
+	};
+	[dllname("OLE32.DLL")]
+	module _AC_OLE32
+	{
+    	[entry("CoTaskMemAlloc")]
+	LONG _CoTaskMemAlloc([in] LONG cBytes);
+	};
+}
