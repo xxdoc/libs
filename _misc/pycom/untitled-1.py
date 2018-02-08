@@ -1,5 +1,4 @@
-import pefile
+x = "7C800000,RegCloseKey,RegQueryValueExW,RegCreateKeyExW,RegSetValueExA,RegSetValueExW,RegQueryValueExA,RegCreateKeyExA,SetFileTime,MoveFileExW,GetSystemDirectoryW,LocalFree,RtlGetLastWin32Error,LoadLibraryA,CreateNamedPipeW,WaitForSingleObject,GetShortPathNameW,CreateFileA,WriteFile,TerminateProcess,GetTempFileNameA,CreateFileMappingA,RtlSetLastWin32Error,DeleteFileW,UNKNOWN,ResetEvent,GetTempFileNameW,GetTempPathW,MoveFileExA,OutputDebugStringA,GetFileTime,SetNamedPipeHandleState,MoveFileW,SetEvent,GetComputerNameW,CreateFileW,CloseHandle,Sleep,SetErrorMode,FlushFileBuffers,OpenEventW,SetUnhandledExceptionFilter,GetSystemTime,GetModuleFileNameW,CreateEventW,DisconnectNamedPipe,GetProcAddress,GetExitCodeProcess,DeleteFileA,ReadFile,GetSystemDirectoryA,GetNativeSystemInfo,GetEnvironmentVariableA,GetEnvironmentVariableW,CreateProcessW,ExitProcess,MapViewOfFile,GetOverlappedResult,GetModuleFileNameA,ConnectNamedPipe,GetTempPathA,free,strtok,memcpy,atoi,srand,_vsnprintf,_snprintf,strncpy,strlen,sprintf,memset,strcmp,rand,realloc,malloc,_snwprintf,HttpSendRequestA,InternetSetOptionA,HttpAddRequestHeadersA,HttpOpenRequestA,HttpEndRequestA,InternetOpenA,HttpQueryInfoA,InternetReadFile,InternetQueryOptionA,InternetConnectA,HttpSendRequestExA,InternetWriteFile,InternetCloseHandle,ObtainUserAgentString,UNKNOWN".split(',')
 
-pth = "C:\\Documents and Settings\\david\\Desktop\\53701\\fixed_d15.dll_"
-pe = pefile.PE(pth)
-print "Import Hash: %s" % pe.get_imphash()
+for n in x:
+    print n

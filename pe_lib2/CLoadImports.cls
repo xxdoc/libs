@@ -30,7 +30,7 @@ Friend Sub LoadImports(fhand As Long, rvaImportDir As Long, parent As CPEEditor)
     fOffsetIDT = mParent.RvaToOffset(rvaImportDir)
     
     If fOffsetIDT < 1 Then
-        MsgBox "Error loading imports getting file offset from rva? rva=" & rvaImportDir & " offset=" & fOffsetIDT, vbExclamation
+        'MsgBox "Error loading imports getting file offset from rva? rva=" & rvaImportDir & " offset=" & fOffsetIDT, vbExclamation
         Exit Sub
     End If
     

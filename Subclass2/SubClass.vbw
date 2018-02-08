@@ -1,7 +1,7 @@
 modSubclass = 22, 22, 507, 376, 
 MTimer = 5, 6, 726, 608, 
 CTimers = 15, 37, 800, 566, 
-CTimer = 70, 59, 720, 628, 
+CTimer = 70, 59, 720, 628, Z
 CLimitResize = 22, 22, 643, 436, 
 CSubclass2 = 154, 154, 885, 576, 
 CWindow = 198, 198, 952, 603, 
