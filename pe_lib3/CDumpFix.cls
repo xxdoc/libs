@@ -10,7 +10,7 @@ Attribute VB_Name = "CDumpFix"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 'License:   GPL
 'Copyright: 2005 iDefense a Verisign Company
@@ -31,6 +31,8 @@ Option Explicit
 '         You should have received a copy of the GNU General Public License along with
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
+
+'2.13.18 - should be x64 safe now...
 
 Private Type IMAGEDOSHEADER
     e_magic As Integer

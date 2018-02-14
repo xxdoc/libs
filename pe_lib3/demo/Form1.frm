@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Object = "{9A143468-B450-48DD-930D-925078198E4D}#1.1#0"; "hexed.ocx"
 Begin VB.Form frmResList 
    Caption         =   "Form1"
@@ -77,9 +77,12 @@ Sub ShowResources(p As CPEEditor)
     Dim li As ListItem
     
     For Each r In pe.Resources.Entries
-        Set li = lv.ListItems.Add(, , r.path)
+        Set li = lv.ListItems.add(, , r.path)
         Set li.Tag = r
     Next
+    
+    If lv.ListItems.Count > 0 Then lv_ItemClick lv.ListItems(1)
+        
     
 End Sub
 
@@ -98,7 +101,7 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     he.LoadFile pe.LoadedFile
     he.scrollTo offset - &H20
     he.SelStart = offset
-    he.SelLength = r.Size - 1
+    he.SelLength = r.size - 1
     
     Text1 = "FileOffset: " & Hex(offset) & vbCrLf & r.Report
     

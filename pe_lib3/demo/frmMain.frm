@@ -266,7 +266,8 @@ Private Sub Form_Load()
     ConfigureListView lvSects
     'txtFile = App.path & "\sppe_demo.exe"
     'txtFile = App.path & "\..\_sppe2.dll"
-    txtFile = "D:\_code\iDef\SysAnalyzer\x64.dll"
+    'txtFile = "D:\_code\iDef\SysAnalyzer\x64.dll"
+    txtFile = "C:\Documents and Settings\david\Desktop\kernel32.dll"
 End Sub
 
 Private Sub cmdListImports_Click()
@@ -321,7 +322,7 @@ Private Sub Command1_Click()
         et = GetTickCount
         txtLoadTime = ((et - st) / 1000) & "s"
         
-        chkx64.value = IIf(pe.is64Bit, 1, 0)
+        chkx64.value = IIf(pe.is64bit, 1, 0)
         txtEntryPoint = pe.OptionalHeader.EntryPoint.toString()
         txtImageBase = pe.OptionalHeader.ImageBase.toString()
         txtExportTable = pe.OptionalHeader.ddVirtualAddress(Export_Table)

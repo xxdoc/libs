@@ -10,7 +10,7 @@ Attribute VB_Name = "CAssembler"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 'dzzie@yahoo.com
 'http://sandsprite.com
@@ -186,12 +186,12 @@ hell:
 End Sub
 
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub

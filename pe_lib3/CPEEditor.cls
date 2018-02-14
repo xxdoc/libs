@@ -10,7 +10,7 @@ Attribute VB_Name = "CPEEditor"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 
 Option Explicit
 'dzzie@yahoo.com
@@ -22,8 +22,7 @@ Option Explicit
 '       fixed bug for section offsets for pe32+
 '       now loads .net attributes (version, anycpu, isDotNet)
 '
-'2.13.18 - offsets/imports should be x64 safe now...
-
+'2.13.18 - everything should be x64 safe now...
 
 Public OptionalHeader As New COptionalHeader
 Public Sections As New Collection
@@ -35,7 +34,7 @@ Private cimp As CLoadImports
 Private cexp As CLoadExports
 Private dbgDir As CDebugDir
 
-Public CanAddSection As Boolean
+'Public CanAddSection As Boolean
 Public errMessage As String
 
 Public isLoaded As Boolean
@@ -51,15 +50,6 @@ Private DOSHEADER As IMAGEDOSHEADER
 Private NTHEADER As IMAGE_NT_HEADERS
 
 Public LoadedFile As String
-
-'Private Type MungeCurr
-'    value As Double
-'End Type
-'
-'Private Type Munge2Long
-'    LoValue As Long
-'    HiValue As Long
-'End Type
 
 Public Enum eMachineType
     mt_UNKNOWN = &H0
@@ -117,26 +107,6 @@ Private Sub SetVersions64(ih As IMAGE_OPTIONAL_HEADER_64)
         SubSysVersion = .MajorSubsystemVersion & "." & .MinorSubsystemVersion
     End With
 End Sub
-
-'Function x64ToHex(v As Double, Optional pad As Boolean = False, Optional x64Tick As Boolean = False) As String
-'    Dim c As MungeCurr
-'    Dim l As Munge2Long
-'    c.value = v
-'    LSet l = c
-'    If l.HiValue = 0 Then
-'        If pad Then
-'            x64ToHex = Right("00000000" & Hex(l.LoValue), 8)
-'        Else
-'            x64ToHex = Hex(l.LoValue)
-'        End If
-'    Else
-'        If pad Then
-'            x64ToHex = Right("00000000" & Hex(l.HiValue), 8) & IIf(x64Tick, "`", Empty) & Right("00000000" & Hex(l.LoValue), 8)
-'        Else
-'            x64ToHex = Hex(l.HiValue) & IIf(x64Tick, "`", Empty) & Right("00000000" & Hex(l.LoValue), 8)
-'        End If
-'    End If
-'End Function
 
 'we load it on demand..
 Property Get Imports() As CLoadImports
@@ -277,7 +247,7 @@ Function LoadFile(fPath As String) As Boolean
 
         m_dotNetVersion = Empty
         errMessage = Empty
-        CanAddSection = False
+        'CanAddSection = False
         isLoaded = False
         MachineType = Empty
         is64bit = False
@@ -403,18 +373,18 @@ Private Sub LoadSections(fhand As Long, nth As IMAGE_NT_HEADERS)
         Sections.add CSect
     Next
     
-    CanAddSection = False
-    
-    Dim b() As Byte
-    ReDim b(Len(udtSH))
-    Get fhand, , b() ' buffer where next section would sit
-    
-    'if all empty then is room to add new section
-    For i = 0 To UBound(b)
-        If b(i) <> 0 Then Exit Sub
-    Next
-    
-    CanAddSection = True
+'    CanAddSection = False
+'
+'    Dim b() As Byte
+'    ReDim b(Len(udtSH))
+'    Get fhand, , b() ' buffer where next section would sit
+'
+'    'if all empty then is room to add new section
+'    For i = 0 To UBound(b)
+'        If b(i) <> 0 Then Exit Sub
+'    Next
+'
+'    CanAddSection = True
     
 End Sub
 
@@ -465,6 +435,8 @@ Function OffsetToVA(ByVal fOffset As Long, Optional sectName As String) As ULong
     
     If rva <> 0 Then
         Set OffsetToVA = OptionalHeader.ImageBase.add(rva)
+    Else
+        Set OffsetToVA = New ULong64
     End If
     
 End Function

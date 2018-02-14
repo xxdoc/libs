@@ -8,9 +8,9 @@ BEGIN
 END
 Attribute VB_Name = "CWinHash"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 
 '9/7/07  fixed error in crypt acquire context, for some reason old method broke

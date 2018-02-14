@@ -10,7 +10,7 @@ Attribute VB_Name = "CFileProperties"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 'License:   GPL
 'Copyright: 2005 iDefense a Verisign Company
 'Site:      http://labs.idefense.com
@@ -181,14 +181,14 @@ Public Function FileInfo(Optional ByVal PathWithFilename As String) As CFileProp
     
 End Function
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Integer
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 Function FileExists(path) As Boolean

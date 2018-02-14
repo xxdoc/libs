@@ -10,7 +10,7 @@ Attribute VB_Name = "CResDir"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 'private to dll clients dont use it..
 
 'Public Entries As New Collection 'of CResEntry
@@ -110,10 +110,10 @@ Friend Sub LoadDir(p As CResources, fileOffset As Long, Optional pth As String)
             cd.CodePage = d.CodePage
             cd.OffsetToDataRVA = d.Data_RVA
             cd.Reserved = d.Reserved
-            cd.Size = d.Size
+            cd.size = d.size
             cd.path = r.path
-            cd.timeStamp = timeStampToDate(resRootDir.TimeDateStamp)
-            p.Entries.Add cd
+            cd.timestamp = timeStampToDate(resRootDir.TimeDateStamp)
+            p.Entries.add cd
         End If
             
 

@@ -8,9 +8,9 @@ BEGIN
 END
 Attribute VB_Name = "CReloc"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 '2.2.2010 David Zimmer <dzzie@yahoo.com>
 
 Public RType As Long
@@ -26,11 +26,15 @@ Public Function Recalc(newBase As Long) As Double
     Dim delta
     On Error GoTo hell
     
+    Dim cv As New ULong 'changed from asm 2.14.18
+    
+    cv = CurValue
     errLog = Empty
     
     Select Case RType
         Case 3: 'HIGHLOW
-            Recalc = RelocCalc(CurValue, CurBase, newBase) '(CurValue - CurBase) - newBase
+            'Recalc = RelocCalc(CurValue, CurBase, newBase) '(CurValue - CurBase) - newBase
+            Recalc = CLng(cv.subtract(CurBase).subtract(newBase)) 'subtract without overflow
         Case Default:
             errLog = errLog & "Unsupported reloc type: " & RType & " offset: " & rva & vbCrLf
     End Select

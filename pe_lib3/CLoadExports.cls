@@ -10,7 +10,7 @@ Attribute VB_Name = "CLoadExports"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 'License:   GPL
 'Copyright: David Zimmer 2002
@@ -31,6 +31,8 @@ Option Explicit
 '         You should have received a copy of the GNU General Public License along with
 '         this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 '         Place, Suite 330, Boston, MA 02111-1307 USA
+'
+'2.13.18 - looks to be x64 safe...
 
 Private Type IMAGE_EXPORT_DIRECTORY
     Characteristics As Long
@@ -264,14 +266,14 @@ End Sub
 
 
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 

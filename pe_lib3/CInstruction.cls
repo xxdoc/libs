@@ -8,9 +8,9 @@ BEGIN
 END
 Attribute VB_Name = "CInstruction"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 'dzzie@yahoo.com
 'http://sandsprite.com

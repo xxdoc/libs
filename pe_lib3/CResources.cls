@@ -8,9 +8,9 @@ BEGIN
 END
 Attribute VB_Name = "CResources"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 'do not hang onto a ref of this class and reload the pe editor with something else
 
 'the paths this returns arent quite right yet... :(

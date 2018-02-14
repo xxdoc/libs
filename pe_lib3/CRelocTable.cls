@@ -8,9 +8,9 @@ BEGIN
 END
 Attribute VB_Name = "CRelocTable"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 '2.2.2010 David Zimmer <dzzie@yahoo.com>
 
@@ -28,7 +28,7 @@ Private Type RelocTable
 End Type
 
 Private Type entry
-    value As Integer
+    Value As Integer
 End Type
     
 
@@ -61,12 +61,14 @@ Friend Sub LoadTable(fhandle As Long, ByVal rvaRelocDirectoryTable As Long, pare
     End If
     
     'Debug.Print Hex(rt.va) & " "; Hex(rt.Size)
-
+    
+    Dim ShrX As New ULong 'changed from asm 2.14.18
+    
     For i = 0 To Me.NumEntries
         Set r = New CReloc
         Get fhandle, , e
-        RType = ShrX(CLng(e.value), 12)
-        rvalue = e.value And &HFFF
+        RType = ShrX.setVal(e.Value).rshift(12)
+        rvalue = e.Value And &HFFF
         With r
             .RType = RType
             .rva = rt.va + rvalue
@@ -85,7 +87,5 @@ Friend Sub LoadTable(fhandle As Long, ByVal rvaRelocDirectoryTable As Long, pare
 
 
 End Sub
-
-
-
+ 
 
