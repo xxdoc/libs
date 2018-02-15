@@ -227,7 +227,7 @@ Private Sub cmdCalculate_Click()
                     Exit Sub
                 End If
                 
-                rva = va.subtract(ImageBase)
+                rva = va.subtract(ImageBase).lo
                 fo = mParent.RvaToOffset(rva, , sectName)
                 
                 txtRVA = Hex(rva)

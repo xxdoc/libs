@@ -153,7 +153,7 @@ Private Type IMAGE_FILE_HEADER
     Characteristics As Integer
 End Type
 
-Private Type IMAGE_NT_HEADERS
+Private Type IMAGE_NT_HEADERS_MIN
     Signature As String * 4
     FileHeader As IMAGE_FILE_HEADER
     'OptionalHeader As IMAGE_OPTIONAL_HEADER  'can be 32 or 64 bit struct..load on demand after testing..
@@ -164,7 +164,7 @@ Public errMsg As String
 Function QuickDumpFix(fPath As String) As Boolean
     
     Dim DOSHEADER As IMAGEDOSHEADER
-    Dim NTHEADER As IMAGE_NT_HEADERS
+    Dim NTHEADER As IMAGE_NT_HEADERS_MIN
     Dim Sections() As IMAGE_SECTION_HEADER
     Dim udtSH As IMAGE_SECTION_HEADER
     Dim opt As IMAGE_OPTIONAL_HEADER
@@ -208,7 +208,8 @@ Function QuickDumpFix(fPath As String) As Boolean
         Sections(i) = udtSH
     Next
     
-    Put f, DOSHEADER.e_lfanew + 1, NTHEADER
+    'Put f, DOSHEADER.e_lfanew + 1, NTHEADER
+    Seek f, DOSHEADER.e_lfanew + 1 + Len(NTHEADER)
     
     If is64bit Then
         opt64.FileAlignment = &H1000

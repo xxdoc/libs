@@ -110,7 +110,12 @@ Friend Sub LoadExports(fhandle As Long, ByVal rvaExportDirectoryTable As Long, p
         
     'Debug.Print "AdrofFunc: " & Hex(ied.AddressOfFunctions)
     'Debug.Print "FileOffset:" & Hex(oset)
-        
+    
+    If ied.NumberOfFunctions > 10000 Then 'something fishy
+        mParent.errMessage = "To many exports: " & ied.NumberOfFunctions
+        Exit Sub
+    End If
+    
     For i = 0 To ied.NumberOfFunctions - 1
         Get fhandle, (oset + (i * 4)), pointer
         'If i = 0 Then Debug.Print "FuncPointer 0: " & Hex(pointer)
