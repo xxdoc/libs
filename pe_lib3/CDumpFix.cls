@@ -208,14 +208,16 @@ Function QuickDumpFix(fPath As String) As Boolean
         Sections(i) = udtSH
     Next
     
-    'Put f, DOSHEADER.e_lfanew + 1, NTHEADER
-    Seek f, DOSHEADER.e_lfanew + 1 + Len(NTHEADER)
+    Put f, DOSHEADER.e_lfanew + 1, NTHEADER
+    'Seek f, DOSHEADER.e_lfanew + 1 + Len(NTHEADER)
     
     If is64bit Then
         opt64.FileAlignment = &H1000
+        opt64.DllCharacteristics = 0
         Put f, , opt64
     Else
         opt.FileAlignment = &H1000
+        opt.DllCharacteristics = 0
         Put f, , opt
     End If
     

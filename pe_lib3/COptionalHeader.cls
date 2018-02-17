@@ -300,4 +300,41 @@ Property Get ddSize(i As eDATA_DIRECTORY) As Long
     'End If
 End Property
 
+'2.17.18
+Property Get DEP() As Boolean
+    DEP = ((Me.DllCharacteristics And &H100) = &H100)
+End Property
+
+Property Get ASLR() As Boolean
+    ASLR = ((Me.DllCharacteristics And &H40) = &H40)
+End Property
+
+Property Get FORCE_INTEGRITY() As Boolean
+    FORCE_INTEGRITY = ((Me.DllCharacteristics And &H80) = &H80)
+End Property
+
+Property Let DEP(v As Boolean)
+    If v Then
+        DllCharacteristics = DllCharacteristics Or &H100
+    Else
+        DllCharacteristics = DllCharacteristics Xor &H100
+    End If
+End Property
+
+Property Let ASLR(v As Boolean)
+    If v Then
+        DllCharacteristics = DllCharacteristics Or &H40
+    Else
+        DllCharacteristics = DllCharacteristics Xor &H40
+    End If
+End Property
+
+Property Let FORCE_INTEGRITY(v As Boolean)
+    If v Then
+        DllCharacteristics = DllCharacteristics Or &H80
+    Else
+        DllCharacteristics = DllCharacteristics Xor &H80
+    End If
+End Property
+
 

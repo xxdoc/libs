@@ -10,7 +10,7 @@ Attribute VB_Name = "ULong"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 'Enum op
 '    op_add = 0
 '    op_sub = 1

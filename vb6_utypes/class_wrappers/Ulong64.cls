@@ -235,9 +235,9 @@ End Function
 
 Private Sub Class_Initialize()
     hLib = LoadLibrary("UTypes.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.path & "\UTypes.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\UTypes.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\..\UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
 '    If ensureUTypes() Then hLib = modGeneral.hUTypes
     padLeft = False
     useTick = True

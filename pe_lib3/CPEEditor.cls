@@ -35,7 +35,8 @@ Private cexp As CLoadExports
 Private dbgDir As CDebugDir
 
 'Public CanAddSection As Boolean
-Public errMessage As String
+'Public errMessage As String
+Private errMsgs As Collection
 
 Public isLoaded As Boolean
 Public MachineType As String
@@ -80,6 +81,20 @@ Public ImageVersion As String
 Public SubSysVersion As String
 
 Private hash As CWinHash
+
+Property Get errMessage() As String
+    Dim tmp As String, x
+    If errMsgs Is Nothing Then Exit Property
+    For Each x In errMsgs
+        tmp = tmp & x & vbCrLf
+    Next
+    errMessage = tmp
+End Property
+
+Property Let errMessage(msg As String)
+    If errMsgs Is Nothing Then Set errMsgs = New Collection
+    errMsgs.add msg
+End Property
 
 Property Get dotNetVersion(Optional full As Boolean = False) As String
     On Error Resume Next
@@ -246,7 +261,7 @@ Function LoadFile(fPath As String) As Boolean
         Dim cli As Long
 
         m_dotNetVersion = Empty
-        errMessage = Empty
+        Set errMsgs = Nothing
         'CanAddSection = False
         isLoaded = False
         MachineType = Empty

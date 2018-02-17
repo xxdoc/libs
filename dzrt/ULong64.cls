@@ -80,6 +80,8 @@ Property Let Value(v)
         SetLongs 0, v.Value
     ElseIf TypeName(v) = "Long" Or TypeName(v) = "Byte" Or TypeName(v) = "Integer" Then
         SetLongs 0, CLng(v)
+    ElseIf TypeName(v) = "Currency" Or TypeName(v) = "Double" Then
+        Me.rawValue = v
     Else
         Err.Raise 1, "ULong64.Value", "Unsupported conversion type to ULong64: " & TypeName(v)
     End If
@@ -207,13 +209,13 @@ Function raw_op(operand2, operation As op) As ULong64
     Dim ret As New ULong64
     Dim tmp As New ULong64
     
-    If TypeName(operand2) = "ULong64" Then
-        Set tmp = operand2
-    ElseIf TypeName(operand2) = "ULong" Then
-        tmp.SetLongs 0, operand2.rawValue
-    Else
-        tmp.SetLongs 0, CLng(operand2)
-    End If
+'    If TypeName(operand2) = "ULong64" Then
+'        Set tmp = operand2
+'    ElseIf TypeName(operand2) = "ULong" Then
+'        tmp.SetLongs 0, operand2.rawValue
+'    Else
+        tmp = operand2
+    'End If
     
     If mode = mSigned Then
         ret.rawValue = S64(rawValue, tmp.rawValue, operation)
@@ -232,12 +234,13 @@ End Function
 
 
 Private Sub Class_Initialize()
-'    hLib = LoadLibrary("UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.path & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\..\UTypes.dll")
-    If ensureUTypes() Then hLib = modGeneral.hUTypes
-    padLeft = True
+    hLib = LoadLibrary("UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\..\UTypes.dll")
+'    If ensureUTypes() Then hLib = modGeneral.hUTypes
+    padLeft = False
+    useTick = True
 End Sub
 
 'these stubs are for readability/ease of use
@@ -284,23 +287,23 @@ End Function
 Function greaterThan(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_gt)
-    greaterThan = (a.rawValue = 1)
+    greaterThan = Not (a.rawValue = 0)
 End Function
 
 Function lessThan(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_lt)
-    lessThan = (a.rawValue = 1)
+    lessThan = Not (a.rawValue = 0)
 End Function
 
 Function greaterThanEqual(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_gteq)
-    greaterThanEqual = (a.rawValue = 1)
+    greaterThanEqual = Not (a.rawValue = 0)
 End Function
 
 Function lessThanEqual(operand2) As Boolean
     Dim a As ULong64
     Set a = raw_op(operand2, op_lteq)
-    lessThanEqual = (a.rawValue = 1)
+    lessThanEqual = Not (a.rawValue = 0)
 End Function

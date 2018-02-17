@@ -10,7 +10,7 @@ Attribute VB_Name = "UByte"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 
 'this class is so you can do byte operations which would overflow 255 and go back to 0 like in C
 

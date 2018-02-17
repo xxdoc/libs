@@ -122,7 +122,7 @@ Function fromString(ByVal s As String, Optional forceHex As Boolean = True) As B
     On Error GoTo hell
     Dim tmp As Long
     
-    s = trim(s)
+    s = Trim(s)
     If Left(s, 1) = "-" Then forceHex = False
     
     If LCase(Left(s, 2)) = "0x" Or LCase(Left(s, 2)) = "&h" Or LCase(Left(s, 2)) = "\x" Then
@@ -163,11 +163,11 @@ Function raw_op(operand2, operation As op) As ULong
 End Function
 
 Private Sub Class_Initialize()
-'    hLib = LoadLibrary("UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.path & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\..\UTypes.dll")
-    If ensureUTypes() Then hLib = modGeneral.hUTypes
+    hLib = LoadLibrary("UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\UTypes.dll")
+    If hLib = 0 Then hLib = LoadLibrary(App.path & "\..\..\UTypes.dll")
+'    If ensureUTypes() Then hLib = modGeneral.hUTypes
     padLeft = True
 End Sub
 

@@ -3,23 +3,24 @@ Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form frmOffsets 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "32/64bit File offset calculator and dump fix"
-   ClientHeight    =   2775
+   ClientHeight    =   3225
    ClientLeft      =   45
    ClientTop       =   615
-   ClientWidth     =   6780
+   ClientWidth     =   7140
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   2775
-   ScaleWidth      =   6780
+   ScaleHeight     =   3225
+   ScaleWidth      =   7140
    StartUpPosition =   2  'CenterScreen
    Begin VB.TextBox txtOffset 
+      Alignment       =   1  'Right Justify
       BackColor       =   &H80000004&
       Height          =   315
       Left            =   1380
       TabIndex        =   8
-      Top             =   2400
-      Width           =   1095
+      Top             =   2760
+      Width           =   1755
    End
    Begin VB.OptionButton Option1 
       Caption         =   "FileOffset"
@@ -27,7 +28,7 @@ Begin VB.Form frmOffsets
       Index           =   2
       Left            =   60
       TabIndex        =   7
-      Top             =   2340
+      Top             =   2700
       Width           =   1215
    End
    Begin VB.OptionButton Option1 
@@ -36,7 +37,7 @@ Begin VB.Form frmOffsets
       Index           =   1
       Left            =   60
       TabIndex        =   6
-      Top             =   1980
+      Top             =   2340
       Value           =   -1  'True
       Width           =   1215
    End
@@ -46,40 +47,42 @@ Begin VB.Form frmOffsets
       Index           =   0
       Left            =   60
       TabIndex        =   5
-      Top             =   1620
+      Top             =   1980
       Width           =   1215
    End
    Begin VB.CommandButton cmdCalculate 
       Caption         =   "Calculate"
       Height          =   375
-      Left            =   5580
+      Left            =   5880
       TabIndex        =   4
-      Top             =   1620
+      Top             =   1980
       Width           =   1155
    End
    Begin VB.TextBox txtRVA 
+      Alignment       =   1  'Right Justify
       Height          =   315
       Left            =   1380
       TabIndex        =   3
-      Top             =   1980
-      Width           =   1095
+      Top             =   2340
+      Width           =   1755
    End
    Begin VB.TextBox txtVA 
+      Alignment       =   1  'Right Justify
       BackColor       =   &H80000004&
       Height          =   315
       Left            =   1380
       TabIndex        =   2
-      Top             =   1620
-      Width           =   1095
+      Top             =   1980
+      Width           =   1755
    End
    Begin MSComctlLib.ListView lvSect 
-      Height          =   1515
+      Height          =   1875
       Left            =   0
       TabIndex        =   0
       Top             =   0
-      Width           =   6735
-      _ExtentX        =   11880
-      _ExtentY        =   2672
+      Width           =   7035
+      _ExtentX        =   12409
+      _ExtentY        =   3307
       View            =   3
       LabelEdit       =   1
       LabelWrap       =   -1  'True
@@ -135,32 +138,33 @@ Begin VB.Form frmOffsets
       EndProperty
       ForeColor       =   &H00FF0000&
       Height          =   195
-      Left            =   6000
+      Left            =   6300
       TabIndex        =   11
-      Top             =   2160
+      Top             =   2520
       Width           =   675
    End
    Begin VB.Label lblEntryPoint 
       Caption         =   "Entry Point: "
       Height          =   315
-      Left            =   2940
+      Left            =   3300
       TabIndex        =   10
-      Top             =   1680
-      Width           =   2535
+      Top             =   2040
+      Width           =   2295
    End
    Begin VB.Label lblSection 
-      Height          =   255
-      Left            =   3780
+      AutoSize        =   -1  'True
+      Height          =   195
+      Left            =   4080
       TabIndex        =   9
-      Top             =   2460
-      Width           =   2715
+      Top             =   2820
+      Width           =   45
    End
    Begin VB.Label Label1 
       Caption         =   "Section:             Bytes :"
       Height          =   255
-      Left            =   2940
+      Left            =   3240
       TabIndex        =   1
-      Top             =   2460
+      Top             =   2820
       Width           =   735
    End
    Begin VB.Menu mnuPopup 
@@ -235,7 +239,7 @@ Private Sub cmdCalculate_Click()
         Case 1: 'rva
                 If Not GetHextxt(txtRVA, rva) Then Exit Sub
                 
-                Set va = ImageBase.add(rva)
+                Set va = ImageBase.Add(rva)
                 fo = mParent.RvaToOffset(rva, , sectName)
                 
                 txtVA = va.toString()
@@ -244,7 +248,7 @@ Private Sub cmdCalculate_Click()
                 If Not GetHextxt(txtOffset, fo) Then Exit Sub
                 
                 rva = mParent.OffsetToRVA(fo, sectName)
-                Set va = ImageBase.add(rva)
+                Set va = ImageBase.Add(rva)
               
                 txtRVA = Hex(rva)
                 txtVA = va.toString()
@@ -301,8 +305,6 @@ Private Sub lblDumpFix_Click()
     
 End Sub
 
- 
-
 Private Sub lvSect_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
@@ -353,7 +355,7 @@ Sub FilloutListView(lv As Object, Sections As Collection)
     lv.ListItems.Clear
     
     For Each cs In Sections
-        Set li = lv.ListItems.add(, , cs.nameSec)
+        Set li = lv.ListItems.Add(, , cs.nameSec)
         li.SubItems(1) = Hex(cs.VirtualAddress)
         li.SubItems(2) = Hex(cs.VirtualSize)
         li.SubItems(3) = Hex(cs.PointerToRawData)
