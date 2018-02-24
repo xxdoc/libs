@@ -115,10 +115,12 @@ Function raw_op(operand2, operation As op) As UByte
 End Function
 
 Private Sub Class_Initialize()
-    hLib = LoadLibrary("UTypes.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
-    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
+'    hLib = LoadLibrary("UTypes.dll")
+'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\System32\UTypes.dll")
+'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\UTypes.dll")
+'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
+'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
+'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
 '    If ensureUTypes() Then hLib = modGeneral.hUTypes
     padLeft = True
 End Sub
