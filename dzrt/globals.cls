@@ -1393,3 +1393,78 @@ Function cjoin(a As Collection, b As Collection) As Collection
     Set cjoin = ret
 End Function
 
+Function isIn(needle, haystack, Optional ByRef index) As Boolean
+    Dim t As String, j As String, x
+    Dim i As Long
+    
+    On Error GoTo hell
+    'string or variant are treated as strings and index = instr
+    'arrays will walk all elements, index will be found array index, search as above
+    'collections as above index col index, also supports object types..
+    'other datatypes
+    index = -1
+    t = TypeName(haystack)
+    
+    If t = "String" Or t = "Variant" Then
+        index = InStr(1, haystack, needle, vbTextCompare)
+        If index > 0 Then isIn = True
+    ElseIf InStr(t, "()") > 0 Then 'its an array
+        For i = LBound(haystack) To UBound(haystack)
+            j = TypeName(haystack(i))
+            If j = "String" Or t = "Variant" Then
+                 index = InStr(1, haystack(i), needle, vbTextCompare)
+                 If index > 0 Then
+                    isIn = True
+                    index = i
+                    Exit For
+                 End If
+            Else
+                If needle = haystack(i) Then
+                    isIn = True
+                    index = i
+                    Exit For
+                End If
+            End If
+        Next
+    ElseIf t = "Collection" Then
+        i = 0
+        For Each x In haystack
+            i = i + 1
+            j = TypeName(x)
+            If IsObject(needle) And IsObject(x) Then
+                 If ObjPtr(needle) = ObjPtr(x) Then
+                    isIn = True
+                    index = i
+                    Exit For
+                 End If
+            ElseIf j = "String" Or t = "Variant" Then
+                 index = InStr(1, haystack(i), needle, vbTextCompare)
+                 If index > 0 Then
+                    isIn = True
+                    index = i
+                    Exit For
+                 End If
+            Else
+                If needle = haystack(i) Then
+                    isIn = True
+                    index = i
+                    Exit For
+                End If
+            End If
+        Next
+    Else
+        If needle = haystack Then
+            isIn = True
+            index = 0
+        End If
+    End If
+                    
+    Exit Function
+    
+hell:
+    isIn = False
+    index = -1
+    
+End Function
+
+
