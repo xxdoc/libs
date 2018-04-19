@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form1 
    Caption         =   "Form1"
    ClientHeight    =   9345
@@ -10,6 +10,14 @@ Begin VB.Form Form1
    ScaleHeight     =   9345
    ScaleWidth      =   18615
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton Command7 
+      Caption         =   "Copy Console"
+      Height          =   495
+      Left            =   7320
+      TabIndex        =   16
+      Top             =   7440
+      Width           =   1455
+   End
    Begin VB.CommandButton Command6 
       Caption         =   "clone Kanal treeview"
       Height          =   405
@@ -134,7 +142,6 @@ Begin VB.Form Form1
       Height          =   315
       Left            =   2640
       TabIndex        =   1
-      Text            =   "11995156"
       Top             =   3990
       Width           =   2295
    End
@@ -216,12 +223,17 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
  Dim ws As New CWindowsSystem
-
+ 
  Private Sub Command1_Click()
     Dim c As Collection
     Dim w As New Cwindow
     
     Dim tmp() As String
+    
+    If Len(Text1) = 0 Then
+        MsgBox "set remote treeview"
+        Exit Sub
+    End If
     
     w.hwnd = CLng(Text1)
     
@@ -352,7 +364,17 @@ Private Sub Command6_Click()
     
 End Sub
 
+Private Sub Command7_Click()
+    Dim c As New Cwindow
+    If Len(Text1) = 0 Then
+        MsgBox "select remote console window first"
+        Exit Sub
+    End If
+    Text2 = c.CopyConsole(CLng(Text1))
+End Sub
+
 Private Sub Form_Load()
+
     Me.Caption = ws.GetWindowsVersion(True) & " - " & ws.GetWindowsVersionName
     
     For i = 0 To 10

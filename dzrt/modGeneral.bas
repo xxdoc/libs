@@ -411,18 +411,18 @@ End Function
 
 
 'supports %x, %c, %s, %d, %10d \t \n %%
-Function printf(ByVal Msg As String, vars() As Variant) As String
+Function printf(ByVal msg As String, vars() As Variant) As String
 
     Dim t
     Dim ret As String
     Dim i As Long, base, marker
     
-    Msg = Replace(Msg, Chr(0), Empty)
-    Msg = Replace(Msg, "\t", vbTab)
-    Msg = Replace(Msg, "\n", vbCrLf) 'simplified
-    Msg = Replace(Msg, "%%", Chr(0))
+    msg = Replace(msg, Chr(0), Empty)
+    msg = Replace(msg, "\t", vbTab)
+    msg = Replace(msg, "\n", vbCrLf) 'simplified
+    msg = Replace(msg, "%%", Chr(0))
     
-    t = split(Msg, "%")
+    t = split(msg, "%")
     If UBound(t) <> UBound(vars) + 1 Then
         MsgBox "Format string mismatch.."
         Exit Function
@@ -508,41 +508,41 @@ Private Function ExtractSpecifier(v)
     
 End Function
 
-Public Function ado_ConnectionString(dbServer As dbServers, dbName As String, Optional server As String, Optional Port = 3306, Optional user As String, Optional pass As String) As String
-    Dim dbPath As String, baseString As String, blnInlineAuth As Boolean
-    
-    Select Case dbServer
-        Case Access
-            baseString = "Provider=MSDASQL;Driver={Microsoft Access Driver (*.mdb)};DBQ=____;"
-        Case FileDsn
-            baseString = "FILEDSN=____;"
-        Case DSN
-            baseString = "DSN=____;"
-        Case dBase
-            baseString = "Driver={Microsoft dBASE Driver (*.dbf)};DriverID=277;Dbq=____;"
-        Case mysql
-            baseString = "Driver={mySQL};Server=" & server & ";Port=" & Port & ";Stmt=;Option=16834;Database=____;"
-        Case MsSql2k
-            baseString = "Driver={SQL Server};Server=" & server & ";Database=____;"
-        Case JetAccess2k
-            baseString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=____;" & _
-                         "User Id=" & user & ";" & _
-                         "Password=" & pass & ";"
-                         blnInlineAuth = True
-    End Select
-                         
-        
-    If Not blnInlineAuth Then
-        If user <> Empty Then baseString = baseString & "Uid:" & user & ";"
-        If pass <> Empty Then baseString = baseString & "Pwd:" & user & ";"
-    End If
-       
-    '%AP% is like enviromental variable for app.path i am lazy :P
-    dbPath = Replace(dbName, "%AP%", App.path)
-    
-    ado_ConnectionString = Replace(baseString, "____", dbPath)
-    
-End Function
+'Public Function ado_ConnectionString(dbServer As dbServers, dbName As String, Optional server As String, Optional Port = 3306, Optional User As String, Optional pass As String) As String
+'    Dim dbPath As String, baseString As String, blnInlineAuth As Boolean
+'
+'    Select Case dbServer
+'        Case Access
+'            baseString = "Provider=MSDASQL;Driver={Microsoft Access Driver (*.mdb)};DBQ=____;"
+'        Case FileDsn
+'            baseString = "FILEDSN=____;"
+'        Case DSN
+'            baseString = "DSN=____;"
+'        Case dBase
+'            baseString = "Driver={Microsoft dBASE Driver (*.dbf)};DriverID=277;Dbq=____;"
+'        Case mysql
+'            baseString = "Driver={mySQL};Server=" & server & ";Port=" & Port & ";Stmt=;Option=16834;Database=____;"
+'        Case MsSql2k
+'            baseString = "Driver={SQL Server};Server=" & server & ";Database=____;"
+'        Case JetAccess2k
+'            baseString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=____;" & _
+'                         "User Id=" & User & ";" & _
+'                         "Password=" & pass & ";"
+'                         blnInlineAuth = True
+'    End Select
+'
+'
+'    If Not blnInlineAuth Then
+'        If User <> Empty Then baseString = baseString & "Uid:" & User & ";"
+'        If pass <> Empty Then baseString = baseString & "Pwd:" & User & ";"
+'    End If
+'
+'    '%AP% is like enviromental variable for app.path i am lazy :P
+'    dbPath = Replace(dbName, "%AP%", App.path)
+'
+'    ado_ConnectionString = Replace(baseString, "____", dbPath)
+'
+'End Function
 
 Function GetParentFolder(path) As String
     Dim tmp() As String

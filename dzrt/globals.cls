@@ -52,13 +52,13 @@ Private Const INTERNET_FLAG_RELOAD As Long = &H80000000
 
 'all but jet are odbc jet is ole
 Public Enum dbServers
-    Access
-    JetAccess2k
-    MsSql2k
-    mysql
-    DSN
-    FileDsn
-    dBase
+    db_Access
+    db_JetAccess2k
+    db_MsSql2k
+    db_mysql
+    db_DSN
+    db_FileDsn
+    db_dBase
 End Enum
 
 Public Enum CompressTypes
@@ -79,6 +79,25 @@ Public Enum hexOutFormats
     hoSpaced
     hoHexOnly
 End Enum
+
+Private Const E_POINTER As Long = &H80004003
+Private Const S_OK As Long = 0
+Private Const INTERNET_MAX_URL_LENGTH As Long = 2048
+Private Const URL_ESCAPE_PERCENT As Long = &H1000&
+
+Private Declare Function UrlEscape Lib "shlwapi" Alias "UrlEscapeA" ( _
+    ByVal pszURL As String, _
+    ByVal pszEscaped As String, _
+    ByRef pcchEscaped As Long, _
+    ByVal dwFlags As Long) As Long
+
+Private Declare Function UrlUnescape Lib "shlwapi" Alias "UrlUnescapeA" ( _
+    ByVal pszURL As String, _
+    ByVal pszUnescaped As String, _
+    ByRef pcchUnescaped As Long, _
+    ByVal dwFlags As Long) As Long
+
+
 
 Private OnBits(0 To 31) As Long
 Private crc_table() As Long
@@ -678,6 +697,46 @@ End Function
 
 Function printf(ByVal msg As String, ParamArray vars()) As String
     printf = modGeneral.printf(msg, paramsToArray(vars))
+End Function
+
+Function ado_BuildConnectionString(dbServer As dbServers, dbName As String, Optional server As String, _
+                          Optional Port = 3306, Optional User As String, Optional pass As String) As String
+    
+    Dim dbPath As String
+    Dim baseString As String
+    Dim blnInlineAuth As Boolean
+    
+    Select Case dbServer
+        Case db_Access
+            baseString = "Provider=MSDASQL;Driver={Microsoft Access Driver (*.mdb)};DBQ=____;"
+        Case db_FileDsn
+            baseString = "FILEDSN=____;"
+        Case db_DSN
+            baseString = "DSN=____;"
+        Case db_dBase
+            baseString = "Driver={Microsoft dBASE Driver (*.dbf)};DriverID=277;Dbq=____;"
+        Case db_mysql
+            baseString = "Driver={mySQL};Server=" & server & ";Port=" & Port & ";Stmt=;Option=16834;Database=____;"
+        Case db_MsSql2k
+            baseString = "Driver={SQL Server};Server=" & server & ";Database=____;"
+        Case db_JetAccess2k
+            baseString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=____;" & _
+                         "User Id=" & User & ";" & _
+                         "Password=" & pass & ";"
+                         blnInlineAuth = True
+    End Select
+                         
+        
+    If Not blnInlineAuth Then
+        If User <> Empty Then baseString = baseString & "Uid:" & User & ";"
+        If pass <> Empty Then baseString = baseString & "Pwd:" & User & ";"
+    End If
+       
+    '%AP% is like enviromental variable for app.path i am lazy :P
+    dbPath = Replace(dbName, "%AP%", App.path)
+    
+    ado_BuildConnectionString = Replace(baseString, "____", dbPath)
+    
 End Function
 
 Function ado_buildInsert(tblName, fields, ParamArray params()) As String
@@ -1358,8 +1417,8 @@ Function DeCompress(fileStringOrByte, ByRef outVal, Optional method As CompressT
          
 End Function
 
-Function DownloadFile(url, localPath) As Boolean
-    DownloadFile = (URLDownloadToFile(0&, url, localPath, BINDF_GETNEWESTVERSION, 0&) = ERROR_SUCCESS)
+Function DownloadFile(URL, localPath) As Boolean
+    DownloadFile = (URLDownloadToFile(0&, URL, localPath, BINDF_GETNEWESTVERSION, 0&) = ERROR_SUCCESS)
 End Function
 
 Function a2c(ary) As Collection
@@ -1445,7 +1504,7 @@ Function isIn(needle, haystack, Optional ByRef index) As Boolean
                     Exit For
                  End If
             Else
-                If needle = haystack(i) Then
+                If needle = x Then
                     isIn = True
                     index = i
                     Exit For
@@ -1463,7 +1522,107 @@ Function isIn(needle, haystack, Optional ByRef index) As Boolean
     
 hell:
     isIn = False
-    index = -1
+    index = -2
+    
+End Function
+
+Function concat(divider, ParamArray elements()) As String
+    Dim i As Long
+    For i = 0 To UBound(elements)
+        concat = concat & elements(i) & IIf(i <> UBound(elements), divider, Empty)
+    Next
+End Function
+
+Public Function url_decode(ByVal URL As String, ByRef outVal As String, Optional ByVal PlusSpace As Boolean = True) As Boolean
+    
+    Dim cchUnescaped As Long
+    Dim HRESULT As Long
+    Dim tmp As String
+    
+    outVal = Empty
+    
+    If PlusSpace Then URL = Replace$(URL, "+", " ")
+    cchUnescaped = Len(URL)
+    tmp = String$(cchUnescaped, 0)
+    HRESULT = UrlUnescape(URL, tmp, cchUnescaped, 0)
+    
+    If HRESULT = E_POINTER Then
+        tmp = String$(cchUnescaped, 0)
+        HRESULT = UrlUnescape(URL, tmp, cchUnescaped, 0)
+    End If
+    
+    If HRESULT <> S_OK Then Exit Function
+    
+    outVal = Left$(tmp, cchUnescaped)
+    url_decode = True
+    
+End Function
+
+Public Function url_encode(ByVal URL As String, ByRef outVal As String, Optional ByVal SpacePlus As Boolean = True) As Boolean
+    
+    Dim cchEscaped As Long
+    Dim HRESULT As Long
+    Dim tmp As String
+    
+    outVal = Empty
+    
+    If Len(URL) > INTERNET_MAX_URL_LENGTH Then
+         outVal = "URL parameter too long"
+         Exit Function
+    End If
+    
+    cchEscaped = Len(URL) * 1.5
+    tmp = String$(cchEscaped, 0)
+    
+    HRESULT = UrlEscape(URL, tmp, cchEscaped, URL_ESCAPE_PERCENT)
+    
+    If HRESULT = E_POINTER Then
+        tmp = String$(cchEscaped, 0)
+        HRESULT = UrlEscape(URL, tmp, cchEscaped, URL_ESCAPE_PERCENT)
+    End If
+
+    If HRESULT <> S_OK Then Exit Function
+    
+    tmp = Left$(tmp, cchEscaped)
+    If SpacePlus Then
+        tmp = Replace$(tmp, "+", "%2B")
+        tmp = Replace$(tmp, " ", "+")
+    End If
+    
+    outVal = tmp
+    url_encode = True
+    
+End Function
+
+Public Function html_encode(ByVal iString As String, ByRef outVal) As Boolean
+    Dim o As Object
+    
+    outVal = Empty
+    Set o = CreateObject("MSXML2.DOMDocument")
+    
+    If o Is Nothing Then Exit Function
+
+    With o.createTextNode(iString)
+        outVal = .xml
+        If outVal <> iString Then html_encode = True
+    End With
+    
+End Function
+
+Public Function html_decode(ByVal iString As String, ByRef outVal) As Boolean
+    Dim o As Object
+    
+    outVal = Empty
+    Set o = CreateObject("MSXML2.DOMDocument")
+    
+    If o Is Nothing Then Exit Function
+    
+    With o
+        html_decode = .loadXML("<p>" & iString & "</p>")
+        If html_decode Then
+            outVal = .selectSingleNode("p").nodeTypedValue
+        End If
+    End With
     
 End Function
 

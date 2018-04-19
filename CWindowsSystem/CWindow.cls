@@ -13,21 +13,29 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Public hWnd As Long
+Public hwnd As Long
 
 
-Private Declare Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hWnd As Long, ByRef hINst As Long) As Long
-Private Declare Function GetWindowText Lib "user32.dll" Alias "GetWindowTextA" (ByVal hWnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
-Private Declare Function GetWindowTextLength Lib "user32.dll" Alias "GetWindowTextLengthA" (ByVal hWnd As Long) As Long
+Private Declare Function GetWindowThreadProcessId Lib "user32.dll" (ByVal hwnd As Long, ByRef hINst As Long) As Long
+Private Declare Function GetWindowText Lib "user32.dll" Alias "GetWindowTextA" (ByVal hwnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
+Private Declare Function GetWindowTextLength Lib "user32.dll" Alias "GetWindowTextLengthA" (ByVal hwnd As Long) As Long
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function OpenProcess Lib "kernel32" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal dwProcessId As Long) As Long
 Private Declare Function GetModuleFileNameExA Lib "PSAPI.DLL" (ByVal hProcess As Long, ByVal hModule As Long, ByVal ModuleName As String, ByVal nSize As Long) As Long
-Private Declare Function SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
+Private Declare Function SetWindowPos Lib "user32" (ByVal hwnd As Long, ByVal hWndInsertAfter As Long, ByVal x As Long, ByVal Y As Long, ByVal cx As Long, ByVal cy As Long, ByVal wFlags As Long) As Long
 
 Private Declare Function EnumProcessModules Lib "PSAPI.DLL" (ByVal hProcess As Long, ByRef lphModule As Long, ByVal cb As Long, ByRef cbNeeded As Long) As Long
-Private Declare Function PostMessage Lib "user32" Alias "PostMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function PostMessage Lib "user32" Alias "PostMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
  
+Private Declare Function AttachConsole Lib "kernel32" (ByVal dwProcessId As Long) As Boolean
+Private Declare Function FreeConsole Lib "kernel32" () As Long
+Private Declare Function GetStdHandle Lib "kernel32" (ByVal nStdHandle As Long) As Long
+Private Declare Function GetConsoleScreenBufferInfo Lib "kernel32" (ByVal hConsoleOutput As Long, lpConsoleScreenBufferInfo As CONSOLE_SCREEN_BUFFER_INFO) As Long
+Private Declare Function ReadConsoleOutputCharacter Lib "kernel32" Alias "ReadConsoleOutputCharacterW" (ByVal hConsoleOutput As Long, ByVal lpCharacter As Long, ByVal nLength As Long, ByVal dwReadCoord As Long, lpNumberOfCharsRead As Long) As Long
+
+
+
 Private Const WM_SYSCOMMAND  As Long = &H112
 Private Const SC_MINIMIZE As Long = &HF020
 Private Const HWND_NOTOPMOST = -2
@@ -48,6 +56,28 @@ Private Type RECT
         Bottom As Long
 End Type
  
+Private Const STD_OUTPUT_HANDLE         As Long = -11
+
+Private Type COORD
+    x As Integer
+    Y As Integer
+End Type
+
+Private Type SMALL_RECT
+    Left As Integer
+    Top As Integer
+    Right As Integer
+    Bottom As Integer
+End Type
+
+Private Type CONSOLE_SCREEN_BUFFER_INFO
+    dwSize As COORD
+    dwCursorPosition As COORD
+    wAttributes As Integer
+    srWindow As SMALL_RECT
+    dwMaximumWindowSize As COORD
+End Type
+
  
 Private Type WINDOWPLACEMENT
         Length As Long
@@ -89,13 +119,13 @@ Enum eWindowStates
     SW_SHOWNORMAL = 1
 End Enum
 
-Private Declare Function GetWindowPlacement Lib "user32" (ByVal hWnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
-Private Declare Function SetWindowPlacement Lib "user32" (ByVal hWnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
-Private Declare Function SendMessage Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal msg As Long, wParam As Any, lParam As Any) As Long
-Private Declare Function IsWindow Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetWindowPlacement Lib "user32" (ByVal hwnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
+Private Declare Function SetWindowPlacement Lib "user32" (ByVal hwnd As Long, lpwndpl As WINDOWPLACEMENT) As Long
+Private Declare Function SendMessage Lib "user32.dll" Alias "SendMessageA" (ByVal hwnd As Long, ByVal msg As Long, wParam As Any, lParam As Any) As Long
+Private Declare Function IsWindow Lib "user32" (ByVal hwnd As Long) As Long
 Private Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWndParent As Long, ByVal hWndChildAfter As Long, ByVal lpszClassName As String, ByVal lpszWindowName As String) As Long
-Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
-Private Declare Function IsWindowVisible Lib "user32" (ByVal hWnd As Long) As Long
+Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long) As Long
+Private Declare Function IsWindowVisible Lib "user32" (ByVal hwnd As Long) As Long
 
 Private Const LB_GETCOUNT = &H18B
 Private Const LB_GETTEXT = &H189
@@ -110,32 +140,32 @@ Private Const GWL_EXSTYLE    As Long = -20
 Private Const WS_EX_TOPMOST As Long = 8
 
 Property Get Visible() As Boolean
-    Visible = IIf(IsWindowVisible(Me.hWnd) = 0, False, True)
+    Visible = IIf(IsWindowVisible(Me.hwnd) = 0, False, True)
 End Property
 
 Property Let TopMost(v As Boolean)
     Dim Flags As Long, zflags As Long
     Flags = SWP_NOACTIVATE Or SWP_SHOWWINDOW Or SWP_NOMOVE Or SWP_NOSIZE
     zflags = IIf(v, HWND_TOPMOST, HWND_NOTOPMOST)
-    SetWindowPos hWnd, zflags, 0, 0, 0, 0, Flags
+    SetWindowPos hwnd, zflags, 0, 0, 0, 0, Flags
 End Property
 
 Property Get TopMost() As Boolean
     Dim exStyle As Long
-    exStyle = GetWindowLong(hWnd, GWL_EXSTYLE)
+    exStyle = GetWindowLong(hwnd, GWL_EXSTYLE)
     TopMost = ((exStyle And WS_EX_TOPMOST) = WS_EX_TOPMOST)
 End Property
 
 Sub CloseWindow()
-    PostMessage hWnd, WM_CLOSE, 0, 0
+    PostMessage hwnd, WM_CLOSE, 0, 0
 End Sub
 
 Property Get isValid() As Boolean
-    isValid = Not (IsWindow(hWnd) = 0)
+    isValid = Not (IsWindow(hwnd) = 0)
 End Property
 
 Function CopyRemoteListView(Optional dest As ListView, Optional colSeperator As String = vbTab) As Collection
-    Set CopyRemoteListView = LV_Duplicate(hWnd, dest, colSeperator)
+    Set CopyRemoteListView = LV_Duplicate(hwnd, dest, colSeperator)
 End Function
 
 Function CopyRemoteTreeView(Optional dest As TreeView) As Collection
@@ -144,7 +174,7 @@ Function CopyRemoteTreeView(Optional dest As TreeView) As Collection
    
    Set CopyRemoteTreeView = tvEntries
    
-   TargetTreeview.hWnd = hWnd
+   TargetTreeview.hwnd = hwnd
    If Not dmGetTreeviewInfo(TargetTreeview) Then Exit Function
    If TargetTreeview.ItemCount < 1 Then Exit Function
 
@@ -157,7 +187,7 @@ Function FindChild(ByVal className As String) As Cwindow
     Dim hChild As Long
     Dim w As New Cwindow
     
-    w.hWnd = FindWindowEx(hWnd, 0&, className, vbNullString)
+    w.hwnd = FindWindowEx(hwnd, 0&, className, vbNullString)
     Set FindChild = w 'can be 0 check isValid...
     
 End Function
@@ -175,14 +205,14 @@ Function CopyListBox(Optional toListBox As ListBox) As Collection
     
     If lb Then toListBox.Clear
     
-    count = SendMessage(hWnd, LB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
+    count = SendMessage(hwnd, LB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
     If count < 1 Then Exit Function
     
     For i = 0 To count - 1
-        textlen = SendMessage(hWnd, LB_GETTEXTLEN, ByVal i, ByVal CLng(0))
+        textlen = SendMessage(hwnd, LB_GETTEXTLEN, ByVal i, ByVal CLng(0))
         itemText = Space(textlen) & vbNullChar
         
-        textlen = SendMessage(hWnd, LB_GETTEXT, ByVal i, ByVal itemText)
+        textlen = SendMessage(hwnd, LB_GETTEXT, ByVal i, ByVal itemText)
         itemText = Left(itemText, textlen)
         
         If lb Then toListBox.AddItem itemText
@@ -204,14 +234,14 @@ Function CopyComboBox(Optional toCombo As ComboBox) As Collection
     
     If lb Then toCombo.Clear
     
-    count = SendMessage(hWnd, CB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
+    count = SendMessage(hwnd, CB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
     If count < 1 Then Exit Function
     
     For i = 0 To count - 1
-        textlen = SendMessage(hWnd, CB_GETLBTEXTLEN, ByVal i, ByVal CLng(0))
+        textlen = SendMessage(hwnd, CB_GETLBTEXTLEN, ByVal i, ByVal CLng(0))
         itemText = Space(textlen) & vbNullChar
         
-        textlen = SendMessage(hWnd, CB_GETLBTEXT, ByVal i, ByVal itemText)
+        textlen = SendMessage(hwnd, CB_GETLBTEXT, ByVal i, ByVal itemText)
         itemText = Left(itemText, textlen)
         
         If lb Then toCombo.AddItem itemText
@@ -220,19 +250,52 @@ Function CopyComboBox(Optional toCombo As ComboBox) As Collection
     
 End Function
 
+Function CopyConsole(Optional hwnd As Long) As String
+
+    Dim infBuf  As CONSOLE_SCREEN_BUFFER_INFO
+    Dim lr As Long, hOut As Long, i As Long, count As Long, buf As String, tmp As String
+        
+    'Dragokas: https://safezone.cc/resources/console-window-interceptor.144/
+    
+    If hwnd <> 0 Then Me.hwnd = hwnd
+    If Me.className <> "ConsoleWindowClass" Then Exit Function
+    
+    lr = AttachConsole(Me.ProcessPID)
+    If lr = 0 Then Exit Function
+    
+    hOut = GetStdHandle(STD_OUTPUT_HANDLE)
+    If hOut = 0 Then
+        FreeConsole
+        Exit Function
+    End If
+    
+    GetConsoleScreenBufferInfo hOut, infBuf
+    count = infBuf.dwSize.x
+    buf = Space(count)
+    
+    For i = 0 To infBuf.dwCursorPosition.Y
+        ReadConsoleOutputCharacter hOut, StrPtr(buf), count, i * &H10000, count
+        tmp = tmp & RTrim(buf) & vbNewLine
+    Next
+    
+    FreeConsole
+    CopyConsole = tmp
+    
+End Function
+
 
 Property Get ProcessPID() As Long
     Dim pid As Long
-    GetWindowThreadProcessId hWnd, pid
+    GetWindowThreadProcessId hwnd, pid
     ProcessPID = pid
 End Property
 
 Property Get Caption() As String
     Dim hWndlength As Long, hWndTitle As String, a As Long
     
-    hWndlength = GetWindowTextLength(hWnd)
+    hWndlength = GetWindowTextLength(hwnd)
     hWndTitle = String$(hWndlength + 10, 0)
-    a = GetWindowText(hWnd, hWndTitle, (hWndlength + 1))
+    a = GetWindowText(hwnd, hWndTitle, (hWndlength + 1))
     Caption = hWndTitle
     
 End Property
@@ -240,25 +303,25 @@ End Property
 Property Get className() As String
     Dim lpClassName As String, retVal As Long
     lpClassName = Space(256)
-    retVal = GetClassName(hWnd, lpClassName, 256)
+    retVal = GetClassName(hwnd, lpClassName, 256)
     className = Left$(lpClassName, retVal)
 End Property
 
 Property Get WindowState() As eWindowStates
     Dim wp As WINDOWPLACEMENT
     wp.Length = Len(wp)
-    GetWindowPlacement hWnd, wp
+    GetWindowPlacement hwnd, wp
     WindowState = wp.showCmd
 End Property
 
 Property Let WindowState(s As eWindowStates)
     Dim wp As WINDOWPLACEMENT
     wp.Length = Len(wp)
-    GetWindowPlacement hWnd, wp
+    GetWindowPlacement hwnd, wp
     wp.Length = Len(wp)
     wp.showCmd = s
     wp.Flags = WPF_ASYNCWINDOWPLACEMENT
-    SetWindowPlacement hWnd, wp
+    SetWindowPlacement hwnd, wp
 End Property
 
 Property Get WindowStateString() As String
@@ -289,7 +352,7 @@ Property Get ProcessPath() As String
     Dim hMods() As Long, cbAlloc As Long, ret As Long, retMax As Long
     Dim sPath As String
     
-    GetWindowThreadProcessId hWnd, pid
+    GetWindowThreadProcessId hwnd, pid
     
     hProc = OpenProcess(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ, False, pid)
     
@@ -308,15 +371,15 @@ Property Get ProcessPath() As String
 End Property
 
 Public Sub MinimizeWindow()
-    PostMessage hWnd, WM_SYSCOMMAND, SC_MINIMIZE, 0
+    PostMessage hwnd, WM_SYSCOMMAND, SC_MINIMIZE, 0
 End Sub
 
 Property Get IsIEServerWindow() As Boolean
-    IsIEServerWindow = Morcillo.IsIEServerWindow(hWnd)
+    IsIEServerWindow = Morcillo.IsIEServerWindow(hwnd)
 End Property
 
 Function IEDOMFromhWnd() As HTMLDocument
-    Set IEDOMFromhWnd = Morcillo.IEDOMFromhWnd(hWnd)
+    Set IEDOMFromhWnd = Morcillo.IEDOMFromhWnd(hwnd)
 End Function
 
 

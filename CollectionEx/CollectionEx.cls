@@ -25,20 +25,40 @@ Dim c As New Collection
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSource As Any, ByVal ByteLen As Long)
 
 Private Type dump
-    Key As String
+    key As String
     data As Variant
 End Type
+
+Public OptionForceAsKey As Boolean
 
 Public Sub Attach(existing As Collection)
     Set c = existing
 End Sub
 
-Public Sub Add(vData As Variant, Optional ByVal Key As String, Optional Before As Variant, Optional After As Variant)
+Public Sub AddAutoIndex(vData As Variant, Optional ByVal key As String, Optional Before As Variant, Optional After As Variant)
+    
+    Dim i As Long, temp As String
+
+    If Len(key) > 0 Then
+        If keyExists(key) Then
+            Do
+                i = i + 1
+                temp = key & "_" & i
+            Loop While keyExists(temp)
+            key = temp
+        End If
+    End If
+    
+    Add vData, key, Before, After
+    
+End Sub
+
+Public Sub Add(vData As Variant, Optional ByVal key As String, Optional Before As Variant, Optional After As Variant)
     ' If not specified, Before and/or After come is as IsError() = True, which the collection.Add method can handle.
     ' It still raises an error if both are specified, and that behavior is not changed.
     ' Also errors when trying to add duplicate keys, as expected.
-    If Len(Key) Then
-        c.Add vData, Base16Encode(Key), Before, After
+    If Len(key) Then
+        c.Add vData, Base16Encode(key), Before, After
     Else
         c.Add vData, , Before, After
     End If
@@ -52,20 +72,30 @@ Property Let Item(ByVal IndexOrKey As Variant, Optional ByVal forceAsKey As Byte
     Dim tmp As Variant
     
     i = VarType(IndexOrKey)
+    
+    If OptionForceAsKey Then forceAsKey = 1
     If forceAsKey <> 0 Then i = 8
     
     Select Case i
         Case 2 To 7 ' Integer, Long, Single, Double, Currency, & Date.  (A bit weird to pass in a date, but who knows.)
             
             k = Me.keyForIndex(CLng(IndexOrKey))
-            c.Remove CLng(IndexOrKey)
-            c.Add val, k
+            c.remove CLng(IndexOrKey)
+            If Len(k) > 0 Then
+                c.Add val, k
+            Else
+                c.Add val
+            End If
             
         Case 8
-            k = Base16Encode(CStr(IndexOrKey))
-            Me.Remove IndexOrKey, forceAsKey
+        
+            If keyExists(CStr(IndexOrKey)) Then
+                k = Base16Encode(CStr(IndexOrKey))
+                Me.remove IndexOrKey, forceAsKey
+            End If
+            
             Add val, IndexOrKey
-    
+            
     End Select
     
 
@@ -79,6 +109,8 @@ Attribute Item.VB_UserMemId = 0
     Dim k As String
     
     i = VarType(IndexOrKey)
+    
+    If OptionForceAsKey Then forceAsKey = 1
     If forceAsKey <> 0 Then i = 8
     
     Select Case i
@@ -104,28 +136,44 @@ Attribute Item.VB_UserMemId = 0
 End Property
 
 'property so we can mouse over it in ide to see value..
-Property Get Count()
-    Count = c.Count
+Property Get count()
+    count = c.count
 End Property
 
-Public Sub Remove(ByVal IndexOrKey As Variant, Optional ByVal forceAsKey As Byte = 0)
+Public Sub remove(ByVal IndexOrKey As Variant, Optional ByVal forceAsKey As Byte = 0)
     Dim i As Integer
     
     i = VarType(IndexOrKey)
+    
+    If OptionForceAsKey Then forceAsKey = 1
     If forceAsKey <> 0 Then i = 8
     
     Select Case i
         Case 2 To 7 ' Integer, Long, Single, Double, Currency, & Date.  (A bit weird to pass in a date, but who knows.)
-            c.Remove CLng(IndexOrKey)
+            c.remove CLng(IndexOrKey)
         Case 8
-            c.Remove Base16Encode(CStr(IndexOrKey))
+            c.remove Base16Encode(CStr(IndexOrKey))
     End Select
     
     ' It does nothing if bad IndexOrKey type (such as Null, an object or other nonsense).
 End Sub
 
+Sub CreateKey(ByVal k As String)
+    If Me.keyExists(k) Then Exit Sub
+    Add Empty, k
+End Sub
+
+Function dumpKeys() As String
+    Dim i As Long
+    Dim tmp() As String
+    For i = 1 To c.count
+        push tmp, Me.keyForIndex(i)
+    Next
+    dumpKeys = Join(tmp, vbCrLf)
+End Function
+
 Property Get isEmpty() As Boolean
-    isEmpty = (c.Count = 0)
+    isEmpty = (c.count = 0)
 End Property
 
 Public Sub Clear()
@@ -137,7 +185,7 @@ Public Function Clone() As CollectionEx
     Dim cc As New CollectionEx
     Dim i As Long
     
-    For i = 1 To c.Count
+    For i = 1 To c.count
         'If IsObject(c(i)) Then Err.Raise 256, , "CollectionEx.Clone: Can not clone a collection with object references"
         cc.Add c(i), keyForIndex(i)
     Next
@@ -174,9 +222,9 @@ Attribute NewEnum.VB_MemberFlags = "40"
    Set NewEnum = c.[_NewEnum]
 End Function
 
-Public Function keyExists(ByVal Key As String) As Boolean
+Public Function keyExists(ByVal key As String) As Boolean
     On Error GoTo DoesntExist
-    IsObject c(Base16Encode(Key))
+    IsObject c(Base16Encode(key))
     keyExists = True
 DoesntExist:
 End Function
@@ -185,11 +233,11 @@ Public Function toString(Optional ByVal delimiter As String = vbCrLf, Optional B
     Dim tmp() As Variant
     Dim k, i As Long
     
-    If c.Count = 0 Then GoTo done
+    If c.count = 0 Then GoTo done
     
-    ReDim tmp(c.Count - 1)
+    ReDim tmp(c.count - 1)
     
-    For i = 1 To c.Count
+    For i = 1 To c.count
         k = Empty
         If includeKeys Then k = keyForIndex(i)
         If Len(k) > 0 Then k = k & " = "
@@ -214,12 +262,12 @@ Public Function toDumpFile(ByVal fPath As String) As Boolean
     Dim tmp() As dump, d As dump
     Dim v, i As Long, f As Long
     
-    If c.Count = 0 Then GoTo hell
+    If c.count = 0 Then GoTo hell
     
-    ReDim tmp(c.Count - 1)
+    ReDim tmp(c.count - 1)
     
-    For i = 1 To c.Count
-        tmp(i - 1).Key = keyForIndex(i)
+    For i = 1 To c.count
+        tmp(i - 1).key = keyForIndex(i)
         If IsObject(c(i)) Then
             tmp(i - 1).data = "[ invalid can not save " & TypeName(c(i)) & " object ]"
         Else
@@ -248,11 +296,11 @@ Public Function toTextFile(ByVal fPath As String, Optional header As String) As 
     Dim tmp() As String
     Dim v, i As Long, f As Long
     
-    If c.Count = 0 Then GoTo hell
+    If c.count = 0 Then GoTo hell
     
-    ReDim tmp(c.Count - 1)
+    ReDim tmp(c.count - 1)
     
-    For i = 1 To c.Count
+    For i = 1 To c.count
         If IsObject(c(i)) Then
             tmp(i - 1) = "[ invalid can not save " & TypeName(c(i)) & " object ]"
         Else
@@ -281,7 +329,7 @@ Public Function fromTextFile(ByVal fPath As String, Optional append As Boolean, 
     Dim tmp() As String, dat As String
     Dim v, i As Long, f As Long, cnt As Long
     
-    If c.Count > 0 And append = False Then Set c = New Collection
+    If c.count > 0 And append = False Then Set c = New Collection
     
     dat = ReadFile(fPath)
     If InStr(dat, Chr(0)) > 0 Then
@@ -298,7 +346,7 @@ Public Function fromTextFile(ByVal fPath As String, Optional append As Boolean, 
     Next
 
 hell:
-    fromTextFile = c.Count
+    fromTextFile = c.count
 End Function
 
 Public Function fromDumpFile(ByVal fPath As String, Optional append As Boolean, Optional trimIt As Boolean) As Long
@@ -311,7 +359,7 @@ Public Function fromDumpFile(ByVal fPath As String, Optional append As Boolean, 
     Dim v, i As Long, f As Long, cnt As Long
     Dim d As String
     
-    If c.Count > 0 And append = False Then Set c = New Collection
+    If c.count > 0 And append = False Then Set c = New Collection
     
     f = FreeFile
     Open fPath For Binary As f
@@ -321,17 +369,42 @@ Public Function fromDumpFile(ByVal fPath As String, Optional append As Boolean, 
     Close f
     
     For i = 0 To UBound(tmp)
-        d = tmp(i).data(i)
+        d = tmp(i).data
         If trimIt Then d = trim(d)
-        If Len(tmp(i).Key) = 0 Then
+        If Len(tmp(i).key) = 0 Then
             c.Add d
         Else
-            c.Add d, Base16Encode(uniqueKey(tmp(i).Key))
+            c.Add d, Base16Encode(uniqueKey(tmp(i).key))
         End If
     Next
 
 hell:
-    fromDumpFile = c.Count
+    fromDumpFile = c.count
+End Function
+
+Public Function keyForValue(val, ByRef key) As Boolean
+    Dim i As Long
+    
+    For i = 1 To c.count
+            
+        If IsObject(c(i)) Then
+            If IsObject(val) Then
+                If ObjPtr(c(i)) = ObjPtr(val) Then
+                    key = keyForIndex(i)
+                    keyForValue = True
+                    Exit Function
+                End If
+            End If
+        Else
+            If c(i) = val Then
+                key = keyForIndex(i)
+                keyForValue = True
+                Exit Function
+            End If
+        End If
+            
+    Next
+    
 End Function
 
 Public Function keyForIndex(index As Long) As String
@@ -340,19 +413,19 @@ Public Function keyForIndex(index As Long) As String
     Dim Ptr   As Long
     Dim sKey  As String
     '
-    If index < 1 Or index > c.Count Then
-        Err.Raise 9
+    If index < 1 Or index > c.count Then
+        err.Raise 9
         Exit Function
     End If
     '
-    If index <= c.Count / 2 Then                                ' Start from front.
+    If index <= c.count / 2 Then                                ' Start from front.
         CopyMemory Ptr, ByVal ObjPtr(c) + &H18, 4               ' First item pointer of collection header.
         For i = 2 To index
             CopyMemory Ptr, ByVal Ptr + &H18, 4                 ' Next item pointer of collection item.
         Next i
     Else                                                        ' Start from end and go back.
         CopyMemory Ptr, ByVal ObjPtr(c) + &H1C, 4               ' Last item pointer of collection header.
-        For i = c.Count - 1 To index Step -1
+        For i = c.count - 1 To index Step -1
             CopyMemory Ptr, ByVal Ptr + &H14, 4                 ' Previous item pointer of collection item.
         Next i
     End If
@@ -363,11 +436,11 @@ Public Function keyForIndex(index As Long) As String
     CopyMemory ByVal VarPtr(sKey), i, 4                         ' Put string pointer back to keep memory straight.
 End Function
 
-Public Function indexForKey(ByVal Key As String) As Long
+Public Function indexForKey(ByVal key As String) As Long
     Dim i As Long
     indexForKey = 0
-    For i = 1 To c.Count
-        If keyForIndex(i) = Key Then
+    For i = 1 To c.count
+        If keyForIndex(i) = key Then
             indexForKey = i
             Exit Function
         End If
@@ -391,12 +464,12 @@ Public Function changeKey(ByVal OldKey As String, ByVal NewKey As String) As Boo
        vData = c.Item(index)
     End If
     
-    c.Remove index
+    c.remove index
     
-    If c.Count = 0 Then
+    If c.count = 0 Then
         c.Add vData, Base16Encode(NewKey)             ' Add first item.
-    ElseIf index > c.Count Then
-        c.Add vData, Base16Encode(NewKey), , c.Count  ' Add to end.
+    ElseIf index > c.count Then
+        c.Add vData, Base16Encode(NewKey), , c.count  ' Add to end.
     Else
         c.Add vData, Base16Encode(NewKey), index      ' Add prior to one specified, so it takes on that index number.
     End If
@@ -423,7 +496,7 @@ Public Function changeIndex(OldIndex As Long, newIndex As Long) As Boolean
     On Error GoTo hell
     
     If OldIndex = newIndex Then GoTo ok
-    If c.Count = 1 Then GoTo ok
+    If c.count = 1 Then GoTo ok
     
     If IsObject(c.Item(OldIndex)) Then
         Set vData = c.Item(OldIndex)
@@ -432,12 +505,12 @@ Public Function changeIndex(OldIndex As Long, newIndex As Long) As Boolean
     End If
 
     sKey = Base16Encode(keyForIndex(OldIndex))
-    c.Remove OldIndex
+    c.remove OldIndex
     
-    If c.Count = 0 Then
+    If c.count = 0 Then
         c.Add vData, sKey             ' Add first item.
-    ElseIf newIndex > c.Count Then
-        c.Add vData, sKey, , c.Count  ' Add to end.
+    ElseIf newIndex > c.count Then
+        c.Add vData, sKey, , c.count  ' Add to end.
     Else
         c.Add vData, sKey, newIndex   ' Add prior to one specified, so it takes on that index number.
     End If
@@ -448,10 +521,10 @@ ok:
 hell:
 End Function
 
-Public Function changeIndexByKey(ByVal Key As String, ByVal newIndex As Long) As Boolean
+Public Function changeIndexByKey(ByVal key As String, ByVal newIndex As Long) As Boolean
     Dim curIndex As Long
     On Error GoTo hell
-    curIndex = indexForKey(Key)
+    curIndex = indexForKey(key)
     changeIndexByKey = changeIndex(curIndex, newIndex)
     Exit Function
 hell:
@@ -460,10 +533,10 @@ End Function
 Public Function Keys() As String()
     Dim tmp() As String, i As Long
     
-    If c.Count = 0 Then Exit Function
+    If c.count = 0 Then Exit Function
     
     push tmp(), ""
-    For i = 1 To c.Count
+    For i = 1 To c.count
         push tmp(), keyForIndex(i)
     Next
     
@@ -476,11 +549,11 @@ Public Function toArray() As Variant()
     Dim v, i As Long
     Dim o As Object
     
-    If c.Count = 0 Then GoTo done
+    If c.count = 0 Then GoTo done
     
-    ReDim tmp(c.Count - 1)
+    ReDim tmp(c.count - 1)
     
-    For i = 1 To c.Count
+    For i = 1 To c.count
         If IsObject(c(i)) Then
             Set tmp(i - 1) = c(i)
         Else
@@ -497,7 +570,7 @@ Public Sub fromArray(ary As Variant, Optional append As Boolean = True, Optional
     'On Error GoTo hell
     
     If AryIsEmpty(ary) Then Exit Sub
-    If Not append And c.Count > 0 Then Set c = New Collection
+    If Not append And c.count > 0 Then Set c = New Collection
     
     For i = LBound(ary) To UBound(ary)
         If trim Then ary(i) = VBA.trim(ary(i))
@@ -526,7 +599,7 @@ Public Function findMatches(c2 As CollectionEx, Optional byKey As Boolean = Fals
     Dim shortCol As CollectionEx
     Dim a As String, b As String
     
-    If c.Count > c2.Count Then
+    If c.count > c2.count Then
         Set longestCol = Me
         Set shortCol = c2
     Else
@@ -538,14 +611,14 @@ Public Function findMatches(c2 As CollectionEx, Optional byKey As Boolean = Fals
     Set findMatches = ret
     
     If byKey Then
-        For i = 1 To longestCol.Count
+        For i = 1 To longestCol.count
             k = longestCol.keyForIndex(i)
             If shortCol.keyExists(k) Then
                 ret.Add longestCol(i), k
             End If
         Next
     Else
-        For i = 1 To longestCol.Count
+        For i = 1 To longestCol.count
             v = longestCol(i)
             v = trim(v)
             For Each v2 In shortCol
@@ -572,7 +645,7 @@ Public Function diff(c2 As CollectionEx, Optional byKey As Boolean = False) As C
     On Error Resume Next
     Set diff = ret
     
-    If c.Count > c2.Count Then
+    If c.count > c2.count Then
         Set longestCol = Me
         Set shortCol = c2
     Else
@@ -581,7 +654,7 @@ Public Function diff(c2 As CollectionEx, Optional byKey As Boolean = False) As C
     End If
     
     If byKey Then
-        For i = 1 To longestCol.Count
+        For i = 1 To longestCol.count
             k = longestCol.keyForIndex(i)
             If Not shortCol.keyExists(k) Then
                 ret.Add longestCol(i), k
@@ -589,7 +662,7 @@ Public Function diff(c2 As CollectionEx, Optional byKey As Boolean = False) As C
             If i Mod 100 = 0 Then DoEvents
         Next
     Else
-        For i = 1 To longestCol.Count
+        For i = 1 To longestCol.count
             v = longestCol(i)
             found = False
             For Each v2 In shortCol
@@ -664,12 +737,12 @@ Function Sort(Optional descending As Boolean = True) As Boolean
     Dim v, i As Long
     Dim o As Object
     
-    If c.Count = 0 Then Exit Function
+    If c.count = 0 Then Exit Function
     
-    ReDim tmp(c.Count - 1)
-    ReDim Keys(c.Count - 1)
+    ReDim tmp(c.count - 1)
+    ReDim Keys(c.count - 1)
     
-    For i = 1 To c.Count
+    For i = 1 To c.count
         If IsObject(c(i)) Then
             Exit Function
         Else
@@ -757,6 +830,6 @@ Private Function WriteFile(ByVal path As String, it) As Boolean
     Put #f, , it
     Close f
     
-    WriteFile = (Err.Number = 0)
+    WriteFile = (err.Number = 0)
     
 End Function
