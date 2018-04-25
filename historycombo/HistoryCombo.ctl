@@ -22,7 +22,10 @@ Attribute VB_Exposed = False
 Dim history() As String
 Dim m_file As String
 
+Event KeyPress(KeyAscii As Integer)
+
 Property Get Text() As String
+Attribute Text.VB_UserMemId = 0
     Text = cbo.Text
 End Property
 
@@ -117,7 +120,9 @@ Function SaveHistory(Optional maxEntries As Long = 50)
     
 End Function
 
-
+Private Sub cbo_KeyPress(KeyAscii As Integer)
+    RaiseEvent KeyPress(KeyAscii)
+End Sub
 
 Private Sub UserControl_Resize()
     On Error Resume Next
