@@ -18,7 +18,8 @@ Private Declare Sub SetWindowPos Lib "user32" (ByVal hWnd As Long, ByVal hWndIns
 Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathNameA" (ByVal lpszLongPath As String, ByVal lpszShortPath As String, ByVal cchBuffer As Long) As Long
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
-
+Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
+   
 Private Const HWND_TOPMOST = -1
 Private Const HWND_NOTOPMOST = -2
 Private Const LB_GETCOUNT = &H18B
@@ -30,7 +31,6 @@ Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Sub Sleep_ Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Long)
-Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
  
 Private Declare Sub vc_srand Lib "utypes.dll" (ByVal v1 As Long)
 Private Declare Function vc_rand Lib "utypes.dll" () As Long
@@ -107,6 +107,27 @@ Public hash As New CWinHash
 Public fso As New CFileSystem3
 Public cmdline As New CCmdLine
 Public zlib As New CZlib
+
+Function ExpandEnvStr(str) As String
+
+    Dim buf As String
+    Dim sz As Long
+    
+    If InStr(str, "%") < 1 Then GoTo errHandler
+    
+    sz = ExpandEnvironmentStrings(str, ByVal buf, 0)
+    If sz = 0 Then GoTo errHandler
+    
+    buf = Space(sz + 100)
+    sz = ExpandEnvironmentStrings(str, ByVal buf, Len(buf))
+    If sz = 0 Then GoTo errHandler
+    
+    buf = Left(buf, sz - 1)
+    ExpandEnvStr = buf
+    
+Exit Function
+errHandler: ExpandEnvStr = str
+End Function
 
 Sub srand(seed As Long)
     If ensureUTypes() Then vc_srand seed
@@ -1417,8 +1438,8 @@ Function DeCompress(fileStringOrByte, ByRef outVal, Optional method As CompressT
          
 End Function
 
-Function DownloadFile(URL, localPath) As Boolean
-    DownloadFile = (URLDownloadToFile(0&, URL, localPath, BINDF_GETNEWESTVERSION, 0&) = ERROR_SUCCESS)
+Function DownloadFile(url, localPath) As Boolean
+    DownloadFile = (URLDownloadToFile(0&, url, localPath, BINDF_GETNEWESTVERSION, 0&) = ERROR_SUCCESS)
 End Function
 
 Function a2c(ary) As Collection
@@ -1533,7 +1554,7 @@ Function concat(divider, ParamArray elements()) As String
     Next
 End Function
 
-Public Function url_decode(ByVal URL As String, ByRef outVal As String, Optional ByVal PlusSpace As Boolean = True) As Boolean
+Public Function url_decode(ByVal url As String, ByRef outVal As String, Optional ByVal PlusSpace As Boolean = True) As Boolean
     
     Dim cchUnescaped As Long
     Dim HRESULT As Long
@@ -1541,14 +1562,14 @@ Public Function url_decode(ByVal URL As String, ByRef outVal As String, Optional
     
     outVal = Empty
     
-    If PlusSpace Then URL = Replace$(URL, "+", " ")
-    cchUnescaped = Len(URL)
+    If PlusSpace Then url = Replace$(url, "+", " ")
+    cchUnescaped = Len(url)
     tmp = String$(cchUnescaped, 0)
-    HRESULT = UrlUnescape(URL, tmp, cchUnescaped, 0)
+    HRESULT = UrlUnescape(url, tmp, cchUnescaped, 0)
     
     If HRESULT = E_POINTER Then
         tmp = String$(cchUnescaped, 0)
-        HRESULT = UrlUnescape(URL, tmp, cchUnescaped, 0)
+        HRESULT = UrlUnescape(url, tmp, cchUnescaped, 0)
     End If
     
     If HRESULT <> S_OK Then Exit Function
@@ -1558,7 +1579,7 @@ Public Function url_decode(ByVal URL As String, ByRef outVal As String, Optional
     
 End Function
 
-Public Function url_encode(ByVal URL As String, ByRef outVal As String, Optional ByVal SpacePlus As Boolean = True) As Boolean
+Public Function url_encode(ByVal url As String, ByRef outVal As String, Optional ByVal SpacePlus As Boolean = True) As Boolean
     
     Dim cchEscaped As Long
     Dim HRESULT As Long
@@ -1566,19 +1587,19 @@ Public Function url_encode(ByVal URL As String, ByRef outVal As String, Optional
     
     outVal = Empty
     
-    If Len(URL) > INTERNET_MAX_URL_LENGTH Then
+    If Len(url) > INTERNET_MAX_URL_LENGTH Then
          outVal = "URL parameter too long"
          Exit Function
     End If
     
-    cchEscaped = Len(URL) * 1.5
+    cchEscaped = Len(url) * 1.5
     tmp = String$(cchEscaped, 0)
     
-    HRESULT = UrlEscape(URL, tmp, cchEscaped, URL_ESCAPE_PERCENT)
+    HRESULT = UrlEscape(url, tmp, cchEscaped, URL_ESCAPE_PERCENT)
     
     If HRESULT = E_POINTER Then
         tmp = String$(cchEscaped, 0)
-        HRESULT = UrlEscape(URL, tmp, cchEscaped, URL_ESCAPE_PERCENT)
+        HRESULT = UrlEscape(url, tmp, cchEscaped, URL_ESCAPE_PERCENT)
     End If
 
     If HRESULT <> S_OK Then Exit Function
