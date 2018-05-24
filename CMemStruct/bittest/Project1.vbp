@@ -1,12 +1,9 @@
 Type=Exe
 Form=Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Class=CMemStruct; CMemStruct.cls
-Class=CStructField; CStructField.cls
-Module=Module1; Module1.bas
 IconForm="Form1"
 Startup="Form1"
-ExeName32="Project1.exe"
+HelpFile=""
 Command32=""
 Name="Project1"
 HelpContextID="0"
@@ -23,7 +20,7 @@ FavorPentiumPro(tm)=0
 CodeViewDebugInfo=0
 NoAliasing=0
 BoundsCheck=0
-OverflowCheck=0
+OverflowCheck=-1
 FlPointCheck=0
 FDIVCheck=0
 UnroundedFP=0
@@ -35,6 +32,3 @@ MaxNumberOfThreads=1
 
 [MS Transaction Server]
 AutoRefresh=1
-
-[fastBuild]
-fullPath=%ap%\Project1.exe

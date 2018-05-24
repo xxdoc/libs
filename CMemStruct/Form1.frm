@@ -97,7 +97,7 @@ Private Sub Form_Load()
     addText "OffsetOf blob1 = " & Hex(ms.offsetOf(5))
     addText "Structure Size = " & Hex(ms.size)
     
-    If Not ms.field("blob1").SetBlobValue("new blob2!", errMsg) Then
+    If Not ms.field("blob1").SetValue("new blob2!", errMsg) Then
         addText "Error setting new blob1 in test2.bin: " & errMsg
     End If
     
@@ -106,17 +106,21 @@ Private Sub Form_Load()
     addText "second struct from text2.bin.blob.asString() = " & ms.field("blob1").asString()
     
     ms.LoadFromFile , App.Path & "\test.bin"
-    ms.field("cur1").value = CCur(3.14)
+    ms.field("cur1").SetValue 3.14
     
     ms.SaveToFile , App.Path & "\test3.bin"
     ms.LoadFromFile , App.Path & "\test3.bin"
     
-    addText "\nNew cur1 value reloaded from file = " & ms.field("cur1").value
+    addText "\nNew cur1 value reloaded from file = " & ms.field("cur1").Value
     
-    b(0) = &H99
+    b(0) = &H80
     b(UBound(b)) = Asc("a")
     ms.fromBytes b
     addText "Loaded from modified byte buffer:\n " & ms.dump(True)
+    
+    addText "\nbyte1 as binary: " & Hex(ms.field(1).Value) & " = " & ms.field(1).toBinary()
+    addText "byte1.clearBit(7).value = " & ms.field(1).clearBit(7).Value
+    addText "byte1.setBit(7).setBit(6).toBinary() = " & ms.field(1).setBit(7).setBit(6).toBinary()
     
     Dim hs As String
     

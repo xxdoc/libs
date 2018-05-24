@@ -180,23 +180,23 @@ Function toBytes() As Byte()
     For Each sf In fields
         Select Case sf.fieldType
             Case msf_byte
-                b = sf.value
+                b = sf.Value
                 CopyMemory ByVal VarPtr(buf(offset)), ByVal VarPtr(b), 1
                 offset = offset + 1
             Case msf_int:
-                i = sf.value
+                i = sf.Value
                 CopyMemory ByVal VarPtr(buf(offset)), ByVal VarPtr(i), 2
                 offset = offset + 2
             Case msf_long:
-                l = sf.value
+                l = sf.Value
                 CopyMemory ByVal VarPtr(buf(offset)), ByVal VarPtr(l), 4
                 offset = offset + 4
             Case msf_cur:
-                c = sf.value
+                c = sf.Value
                 CopyMemory ByVal VarPtr(buf(offset)), ByVal VarPtr(c), 8
                 offset = offset + 8
             Case msf_blob:
-                bb() = sf.value
+                bb() = sf.Value
                 CopyMemory ByVal VarPtr(buf(offset)), ByVal VarPtr(bb(0)), sf.size
                 offset = offset + sf.size
         End Select
@@ -225,23 +225,23 @@ Function fromBytes(buf() As Byte) As Boolean
             Case msf_byte
                 CopyMemory ByVal VarPtr(b), ByVal VarPtr(buf(offset)), 1
                 offset = offset + 1
-                sf.value = b
+                sf.SetValue b
             Case msf_int:
                 CopyMemory ByVal VarPtr(i), ByVal VarPtr(buf(offset)), 2
-                sf.value = i
+                sf.SetValue i
                 offset = offset + 2
             Case msf_long:
                 CopyMemory ByVal VarPtr(l), ByVal VarPtr(buf(offset)), 4
-                sf.value = l
+                sf.SetValue l
                 offset = offset + 4
             Case msf_cur:
                 CopyMemory ByVal VarPtr(c), ByVal VarPtr(buf(offset)), 8
-                sf.value = c
+                sf.SetValue c
                 offset = offset + 8
             Case msf_blob:
                 ReDim bb(sf.size - 1)
                 CopyMemory ByVal VarPtr(bb(0)), ByVal VarPtr(buf(offset)), sf.size
-                sf.value = bb()
+                sf.SetValue bb()
                 offset = offset + sf.size
         End Select
     Next

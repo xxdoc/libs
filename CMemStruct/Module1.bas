@@ -1,4 +1,5 @@
 Attribute VB_Name = "Module1"
+Global bitFlags(31) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
 Private Declare Function htonl Lib "ws2_32.dll" (ByVal hostlong As Long) As Long
 
@@ -20,13 +21,13 @@ Function CurToHex(cur) As String
     CurToHex = Right("00000000" & Hex(hi), 8) & Right("00000000" & Hex(lo), 8)
 End Function
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 Function HexDumpB(b() As Byte, Optional hexOnly = 0) As String
