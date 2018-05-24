@@ -1,0 +1,14 @@
+nstruct blah{
+	unsigned char byte1,
+	*char lpStr1,
+	int int1,
+	__int64 cur1,
+	unsigned char buf[15],
+};
+‡Private Type vbTest
+    byte1 As Byte
+    int1 As Integer
+    long1 As Long
+    cur1 As Currency
+    blob1(14) As Byte
+End Type
