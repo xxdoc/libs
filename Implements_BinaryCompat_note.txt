@@ -1,0 +1,8 @@
+
+only the default interface of a class is subject to binary compatability.
+any other interfaces added using Implements keyword are not affected and can
+be changed. 
+
+thats awesome in practice, you can extend your old classes that multiple projects
+depend on without breaking every other project or having to compile a whole new
+myClass4.cls

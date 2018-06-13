@@ -1,0 +1,256 @@
+Public Function API_Http(sURL As String, _
+                         sMethod As Method, _
+                         sRequestHeads As String, _
+                         cookie As String, _
+                         sPostData As String)
+    ',
+    ',
+    '
+    Dim iRetVal          As Integer
+    Dim sBuffer          As String * 1024
+    Dim lBufferLen       As Long
+    Dim vDllVersion      As tWinInetDLLVersion
+    Dim sStatus          As String
+    Dim sOptionBuffer    As String
+    Dim lOptionBufferLen As Long
+    Dim SecFlag          As Long
+    Dim dwSecFlag        As Long
+    Dim dwPort           As Long
+    Dim hInternetConnect As Long, hHttpOpenRequest As Long
+    Dim HttpORhttps      As String, sHost As String, sPort As String, sURI As String
+    Dim bUseSecure       As Boolean, lService As Integer
+   
+    Screen.MousePointer = vbHourglass                                           '
+    lBufferLen = Len(sPostData)
+    
+    If m_bbUseProxy = True Then
+        hInternetSession = InternetOpen(m_StrsUserAgent, INTERNET_OPEN_TYPE_PROXY, "http=" + m_StrsProxyAddress, vbNullString, 0)
+    Else
+        hInternetSession = InternetOpen(m_StrsUserAgent, INTERNET_OPEN_TYPE_DIRECT, vbNullString, vbNullString, 0)
+    End If
+    
+    '// select which port should API use (cocus 19-feb-14)
+    '// parse the url (cocus 19-feb-14)
+    If Not ParseURL(sURL, HttpORhttps, m_StrUseName, m_StrUsePassword, sHost, sPort, sURI, , "-1") Then
+        '// error parsing url
+        Exit Function
+    End If
+                  
+    Select Case LCase$(HttpORhttps)
+
+        Case "http":                lService = INTERNET_SERVICE_HTTP
+
+        Case "https":               lService = INTERNET_SERVICE_HTTP: bUseSecure = True
+
+        Case "ftp":                 lService = INTERNET_SERVICE_FTP
+    End Select
+    
+    dwPort = CInt(sPort)
+
+    If CBool(hInternetSession) Then
+        '
+        InternetQueryOption hInternetSession, INTERNET_OPTION_VERSION, vDllVersion, Len(vDllVersion)
+
+        '        Debug.Print vDllVersion.lMajorVersion
+        '        Debug.Print vDllVersion.lMinorVersion
+        '        Debug.Print "InternetConnect"                                           '~~~
+        If bUseSecure = True Then
+          
+            SecFlag = INTERNET_FLAG_SECURE Or INTERNET_FLAG_IGNORE_CERT_CN_INVALID Or INTERNET_FLAG_IGNORE_CERT_DATE_INVALID
+        
+        End If
+
+        '// select which port should API use (cocus 19-feb-14)
+        If dwPort = -1 Then
+            If LCase$(sPort) = "ftp" Then
+                dwPort = INTERNET_DEFAULT_FTP_PORT
+            ElseIf bUseSecure Then
+                dwPort = INTERNET_DEFAULT_HTTPS_PORT
+            Else
+                dwPort = INTERNET_DEFAULT_HTTP_PORT
+            End If
+        End If
+
+        If m_bAutomatiRedirection = True Then 'AutomatiRedirection
+        
+            SecFlag = INTERNET_FLAG_NO_AUTO_REDIRECT
+        End If
+
+        If m_bNocookieAndcache = True Then
+            SecFlag = SecFlag Or (INTERNET_FLAG_NO_CACHE_WRITE + INTERNET_FLAG_NO_COOKIES)  '
+        End If
+        '
+        hInternetConnect = InternetConnect(hInternetSession, sHost, dwPort, m_StrUseName, m_StrUsePassword, lService, 0, 0)
+        'hInternetConnect = InternetConnect(hInternetSession, CheckUrl, dwPort,  vbNullString, vbNullString, INTERNET_SERVICE_HTTP, 0, 0)
+
+        If hInternetConnect > 0 Then                                            '
+            Debug.Print "HttpOpenRequest"                                       '
+
+            If sMethod = 1 Then
+                sOptionBuffer = vbNullString
+                lOptionBufferLen = 0
+                hHttpOpenRequest = HttpOpenRequest(hInternetConnect, "GET", sURI, "HTTP/1.1", vbNullString, 0, INTERNET_FLAG_RELOAD Or SecFlag, 0)
+            Else
+                sOptionBuffer = sPostData
+                lOptionBufferLen = Len(sPostData)
+                hHttpOpenRequest = HttpOpenRequest(hInternetConnect, "POST", sURI, "HTTP/1.1", vbNullString, 0, INTERNET_FLAG_RELOAD Or SecFlag, 0)
+            End If
+
+            If CBool(hHttpOpenRequest) Then
+                Debug.Print "HttpSendRequest"                                   '
+                Debug.Print sOptionBuffer
+                Dim sHeader As String
+
+                If InStr(sRequestHeads, "Accept:") = 0 Then '
+                    sRequestHeads = sRequestHeads + vbCrLf + "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/x-shockwave-flash, application/vnd.ms-excel, application/vnd.ms-powerpoint, application/msword, */*" + vbCrLf
+                End If
+
+                If InStr(sRequestHeads, "Referer:") = 0 Then '
+                    sRequestHeads = sRequestHeads + "Referer: " + sURL + vbCrLf
+                End If
+
+                sHeader = sRequestHeads
+                sRequestHeads = vbNullString
+                '
+                iRetVal = HttpAddRequestHeaders(hHttpOpenRequest, sHeader, Len(sHeader), HTTP_ADDREQ_FLAG_REPLACE Or HTTP_ADDREQ_FLAG_ADD)
+
+                If cookie <> "" Then '
+                    '
+                    cookie = "Cookie: " + cookie + vbCrLf
+                    ' szHeaders = szHeaders + Cookie
+                    iRetVal = HttpAddRequestHeaders(hHttpOpenRequest, cookie, Len(cookie), HTTP_ADDREQ_FLAG_REPLACE Or HTTP_ADDREQ_FLAG_ADD)
+                End If
+                '
+                Dim dwTimeOut As Long
+                dwTimeOut = m_intTimeOut                                    ' time out is set to 5 minutes
+                iRetVal = InternetSetOption(hHttpOpenRequest, INTERNET_OPTION_CONNECT_TIMEOUT, dwTimeOut, 4)
+                Debug.Print iRetVal & " " & Err.LastDllError & " " & "INTERNET_OPTION_CONNECT_TIMEOUT"
+                iRetVal = InternetSetOption(hHttpOpenRequest, INTERNET_OPTION_RECEIVE_TIMEOUT, dwTimeOut, 4)
+                Debug.Print iRetVal & " " & "INTERNET_OPTION_RECEIVE_TIMEOUT"
+                iRetVal = InternetSetOption(hHttpOpenRequest, INTERNET_OPTION_SEND_TIMEOUT, dwTimeOut, 4)
+                Debug.Print iRetVal & " " & "INTERNET_OPTION_SEND_TIMEOUT"
+
+                If sPostData <> "" Then
+                    If InStr(sHeader, "Content-Type:") = 0 Then
+                        sRequestHeads = sRequestHeads + "Content-Type: application/x-www-form-urlencoded" + vbCrLf
+                    End If
+                    sRequestHeads = sRequestHeads + "Content-Length: " + CStr(Len(sPostData)) + vbCrLf
+                End If
+Resend:         '
+                iRetVal = HttpSendRequest(hHttpOpenRequest, sRequestHeads, Len(sRequestHeads), sOptionBuffer, lOptionBufferLen)
+
+                If (iRetVal <> 1) And (Err.LastDllError = 12045) Then
+                    MsgBox "Invalid CA"
+                    '
+                    'Certificate Authority is invalid.
+                    Debug.Print "Invalid Cert Auth, resending" & " "
+                    dwSecFlag = SECURITY_FLAG_IGNORE_UNKNOWN_CA
+                    '.
+                    iRetVal = InternetSetOption(hHttpOpenRequest, INTERNET_OPTION_SECURITY_FLAGS, dwSecFlag, 4)
+                    Debug.Print iRetVal & " " & Err.LastDllError & " " & "INTERNET_OPTION_SECURITY_FLAGS"
+                    GoTo Resend
+                End If
+
+                If iRetVal Then
+                    Dim dwStatus As Long, dwStatusSize As Long
+                    dwStatusSize = Len(dwStatus)
+                    HttpQueryInfo hHttpOpenRequest, HTTP_QUERY_FLAG_NUMBER Or HTTP_QUERY_STATUS_CODE, dwStatus, dwStatusSize, 0
+
+                    If m_bbUseProxyLogin = True And dwStatus = HTTP_STATUS_PROXY_AUTH_REQ Then '
+     
+                        iRetVal = InternetSetOptionStr(hHttpOpenRequest, INTERNET_OPTION_PROXY_USERNAME, m_StrsProxyUser, Len(m_StrsProxyUser) + 1)
+                        iRetVal = InternetSetOptionStr(hHttpOpenRequest, INTERNET_OPTION_PROXY_PASSWORD, m_StrsProxyPass, Len(m_StrsProxyPass) + 1)
+                        GoTo Resend
+                    End If
+
+                    If m_bUseLogin = True And dwStatus = HTTP_STATUS_DENIED Then        '
+                        iRetVal = InternetSetOptionStr(hHttpOpenRequest, INTERNET_OPTION_USERNAME, m_StrUseName, Len(m_StrUseName) + 1)
+                        iRetVal = InternetSetOptionStr(hHttpOpenRequest, INTERNET_OPTION_PASSWORD, m_StrUsePassword, Len(m_StrUsePassword) + 1)
+                        GoTo Resend
+                   End If
+                    Debug.Print "HttpQueryInfo"
+                    'response headers ReturnHeads
+                    Dim lblContentType    As String, lblContentLength As String, lblLastModified As String
+                    Dim lblVersion        As String, lblStatusCode As String, lblRawHeaders As String, lblStatusText As String
+                    Dim txtRequestHeaders As String
+                    Dim lblForwarded      As String, lblServer As String, lblRequestMethod As String, lblPragma As String, lblUserAgent As String, lblRequestMethod2 As String
+                    '                    GetQueryInfo hHttpOpenRequest, lblContentType, HTTP_QUERY_CONTENT_TYPE
+                    '                    GetQueryInfo hHttpOpenRequest, lblContentLength, HTTP_QUERY_CONTENT_LENGTH
+                    '                    GetQueryInfo hHttpOpenRequest, lblLastModified, HTTP_QUERY_LAST_MODIFIED
+                    '                    GetQueryInfo hHttpOpenRequest, lblVersion, HTTP_QUERY_VERSION
+                    '                    GetQueryInfo hHttpOpenRequest, lblStatusCode, HTTP_QUERY_STATUS_CODE
+                    '                    GetQueryInfo hHttpOpenRequest, lblStatusText, HTTP_QUERY_STATUS_TEXT
+                    '                    GetQueryInfo hHttpOpenRequest, lblRawHeaders, HTTP_QUERY_RAW_HEADERS
+                    GetQueryInfo hHttpOpenRequest, m_StrRequestHeaders, HTTP_QUERY_RAW_HEADERS_CRLF '
+                    
+                    '                    GetQueryInfo hHttpOpenRequest, lblForwarded, HTTP_QUERY_FORWARDED
+                    '                    GetQueryInfo hHttpOpenRequest, lblServer, HTTP_QUERY_SERVER
+                    '                    GetQueryInfo hHttpOpenRequest, lblRequestMethod, HTTP_QUERY_REQUEST_METHOD
+                    '                    GetQueryInfo hHttpOpenRequest, lblPragma, HTTP_QUERY_FLAG_REQUEST_HEADERS + HTTP_QUERY_PRAGMA
+                    '                    GetQueryInfo hHttpOpenRequest, txtRequestHeaders, HTTP_QUERY_FLAG_REQUEST_HEADERS + HTTP_QUERY_RAW_HEADERS_CRLF
+                    '                    GetQueryInfo hHttpOpenRequest, lblUserAgent, HTTP_QUERY_FLAG_REQUEST_HEADERS + HTTP_QUERY_USER_AGENT
+                    '                    GetQueryInfo hHttpOpenRequest, lblRequestMethod2, HTTP_QUERY_FLAG_REQUEST_HEADERS + HTTP_QUERY_REQUEST_METHOD
+                    sStatus = "ok~~~"
+
+                    If InStr(m_StrRequestHeaders, "Set-Cookie: ") > 0 Then
+                        'ReturnCookies = Cookie(ReturnHeads)
+                        m_StrRequestCookies = LiteCookies(m_StrRequestHeaders)
+
+                        If m_bSaveCookietoIE = True Then
+                            Dim i As Integer, buff() As String
+                            buff = Split(m_StrRequestCookies, ";")
+
+                            'InternetSetCookie "http://" + CheckUrl(sURL), "cookie:", ReturnCookies'
+                            For i = 0 To UBound(buff) - 1
+                                InternetSetCookie "http://" + CheckUrl(sURL), Split(buff(i), "=")(0), Split(buff(i), "=")(1) '& ";expires=Sun,22-Feb-2099 00:00:00 GMT;path=/; "
+                            Next
+                        End If
+                    End If
+                    RaiseEvent RequestHeads(sURL, m_StrRequestHeaders)
+                    '
+                    Dim lBytesRead As Long, bBuffer() As Byte, lRead As Long
+                    ReDim bBuffer(0 To CHUNK_SIZE)
+                    Do
+                        InternetReadFile hHttpOpenRequest, bBuffer(0), CHUNK_SIZE, lRead
+
+                        If lRead Then
+                            ReDim Preserve m_BytReturnBytArry(0 To lBytesRead + lRead - 1&)
+                            CopyMemory m_BytReturnBytArry(lBytesRead), bBuffer(0), lRead
+                            lBytesRead = lBytesRead + lRead
+
+                            ' If lRead < CHUNK_SIZE Then Exit Do
+                        Else
+                            Exit Do
+                        End If
+                    Loop
+                    API_Http = True
+                    RaiseEvent RequestFinished(sURL, m_BytReturnBytArry, lBytesRead)
+                Else
+                    ' HttpSendRequest failed
+                    sStatus = "HttpSendRequest call failed; Error code: " & Err.LastDllError & "."
+                    API_Http = False
+                    RaiseEvent RequestError(sURL, sStatus)
+                End If
+            Else
+                ' HttpOpenRequest failed
+                sStatus = "HttpOpenRequest call failed; Error code: " & Err.LastDllError & "."
+                API_Http = False
+                
+            End If
+        Else
+            ' InternetConnect failed
+            sStatus = "InternetConnect call failed; Error code: " & Err.LastDllError & "."
+            API_Http = False
+        End If
+    Else
+        ' hInternetSession handle not allocated
+        sStatus = "InternetOpen call failed: Error code: " & Err.LastDllError & "."
+        API_Http = False
+    End If
+    ReturnStatus = sStatus
+    Dim bret As Integer
+    bret = InternetCloseHandle(hHttpOpenRequest)
+    bret = InternetCloseHandle(hInternetConnect)
+    bret = InternetCloseHandle(hInternetSession)
+    Screen.MousePointer = 0                                                     '
+End Function

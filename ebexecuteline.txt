@@ -1,0 +1,30 @@
+
+Private Declare Function EbExecuteLine Lib "vba6.dll" _
+ (ByVal pStringToExec As Long, ByVal Foo1 As Long, _
+  ByVal Foo2 As Long, ByVal fCheckOnly As Long) As Long
+
+' For VB5 IDE
+'Declare Function EbExecuteLine Lib "vba5.dll" _
+ (ByVal pStringToExec As Long, ByVal Foo1 As Long, _
+  ByVal Foo2 As Long, ByVal fCheckOnly As Long) As Long
+
+' FOR Access 97/VBE.dll clients like Word 97 and Excel 97
+'Declare Function EbExecuteLine Lib "vba332.dll" _
+ (ByVal pStringToExec As Long, ByVal Foo1 As Long, _
+  ByVal Foo2 As Long, ByVal fCheckOnly As Long) As Long
+
+Public x
+
+Function FExecuteCode(stCode As String, _
+ Optional fCheckOnly As Boolean) As Boolean
+
+    FExecuteCode = EbExecuteLine(StrPtr(stCode), 0&, 0&, False) = 0
+End Function
+
+Private Sub Form_Load()
+ 
+    x = 1
+    Call FExecuteCode("msgbox form1.x", True)
+ 
+    End
+End Sub
