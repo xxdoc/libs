@@ -88,6 +88,7 @@ End Sub
 
 Function isRunning() As Boolean
     Dim exitCode As Long, rv As Long
+    If hThread = 0 Then Exit Function
     rv = GetExitCodeThread(hThread, exitCode)
     If rv = 0 Then Exit Function 'failed
     If exitCode = STILL_ACTIVE Then isRunning = True
@@ -131,7 +132,7 @@ Private Sub Class_Terminate()
     'since it does direct memory writes to class private variable memory addresses
     
     Dim cycles As Long
-    
+   
     If isRunning() Then
         Form1.lst Hex(ObjPtr(Me)) & " Class_Terminate while thread active waiting while aborting download", 2
     End If
@@ -142,7 +143,7 @@ Private Sub Class_Terminate()
         Sleep 10
         DoEvents
         If cycles = 1000 Then
-            Form1.lst "wtf force terminating downloader thread - shouldnt ever happen..."
+            MsgBox "wtf force terminating downloader thread - shouldnt ever happen..."
             TerminateThread hThread, -4
         End If
         If cycles = 1500 Then

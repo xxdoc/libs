@@ -121,11 +121,43 @@ Private Sub Form_Unload(Cancel As Integer)
     FreeLibrary hLib 'so ide doesnt hang onto it and we can recompile if we want without closing ide
 End Sub
 
+Function LoadDLL() As Boolean
+    
+    Dim dll As String
+    
+    If hLib <> 0 Then
+        lst "Dll already loaded"
+    Else
+        dll = App.path & "\Debug\bgdl.dll"
+        hLib = LoadLibrary(dll)
+        
+        If hLib = 0 Then
+            lst "Failed to find lib: " & dll
+            dll = App.path & "\Release\bgdl.dll"
+            hLib = LoadLibrary(dll)
+        End If
+        
+        If hLib = 0 Then
+            lst "Failed to find lib: " & dll
+            dll = App.path & "\bgdl.dll"
+            hLib = LoadLibrary(dll)
+        End If
+        
+        If hLib = 0 Then
+            lst "Fatal - Failed to find lib: " & dll
+            Exit Function
+        End If
+    End If
+    
+    LoadDLL = True
+    
+End Function
+
 Private Sub Form_Load()
     
     On Error Resume Next
         
-    Dim url1, url2, dll
+    Dim url1, url2
     Dim f1 As String, f2 As String
     
     Text1 = Now
@@ -135,28 +167,15 @@ Private Sub Form_Load()
     List1.Clear
     List2.Clear
     
-    'url1 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db"
-    url1 = "http://sandsprite.com//blogs/files/idajsdbg_setup.exe"
-    url2 = "http://sandsprite.com/CodeStuff/PDFStreamDumper_Setup.exe"
+    If Not LoadDLL() Then Exit Sub
+    
+    url1 = "http://speedtest.ftp.otenet.gr/files/test10Mb.db"
+    url2 = "http://www.x-ways.net/winhex.zip"
     
     f1 = App.path & "\x1.bin" 'note api cant handle accidental double slashs
     f2 = App.path & "\x2.bin"
     Kill f1
     Kill f2
-    
-    dll = App.path & "\bgdl.dll"
-    hLib = LoadLibrary(dll)
-    
-    If hLib = 0 Then
-        lst "Failed to find lib: " & dll
-        dll = App.path & "\Debug\bgdl.dll"
-        hLib = LoadLibrary(dll)
-    End If
-    
-    If hLib = 0 Then
-        lst "Failed to find lib: " & dll
-        Exit Sub
-    End If
 
     Set d1 = New CAsyncDownload
     Set d2 = New CAsyncDownload

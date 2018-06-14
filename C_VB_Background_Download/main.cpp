@@ -24,29 +24,31 @@ struct CONFIG{
 	int*  STATUS_CODE;
 	int*  PROGRESS;
 	int*  CONTENT_LENGTH;
-	char* lpOutBuffer;
-	char* buf;
-	int bufSz;
-	int outBufSz;
-	HINTERNET hOpen;
-	HINTERNET hConnect;
-	HINTERNET hRequest;
-	FILE *hFile ;
 };
 
 void releaseCFG(CONFIG* cfg){
 	  free(cfg->SERVER);
 	  free(cfg->WEBPATH);
 	  free(cfg->TOFILE);
-	  if(cfg->lpOutBuffer != NULL) free(cfg->lpOutBuffer);
-	  if(cfg->buf != NULL) free(cfg->buf);
 	  free(cfg);
 }
 
 DWORD WINAPI BackgroundWinInetDownload_Thread( LPVOID lpParam ) 
 {
-  unsigned long sz;
   int rv = 0 ;
+  unsigned long sz;
+  unsigned char buf[0x1001];
+  char lpOutBuffer[256] = {0};
+  DWORD dwSize = sizeof(lpOutBuffer);
+  DWORD sz2 = 4;
+  DWORD opts;
+  DWORD timeout = 3 * 1000;	//3 seconds	
+
+  HINTERNET hUrl = 0;
+  HINTERNET hOpen = 0;
+  HINTERNET hConnect = 0;
+  HINTERNET hRequest = 0;
+  FILE *hFile = 0;
 
   CONFIG *cfg = (CONFIG*)lpParam;
 
@@ -56,28 +58,30 @@ DWORD WINAPI BackgroundWinInetDownload_Thread( LPVOID lpParam )
 							SECURITY_FLAG_IGNORE_REVOCATION |
 							SECURITY_FLAG_IGNORE_WRONG_USAGE; 
   
-  DWORD sz2 = 4;
-  DWORD opts;
-  DWORD dwSize = cfg->outBufSz;
 
   *cfg->RETVAL = -1;
-  cfg->hOpen = InternetOpen("WininetDl", INTERNET_OPEN_TYPE_PRECONFIG, NULL,NULL, 0 );
-  if(cfg->hOpen == NULL) goto errOut;
+  hOpen = InternetOpen("WininetDl", INTERNET_OPEN_TYPE_PRECONFIG, NULL,NULL, 0 );
+  if(hOpen == NULL) goto errOut;
+
+  InternetSetOption(hOpen, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout, sizeof(timeout));
 
   if(cfg->isSSL){
-	  cfg->hConnect = InternetConnect(cfg->hOpen, cfg->SERVER, INTERNET_DEFAULT_HTTPS_PORT, NULL,NULL, INTERNET_SERVICE_HTTP, INTERNET_FLAG_SECURE,0);
+	  hConnect = InternetConnect(hOpen, cfg->SERVER, INTERNET_DEFAULT_HTTPS_PORT, NULL,NULL, INTERNET_SERVICE_HTTP, INTERNET_FLAG_SECURE,0);
   }else{
-	  cfg->hConnect = InternetConnect(cfg->hOpen, cfg->SERVER, INTERNET_DEFAULT_HTTP_PORT, NULL,NULL,INTERNET_SERVICE_HTTP,0,0);
+	  hConnect = InternetConnect(hOpen, cfg->SERVER, INTERNET_DEFAULT_HTTP_PORT, NULL,NULL,INTERNET_SERVICE_HTTP,0,0);
   }
 
-  if(cfg->hConnect == NULL) goto errOut;
+  if(hConnect == NULL) goto errOut;
 
-  cfg->hRequest = HttpOpenRequest(cfg->hConnect,
+  InternetSetOption(hConnect, INTERNET_OPTION_RECEIVE_TIMEOUT, &timeout, sizeof(timeout));
+  InternetSetOption(hConnect, INTERNET_OPTION_SEND_TIMEOUT, &timeout, sizeof(timeout));
+  
+  hRequest = HttpOpenRequest(hConnect,
                                 "GET",
                                 cfg->WEBPATH,
                                 "HTTP/1.1", NULL, NULL, INTERNET_FLAG_RELOAD | INTERNET_FLAG_EXISTING_CONNECT, 0); 
 
-  if(cfg->hRequest == NULL) goto errOut;
+  if(hRequest == NULL) goto errOut;
   
   /*
   rv = InternetQueryOption(hRequest, INTERNET_OPTION_SECURITY_FLAGS, &opts, &sz2);
@@ -89,23 +93,22 @@ DWORD WINAPI BackgroundWinInetDownload_Thread( LPVOID lpParam )
     if(rv==0) rv = GetLastError();
   } */
 
-  rv = HttpSendRequest(cfg->hRequest,0,0,0,0);
+  rv = HttpSendRequest(hRequest,0,0,0,0);
   if(rv==0) goto errOut;
 
-  rv = HttpQueryInfo(cfg->hRequest, HTTP_QUERY_STATUS_CODE, (LPVOID)cfg->lpOutBuffer, &dwSize, NULL);
-  if(rv) *cfg->STATUS_CODE = atoi(cfg->lpOutBuffer); 
+  rv = HttpQueryInfo(hRequest, HTTP_QUERY_STATUS_CODE, (LPVOID)lpOutBuffer, &dwSize, NULL);
+  if(rv) *cfg->STATUS_CODE = atoi(lpOutBuffer); 
 
-  rv = HttpQueryInfo(cfg->hRequest, HTTP_QUERY_CONTENT_LENGTH , (LPVOID)cfg->lpOutBuffer, &dwSize, NULL);
-  if(rv) *cfg->CONTENT_LENGTH = atoi(cfg->lpOutBuffer); 
+  rv = HttpQueryInfo(hRequest, HTTP_QUERY_CONTENT_LENGTH , (LPVOID)lpOutBuffer, &dwSize, NULL);
+  if(rv) *cfg->CONTENT_LENGTH = atoi(lpOutBuffer); 
 
-  cfg->hFile = fopen(cfg->TOFILE, "wb");
-  if(cfg->hFile == NULL) goto errOut;
+  hFile = fopen(cfg->TOFILE, "wb");
+  if(hFile == NULL) goto errOut;
 
-  while(InternetReadFile(cfg->hRequest, cfg->buf, cfg->bufSz-1, &sz) && sz !=0)
+  while(InternetReadFile(hRequest, buf, sizeof(buf)-1, &sz) && sz !=0)
   {
 	 if(*cfg->ABORT) goto errOut;
-	 fwrite(cfg->buf, 1, sz, cfg->hFile);
-	 //cfg->buf[sz] = '\0';
+	 fwrite(buf, 1, sz, hFile);
 	 *cfg->PROGRESS += sz;
   }
   
@@ -121,16 +124,17 @@ errOut:
    //https://support.microsoft.com/en-us/kb/193625
 
 cleanup:
-  if(cfg->hFile != NULL) fclose(cfg->hFile);
-  if(cfg->hOpen != NULL) InternetCloseHandle(cfg->hOpen);
+  if(hFile != NULL) fclose(hFile);
+  if(hRequest!=NULL) InternetCloseHandle(hRequest);
+  if(hConnect!=NULL) InternetCloseHandle(hConnect);
+  if(hOpen != NULL) InternetCloseHandle(hOpen);
 
   releaseCFG(cfg);
-
   return 0;
 
 }
 
-int __stdcall BackgroundDownload(char* server, char* webpath, int ssl, char* toFile, int* retVal, int* abort,	int* statusCode, int* content_length, int* progress)
+int __stdcall BackgroundDownload(char* server, char* webpath, int ssl, char* toFile, int* retVal, int* abort, int* statusCode, int* content_length, int* progress)
 {
 #pragma EXPORT
 	
@@ -163,17 +167,6 @@ int __stdcall BackgroundDownload(char* server, char* webpath, int ssl, char* toF
 	cfg->SERVER = strdup(server);
 	cfg->WEBPATH = strdup(webpath);
 	cfg->TOFILE = strdup(toFile);
-	
-	cfg->bufSz = 0x1001;
-	cfg->buf = (char*)malloc(cfg->bufSz);
-
-	cfg->outBufSz = 256;
-	cfg->lpOutBuffer = (char*)malloc(cfg->outBufSz);
-	
-	if(cfg->buf == NULL || cfg->lpOutBuffer == NULL){
-		releaseCFG(cfg);
-		return 0;
-	}
 
 	HANDLE hThread = CreateThread(NULL, 0, BackgroundWinInetDownload_Thread, (LPVOID)cfg, 0, 0); 
 	
