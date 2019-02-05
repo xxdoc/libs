@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form Form1 
    Caption         =   "Form1"
    ClientHeight    =   9345
@@ -10,6 +10,14 @@ Begin VB.Form Form1
    ScaleHeight     =   9345
    ScaleWidth      =   18615
    StartUpPosition =   3  'Windows Default
+   Begin VB.CommandButton cmdList 
+      Caption         =   "List Windows"
+      Height          =   465
+      Left            =   10485
+      TabIndex        =   17
+      Top             =   7650
+      Width           =   1365
+   End
    Begin VB.CommandButton Command7 
       Caption         =   "Copy Console"
       Height          =   495
@@ -224,6 +232,19 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
  Dim ws As New CWindowsSystem
  
+Private Sub cmdList_Click()
+    Dim w As Cwindow
+    Dim ws As New CWindowsSystem
+    Dim c As Collection
+    
+    List2.Clear
+    Set c = ws.ChildWindows()
+    For Each w In c
+        If w.Visible Then List2.AddItem w.className & " - " & w.Caption
+    Next
+    
+End Sub
+
  Private Sub Command1_Click()
     Dim c As Collection
     Dim w As New Cwindow

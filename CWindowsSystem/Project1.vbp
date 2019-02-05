@@ -1,7 +1,7 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
 Reference=*\G{3050F1C5-98B5-11CF-BB82-00AA00BDCE0B}#4.0#0#C:\WINDOWS\system32\mshtml.tlb#Microsoft HTML Object Library
-Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; mscomctl.ocx
 Class=CWindow; CWindow.cls
 Class=CWindowsSystem; CWindowsSystem.cls
 Module=modMain; modMain.bas

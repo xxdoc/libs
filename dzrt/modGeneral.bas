@@ -410,7 +410,7 @@ ret0:
 End Function
 
 
-'supports %x, %c, %s, %d, %10d \t \n %%
+'supports %x, %c, %s, %d, %10d \t \n %% %-20s
 Function printf(ByVal msg As String, vars() As Variant) As String
 
     Dim t
@@ -451,6 +451,7 @@ Private Function HandleMarker(base, ByVal marker, var) As String
     Dim spacer As String
     Dim prefix As String
     Dim count As Long
+    Dim leftJustify As Boolean
     
     If Len(base) > Len(marker) Then
         newBase = Mid(base, Len(marker) + 1) 'remove the marker..
@@ -471,6 +472,10 @@ Private Function HandleMarker(base, ByVal marker, var) As String
     
     If Len(marker) > 1 Then 'it has some more formatting involved..
         marker = Mid(marker, 1, Len(marker) - 1) 'trim off type
+        If Left(marker, 1) = "-" Then
+            leftJustify = True
+            marker = Mid(marker, 2)  'trim off left justify marker
+        End If
         If Left(marker, 1) = "0" Then
             spacer = "0"
             marker = Mid(marker, 2)
@@ -481,8 +486,12 @@ Private Function HandleMarker(base, ByVal marker, var) As String
         If count > 0 Then prefix = String(count, spacer)
     End If
     
-    HandleMarker = prefix & nVal & newBase
-            
+    If leftJustify Then
+        HandleMarker = nVal & prefix & newBase
+    Else
+        HandleMarker = prefix & nVal & newBase
+    End If
+    
 End Function
 
 Private Function ExtractSpecifier(v)

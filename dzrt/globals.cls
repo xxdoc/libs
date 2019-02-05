@@ -717,7 +717,15 @@ hell:
 End Function
 
 Function printf(ByVal msg As String, ParamArray vars()) As String
-    printf = modGeneral.printf(msg, paramsToArray(vars))
+   
+    Dim i As Long, tmp()
+    
+    For i = 0 To UBound(vars)
+        push tmp, vars(i)
+    Next
+    
+    printf = modGeneral.printf(msg, tmp)
+
 End Function
 
 Function ado_BuildConnectionString(dbServer As dbServers, dbName As String, Optional server As String, _
@@ -1316,7 +1324,16 @@ Public Function dec(ByRef x, Optional Increment As Long = 1)
 End Function
 
 Function paramsToArray(ParamArray values()) As Variant()
-    paramsToArray = values
+    'paramsToArray = values 'creates multidim array?
+    
+    Dim i As Long, tmp()
+    
+    For i = 0 To UBound(values)
+        push tmp, values(i)
+    Next
+    
+    paramsToArray = tmp
+    
 End Function
 
 Function max(values() As Variant)
