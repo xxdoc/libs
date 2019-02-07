@@ -1,0 +1,1101 @@
+<html>
+<body>
+<script>
+// Tom's Inflation Calculator
+// Copyright 2019, Tom R. Halfhill
+// JavaScript version 3.14
+// https://www.halfhill.com/inflation_js.html
+
+// modified to simple js library
+
+// Declare global variables and constants:
+CBO_START_YEAR = 2019; // UPDATE EVERY YEAR!!!!!!!!!!!!
+CBO_END_YEAR = 2028;   // UPDATE EVERY YEAR!!!!!!!!!!!!
+FORECAST_START_YEAR = 2029; // UPDATE EVERY YEAR!!!!!!!
+FORECAST_END_YEAR = 2100;   // NO NEED TO UPDATE
+var dollarFormat = true; // Dollar formatting on/off
+var errMsg = ""
+
+// Social Security Average Wage Index
+SSAWI = new Object();
+SSAWI.OLDEST_YEAR = 1951;
+SSAWI.LATEST_YEAR = 2017; // UPDATE YEARLY!!!
+SSAWI.NAME = "Social Security Wage Index, " + SSAWI.OLDEST_YEAR + "-" + SSAWI.LATEST_YEAR;
+SSAWI.DATA_SOURCE = "Social Security Administration";
+SSAWI.rates = new Array(100);
+SSAWI.rates[0] = 6.22;   // 1952
+SSAWI.rates[1] = 5.59;   // 1953
+SSAWI.rates[2] = 0.52;   // 1954
+SSAWI.rates[3] = 4.62;   // 1955
+SSAWI.rates[4] = 6.99;   // 1956
+SSAWI.rates[5] = 3.10;   // 1957
+SSAWI.rates[6] = 0.88;   // 1958
+SSAWI.rates[7] = 4.95;   // 1959
+SSAWI.rates[8] = 3.92;   // 1960
+SSAWI.rates[9] = 1.99;   // 1961
+SSAWI.rates[10] = 5.01;  // 1962
+SSAWI.rates[11] = 2.45;  // 1963
+SSAWI.rates[12] = 4.09;  // 1964
+SSAWI.rates[13] = 1.80;  // 1965
+SSAWI.rates[14] = 6.00;  // 1966
+SSAWI.rates[15] = 5.57;  // 1967
+SSAWI.rates[16] = 6.87;  // 1968
+SSAWI.rates[17] = 5.78;  // 1969
+SSAWI.rates[18] = 4.96;  // 1970
+SSAWI.rates[19] = 5.02;  // 1971
+SSAWI.rates[20] = 9.80;  // 1972
+SSAWI.rates[21] = 6.26;  // 1973
+SSAWI.rates[22] = 5.94;  // 1974
+SSAWI.rates[23] = 7.47;  // 1975
+SSAWI.rates[24] = 6.90;  // 1976
+SSAWI.rates[25] = 5.99;  // 1977
+SSAWI.rates[26] = 7.94;  // 1978
+SSAWI.rates[27] = 8.75;  // 1979
+SSAWI.rates[28] = 9.01;  // 1980
+SSAWI.rates[29] = 10.07; // 1981
+SSAWI.rates[30] = 5.51;  // 1982
+SSAWI.rates[31] = 4.87;  // 1983
+SSAWI.rates[32] = 5.88;  // 1984
+SSAWI.rates[33] = 4.26;  // 1985
+SSAWI.rates[34] = 2.97;  // 1986
+SSAWI.rates[35] = 6.38;  // 1987
+SSAWI.rates[36] = 4.93;  // 1988
+SSAWI.rates[37] = 3.96;  // 1989
+SSAWI.rates[38] = 4.62;  // 1990
+SSAWI.rates[39] = 3.73;  // 1991
+SSAWI.rates[40] = 5.15;  // 1992
+SSAWI.rates[41] = 0.86;  // 1993
+SSAWI.rates[42] = 2.68;  // 1994
+SSAWI.rates[43] = 4.01;  // 1995
+SSAWI.rates[44] = 4.89;  // 1996
+SSAWI.rates[45] = 5.84;  // 1997
+SSAWI.rates[46] = 5.23;  // 1998
+SSAWI.rates[47] = 5.57;  // 1999
+SSAWI.rates[48] = 5.53;  // 2000
+SSAWI.rates[49] = 2.39;  // 2001
+SSAWI.rates[50] = 1.00;  // 2002
+SSAWI.rates[51] = 2.44;  // 2003
+SSAWI.rates[52] = 4.65;  // 2004
+SSAWI.rates[53] = 3.66;  // 2005
+SSAWI.rates[54] = 4.60;  // 2006
+SSAWI.rates[55] = 4.54;  // 2007
+SSAWI.rates[56] = 2.30;  // 2008
+SSAWI.rates[57] = -1.51; // 2009
+SSAWI.rates[58] = 2.36;  // 2010
+SSAWI.rates[59] = 3.13;  // 2011
+SSAWI.rates[60] = 3.12;  // 2012
+SSAWI.rates[61] = 1.28;  // 2013
+SSAWI.rates[62] = 3.55;  // 2014
+SSAWI.rates[63] = 3.48;  // 2015
+SSAWI.rates[64] = 1.13;  // 2016
+SSAWI.rates[65] = 3.45;  // 2017
+// Convert percentages:
+// UPDATE LOOP VALUE YEARLY!!!
+for (var x=0; x<=65; x++) {
+	SSAWI.rates[x] = SSAWI.rates[x]/100;
+}
+// end of Social Security initialization
+
+// Consumer Price Index - Urban
+CPIU = new Object();
+CPIU.OLDEST_YEAR = 1665;
+CPIU.OLDEST_CPIU_YEAR = 1913;
+CPIU.LATEST_YEAR = 2100;
+CPIU.LATEST_DATA_YEAR = 2018; // UPDATE YEARLY!!!!!!
+CPIU.NAME = "Consumer Price Index (Urban), " + CPIU.OLDEST_YEAR + "-" + CPIU.LATEST_YEAR;
+CPIU.DATA_SOURCE = "U.S. Bureau of Labor Statistics 1913-" + CPIU.LATEST_DATA_YEAR;
+CPIU.sum = 0; // used later to compute CPI-U average
+CPIU.average = 0;
+CPIU.rates = new Array(450);
+CPIU.rates[0] = 0;       // 1666 = Economic History Services data
+CPIU.rates[1] = 7.55;    // 1667 http://www.eh.net/hmit/
+CPIU.rates[2] = 3.51;    // 1668
+CPIU.rates[3] = -6.78;   // 1669
+CPIU.rates[4] = -1.82;   // 1670
+CPIU.rates[5] = 1.85;    // 1671
+CPIU.rates[6] = -0.91;   // 1672
+CPIU.rates[7] = -4.59;   // 1673
+CPIU.rates[8] = 7.69;    // 1674
+CPIU.rates[9] = -13.39;  // 1675
+CPIU.rates[10] = 1.03;   // 1676
+CPIU.rates[11] = 1.02;   // 1677
+CPIU.rates[12] = -2.02;  // 1678
+CPIU.rates[13] = -1.03;  // 1679
+CPIU.rates[14] = 14.58;  // 1680
+CPIU.rates[15] = 2.73;   // 1681
+CPIU.rates[16] = -18.58; // 1682
+CPIU.rates[17] = 0;      // 1683
+CPIU.rates[18] = 0;      // 1684
+CPIU.rates[19] = 7.61;   // 1685
+CPIU.rates[20] = -6.06;  // 1686
+CPIU.rates[21] = 0;      // 1687
+CPIU.rates[22] = -8.6;   // 1688
+CPIU.rates[23] = 2.35;   // 1689
+CPIU.rates[24] = 2.3;    // 1690
+CPIU.rates[25] = 4.49;   // 1691
+CPIU.rates[26] = -5.38;  // 1692
+CPIU.rates[27] = -5.68;  // 1693
+CPIU.rates[28] = 6.02;   // 1694
+CPIU.rates[29] = -7.95;  // 1695
+CPIU.rates[30] = 17.28;  // 1696
+CPIU.rates[31] = -2.11;  // 1697
+CPIU.rates[32] = -5.38;  // 1698
+CPIU.rates[33] = 9.09;   // 1699
+CPIU.rates[34] = -3.13;  // 1700
+CPIU.rates[35] = 5.38;   // 1701
+CPIU.rates[36] = -8.16 ; // 1702
+CPIU.rates[37] = -1.11 ; // 1703
+CPIU.rates[38] = 13.48 ; // 1704
+CPIU.rates[39] = -9.9;   // 1705
+CPIU.rates[40] = 7.69;   // 1706
+CPIU.rates[41] = -4.08;  // 1707
+CPIU.rates[42] = -21.28; // 1708
+CPIU.rates[43] = 20.27;  // 1709
+CPIU.rates[44] = -10.11; // 1710
+CPIU.rates[45] = -1.25;  // 1711
+CPIU.rates[46] = -5.06;  // 1712
+CPIU.rates[47] = 6.67;   // 1713
+CPIU.rates[48] = -8.75;  // 1714
+CPIU.rates[49] = 12.33;  // 1715
+CPIU.rates[50] = -6.1;   // 1716
+CPIU.rates[51] = 6.49;   // 1717
+CPIU.rates[52] = -6.1;   // 1718
+CPIU.rates[53] = 6.49;   // 1719
+CPIU.rates[54] = -7.32;  // 1720
+CPIU.rates[55] = -6.58;  // 1721
+CPIU.rates[56] = 5.63;   // 1722
+CPIU.rates[57] = 1.33;   // 1723
+CPIU.rates[58] = 3.95;   // 1724
+CPIU.rates[59] = 13.92;  // 1725
+CPIU.rates[60] = -7.78;  // 1726
+CPIU.rates[61] = 3.61;   // 1727
+CPIU.rates[62] = -5.81;  // 1728
+CPIU.rates[63] = -1.23;  // 1729
+CPIU.rates[64] = 0;      // 1730
+CPIU.rates[65] = -11.25; // 1731
+CPIU.rates[66] = -7.04;  // 1732
+CPIU.rates[67] = 3.03;   // 1733
+CPIU.rates[68] = -2.94;  // 1734
+CPIU.rates[69] = 3.03;   // 1735
+CPIU.rates[70] = -4.41;  // 1736
+CPIU.rates[71] = 3.08;   // 1737
+CPIU.rates[72] = 4.48;   // 1738
+CPIU.rates[73] = -11.43; // 1739
+CPIU.rates[74] = 6.45;   // 1740
+CPIU.rates[75] = 37.88;  // 1741
+CPIU.rates[76] = -10.99; // 1742
+CPIU.rates[77] = -12.35; // 1743
+CPIU.rates[78] = -7.04;  // 1744
+CPIU.rates[79] = -3.03;  // 1745
+CPIU.rates[80] = 1.56;   // 1746
+CPIU.rates[81] = 10.77;  // 1747
+CPIU.rates[82] = 13.89;  // 1748
+CPIU.rates[83] = 2.44;   // 1749
+CPIU.rates[84] = 0;      // 1750
+CPIU.rates[85] = 1.19;   // 1751
+CPIU.rates[86] = 1.18;   // 1752
+CPIU.rates[87] = -2.33;  // 1753
+CPIU.rates[88] = -3.57;  // 1754
+CPIU.rates[89] = -2.47;  // 1755
+CPIU.rates[90] = -2.53;  // 1756
+CPIU.rates[91] = 5.19;   // 1757
+CPIU.rates[92] = 7.41;   // 1758
+CPIU.rates[93] = 13.79;  // 1759
+CPIU.rates[94] = -3.03;  // 1760
+CPIU.rates[95] = -8.33;  // 1761
+CPIU.rates[96] = 7.95;   // 1762
+CPIU.rates[97] = 0;      // 1763
+CPIU.rates[98] = -7.37;  // 1764
+CPIU.rates[99] = 1.14;   // 1765
+CPIU.rates[100] = 8.99;  // 1766
+CPIU.rates[101] = -2.06; // 1767
+CPIU.rates[102] = -5.26; // 1768
+CPIU.rates[103] = 3.33;  // 1769
+CPIU.rates[104] = 7.53;  // 1770
+CPIU.rates[105] = -4.0;  // 1771
+CPIU.rates[106] = 14.58; // 1772
+CPIU.rates[107] = -7.27; // 1773
+CPIU.rates[108] = -4.9;  // 1774
+CPIU.rates[109] = -5.15; // 1775
+CPIU.rates[110] = 14.13; // 1776
+CPIU.rates[111] = 21.9;  // 1777
+CPIU.rates[112] = 29.69; // 1778
+CPIU.rates[113] = -11.45;// 1779
+CPIU.rates[114] = 12.24; // 1780
+CPIU.rates[115] = -19.39;// 1781
+CPIU.rates[116] = 9.77;  // 1782
+CPIU.rates[117] = -12.33;// 1783
+CPIU.rates[118] = -3.91; // 1784
+CPIU.rates[119] = -4.88; // 1785
+CPIU.rates[120] = -2.56; // 1786
+CPIU.rates[121] = -1.75; // 1787
+CPIU.rates[122] = -4.46; // 1788
+CPIU.rates[123] = -0.93; // 1789
+CPIU.rates[124] = 3.77;  // 1790
+CPIU.rates[125] = 2.73;  // 1791
+CPIU.rates[126] = 1.77;  // 1792
+CPIU.rates[127] = 3.48;  // 1793
+CPIU.rates[128] = 10.92; // 1794
+CPIU.rates[129] = 14.39; // 1795
+CPIU.rates[130] = 5.3;   // 1796
+CPIU.rates[131] = -3.77; // 1797
+CPIU.rates[132] = -3.27; // 1798
+CPIU.rates[133] = 0;     // 1799
+CPIU.rates[134] = 2.03;  // 1800
+CPIU.rates[135] = 1.32;  // 1801
+CPIU.rates[136] = -15.69;// 1802
+CPIU.rates[137] = 5.43;  // 1803
+CPIU.rates[138] = 4.41;  // 1804
+CPIU.rates[139] = -0.7;  // 1805
+CPIU.rates[140] = 4.26;  // 1806
+CPIU.rates[141] = -5.44; // 1807
+CPIU.rates[142] = 8.63;  // 1808
+CPIU.rates[143] = -1.99; // 1809
+CPIU.rates[144] = 0;     // 1810
+CPIU.rates[145] = 6.76;  // 1811
+CPIU.rates[146] = 1.27;  // 1812
+CPIU.rates[147] = 20.0;  // 1813
+CPIU.rates[148] = 9.9;   // 1814
+CPIU.rates[149] = -12.32;// 1815
+CPIU.rates[150] = -8.65; // 1816
+CPIU.rates[151] = -5.33; // 1817
+CPIU.rates[152] = -4.38; // 1818
+CPIU.rates[153] = 0;     // 1819
+CPIU.rates[154] = -7.84; // 1820
+CPIU.rates[155] = -4.61; // 1821 = Federal Reserve Bank data...
+CPIU.rates[156] = 3.22;  // 1822 (Global Financial Data)
+CPIU.rates[157] = -4.68; // 1823
+CPIU.rates[158] = -6.56; // 1824
+CPIU.rates[159] = 1.76;  // 1825
+CPIU.rates[160] = -5.17; // 1826
+CPIU.rates[161] = 3.63;  // 1827
+CPIU.rates[162] = 0;     // 1828
+CPIU.rates[163] = 1.76;  // 1829
+CPIU.rates[164] = -6.9;  // 1830
+CPIU.rates[165] = 3.7;   // 1831
+CPIU.rates[166] = 1.79;  // 1832
+CPIU.rates[167] = 1.76;  // 1833
+CPIU.rates[168] = -12.07;// 1834
+CPIU.rates[169] = 17.64; // 1835
+CPIU.rates[170] = 13.34; // 1836
+CPIU.rates[171] = 5.88;  // 1837
+CPIU.rates[172] = -1.39; // 1838
+CPIU.rates[173] = 0;     // 1839
+CPIU.rates[174] = -15.49;// 1840
+CPIU.rates[175] = 0;     // 1841
+CPIU.rates[176] = -8.32; // 1842
+CPIU.rates[177] = -7.27; // 1843
+CPIU.rates[178] = 1.95;  // 1844
+CPIU.rates[179] = 3.86;  // 1845
+CPIU.rates[180] = 7.41;  // 1846
+CPIU.rates[181] = 0;     // 1847
+CPIU.rates[182] = -12.07;// 1848
+CPIU.rates[183] = 5.88;  // 1849
+CPIU.rates[184] = -5.55; // 1850
+CPIU.rates[185] = 17.64; // 1851
+CPIU.rates[186] = 0;     // 1852
+CPIU.rates[187] = 6.67;  // 1853
+CPIU.rates[188] = 0;     // 1854
+CPIU.rates[189] = 4.68;  // 1855
+CPIU.rates[190] = 1.5;   // 1856
+CPIU.rates[191] = 2.93;  // 1857
+CPIU.rates[192] = -1.42; // 1858
+CPIU.rates[193] = -8.71; // 1859
+CPIU.rates[194] = -3.17; // 1860
+CPIU.rates[195] = 3.27;  // 1861
+CPIU.rates[196] = 9.54;  // 1862
+CPIU.rates[197] = 13.04; // 1863
+CPIU.rates[198] = 21.79; // 1864
+CPIU.rates[199] = 7.38;  // 1865
+CPIU.rates[200] = 0.97;  // 1866
+CPIU.rates[201] = -0.96; // 1867
+CPIU.rates[202] = -3.92; // 1868
+CPIU.rates[203] = -3.07; // 1869
+CPIU.rates[204] = -4.2;  // 1870
+CPIU.rates[205] = -2.2;  // 1871
+CPIU.rates[206] = 1.13;  // 1872
+CPIU.rates[207] = -2.23; // 1873
+CPIU.rates[208] = 0;     // 1874
+CPIU.rates[209] = -4.59; // 1875
+CPIU.rates[210] = -3.66; // 1876
+CPIU.rates[211] = -6.33; // 1877
+CPIU.rates[212] = -6.76; // 1878
+CPIU.rates[213] = 7.25;  // 1879
+CPIU.rates[214] = 4.05;  // 1880
+CPIU.rates[215] = 5.19;  // 1881
+CPIU.rates[216] = -2.47; // 1882
+CPIU.rates[217] = -2.53; // 1883
+CPIU.rates[218] = -3.9;  // 1884
+CPIU.rates[219] = -1.35; // 1885
+CPIU.rates[220] = 0;     // 1886
+CPIU.rates[221] = 2.74;  // 1887
+CPIU.rates[222] = 0;     // 1888
+CPIU.rates[223] = -1.33; // 1889
+CPIU.rates[224] = 1.35;  // 1890
+CPIU.rates[225] = 0;     // 1891
+CPIU.rates[226] = -1.33; // 1892
+CPIU.rates[227] = 0;     // 1893
+CPIU.rates[228] = -2.7;  // 1894
+CPIU.rates[229] = -1.39; // 1895
+CPIU.rates[230] = 0;     // 1896
+CPIU.rates[231] = 0;     // 1897
+CPIU.rates[232] = 1.41;  // 1898
+CPIU.rates[233] = 4.17;  // 1899
+CPIU.rates[234] = 1.33;  // 1900
+CPIU.rates[235] = 2.63;  // 1901
+CPIU.rates[236] = 2.56;  // 1902
+CPIU.rates[237] = 0;     // 1903
+CPIU.rates[238] = 1.25;  // 1904
+CPIU.rates[239] = 2.47;  // 1905
+CPIU.rates[240] = 4.82;  // 1906
+CPIU.rates[241] = 3.45;  // 1907
+CPIU.rates[242] = 0;     // 1908
+CPIU.rates[243] = 5.56;  // 1909
+CPIU.rates[244] = 0;     // 1910
+CPIU.rates[245] = 2.11;  // 1911
+CPIU.rates[246] = 3.09;  // 1912
+CPIU.rates[247] = 2.04;  // 1913
+CPIU.rates[248] = 1.0;   // 1914 = U.S. Consumer Price Index (Urban)...
+CPIU.rates[249] = 1.0;   // 1915
+CPIU.rates[250] = 7.9;   // 1916
+CPIU.rates[251] = 17.4;  // 1917
+CPIU.rates[252] = 18.0;  // 1918
+CPIU.rates[253] = 14.6;  // 1919
+CPIU.rates[254] = 15.6;  // 1920
+CPIU.rates[255] = -10.5; // 1921
+CPIU.rates[256] = -6.1;  // 1922
+CPIU.rates[257] = 1.8;   // 1923
+CPIU.rates[258] = 0;     // 1924
+CPIU.rates[259] = 2.3;   // 1925
+CPIU.rates[260] = 1.1;   // 1926
+CPIU.rates[261] = -1.7;  // 1927
+CPIU.rates[262] = -1.7;  // 1928
+CPIU.rates[263] = 0;     // 1929
+CPIU.rates[264] = -2.3;  // 1930
+CPIU.rates[265] = -9.0;  // 1931
+CPIU.rates[266] = -9.9;  // 1932
+CPIU.rates[267] = -5.1;  // 1933
+CPIU.rates[268] = 3.1;   // 1934
+CPIU.rates[269] = 2.2;   // 1935
+CPIU.rates[270] = 1.5;   // 1936
+CPIU.rates[271] = 3.6;   // 1937
+CPIU.rates[272] = -2.1;  // 1938
+CPIU.rates[273] = -1.4;  // 1939
+CPIU.rates[274] = 0.7;   // 1940
+CPIU.rates[275] = 5.0;   // 1941
+CPIU.rates[276] = 10.9;  // 1942
+CPIU.rates[277] = 6.1;   // 1943
+CPIU.rates[278] = 1.7;   // 1944
+CPIU.rates[279] = 2.3;   // 1945
+CPIU.rates[280] = 8.3;   // 1946
+CPIU.rates[281] = 14.4;  // 1947
+CPIU.rates[282] = 8.1;   // 1948
+CPIU.rates[283] = -1.2;  // 1949
+CPIU.rates[284] = 1.3;   // 1950
+CPIU.rates[285] = 7.9;   // 1951
+CPIU.rates[286] = 1.9;   // 1952
+CPIU.rates[287] = 0.8;   // 1953
+CPIU.rates[288] = 0.7;   // 1954
+CPIU.rates[289] = -0.4;  // 1955
+CPIU.rates[290] = 1.5;   // 1956
+CPIU.rates[291] = 3.3;   // 1957
+CPIU.rates[292] = 2.8;   // 1958
+CPIU.rates[293] = 0.7;   // 1959
+CPIU.rates[294] = 1.7;   // 1960
+CPIU.rates[295] = 1.0;   // 1961
+CPIU.rates[296] = 1.0;   // 1962
+CPIU.rates[297] = 1.3;   // 1963
+CPIU.rates[298] = 1.3;   // 1964
+CPIU.rates[299] = 1.6;   // 1965
+CPIU.rates[300] = 2.9;   // 1966
+CPIU.rates[301] = 3.1;   // 1967
+CPIU.rates[302] = 4.2;   // 1968
+CPIU.rates[303] = 5.5;   // 1969
+CPIU.rates[304] = 5.7;   // 1970
+CPIU.rates[305] = 4.4;   // 1971
+CPIU.rates[306] = 3.2;   // 1972
+CPIU.rates[307] = 6.2;   // 1973
+CPIU.rates[308] = 11.0;  // 1974
+CPIU.rates[309] = 9.1;   // 1975
+CPIU.rates[310] = 5.8;   // 1976
+CPIU.rates[311] = 6.5;   // 1977
+CPIU.rates[312] = 7.6;   // 1978
+CPIU.rates[313] = 11.3;  // 1979
+CPIU.rates[314] = 13.5;  // 1980
+CPIU.rates[315] = 10.3;  // 1981
+CPIU.rates[316] = 6.2;   // 1982
+CPIU.rates[317] = 3.2;   // 1983
+CPIU.rates[318] = 4.3;   // 1984
+CPIU.rates[319] = 3.6;   // 1985
+CPIU.rates[320] = 1.9;   // 1986
+CPIU.rates[321] = 3.6;   // 1987
+CPIU.rates[322] = 4.1;   // 1988
+CPIU.rates[323] = 4.8;   // 1989
+CPIU.rates[324] = 5.4;   // 1990
+CPIU.rates[325] = 4.2;   // 1991
+CPIU.rates[326] = 3.0;   // 1992
+CPIU.rates[327] = 3.0;   // 1993
+CPIU.rates[328] = 2.6;   // 1994
+CPIU.rates[329] = 2.8;   // 1995
+CPIU.rates[330] = 3.0;   // 1996
+CPIU.rates[331] = 2.3;   // 1997
+CPIU.rates[332] = 1.6;   // 1998
+CPIU.rates[333] = 2.2;   // 1999
+CPIU.rates[334] = 3.4;   // 2000
+CPIU.rates[335] = 2.8;   // 2001
+CPIU.rates[336] = 1.6;   // 2002
+CPIU.rates[337] = 2.3;   // 2003
+CPIU.rates[338] = 2.7;   // 2004
+CPIU.rates[339] = 3.4;   // 2005
+CPIU.rates[340] = 3.2;   // 2006
+CPIU.rates[341] = 2.8;   // 2007
+CPIU.rates[342] = 3.8;   // 2008
+CPIU.rates[343] = -0.4;  // 2009
+CPIU.rates[344] = 1.6;   // 2010
+CPIU.rates[345] = 3.2;   // 2011
+CPIU.rates[346] = 2.1;   // 2012
+CPIU.rates[347] = 1.5;   // 2013
+CPIU.rates[348] = 1.6;   // 2014
+CPIU.rates[349] = 0.1;   // 2015
+CPIU.rates[350] = 1.3;   // 2016
+CPIU.rates[351] = 2.1;   // 2017
+CPIU.rates[352] = 2.4;   // 2018 = Latest data year
+CPIU.rates[353] = 2.2;   // 2019 = CBO forecasts (August 2018 Economic Outlook)...
+CPIU.rates[354] = 2.5;   // 2020
+CPIU.rates[355] = 2.5;   // 2021
+CPIU.rates[356] = 2.5;   // 2022
+CPIU.rates[357] = 2.4;   // 2023
+CPIU.rates[358] = 2.4;   // 2024
+CPIU.rates[359] = 2.4;   // 2025
+CPIU.rates[360] = 2.4;   // 2026
+CPIU.rates[361] = 2.4;   // 2027
+CPIU.rates[362] = 2.4;   // 2028
+// UPDATE THIS CODE YEARLY -----------------------------------------
+// Compute CPI-U average, 1913 to present:
+for (x=248; x<=352; x++) { // UPDATE LOOP TARGET FOR LATEST DATA YEAR
+	CPIU.sum = CPIU.sum + CPIU.rates[x];
+}
+CPIU.average = CPIU.sum/(CPIU.LATEST_DATA_YEAR - CPIU.OLDEST_CPIU_YEAR); // Example: 2018 minus 1913
+// Fill array to year 2100 with inflation estimate, UPDATE x TO FIRST EMPTY ARRAY ELEMENT!!!:
+for (x=363; x<=CPIU.LATEST_YEAR - CPIU.OLDEST_YEAR; x++) {
+	CPIU.rates[x] = CPIU.average;
+}
+// END OF CODE TO UPDATE YEARLY ------------------------------------
+// Convert percentages...
+for (x=0; x<=CPIU.LATEST_YEAR - CPIU.OLDEST_YEAR; x++) {
+	CPIU.rates[x] = CPIU.rates[x]/100;
+}
+// end of Consumer Price Index initialization
+
+
+// Medical Cost Inflation
+Medical = new Object();
+Medical.OLDEST_YEAR = 1935;
+Medical.LATEST_YEAR = 2018; // UPDATE YEARLY!!!!
+Medical.NAME = "Medical-Care Inflation, " + Medical.OLDEST_YEAR + "-" + Medical.LATEST_YEAR;
+Medical.DATA_SOURCE = "U.S. Bureau of Labor Statistics";
+Medical.rates = new Array(100);
+Medical.rates[0] = 0.0;     // 1936 (All extracted from CPI data, annual rate)
+Medical.rates[1] = 1.0;     // 1937
+Medical.rates[2] = 0.0;     // 1938
+Medical.rates[3] = 0.0;     // 1939
+Medical.rates[4] = 1.0;     // 1940
+Medical.rates[5] = 0.0;     // 1941
+Medical.rates[6] = 2.9;     // 1942
+Medical.rates[7] = 4.7;     // 1943
+Medical.rates[8] = 3.6;     // 1944
+Medical.rates[9] = 2.6;     // 1945
+Medical.rates[10] = 5.0;    // 1946
+Medical.rates[11] = 8.0;    // 1947
+Medical.rates[12] = 6.7;    // 1948
+Medical.rates[13] = 2.8;    // 1949
+Medical.rates[14] = 2.0;    // 1950
+Medical.rates[15] = 5.3;    // 1951
+Medical.rates[16] = 5.0;    // 1952
+Medical.rates[17] = 3.6;    // 1953
+Medical.rates[18] = 2.9;    // 1954
+Medical.rates[19] = 2.2;    // 1955
+Medical.rates[20] = 3.8;    // 1956
+Medical.rates[21] = 4.2;    // 1957
+Medical.rates[22] = 4.6;    // 1958
+Medical.rates[23] = 4.4;    // 1959
+Medical.rates[24] = 3.7;    // 1960
+Medical.rates[25] = 2.7;    // 1961
+Medical.rates[26] = 2.6;    // 1962
+Medical.rates[27] = 2.6;    // 1963
+Medical.rates[28] = 2.1;    // 1964
+Medical.rates[29] = 2.4;    // 1965
+Medical.rates[30] = 4.4;    // 1966
+Medical.rates[31] = 7.2;    // 1967
+Medical.rates[32] = 6.0;    // 1968
+Medical.rates[33] = 6.7;    // 1969
+Medical.rates[34] = 6.6;    // 1970
+Medical.rates[35] = 6.2;    // 1971
+Medical.rates[36] = 3.3;    // 1972
+Medical.rates[37] = 4.0;    // 1973
+Medical.rates[38] = 9.3;    // 1974
+Medical.rates[39] = 12.0;   // 1975
+Medical.rates[40] = 9.5;    // 1976
+Medical.rates[41] = 9.6;    // 1977
+Medical.rates[42] = 8.4;    // 1978
+Medical.rates[43] = 9.2;    // 1979
+Medical.rates[44] = 11.0;   // 1980
+Medical.rates[45] = 10.7;   // 1981
+Medical.rates[46] = 11.6;   // 1982
+Medical.rates[47] = 8.8;    // 1983
+Medical.rates[48] = 6.2;    // 1984
+Medical.rates[49] = 6.3;    // 1985
+Medical.rates[50] = 7.5;    // 1986
+Medical.rates[51] = 6.6;    // 1987
+Medical.rates[52] = 6.5;    // 1988
+Medical.rates[53] = 7.7;    // 1989
+Medical.rates[54] = 9.0;    // 1990
+Medical.rates[55] = 8.7;    // 1991
+Medical.rates[56] = 7.4;    // 1992
+Medical.rates[57] = 5.9;    // 1993
+Medical.rates[58] = 4.8;    // 1994
+Medical.rates[59] = 4.5;    // 1995
+Medical.rates[60] = 3.5;    // 1996
+Medical.rates[61] = 2.8;    // 1997
+Medical.rates[62] = 3.2;    // 1998
+Medical.rates[63] = 3.5;    // 1999
+Medical.rates[64] = 4.1;    // 2000
+Medical.rates[65] = 4.6;    // 2001
+Medical.rates[66] = 4.7;    // 2002
+Medical.rates[67] = 4.0;    // 2003
+Medical.rates[68] = 4.4;    // 2004
+Medical.rates[69] = 4.2;    // 2005
+Medical.rates[70] = 4.0;    // 2006
+Medical.rates[71] = 4.4;    // 2007
+Medical.rates[72] = 3.7;    // 2008
+Medical.rates[73] = 3.2;    // 2009
+Medical.rates[74] = 3.4;    // 2010
+Medical.rates[75] = 3.0;    // 2011
+Medical.rates[76] = 3.7;    // 2012
+Medical.rates[77] = 2.5;    // 2013
+Medical.rates[78] = 2.4;    // 2014
+Medical.rates[79] = 2.6;    // 2015
+Medical.rates[80] = 3.8;    // 2016
+Medical.rates[81] = 2.5;    // 2017
+Medical.rates[82] = 2.0;    // 2018
+// Convert percentages...
+// UPDATE LOOP VALUE YEARLY!!!
+for (var x=0; x<=82; x++) {
+	Medical.rates[x] = Medical.rates[x]/100;
+}
+// end of Medical Cost initialization
+
+
+// CPI-U, December-to-December Inflation
+Dec2Dec = new Object();
+Dec2Dec.OLDEST_YEAR = 1913;
+Dec2Dec.LATEST_YEAR = 2018; // UPDATE YEARLY!!!!
+Dec2Dec.NAME = "CPI-U December-to-December Inflation, " + Dec2Dec.OLDEST_YEAR + "-" + Dec2Dec.LATEST_YEAR;
+Dec2Dec.DATA_SOURCE = "U.S. Bureau of Labor Statistics";
+Dec2Dec.rates = new Array(120);
+Dec2Dec.rates[0] = 1.0;      // 1914
+Dec2Dec.rates[1] = 2.0;      // 1915
+Dec2Dec.rates[2] = 12.6;     // 1916
+Dec2Dec.rates[3] = 18.1;     // 1917
+Dec2Dec.rates[4] = 20.4;     // 1918
+Dec2Dec.rates[5] = 14.5;     // 1919
+Dec2Dec.rates[6] = 2.6;      // 1920
+Dec2Dec.rates[7] = -10.8;    // 1921
+Dec2Dec.rates[8] = -2.3;     // 1922
+Dec2Dec.rates[9] = 2.4;      // 1923
+Dec2Dec.rates[10] = 0.0;     // 1924
+Dec2Dec.rates[11] = 3.5;     // 1925
+Dec2Dec.rates[12] = -1.1;    // 1926
+Dec2Dec.rates[13] = -2.3;    // 1927
+Dec2Dec.rates[14] = -1.2;    // 1928
+Dec2Dec.rates[15] = 0.6;     // 1929
+Dec2Dec.rates[16] = -6.4;    // 1930
+Dec2Dec.rates[17] = -9.3;    // 1931
+Dec2Dec.rates[18] = -10.3;   // 1932
+Dec2Dec.rates[19] = 0.8;     // 1933
+Dec2Dec.rates[20] = 1.5;     // 1934
+Dec2Dec.rates[21] = 3.0;     // 1935
+Dec2Dec.rates[22] = 1.4;     // 1936
+Dec2Dec.rates[23] = 2.9;     // 1937
+Dec2Dec.rates[24] = -2.8;    // 1938
+Dec2Dec.rates[25] = 0.0;     // 1939
+Dec2Dec.rates[26] = 0.7;     // 1940
+Dec2Dec.rates[27] = 9.9;     // 1941
+Dec2Dec.rates[28] = 9.0;     // 1942
+Dec2Dec.rates[29] = 3.0;     // 1943
+Dec2Dec.rates[30] = 2.3;     // 1944
+Dec2Dec.rates[31] = 2.2;     // 1945
+Dec2Dec.rates[32] = 18.1;    // 1946
+Dec2Dec.rates[33] = 8.8;     // 1947
+Dec2Dec.rates[34] = 3.0;     // 1948
+Dec2Dec.rates[35] = -2.1;    // 1949
+Dec2Dec.rates[36] = 5.9;     // 1950
+Dec2Dec.rates[37] = 6.0;     // 1951
+Dec2Dec.rates[38] = 0.8;     // 1952
+Dec2Dec.rates[39] = 0.7;     // 1953
+Dec2Dec.rates[40] = -0.7;    // 1954
+Dec2Dec.rates[41] = 0.4;     // 1955
+Dec2Dec.rates[42] = 3.0;     // 1956
+Dec2Dec.rates[43] = 2.9;     // 1957
+Dec2Dec.rates[44] = 1.8;     // 1958
+Dec2Dec.rates[45] = 1.7;     // 1959
+Dec2Dec.rates[46] = 1.4;     // 1960
+Dec2Dec.rates[47] = 0.7;     // 1961
+Dec2Dec.rates[48] = 1.3;     // 1962
+Dec2Dec.rates[49] = 1.6;     // 1963
+Dec2Dec.rates[50] = 1.0;     // 1964
+Dec2Dec.rates[51] = 1.9;     // 1965
+Dec2Dec.rates[52] = 3.5;     // 1966
+Dec2Dec.rates[53] = 3.0;     // 1967
+Dec2Dec.rates[54] = 4.7;     // 1968
+Dec2Dec.rates[55] = 6.2;     // 1969
+Dec2Dec.rates[56] = 5.6;     // 1970
+Dec2Dec.rates[57] = 3.3;     // 1971
+Dec2Dec.rates[58] = 3.4;     // 1972
+Dec2Dec.rates[59] = 8.7;     // 1973
+Dec2Dec.rates[60] = 12.3;    // 1974
+Dec2Dec.rates[61] = 6.9;     // 1975
+Dec2Dec.rates[62] = 4.9;     // 1976
+Dec2Dec.rates[63] = 6.7;     // 1977
+Dec2Dec.rates[64] = 9.0;     // 1978
+Dec2Dec.rates[65] = 13.3;    // 1979
+Dec2Dec.rates[66] = 12.5;    // 1980
+Dec2Dec.rates[67] = 8.9;     // 1981
+Dec2Dec.rates[68] = 3.8;     // 1982
+Dec2Dec.rates[69] = 3.8;     // 1983
+Dec2Dec.rates[70] = 3.9;     // 1984
+Dec2Dec.rates[71] = 3.8;     // 1985
+Dec2Dec.rates[72] = 1.1;     // 1986
+Dec2Dec.rates[73] = 4.4;     // 1987
+Dec2Dec.rates[74] = 4.4;     // 1988
+Dec2Dec.rates[75] = 4.6;     // 1989
+Dec2Dec.rates[76] = 6.1;     // 1990
+Dec2Dec.rates[77] = 3.1;     // 1991
+Dec2Dec.rates[78] = 2.9;     // 1992
+Dec2Dec.rates[79] = 2.7;     // 1993
+Dec2Dec.rates[80] = 2.7;     // 1994
+Dec2Dec.rates[81] = 2.5;     // 1995
+Dec2Dec.rates[82] = 3.3;     // 1996
+Dec2Dec.rates[83] = 1.7;     // 1997
+Dec2Dec.rates[84] = 1.6;     // 1998
+Dec2Dec.rates[85] = 2.7;     // 1999
+Dec2Dec.rates[86] = 3.4;     // 2000
+Dec2Dec.rates[87] = 1.6;     // 2001
+Dec2Dec.rates[88] = 2.4;     // 2002
+Dec2Dec.rates[89] = 1.9;     // 2003
+Dec2Dec.rates[90] = 3.3;     // 2004
+Dec2Dec.rates[91] = 3.4;     // 2005
+Dec2Dec.rates[92] = 2.5;     // 2006
+Dec2Dec.rates[93] = 4.1;     // 2007
+Dec2Dec.rates[94] = 0.1;     // 2008
+Dec2Dec.rates[95] = 2.7;     // 2009
+Dec2Dec.rates[96] = 1.5;     // 2010
+Dec2Dec.rates[97] = 3.0;     // 2011
+Dec2Dec.rates[98] = 1.7;     // 2012
+Dec2Dec.rates[99] = 1.5;     // 2013
+Dec2Dec.rates[100] = 0.8;    // 2014
+Dec2Dec.rates[101] = 0.7;    // 2015
+Dec2Dec.rates[102] = 2.1;    // 2016
+Dec2Dec.rates[103] = 2.1;    // 2017
+Dec2Dec.rates[104] = 1.9;    // 2018
+// Convert percentages:
+// UPDATE LOOP VALUE YEARLY!!!
+for (var x=0; x<=104; x++) {
+	Dec2Dec.rates[x] = Dec2Dec.rates[x]/100;
+}
+// end of CPI-U December-to-December initialization
+
+
+// Personal Consumption Expenditures Price Index
+PCEPI = new Object();
+PCEPI.OLDEST_YEAR = 1959;
+PCEPI.LATEST_YEAR = 2017; // UPDATE YEARLY!!!!
+PCEPI.NAME = "Personal Consumption Expenditures, " + PCEPI.OLDEST_YEAR + "-" + PCEPI.LATEST_YEAR + "<BR>(Annual End-of-Period Percent Change)";
+PCEPI.DATA_SOURCE = "U.S. Bureau of Economic Analysis"; // via Federal Reserve Bank of St. Louis, annual end of period
+PCEPI.rates = new Array(85);
+PCEPI.rates[0] = 1.527;     // 1960
+PCEPI.rates[1] = 0.549;     // 1961
+PCEPI.rates[2] = 1.333;     // 1962
+PCEPI.rates[3] = 1.432;     // 1963
+PCEPI.rates[4] = 1.384;     // 1964
+PCEPI.rates[5] = 1.668;     // 1965
+PCEPI.rates[6] = 3.063;     // 1966
+PCEPI.rates[7] = 2.596;     // 1967
+PCEPI.rates[8] = 4.333;     // 1968
+PCEPI.rates[9] = 4.937;     // 1969
+PCEPI.rates[10] = 4.590;    // 1970
+PCEPI.rates[11] = 3.648;    // 1971
+PCEPI.rates[12] = 3.354;    // 1972
+PCEPI.rates[13] = 7.727;    // 1973
+PCEPI.rates[14] = 11.469;   // 1974
+PCEPI.rates[15] = 6.629;    // 1975
+PCEPI.rates[16] = 5.063;    // 1976
+PCEPI.rates[17] = 6.602;    // 1977
+PCEPI.rates[18] = 7.560;    // 1978
+PCEPI.rates[19] = 10.144;   // 1979
+PCEPI.rates[20] = 10.539;   // 1980
+PCEPI.rates[21] = 7.285;    // 1981
+PCEPI.rates[22] = 4.810;    // 1982
+PCEPI.rates[23] = 3.692;    // 1983
+PCEPI.rates[24] = 3.647;    // 1984
+PCEPI.rates[25] = 3.652;    // 1985
+PCEPI.rates[26] = 1.534;    // 1986
+PCEPI.rates[27] = 3.795;    // 1987
+PCEPI.rates[28] = 4.274;    // 1988
+PCEPI.rates[29] = 3.838;    // 1989
+PCEPI.rates[30] = 4.806;    // 1990
+PCEPI.rates[31] = 2.588;    // 1991
+PCEPI.rates[32] = 2.595;    // 1992
+PCEPI.rates[33] = 2.189;    // 1993
+PCEPI.rates[34] = 2.144;    // 1994
+PCEPI.rates[35] = 1.919;    // 1995
+PCEPI.rates[36] = 2.354;    // 1996
+PCEPI.rates[37] = 1.113;    // 1997
+PCEPI.rates[38] = 0.810;    // 1998
+PCEPI.rates[39] = 2.054;    // 1999
+PCEPI.rates[40] = 2.425;    // 2000
+PCEPI.rates[41] = 1.066;    // 2001
+PCEPI.rates[42] = 2.112;    // 2002
+PCEPI.rates[43] = 1.917;    // 2003
+PCEPI.rates[44] = 2.840;    // 2004
+PCEPI.rates[45] = 2.871;    // 2005
+PCEPI.rates[46] = 2.134;    // 2006
+PCEPI.rates[47] = 3.402;    // 2007
+PCEPI.rates[48] = 0.374;    // 2008
+PCEPI.rates[49] = 2.066;    // 2009
+PCEPI.rates[50] = 1.388;    // 2010
+PCEPI.rates[51] = 2.502;    // 2011
+PCEPI.rates[52] = 1.657;    // 2012
+PCEPI.rates[53] = 1.421;    // 2013
+PCEPI.rates[54] = 0.864;    // 2014
+PCEPI.rates[55] = 0.535;    // 2015
+PCEPI.rates[56] = 1.772;    // 2016
+PCEPI.rates[57] = 1.706;    // 2017
+// Convert percentages...
+// UPDATE LOOP VALUE YEARLY!!!
+for (var x=0; x<=57; x++) {
+	PCEPI.rates[x] = PCEPI.rates[x]/100;
+}
+// end of Personal Consumption Expenditures initialization
+
+
+// ShadowStats (U.S. Price Inflation)
+ShadowStats = new Object();
+ShadowStats.OLDEST_YEAR = 1969;
+ShadowStats.LATEST_YEAR = 2018; // UPDATE YEARLY!!!!
+ShadowStats.NAME = "ShadowStats U.S. Price Inflation, " + ShadowStats.OLDEST_YEAR + "-" + ShadowStats.LATEST_YEAR;
+ShadowStats.DATA_SOURCE = "© ShadowStats";
+ShadowStats.rates = new Array(100);
+ShadowStats.rates[0] = 5.84;     // 1970
+ShadowStats.rates[1] = 4.29;     // 1971
+ShadowStats.rates[2] = 3.27;     // 1972
+ShadowStats.rates[3] = 6.18;     // 1973
+ShadowStats.rates[4] = 11.05;    // 1974
+ShadowStats.rates[5] = 9.14;     // 1975
+ShadowStats.rates[6] = 5.74;     // 1976
+ShadowStats.rates[7] = 6.5;     // 1977
+ShadowStats.rates[8] = 7.63;     // 1978
+ShadowStats.rates[9] = 11.25;    // 1979
+ShadowStats.rates[10] = 13.55;   // 1980
+ShadowStats.rates[11] = 10.33;  // 1981
+ShadowStats.rates[12] = 6.13;   // 1982
+ShadowStats.rates[13] = 3.83;   // 1983
+ShadowStats.rates[14] = 5.30;   // 1984
+ShadowStats.rates[15] = 4.58;   // 1985
+ShadowStats.rates[16] = 2.92;   // 1986
+ShadowStats.rates[17] = 4.99;   // 1987
+ShadowStats.rates[18] = 5.94;   // 1988
+ShadowStats.rates[19] = 6.71;   // 1989
+ShadowStats.rates[20] = 7.69;   // 1990
+ShadowStats.rates[21] = 6.53;   // 1991
+ShadowStats.rates[22] = 5.33;   // 1992
+ShadowStats.rates[23] = 5.42;   // 1993
+ShadowStats.rates[24] = 5.98;   // 1994
+ShadowStats.rates[25] = 6.52;   // 1995
+ShadowStats.rates[26] = 7.74;   // 1996
+ShadowStats.rates[27] = 8.03;   // 1997
+ShadowStats.rates[28] = 7.79;   // 1998
+ShadowStats.rates[29] = 8.47;   // 1999
+ShadowStats.rates[30] = 9.74;   // 2000
+ShadowStats.rates[31] = 9.12;   // 2001
+ShadowStats.rates[32] = 7.85;   // 2002
+ShadowStats.rates[33] = 8.55;   // 2003
+ShadowStats.rates[34] = 9.09;   // 2004
+ShadowStats.rates[35] = 10.05;  // 2005
+ShadowStats.rates[36] = 10.18;  // 2006
+ShadowStats.rates[37] = 10.51;  // 2007
+ShadowStats.rates[38] = 11.57;  // 2008
+ShadowStats.rates[39] = 7.03;   // 2009
+ShadowStats.rates[40] = 8.92;   // 2010
+ShadowStats.rates[41] = 10.72;  // 2011
+ShadowStats.rates[42] = 9.68;   // 2012
+ShadowStats.rates[43] = 9.08;   // 2013
+ShadowStats.rates[44] = 9.32;   // 2014
+ShadowStats.rates[45] = 7.72;   // 2015
+ShadowStats.rates[46] = 8.94;   // 2016
+ShadowStats.rates[47] = 9.87;   // 2017
+ShadowStats.rates[48] = 10.21;  // 2018
+// Convert percentages:
+// UPDATE LOOP VALUE YEARLY!!!
+for (var x=0; x<=48; x++) {
+	ShadowStats.rates[x] = ShadowStats.rates[x]/100;
+}
+// end of ShadowStats initialization
+
+
+// Define several global functions:
+
+
+function toUSD(number) { // Convert number to dollar-formatted string (by Rob Glazebrook)
+	var dollars = "";
+	var cents = "";
+	var number = number.toString(); 
+	dollars = number.split('.')[0]; 
+	cents = (number.split('.')[1] || '') +'00';
+	dollars = dollars.split('').reverse().join('')
+		.replace(/(\d{3}(?!$))/g, '$1,')
+		.split('').reverse().join('');
+	return '$' + dollars + '.' + cents.slice(0, 2);
+} // end of function toUSD
+
+
+function checkDollarInput (dollars$) {
+	var dollars = 0;
+	// Remove dollar signs:
+	if (dollars$.match("$") != null) dollars$ = dollars$.replace("$", "");
+	// Remove commas:
+	if (dollars$.match(",") != null) dollars$ = dollars$.replace(/,/g, "");
+	// Remove minus signs:
+	if (dollars$.match("-") != null) dollars$ = dollars$.replace(/-/g, "");
+	try {
+		dollars = new Number(dollars$);
+		if (isNaN(dollars)) throw "Error: " + dollars$ + " is not a valid dollar amount.";
+		if (dollars$ == "") throw "Error: Please enter a dollar amount.";
+	}
+	catch (err) {
+		errMsg = err;
+		return -1;
+	}
+	return dollars;
+} // end of function checkDollarInput
+
+function checkStartYearInput (startYear$, oldest_year, latest_year) {
+	var startYear = 0;
+	try {
+		startYear = new Number(startYear$);
+		if (isNaN(startYear)) throw "Error: " + startYear$ + " is not a valid year.";
+		if (startYear$ == "") throw "Error: Please enter a starting year.";
+		if (startYear < oldest_year) throw "Error: starting year is too long ago. Try a later year.";
+		if (startYear > latest_year) throw "Error: inflation data for the starting year is not yet available. Try an earlier year.";
+	}
+	catch (err) {
+		errMsg = err;
+		return -1;
+	}
+	return startYear;
+} // end of function checkStartYearInput
+
+function checkTargetYearInput (targetYear$, oldest_year, latest_year) {
+	var targetYear = 0;
+	try {
+		targetYear = new Number(targetYear$);
+		if (isNaN(targetYear)) throw "Error: " + targetYear$ + " is not a valid year.";
+		if (targetYear$ == "") throw "Error: Please enter a target year.";
+		if (targetYear < oldest_year) throw "Error: target year is too long ago. Try a later year.";
+		if (targetYear > latest_year) throw "Error: inflation data for the target year is not yet available. Try an earlier year.";
+	}
+	catch (err) {
+		errMsg = err;
+		return -1;
+	}
+	return targetYear;
+} // end of function checkTargetYearInput
+
+
+function calculate(eMethod,dollars$,startYear$,targetYear$ ) {	// Calculate button
+	var dollars = 0;
+	var startYear = 0;
+	var targetYear = 0;
+	
+	errMsg = '';
+	dollars$ = dollars$.toString()
+	startYear$ = startYear$.toString()
+	targetYear$ = targetYear$.toString()
+	
+	dollars = checkDollarInput(dollars$);
+	if (dollars == -1) return; // error!
+	dollars$ = dollars.toString(); // convert corrected input to string
+
+	if (eMethod==1) {
+		startYear = checkStartYearInput(startYear$, CPIU.OLDEST_YEAR, CPIU.LATEST_YEAR);
+		if (startYear == -1) return; // error!
+		targetYear = checkTargetYearInput(targetYear$, CPIU.OLDEST_YEAR, CPIU.LATEST_YEAR);
+		if (targetYear == -1) return; // error!
+		return CPIUinflation(dollars$, dollars, startYear, targetYear);
+	}
+	if (eMethod==2) {
+		startYear = checkStartYearInput(startYear$, SSAWI.OLDEST_YEAR, SSAWI.LATEST_YEAR);
+		if (startYear == -1) return; // error!
+		targetYear = checkTargetYearInput(targetYear$, SSAWI.OLDEST_YEAR, SSAWI.LATEST_YEAR);
+		if (targetYear == -1) return; // error!
+		return SSAWIinflation(dollars$, dollars, startYear, targetYear);
+	}
+	if (eMethod==3) {
+		startYear = checkStartYearInput(startYear$, Medical.OLDEST_YEAR, Medical.LATEST_YEAR);
+		if (startYear == -1) return; // error!
+		targetYear = checkTargetYearInput(targetYear$, Medical.OLDEST_YEAR, Medical.LATEST_YEAR);
+		if (targetYear == -1) return; // error!
+		return MedicalInflation(dollars$, dollars, startYear, targetYear);
+	}
+	if (eMethod==4) {
+		startYear = checkStartYearInput(startYear$, Dec2Dec.OLDEST_YEAR, Dec2Dec.LATEST_YEAR);
+		if (startYear == -1) return; // error!
+		targetYear = checkTargetYearInput(targetYear$, Dec2Dec.OLDEST_YEAR, Dec2Dec.LATEST_YEAR);
+		if (targetYear == -1) return; // error!
+		return Dec2DecInflation(dollars$, dollars, startYear, targetYear);
+	}
+	if (eMethod==5) {
+		startYear = checkStartYearInput(startYear$, PCEPI.OLDEST_YEAR, PCEPI.LATEST_YEAR);
+		if (startYear == -1) return; // error!
+		targetYear = checkTargetYearInput(targetYear$, PCEPI.OLDEST_YEAR, PCEPI.LATEST_YEAR);
+		if (targetYear == -1) return; // error!
+		return PCEPIInflation(dollars$, dollars, startYear, targetYear);
+	}
+	if (eMethod==6) {
+		startYear = checkStartYearInput(startYear$, ShadowStats.OLDEST_YEAR, ShadowStats.LATEST_YEAR);
+		if (startYear == -1) return; // error!
+		targetYear = checkTargetYearInput(targetYear$, ShadowStats.OLDEST_YEAR, ShadowStats.LATEST_YEAR);
+		if (targetYear == -1) return; // error!
+		return ShadowStatsInflation(dollars$, dollars, startYear, targetYear);
+	}
+} // end of function calculate
+
+function CPIUinflation(dollars$, dollars, startYear, targetYear) {
+	var yearGap = 0;
+	var x = 0;
+	//alert(1)
+	if (startYear < targetYear) {	// calculate forward in time...
+		yearGap = targetYear - startYear;
+		for (x=0; x<yearGap; x++) {
+			dollars = dollars + (dollars * CPIU.rates[(startYear - CPIU.OLDEST_YEAR) + x]);
+		}
+	}
+	if (startYear > targetYear) {	// calculate backward in time...
+		yearGap = startYear - targetYear;
+		for (x=1; x<=yearGap; x++) {
+			dollars = dollars / (1 + CPIU.rates[(startYear - CPIU.OLDEST_YEAR) - x]);
+		}
+	}
+	//showAnswer(dollars$, startYear, dollars, targetYear, CPIU.NAME);
+	return precise_round(dollars,2);
+} // end of function CPIUinflation
+
+function SSAWIinflation(dollars$, dollars, startYear, targetYear) {
+	var yearGap = 0;
+	var x = 0;
+	if (startYear < targetYear) {	// calculate forward in time...
+		yearGap = targetYear - startYear;
+		for (x=0; x<yearGap; x++) {
+			dollars = dollars + (dollars * SSAWI.rates[(startYear - SSAWI.OLDEST_YEAR) + x]);
+		}
+	}
+	if (startYear > targetYear) {	// calculate backward in time...
+		yearGap = startYear - targetYear;
+		for (x=1; x<=yearGap; x++) {
+			dollars = dollars / (1 + SSAWI.rates[(startYear - SSAWI.OLDEST_YEAR) - x]);
+		}
+	}
+	//showAnswer(dollars$, startYear, dollars, targetYear, SSAWI.NAME);
+	return precise_round(dollars,2);
+} // end of function SSAWIinflation
+
+function MedicalInflation(dollars$, dollars, startYear, targetYear) {
+	var yearGap = 0;
+	var x = 0;
+	if (startYear < targetYear) {	// calculate forward in time...
+		yearGap = targetYear - startYear;
+		for (x=0; x<yearGap; x++) {
+			dollars = dollars + (dollars * Medical.rates[(startYear - Medical.OLDEST_YEAR) + x]);
+		}
+	}
+	if (startYear > targetYear) {	// calculate backward in time...
+		yearGap = startYear - targetYear;
+		for (x=1; x<=yearGap; x++) {
+			dollars = dollars / (1 + Medical.rates[(startYear - Medical.OLDEST_YEAR) - x]);
+		}
+	}
+	//showAnswer(dollars$, startYear, dollars, targetYear, Medical.NAME);
+	return precise_round(dollars,2);
+} // end of function MedicalInflation
+
+function Dec2DecInflation(dollars$, dollars, startYear, targetYear) {
+	var yearGap = 0;
+	var x = 0;
+	if (startYear < targetYear) {	// calculate forward in time...
+		yearGap = targetYear - startYear;
+		for (x=0; x<yearGap; x++) {
+			dollars = dollars + (dollars * Dec2Dec.rates[(startYear - Dec2Dec.OLDEST_YEAR) + x]);
+		}
+	}
+	if (startYear > targetYear) {	// calculate backward in time...
+		yearGap = startYear - targetYear;
+		for (x=1; x<=yearGap; x++) {
+			dollars = dollars / (1 + Dec2Dec.rates[(startYear - Dec2Dec.OLDEST_YEAR) - x]);
+		}
+	}
+	//showAnswer(dollars$, startYear, dollars, targetYear, Dec2Dec.NAME);
+	return precise_round(dollars,2);
+} // end of function Dec2DecInflation
+
+function PCEPIInflation(dollars$, dollars, startYear, targetYear) {
+	var yearGap = 0;
+	var x = 0;
+	if (startYear < targetYear) {	// calculate forward in time...
+		yearGap = targetYear - startYear;
+		for (x=0; x<yearGap; x++) {
+			dollars = dollars + (dollars * PCEPI.rates[(startYear - PCEPI.OLDEST_YEAR) + x]);
+		}
+	}
+	if (startYear > targetYear) {	// calculate backward in time...
+		yearGap = startYear - targetYear;
+		for (x=1; x<=yearGap; x++) {
+			dollars = dollars / (1 + PCEPI.rates[(startYear - PCEPI.OLDEST_YEAR) - x]);
+		}
+	}
+	//showAnswer(dollars$, startYear, dollars, targetYear, PCEPI.NAME);
+	return precise_round(dollars,2);
+} // end of function PCEPIInflation
+
+function ShadowStatsInflation(dollars$, dollars, startYear, targetYear) {
+	var yearGap = 0;
+	var x = 0;
+	if (startYear < targetYear) {	// calculate forward in time...
+		yearGap = targetYear - startYear;
+		for (x=0; x<yearGap; x++) {
+			dollars = dollars + (dollars * ShadowStats.rates[(startYear - ShadowStats.OLDEST_YEAR) + x]);
+		}
+	}
+	if (startYear > targetYear) {	// calculate backward in time...
+		yearGap = startYear - targetYear;
+		for (x=1; x<=yearGap; x++) {
+			dollars = dollars / (1 + ShadowStats.rates[(startYear - ShadowStats.OLDEST_YEAR) - x]);
+		}
+	}
+	//showAnswer(dollars$, startYear, dollars, targetYear, ShadowStats.NAME);
+	return precise_round(dollars,2);
+} // end of function ShadowStatsInflation
+
+function precise_round(num,decimals) {
+    var sign = num >= 0 ? 1 : -1;
+    return (Math.round((num*Math.pow(10,decimals)) + (sign*0.001)) / Math.pow(10,decimals)).toFixed(decimals);
+}
+
+//calculate(eMethod,dollars$,startYear$,targetYear$ )
+x = calculate(1,100,1980,2018 )
+if(x == -1)
+ alert(errMsg)
+else{
+ alert(x)
+}
+
+</script>

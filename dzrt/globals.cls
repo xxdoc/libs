@@ -166,6 +166,21 @@ Function LoadData(fileStringOrByte, Optional allowFilePaths As Boolean = True) A
     LoadData = modGeneral.LoadData(fileStringOrByte, allowFilePaths)
 End Function
 
+Function tocsv(ParamArray x()) As String
+    Dim i As Long
+    Dim tmp()
+    For i = 0 To UBound(x)
+        If IsNull(x(i)) Then
+            push tmp, "[Null]"
+        ElseIf IsObject(x(i)) Then
+            push tmp, "[Obj:" & TypeName(x(i)) & "]"
+        Else
+            push tmp, x(i)
+        End If
+    Next
+    tocsv = Join(tmp, ",") & vbCrLf
+End Function
+
 Function cast(varIn, varOut, Optional allowFilePaths As Boolean = False) As Boolean
     On Error Resume Next
     Dim b() As Byte
@@ -692,6 +707,24 @@ Function lvGetColumn(lv As Object, colIndex As Long) As String
     
 End Function
 
+Function cboFromFile(cbo As Object, fPath) As Long
+    Dim fs As New CFileStream
+    On Error GoTo hell
+    
+    cbo.Clear
+    fs.Open_ fPath, otRead
+    While Not fs.eof
+        cbo.AddItem fs.ReadLine
+    Wend
+    
+hell:
+    On Error Resume Next
+    fs.Close_
+    cboFromFile = cbo.ListCount
+    
+End Function
+
+
 Function Rpad(v, Optional l As Long = 8, Optional char As String = " ")
     On Error GoTo hell
     Dim x As Long
@@ -716,12 +749,18 @@ hell:
     End If
 End Function
 
-Function printf(ByVal msg As String, ParamArray vars()) As String
+Function printf(ByVal msg As String, ParamArray values()) As String
    
     Dim i As Long, tmp()
     
-    For i = 0 To UBound(vars)
-        push tmp, vars(i)
+    For i = 0 To UBound(values)
+        If IsNull(values(i)) Then
+            push tmp, "[Null]"
+        ElseIf IsObject(values(i)) Then
+            push tmp, "[Object:" & TypeName(values(i)) & "]"
+        Else
+            push tmp, values(i)
+        End If
     Next
     
     printf = modGeneral.printf(msg, tmp)
@@ -1329,7 +1368,13 @@ Function paramsToArray(ParamArray values()) As Variant()
     Dim i As Long, tmp()
     
     For i = 0 To UBound(values)
-        push tmp, values(i)
+        If IsNull(values(i)) Then
+            push tmp, "[Null]"
+        ElseIf IsObject(values(i)) Then
+            push tmp, "[Object:" & TypeName(values(i)) & "]"
+        Else
+            push tmp, values(i)
+        End If
     Next
     
     paramsToArray = tmp
@@ -1663,5 +1708,142 @@ Public Function html_decode(ByVal iString As String, ByRef outVal) As Boolean
     End With
     
 End Function
+
+Public Function fgFill(FlexGrid As Object, rs As Object) As Long
+'*******************************************************
+'PURPOSE: Populate MSFlexGrid with data from an
+'         ADO Recordset
+'PARAMETERS:  FlexGrid: MsFlexGrid to Populate
+'             RS: Open ADO Recordset
+'RETURNS:     True if successful, false otherwise
+'REQUIRES:    -- Reference to Microsoft Active Data Objects
+'             -- Recordset should be open with cursor set at
+'                first row when passed and must
+'                support recordcount property
+'             -- FlexGrid should be empty when passed
+'EXAMPLE:
+'Dim conn As New ADODB.Connection
+'Dim rs As New ADODB.Recordset
+'Dim sConnString As String
+'
+'sConnString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\MyDatabase.mdb"
+'conn.Open sConnString
+'rs.Open " SELECT * FROM MyTable", oConn, adOpenKeyset, adLockOptimistic
+'PopulateFlexGrid MSFlexGrid1, rs
+'
+'rs.Close
+'conn.Close
+'***********************************************************
+'**********************************************
+            
+    On Error GoTo ErrorHandler
+
+    If TypeName(FlexGrid) <> "MSFlexGrid" Then Exit Function
+    If TypeName(rs) <> "Recordset" Then Exit Function
+    'If Not TypeOf rs Is ADODB.Recordset Then Exit Function
+    
+    Dim i As Integer
+    Dim j As Integer
+    
+    initFlexGrid FlexGrid
+    
+    With FlexGrid
+  
+        If Not rs.eof Then
+        
+            '.Rows = rs.RecordCount + 1
+            .Cols = rs.fields.count
+            .AddItem ""
+            
+            For i = 0 To rs.fields.count - 1
+                .TextMatrix(0, i) = rs.fields(i).Name
+            Next
+        
+            i = 1
+            Do While Not rs.eof
+            
+                .AddItem ""
+                For j = 0 To rs.fields.count - 1
+                    If Not IsNull(rs.fields(j).Value) Then
+                        .TextMatrix(i, j) = trim(rs.fields(j).Value)
+                    End If
+                Next
+        
+                i = i + 1
+                rs.MoveNext
+            Loop
+        
+        
+        End If
+        fgFill = .rows
+    End With
+    
+    Exit Function
+ErrorHandler:
+    fgFill = -1
+    
+End Function
+
+Private Function initFlexGrid(fg As Object)
+    
+    On Error Resume Next
+    Dim i As Long
+    
+    With fg
+        .Clear
+        .FixedRows = 1
+        .FixedCols = 0
+        For i = .rows - 1 To 0 Step -1
+            .RemoveItem i
+        Next
+    End With
+    
+End Function
+
+'copies all the data from a flexgrid into well formatted rows for text display
+'use delimiter to skip padding and have in csv type format,
+'delimiter not checked for in data
+Public Sub fgCopy(FlexGrid As Object, Optional delimiter)
+
+   Dim colWidths() As Long
+   Dim rows() As String
+   Dim fields() As String
+   Dim d As String
+   Dim c As Long, r As Long, maxwidth As Long
+   
+   If TypeName(FlexGrid) <> "MSFlexGrid" Then Exit Sub
+   
+   With FlexGrid
+   
+        ReDim colWidths(.Cols)
+        
+        If Len(delimiter) = 0 Then
+            For c = 0 To .Cols - 1
+                For r = 0 To .rows - 1
+                    maxwidth = Len(.TextMatrix(r, c))
+                    If maxwidth > colWidths(c) Then colWidths(c) = maxwidth
+                Next
+            Next
+        End If
+        
+        For r = 0 To .rows - 1
+            Erase fields
+            For c = 0 To .Cols - 1
+                d = .TextMatrix(r, c)
+                If Len(delimiter) = 0 Then
+                    d = d & Space(colWidths(c) - Len(d) + 2)
+                Else
+                    d = d & delimiter
+                End If
+                push fields, d
+            Next
+            push rows, Join(fields, "")
+        Next
+    End With
+    
+    Clipboard.Clear
+    Clipboard.SetText Join(rows, vbCrLf)
+   
+End Sub
 
 
