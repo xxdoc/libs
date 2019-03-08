@@ -60,6 +60,8 @@ Private Sub Form_Load()
     Dim ms As New CMemStruct, errMsg As String
     Dim b() As Byte, tmp() As String
     
+    'GoTo test4
+    
     If Not ms.AddFields("byte1*b,int1*i,lng1*l,cur1*c,blob1*15", errMsg) Then
         Text1 = errMsg
         Exit Sub
@@ -133,8 +135,33 @@ Private Sub Form_Load()
         addText "\nDumped from modified hex string: \n" & ms.dump(True)
     End If
         
+    Exit Sub
     
+test4:
+    Set ms = New CMemStruct
     
+'    Private Type PACKAGE_ID
+'      reserved As Long
+'      processorArchitecture  As Long
+'      revision As Integer
+'      build As Integer
+'      minor As Integer
+'      major As Integer
+'      name  As Long
+'      publisher  As Long
+'      resourceId  As Long
+'      publisherId  As Long
+'    End Type
+
+    fields = "reserved*l,arch*l,rev*i,build*i,min*i,maj*i,name*l,pub*l,resource*l,pubID*l"
+    
+    If Not ms.AddFields(fields, errMsg) Then
+        Text1 = errMsg
+        Exit Sub
+    End If
+    
+    ms.LoadFromFile , App.Path & "\test4.bin"
+    Debug.Print ms.dump
     
     
     

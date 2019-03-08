@@ -1,12 +1,8 @@
 Type=Exe
-Form=Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
-Class=CMemStruct; CMemStruct.cls
-Class=CStructField; CStructField.cls
-Module=Module1; Module1.bas
-IconForm="Form1"
+Reference=*\G{60E64C4D-86E1-4F70-9D74-82C8C8F7745C}#74.0#0#..\dzrt\dzrt.dll#.DZ Runtime from Sandsprite.com
+Form=Form1.frm
 Startup="Form1"
-ExeName32="Project1.exe"
 Command32=""
 Name="Project1"
 HelpContextID="0"
@@ -16,7 +12,6 @@ MinorVer=0
 RevisionVer=0
 AutoIncrementVer=0
 ServerSupportFiles=0
-VersionCompanyName="sandsprite"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
@@ -32,9 +27,6 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
-
-[MS Transaction Server]
-AutoRefresh=1
 
 [fastBuild]
 fullPath=%ap%\Project1.exe

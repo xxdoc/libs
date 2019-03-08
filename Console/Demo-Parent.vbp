@@ -1,18 +1,22 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
-Reference=*\G{420B2830-E718-11CF-893D-00A0C9054228}#1.0#0#C:\Windows\SysWOW64\scrrun.dll#Microsoft Scripting Runtime
-Module=Module1; Module1.bas
+Module=MDemoParent; Demo-Parent.bas
+Module=Con; MConsole.bas
 Startup="Sub Main"
-ExeName32="Console EXE.exe"
+HelpFile=""
+Title="Demo-Parent.bas"
+ExeName32="Demo-Parent.exe"
 Command32=""
-Name="Project1"
+Name="Parent"
 HelpContextID="0"
 CompatibleMode="0"
 MajorVer=1
 MinorVer=0
-RevisionVer=0
+RevisionVer=2
 AutoIncrementVer=0
 ServerSupportFiles=0
+VersionCompanyName="http://www.mvps.org/vb"
+VersionLegalCopyright="Copyright ©2004-2009 Karl E. Peterson"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
@@ -29,8 +33,16 @@ Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
 
-[VBCompiler]
-LinkSwitches=/SUBSYSTEM:CONSOLE
-
-[fastBuild]
-fullPath=%ap%\Console EXE.exe
+[vbAdvance]
+IsConsole=1
+HasStubFile=0
+GenerateMap=0
+TSAware=0
+XPManifest=0
+ResBuildName=.\Parent.dll
+ReplaceIcon=0
+SendCommandArgs=0
+SymbDbgPref=0
+RevisionVersion=4
+XPManifestUIAccess=0
+XPManifestTrustLevel=0

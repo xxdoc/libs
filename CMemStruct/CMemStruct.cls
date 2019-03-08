@@ -283,7 +283,7 @@ End Sub
 'format specifiers (case insensitive)
 '   b = byte, l = long, i = int, c = currency, numeric val = blob size
 
-Function AddFields(formatString As String, Optional errMsg, Optional reset As Boolean = True, Optional ByVal name As String) As Boolean
+Function AddFields(ByVal formatString As String, Optional errMsg, Optional reset As Boolean = True, Optional ByVal name As String) As Boolean
     Dim f() As String, ff, t() As String, size As Long
     Dim ft As ms_fieldType, sf As CStructField
     

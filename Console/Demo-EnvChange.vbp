@@ -1,14 +1,11 @@
 Type=Exe
-Form=Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
-Class=CMemStruct; CMemStruct.cls
-Class=CStructField; CStructField.cls
-Module=Module1; Module1.bas
-IconForm="Form1"
-Startup="Form1"
-ExeName32="Project1.exe"
+Module=MDemoEnvChange; Demo-EnvChange.bas
+Module=Con; MConsole.bas
+Startup="Sub Main"
+ExeName32="Demo-EnvChange.exe"
 Command32=""
-Name="Project1"
+Name="DemoEnvChange"
 HelpContextID="0"
 CompatibleMode="0"
 MajorVer=1
@@ -16,7 +13,8 @@ MinorVer=0
 RevisionVer=0
 AutoIncrementVer=0
 ServerSupportFiles=0
-VersionCompanyName="sandsprite"
+VersionCompanyName="http://vb.mvps.org/"
+VersionLegalCopyright="Copyright ©2004-2009 Karl E. Peterson"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
@@ -33,8 +31,16 @@ Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
 
-[MS Transaction Server]
-AutoRefresh=1
-
-[fastBuild]
-fullPath=%ap%\Project1.exe
+[vbAdvance]
+IsConsole=1
+HasStubFile=0
+GenerateMap=0
+TSAware=0
+XPManifest=0
+ResBuildName=.\Project1.dll
+ReplaceIcon=0
+SendCommandArgs=0
+SymbDbgPref=0
+RevisionVersion=4
+XPManifestUIAccess=0
+XPManifestTrustLevel=0
