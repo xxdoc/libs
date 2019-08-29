@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form1 
    Caption         =   "Form1"
    ClientHeight    =   9345
@@ -232,6 +232,20 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
  Dim ws As New CWindowsSystem
  
+ Private Const KEYEVENTF_EXTENDEDKEY = &H1
+Private Const KEYEVENTF_KEYUP = &H2
+Private Const VK_CONTROL = &H11
+Private Const VK_MENU = &H12
+ Private Const WM_KEYDOWN = &H100
+    Private Const WM_KEYUP = &H101
+    Private Const WM_SETFOCUS = &H7
+    Private Const WM_CHAR = &H102
+    
+Private Declare Sub keybd_event Lib "user32.dll" (ByVal bVk As Byte, ByVal bScan As Byte, ByVal dwFlags As Long, ByVal dwExtraInfo As Long)
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+
+
+
 Private Sub cmdList_Click()
     Dim w As Cwindow
     Dim ws As New CWindowsSystem
@@ -414,6 +428,35 @@ Private Sub Form_Load()
         Next
     Next
     
+    Dim cs As Cwindow, c2 As Cwindow
+    For Each cs In ws.ChildWindows(0, "wndclass_desked_gsk")
+        Debug.Print cs.hwnd & ":" & cs.Caption
+        For Each c2 In ws.ChildWindows(cs.hwnd)  ', "MsoCommandBarPopup")
+            'Debug.Print vbTab & c2.hwnd & ":" & c2.className & ":" & c2.Caption
+            If InStr(1, c2.Caption, "Immediate", vbTextCompare) > 0 Then
+                Debug.Print vbTab & Hex(c2.hwnd) & ":" & c2.className & ":" & c2.Caption
+                SendMessage c2.hwnd, WM_SETFOCUS, 1, 0
+                'For i = 0 To 5
+                '    Call SendMessage(c2.hwnd, WM_CHAR, &H41, 1)
+                '    Call SendMessage(c2.hwnd, WM_CHAR, &H41, 1)
+                'Next
+                
+                Call SendMessage(c2.hwnd, WM_KEYDOWN, VK_CONTROL, 0)
+                Call SendMessage(c2.hwnd, WM_KEYDOWN, VK_DOWN, 0)
+                Call SendMessage(c2.hwnd, WM_KEYDOWN, &H41, 0)
+                Call SendMessage(c2.hwnd, WM_KEYUP, &H41, 0)
+                Call SendMessage(c2.hwnd, WM_KEYUP, VK_CONTROL, 0)
+                Call SendMessage(c2.hwnd, WM_KEYUP, VK_DOWN, 0)
+                
+                AppActivate cs.Caption
+                SendKeys "^A"
+                'keybd_event VK_CONTROL, 0, KEYEVENTF_KEYUP, 0  'release CTRL
+            End If
+        Next
+        'Exit For
+    Next
+    
+    End
     
 End Sub
 

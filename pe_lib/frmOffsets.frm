@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmOffsets 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "Form1"
@@ -15,7 +15,6 @@ Begin VB.Form frmOffsets
    StartUpPosition =   2  'CenterScreen
    Begin VB.TextBox txtOffset 
       BackColor       =   &H80000004&
-      Enabled         =   0   'False
       Height          =   315
       Left            =   1380
       TabIndex        =   8
@@ -67,7 +66,6 @@ Begin VB.Form frmOffsets
    End
    Begin VB.TextBox txtVA 
       BackColor       =   &H80000004&
-      Enabled         =   0   'False
       Height          =   315
       Left            =   1380
       TabIndex        =   2

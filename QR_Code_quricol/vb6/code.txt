@@ -1,0 +1,24 @@
+
+Option Explicit
+ 
+Private Enum TErrorCorretion
+    QualityLow
+    QualityMedium
+    QualityStandard
+    QualityHigh
+End Enum
+ 
+Private Declare Sub GenerateBMP _
+                Lib "C:\Temp\quricol32.dll" _
+                Alias "GenerateBMPW" ( _
+                ByVal FileName As Long, _
+                ByVal Text As Long, _
+                ByVal Margin As Long, _
+                ByVal Size As Long, _
+                ByVal Level As TErrorCorretion)
+                
+Private Sub Form_Load()
+    
+    GenerateBMP StrPtr("C:\Users\home\Desktop\Example.bmp"), StrPtr("Hello world!"), 3, 5, QualityLow
+    
+End Sub

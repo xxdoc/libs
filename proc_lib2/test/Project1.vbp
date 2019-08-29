@@ -1,6 +1,6 @@
 Type=Exe
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Reference=*\G{C3428DEA-1323-4AA6-A629-44244F7B3D3B}#1e.0#0#..\procLib2.dll#Sandsprite Process Library 2
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
+Reference=*\G{C3428DEA-1323-4AA6-A629-44244F7B3D3B}#2d.0#0#..\procLib2.dll#Sandsprite Process Library 2
 Form=Form1.frm
 Startup="Form1"
 Command32=""

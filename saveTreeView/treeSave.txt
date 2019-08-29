@@ -1,0 +1,13 @@
+# MaxDepth:2 NodeCount:12                                                                             
+TopLevelBranch1:Tag: TopLevelBranch1
+	SubBranch1_1:Tag: SubBranch1_1
+		Node1_1_1:Tag: Node1_1_1
+		Node1_1_2:Tag: Node1_1_2
+		Node1_1_3:Tag: Node1_1_3
+	SubBranch1_2:Tag: SubBranch1_2
+		Node1_2_1:Tag: Node1_2_1
+		Node1_2_2:Tag: Node1_2_2
+TopLevelBranch2:Tag: TopLevelBranch2
+	SubBranch2_1:Tag: SubBranch2_1
+	SubBranch2_2:Tag: SubBranch2_2
+		Node2_2_1:Tag: Node2_2_1

@@ -1016,6 +1016,7 @@ Public Function toBytes(ByVal hexstr, ByRef outVar, Optional ByVal inputformat A
     str = Replace(str, "+", Empty)
     str = Replace(str, """""", Empty)
     str = Replace(str, "'", Empty)
+    If inputformat = ifDecimal Then str = Replace(str, " ", Empty)
     hexstr = str
     
     If InStr(hexstr, "\u") > 0 Then hexstr = Replace(hexstr, "\u", "%u")

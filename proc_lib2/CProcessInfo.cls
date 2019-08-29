@@ -823,17 +823,17 @@ End Function
 
 'less restrictions on GetProcessImageFileName ?
 Function GetProcessPath(pid As Long) As String
-    Dim hproc As Long
+    Dim hProc As Long
     Dim hMods() As Long, ret As Long, retMax As Long
     Dim sPath As String
     Dim n As Long
     
-    hproc = OpenProcess(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ, False, pid) '2k and XP
-    If hproc <> 0 Then
+    hProc = OpenProcess(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ, False, pid) '2k and XP
+    If hProc <> 0 Then
         ReDim hMods(900)
-        ret = EnumProcessModules(hproc, hMods(0), 900, retMax)
+        ret = EnumProcessModules(hProc, hMods(0), 900, retMax)
         sPath = Space$(260)
-        ret = GetModuleFileNameExA(hproc, hMods(0), sPath, 260)
+        ret = GetModuleFileNameExA(hProc, hMods(0), sPath, 260)
         GetProcessPath = Left$(sPath, ret)
         GetProcessPath = Replace(GetProcessPath, "\??\", Empty)
         GetProcessPath = Replace(GetProcessPath, "\SystemRoot", Environ("Windir"))
@@ -842,18 +842,18 @@ Function GetProcessPath(pid As Long) As String
         
     End If
     
-    If hproc <> 0 Then CloseHandle hproc
+    If hProc <> 0 Then CloseHandle hProc
     
     If Len(GetProcessPath) = 0 Then 'handles more permission issues in Vista+
-        hproc = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
-        If hproc = 0 Then Exit Function
+        hProc = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
+        If hProc = 0 Then Exit Function
         sPath = String(1024, " ")
         ret = GetProcAddress(LoadLibrary("psapi.dll"), "GetProcessImageFileNameA")
         If ret = 0 Then
             ret = GetProcAddress(LoadLibrary("kernel32.dll"), "GetProcessImageFileNameA") 'Vista+
         End If
         If ret = 0 Then Exit Function
-        ret = GetProcessImageFileNameA(hproc, sPath, 1024) 'this returns NT style names \DeviceHardDiskVolume1\...
+        ret = GetProcessImageFileNameA(hProc, sPath, 1024) 'this returns NT style names \DeviceHardDiskVolume1\...
         If ret <> 0 Then
             GetProcessPath = Left$(sPath, ret)
             n = InStr(GetProcessPath, Chr(0))
@@ -861,7 +861,7 @@ Function GetProcessPath(pid As Long) As String
             sPath = GetDosPathForNtDevicePath(GetProcessPath)
             If Len(sPath) > 0 Then GetProcessPath = sPath
         End If
-        CloseHandle hproc
+        CloseHandle hProc
     End If
     
 End Function
@@ -945,7 +945,7 @@ End Sub
 
 Function GetMemoryMap(pid As Long) As Collection 'of CMem
 
-    Dim hproc As Long
+    Dim hProc As Long
     Dim x As Long
     Dim meminfo As MEMORY_BASIC_INFORMATION
     Dim cur As Long
@@ -958,8 +958,8 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
         Exit Function
     End If
 
-    hproc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ Or SYNCHRONIZE), False, pid)
-    If hproc = 0 Then
+    hProc = OpenProcess(CLng(PROCESS_QUERY_INFORMATION Or PROCESS_VM_READ Or SYNCHRONIZE), False, pid)
+    If hProc = 0 Then
         Set GetMemoryMap = ret
         x = GetLastError
         Exit Function
@@ -967,8 +967,8 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
            
     Do While cur < &H7FFEFFFF
         
-         If Not IsProcHandleValid(hproc) Then Exit Do
-         x = VirtualQueryEx(hproc, cur, meminfo, LenB(meminfo))
+         If Not IsProcHandleValid(hProc) Then Exit Do
+         x = VirtualQueryEx(hProc, cur, meminfo, LenB(meminfo))
          
          If meminfo.State <> MEM_FREE Then
             Set cMem = New CMemory
@@ -983,7 +983,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
                        
             If cur > 0 Then
                n = String(256, Chr(0))
-               x = GetModuleFileNameExA(hproc, cur, n, 255)
+               x = GetModuleFileNameExA(hProc, cur, n, 255)
                If x <> 0 Then cMem.ModuleName = ToNull(n)
             End If
             
@@ -997,7 +997,7 @@ Function GetMemoryMap(pid As Long) As Collection 'of CMem
         
     Loop
        
-    CloseHandle hproc
+    CloseHandle hProc
     Set GetMemoryMap = ret
     
 End Function
@@ -1120,12 +1120,12 @@ End Function
 
 'Just check signaled state of the process handle, it will become signaled whenever the process exits
 'handle must have SYNCHRONIZE rights...
-Private Function IsProcHandleValid(hproc As Long) As Boolean
-   If hproc = 0 Then Exit Function
+Private Function IsProcHandleValid(hProc As Long) As Boolean
+   If hProc = 0 Then Exit Function
    Dim rv As Long
    Const WAIT_FAILED = &HFFFFFFFF
    Const WAIT_TIMEOUT = &H102
-   rv = WaitForSingleObject(hproc, 0)
+   rv = WaitForSingleObject(hProc, 0)
    If rv = WAIT_FAILED Then Exit Function
    If rv = WAIT_TIMEOUT Then IsProcHandleValid = True
 End Function
@@ -1831,17 +1831,17 @@ Public Function WriteProcessLong(ByVal hProcess As Long, ByVal lpBaseAddress As 
     If WriteProcessMemory(hProcess, lpBaseAddress, ByVal VarPtr(sValue), 4, ret) <> 0 Then WriteProcessLong = True
 End Function
 
-Function WriteProcessByte(hproc As Long, val As Byte, address As Long) As Boolean
+Function WriteProcessByte(hProc As Long, val As Byte, address As Long) As Boolean
     Dim ret As Long, written As Long
-    If WriteProcessBytes(hproc, ByVal address, ByVal val, 1, written) <> 0 Then WriteProcessByte = True
+    If WriteProcessBytes(hProc, ByVal address, ByVal val, 1, written) <> 0 Then WriteProcessByte = True
 End Function
 
-Function ReadProcessLng(hproc As Long, address As Long, outVal As Long) As Boolean
+Function ReadProcessLng(hProc As Long, address As Long, outVal As Long) As Boolean
    
     Dim b(4) As Byte, tmp As Long
     outVal = 0
     
-    If ReadProcessMemory(hproc, address, b(0), 4, 0) > 0 Then
+    If ReadProcessMemory(hProc, address, b(0), 4, 0) > 0 Then
         CopyMemory tmp, b(0), 4
         outVal = tmp
         ReadProcessLng = True
@@ -1849,27 +1849,27 @@ Function ReadProcessLng(hproc As Long, address As Long, outVal As Long) As Boole
  
 End Function
 
-Function ReadBuf(hproc As Long, ByVal start As Long, ByVal size As Long, ByRef buf() As Byte) As Boolean
+Function ReadBuf(hProc As Long, ByVal start As Long, ByVal size As Long, ByRef buf() As Byte) As Boolean
     
-    ReDim buf(size)
+    ReDim buf(size - 1)
     
-    If ReadProcessMemory(hproc, start, buf(0), size, 0) > 0 Then
+    If ReadProcessMemory(hProc, start, buf(0), size, 0) > 0 Then
         ReadBuf = True
     End If
     
 End Function
 
-Function ReadString(hproc As Long, ByVal start As Long, ByRef strOut As String, Optional isAscii As Boolean = True) As Long
+Function ReadString(hProc As Long, ByVal start As Long, ByRef strOut As String, Optional isAscii As Boolean = True) As Long
     
     Dim ret() As Byte
     Dim a As Byte, b As Byte
     Dim leng As Long
     
    Do While 1
-        If ReadProcessMemory(hproc, start, a, 1, 0) > 0 Then
+        If ReadProcessMemory(hProc, start, a, 1, 0) > 0 Then
             If Not isAscii Then
                 If a = 0 Then
-                    If ReadProcessMemory(hproc, start + 1, b, 1, 0) > 0 Then
+                    If ReadProcessMemory(hProc, start + 1, b, 1, 0) > 0 Then
                         If b = 0 Then Exit Do 'read ahead and see if end of wide string found...
                     Else
                         'd "failed to read at wide " & Hex(start + 1)

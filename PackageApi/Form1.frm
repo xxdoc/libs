@@ -126,11 +126,11 @@ Private Sub Form_Load()
     End If
         
     
-    d rc & ":" & length
+    'd rc & ":" & length
     
     ReDim buf((length + 2) * 2)
     rc = GetPackageFullName(hProcess, length, buf(0))
-    d rc
+    'd rc
     
     'd HexDump(buf)
     d GetUniString(buf, 0)
@@ -143,10 +143,10 @@ Private Sub Form_Load()
     rc = GetPackageId(hProcess, length, 0)
     ReDim buf(length)
     base = VarPtr(buf(0))
-    d Join(Array(rc, length), ":")
+    'd Join(Array(rc, length), ":")
     
     rc = GetPackageId(hProcess, length, buf(0))
-    d Join(Array(rc, length, Hex(base)), ":")
+    'd Join(Array(rc, length, Hex(base)), ":")
     'd HexDump(buf)
     
     CopyMemory ByVal VarPtr(pack), ByVal base, LenB(pack)

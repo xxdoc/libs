@@ -1,0 +1,466 @@
+Option Explicit
+
+Private Const ProcessBasicInformation As Long = 0
+Private Const MEM_RESERVE             As Long = &H2000&
+Private Const MEM_COMMIT              As Long = &H1000&
+Private Const MEM_RELEASE             As Long = &H8000&
+Private Const PAGE_READWRITE          As Long = 4&
+Private Const FADF_AUTO               As Long = 1
+Private Const PAGE_EXECUTE_READWRITE  As Long = &H40&
+
+Private Type SAFEARRAYBOUND
+    cElements                       As Long
+    lLbound                         As Long
+End Type
+
+Private Type SAFEARRAY
+    cDims                           As Integer
+    fFeatures                       As Integer
+    cbElements                      As Long
+    cLocks                          As Long
+    pvData                          As Long
+    Bounds                          As SAFEARRAYBOUND
+End Type
+
+Private Type LARGE_INTEGER
+    lowpart                         As Long
+    highpart                        As Long
+End Type
+
+Private Type UNICODE_STRING64
+    Length                          As Integer
+    MaxLength                       As Integer
+    lPad                            As Long
+    lpBuffer                        As LARGE_INTEGER
+End Type
+
+Private Type IMAGE_DATA_DIRECTORY
+    VirtualAddress                  As Long
+    Size                            As Long
+End Type
+
+Private Type PROCESS_BASIC_INFORMATION64
+    ExitStatus                      As Long
+    Reserved0                       As Long
+    PebBaseAddress                  As LARGE_INTEGER
+    AffinityMask                    As LARGE_INTEGER
+    BasePriority                    As Long
+    Reserved1                       As Long
+    uUniqueProcessId                As LARGE_INTEGER
+    uInheritedFromUniqueProcessId   As LARGE_INTEGER
+End Type
+
+Private Type QUOTA_LIMITS64
+    PagedPoolLimit                  As LARGE_INTEGER
+    NonPagedPoolLimit               As LARGE_INTEGER
+    MinimumWorkingSetSize           As LARGE_INTEGER
+    MaximumWorkingSetSize           As LARGE_INTEGER
+    PagefileLimit                   As LARGE_INTEGER
+    TimeLimit                       As LARGE_INTEGER
+End Type
+
+Private Declare Function NtWow64QueryInformationProcess64 Lib "ntdll" ( _
+                         ByVal hProcess As Long, _
+                         ByVal ProcessInformationClass As Long, _
+                         ByRef pProcessInformation As Any, _
+                         ByVal uProcessInformationLength As Long, _
+                         ByRef puReturnLength As Long) As Long
+Private Declare Function NtWow64ReadVirtualMemory64 Lib "ntdll" ( _
+                         ByVal hProcess As Long, _
+                         ByVal BaseAddressL As Long, _
+                         ByVal BaseAddressH As Long, _
+                         ByRef Buffer As Any, _
+                         ByVal BufferLengthL As Long, _
+                         ByVal BufferLengthH As Long, _
+                         ByRef ReturnLength As LARGE_INTEGER) As Long
+Private Declare Function GetMem8 Lib "msvbvm60" ( _
+                         ByRef Src As Any, _
+                         ByRef Dst As Any) As Long
+Private Declare Function GetMem4 Lib "msvbvm60" ( _
+                         ByRef Src As Any, _
+                         ByRef Dst As Any) As Long
+Private Declare Function GetMem2 Lib "msvbvm60" ( _
+                         ByRef Src As Any, _
+                         ByRef Dst As Any) As Long
+Private Declare Function GetMem1 Lib "msvbvm60" ( _
+                         ByRef Src As Any, _
+                         ByRef Dst As Any) As Long
+Private Declare Function VirtualAlloc Lib "kernel32" ( _
+                         ByVal lpAddress As Long, _
+                         ByVal dwSize As Long, _
+                         ByVal flAllocationType As Long, _
+                         ByVal flProtect As Long) As Long
+Private Declare Function VirtualFree Lib "kernel32" ( _
+                         ByVal lpAddress As Long, _
+                         ByVal dwSize As Long, _
+                         ByVal dwFreeType As Long) As Long
+Private Declare Function DispCallFunc Lib "oleaut32.dll" ( _
+                         ByRef pvInstance As Any, _
+                         ByVal oVft As Long, _
+                         ByVal cc As Long, _
+                         ByVal vtReturn As VbVarType, _
+                         ByVal cActuals As Long, _
+                         ByRef prgvt As Any, _
+                         ByRef prgpvarg As Any, _
+                         ByRef pvargResult As Variant) As Long
+Private Declare Sub MoveArray Lib "msvbvm60" _
+                    Alias "__vbaAryMove" ( _
+                    ByRef Destination() As Any, _
+                    ByRef Source As Any)
+                    
+Private mtProcessInfo64             As PROCESS_BASIC_INFORMATION64
+Private mpfnNtAllocateVirtualMemory As LARGE_INTEGER
+Private mpCode                      As Long
+
+Private Sub Form_Load()
+    Dim lStatus                     As Long
+    Dim tQuota                      As QUOTA_LIMITS64
+    Dim lRet                        As Long
+    Dim pfnNtSetInformationProcess  As LARGE_INTEGER
+    
+    lStatus = NtWow64QueryInformationProcess64(-1, ProcessBasicInformation, mtProcessInfo64, Len(mtProcessInfo64), 0)
+    
+    If lStatus < 0 Then
+        MsgBox "Error 0x" & Hex$(lStatus)
+        Exit Sub
+    End If
+    
+    mpfnNtAllocateVirtualMemory = GetProcAddress64(GetNtDll_Handle, "NtAllocateVirtualMemory")
+    pfnNtSetInformationProcess = GetProcAddress64(GetNtDll_Handle, "NtQueryInformationProcess")
+    
+    mpCode = VirtualAlloc(0, 4096, MEM_COMMIT Or MEM_RESERVE, PAGE_EXECUTE_READWRITE)
+    
+    Dim cA1 As Currency
+    Dim cA2 As Currency
+    Dim tRet    As LARGE_INTEGER
+    
+    GetMem4 VarPtr(tQuota), cA1
+    GetMem4 VarPtr(tRet), cA2
+    
+    lRet = CallX64(pfnNtSetInformationProcess, -0.0001@, 0.0001@, cA1, CCur(Len(tQuota) / 10000@), cA2)
+    
+    pfnNtSetInformationProcess = GetProcAddress64(GetNtDll_Handle, "NtSetInformationProcess")
+    
+    tQuota.MaximumWorkingSetSize.highpart = -1
+    tQuota.MaximumWorkingSetSize.lowpart = -1
+    
+    tQuota.MinimumWorkingSetSize.highpart = -1
+    tQuota.MinimumWorkingSetSize.lowpart = -1
+    
+    lRet = CallX64(pfnNtSetInformationProcess, -0.0001@, 0.0001@, cA1, CCur(Len(tQuota) / 10000@))
+    
+    AllocMemory &H1FFFFFF, 0
+    
+End Sub
+
+Private Sub AllocMemory( _
+            ByVal lSizeL As Long, _
+            ByVal lSizeH As Long)
+    Dim pAddress    As LARGE_INTEGER
+    Dim ppAddress   As LARGE_INTEGER
+    Dim cppAddress  As Currency
+    Dim cpSize      As Currency
+    
+    ppAddress.lowpart = VarPtr(pAddress):   GetMem8 ppAddress, cppAddress
+    GetMem8 VarPtr(lSizeL), cpSize
+    
+    CallX64 mpfnNtAllocateVirtualMemory, -0.0001@, cppAddress, 0@, cpSize, MEM_COMMIT Or MEM_RESERVE, PAGE_READWRITE
+    
+End Sub
+
+' // Call x64
+Private Function CallX64( _
+                 ByRef pfn As LARGE_INTEGER, _
+                 ParamArray vArgs() As Variant) As Long
+    Dim bCode()     As Byte
+    Dim vArg        As Variant
+    Dim lIndex      As Long
+    Dim lByteIdx    As Long
+    Dim lArgs       As Long
+    Dim tArrDesc    As SAFEARRAY
+    Dim vRet        As Variant
+    
+    tArrDesc.cbElements = 1
+    tArrDesc.cDims = 1
+    tArrDesc.fFeatures = FADF_AUTO
+    tArrDesc.Bounds.cElements = 4096
+    tArrDesc.pvData = mpCode
+    
+    MoveArray bCode(), VarPtr(tArrDesc)
+    
+    ' // Make x64call
+    
+    ' // JMP FAR 33:ADDR
+    bCode(0) = &HEA
+    
+    GetMem4 mpCode + 7, bCode(1)
+    GetMem2 &H33, bCode(5)
+    
+    lByteIdx = 7
+    
+    ' // SUB RSP, 0x28 + Args
+
+    If UBound(vArgs) > 3 Then
+    
+        lArgs = UBound(vArgs) - 3
+         lArgs = (lArgs - (lArgs \ 2) * 2) + (lArgs \ 2) * 2
+        
+    End If
+    
+    lArgs = lArgs * &H10 + &H28
+    
+    GetMem4 &HEC8348, bCode(lByteIdx):  lByteIdx = lByteIdx + 3
+    GetMem1 lArgs, bCode(lByteIdx):     lByteIdx = lByteIdx + 1
+    
+    For Each vArg In vArgs
+        
+        Select Case VarType(vArg)
+        Case vbLong
+
+            Select Case lIndex
+            Case 0: GetMem4 &HC1C748, bCode(lByteIdx):  lByteIdx = lByteIdx + 3
+            Case 1: GetMem4 &HC2C748, bCode(lByteIdx):  lByteIdx = lByteIdx + 3
+            Case 2: GetMem4 &HC0C749, bCode(lByteIdx):  lByteIdx = lByteIdx + 3
+            Case 3: GetMem4 &HC1C749, bCode(lByteIdx):  lByteIdx = lByteIdx + 3
+            Case Else
+            
+                GetMem4 &H2444C748, bCode(lByteIdx):    lByteIdx = lByteIdx + 4
+                GetMem1 (lIndex - 4) * 8 + &H20, bCode(lByteIdx):   lByteIdx = lByteIdx + 1
+
+            End Select
+            
+            GetMem4 CLng(vArg), bCode(lByteIdx):    lByteIdx = lByteIdx + 4
+            
+        Case vbCurrency
+        
+            Select Case lIndex
+            Case 0: GetMem2 &HB948, bCode(lByteIdx):  lByteIdx = lByteIdx + 2
+            Case 1: GetMem2 &HBA48, bCode(lByteIdx):  lByteIdx = lByteIdx + 2
+            Case 2: GetMem2 &HB849, bCode(lByteIdx):  lByteIdx = lByteIdx + 2
+            Case 3: GetMem2 &HB949, bCode(lByteIdx):  lByteIdx = lByteIdx + 2
+            Case Else
+            
+                GetMem2 &HB848, bCode(lByteIdx):      lByteIdx = lByteIdx + 2
+                GetMem8 CCur(vArg), bCode(lByteIdx):  lByteIdx = lByteIdx + 8
+                GetMem4 &H24448948, bCode(lByteIdx):  lByteIdx = lByteIdx + 4
+                GetMem1 (lIndex - 4) * 8 + &H20, bCode(lByteIdx):   lByteIdx = lByteIdx + 1
+                
+            End Select
+            
+            If lIndex < 4 Then
+                GetMem8 CCur(vArg), bCode(lByteIdx):  lByteIdx = lByteIdx + 8
+            End If
+            
+        End Select
+        
+        lIndex = lIndex + 1
+        
+    Next
+    
+    ' // MOV RAX, pfn: CALL RAX
+    GetMem2 &HB848, bCode(lByteIdx):    lByteIdx = lByteIdx + 2
+    GetMem8 pfn, bCode(lByteIdx):       lByteIdx = lByteIdx + 8
+    GetMem2 &HD0FF&, bCode(lByteIdx):   lByteIdx = lByteIdx + 2
+    
+    ' // ADD RSP, 0x28 + Args
+    GetMem4 &HC48348, bCode(lByteIdx):  lByteIdx = lByteIdx + 3
+    GetMem1 lArgs, bCode(lByteIdx):     lByteIdx = lByteIdx + 1
+    
+    ' // JMP FAR 23:ADDR
+    GetMem2 &H2DFF, bCode(lByteIdx):    lByteIdx = lByteIdx + 2
+    GetMem4 0&, bCode(lByteIdx):        lByteIdx = lByteIdx + 4
+    GetMem4 mpCode + lByteIdx + 6, bCode(lByteIdx):        lByteIdx = lByteIdx + 4
+    GetMem2 &H23&, bCode(lByteIdx):     lByteIdx = lByteIdx + 2
+
+    bCode(lByteIdx) = &HC3
+    
+    Debug.Print Hex(VarPtr(bCode(0)))
+    
+    DispCallFunc ByVal 0&, mpCode, 4, vbLong, 0, ByVal 0&, ByVal 0&, vRet
+
+    GetMem4 0&, Not Not bCode
+    
+End Function
+
+' // Get procedure arrdess from 64 bit dll
+Private Function GetProcAddress64( _
+                 ByRef pDllBase As LARGE_INTEGER, _
+                 ByRef sFunctionName As String) As LARGE_INTEGER
+    Dim pNtHeaders      As LARGE_INTEGER
+    Dim lRvaNtHeaders   As Long
+    Dim pExportTable    As LARGE_INTEGER
+    Dim tExpDir         As IMAGE_DATA_DIRECTORY
+    Dim tReturned       As LARGE_INTEGER
+    Dim pNames          As LARGE_INTEGER
+    Dim pName           As LARGE_INTEGER
+    Dim pOrdinals       As LARGE_INTEGER
+    Dim pAddresses      As LARGE_INTEGER
+    Dim lCount          As Long
+    Dim lIndex          As Long
+    Dim lOrdinal        As Long
+    Dim lBase           As Long
+    
+    pNtHeaders = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, &H3C)
+    NtWow64ReadVirtualMemory64 -1, pNtHeaders.lowpart, pNtHeaders.highpart, lRvaNtHeaders, 4, 0, tReturned
+    
+    pExportTable = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, lRvaNtHeaders + &H4 + &H14 + &H70)
+    NtWow64ReadVirtualMemory64 -1, pExportTable.lowpart, pExportTable.highpart, tExpDir, Len(tExpDir), 0, tReturned
+            
+    pExportTable = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, tExpDir.VirtualAddress)
+            
+    With x64PtrOffset(pExportTable.lowpart, pExportTable.highpart, &H18)
+        NtWow64ReadVirtualMemory64 -1, .lowpart, .highpart, lCount, Len(lCount), 0, tReturned
+    End With
+
+    With x64PtrOffset(pExportTable.lowpart, pExportTable.highpart, &H10)
+        NtWow64ReadVirtualMemory64 -1, .lowpart, .highpart, lBase, Len(lBase), 0, tReturned
+    End With
+    
+    With x64PtrOffset(pExportTable.lowpart, pExportTable.highpart, &H20)
+        NtWow64ReadVirtualMemory64 -1, .lowpart, .highpart, pNames, 4, 0, tReturned
+    End With
+    
+    With x64PtrOffset(pExportTable.lowpart, pExportTable.highpart, &H24)
+        NtWow64ReadVirtualMemory64 -1, .lowpart, .highpart, pOrdinals, 4, 0, tReturned
+    End With
+    
+    With x64PtrOffset(pExportTable.lowpart, pExportTable.highpart, &H1C)
+        NtWow64ReadVirtualMemory64 -1, .lowpart, .highpart, pAddresses, 4, 0, tReturned
+    End With
+            
+    pNames = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, pNames.lowpart)
+    pOrdinals = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, pOrdinals.lowpart)
+    pAddresses = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, pAddresses.lowpart)
+    
+    For lIndex = 0 To lCount - 1
+        
+        NtWow64ReadVirtualMemory64 -1, pNames.lowpart, pNames.highpart, pName, 4, 0, tReturned
+        pName = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, pName.lowpart)
+        
+        If CompareAnsiString(pName, sFunctionName) = 0 Then
+
+            pOrdinals = x64PtrOffset(pOrdinals.lowpart, pOrdinals.highpart, lIndex * 2)
+            
+            NtWow64ReadVirtualMemory64 -1, pOrdinals.lowpart, pOrdinals.highpart, lOrdinal, 2, 0, tReturned
+            
+            'lOrdinal = lOrdinal - lBase
+            
+            pAddresses = x64PtrOffset(pAddresses.lowpart, pAddresses.highpart, lOrdinal * 4)
+            
+            NtWow64ReadVirtualMemory64 -1, pAddresses.lowpart, pAddresses.highpart, GetProcAddress64, 4, 0, tReturned
+            
+            GetProcAddress64 = x64PtrOffset(pDllBase.lowpart, pDllBase.highpart, GetProcAddress64.lowpart)
+            
+            Exit Function
+            
+        End If
+        
+        pNames = x64PtrOffset(pNames.lowpart, pNames.highpart, 4)
+        
+    Next
+    
+End Function
+
+' // Get 64-bit ntdll base address
+Private Function GetNtDll_Handle() As LARGE_INTEGER
+    Dim pLdrData    As LARGE_INTEGER
+    Dim tReturned   As LARGE_INTEGER
+    Dim pList       As LARGE_INTEGER
+    Dim pDllName    As LARGE_INTEGER
+
+    With x64PtrOffset(mtProcessInfo64.PebBaseAddress.lowpart, mtProcessInfo64.PebBaseAddress.highpart, &H18)
+        NtWow64ReadVirtualMemory64 -1, .lowpart, .highpart, pLdrData, 8, 0, tReturned
+    End With
+    
+    pLdrData = x64PtrOffset(pLdrData.lowpart, pLdrData.highpart, &H10)
+    
+    NtWow64ReadVirtualMemory64 -1, pLdrData.lowpart, pLdrData.highpart, pList, 8, 0, tReturned
+
+    Do
+    
+        pDllName = x64PtrOffset(pList.lowpart, pList.highpart, &H58)
+    
+        If CompareUnicodeString64(pDllName, "ntdll.dll") = 0 Then
+            
+            With x64PtrOffset(pList.lowpart, pList.highpart, &H30)
+                NtWow64ReadVirtualMemory64 -1, .lowpart, .highpart, GetNtDll_Handle, 8, 0, tReturned
+            End With
+            
+            Exit Function
+            
+        End If
+        
+        NtWow64ReadVirtualMemory64 -1, pList.lowpart, pList.highpart, pList, 8, 0, tReturned
+        
+    Loop Until (pList.lowpart = pLdrData.lowpart And pList.highpart = pLdrData.highpart)
+    
+End Function
+
+Private Function CompareAnsiString( _
+                 ByRef pStr1 As LARGE_INTEGER, _
+                 ByRef sStr2 As String) As Long
+    Dim sString     As String
+    Dim bString()   As Byte
+    Dim tReturned   As LARGE_INTEGER
+    
+    ReDim bString(Len(sStr2))
+    
+    NtWow64ReadVirtualMemory64 -1, pStr1.lowpart, pStr1.highpart, bString(0), Len(sStr2) + 1, 0, tReturned
+     
+    If bString(Len(sStr2)) <> 0 Then
+    
+        CompareAnsiString = -1
+        Exit Function
+        
+    End If
+    
+    sString = Left$(StrConv(bString, vbUnicode), Len(sStr2))
+    
+    CompareAnsiString = StrComp(sString, sStr2, vbBinaryCompare)
+    
+End Function
+
+The Trick
+I made x64 calling from VB6 to go to 64 bit mode using "heavens gate":
+
+Private Function CompareUnicodeString64( _
+                 ByRef pStr1 As LARGE_INTEGER, _
+                 ByRef sStr2 As String) As Long
+    Dim tString     As UNICODE_STRING64
+    Dim sString     As String
+    Dim tReturned   As LARGE_INTEGER
+    
+    NtWow64ReadVirtualMemory64 -1, pStr1.lowpart, pStr1.highpart, tString, Len(tString), 0, tReturned
+    
+    sString = Space$(tString.Length \ 2)
+    
+    NtWow64ReadVirtualMemory64 -1, tString.lpBuffer.lowpart, tString.lpBuffer.highpart, _
+                                    ByVal StrPtr(sString), tString.Length - 1, 0, tReturned
+    
+    Debug.Print sString
+    
+    CompareUnicodeString64 = StrComp(sString, sStr2, vbTextCompare)
+    
+End Function
+
+Private Function x64PtrOffset( _
+                 ByVal pL As Long, _
+                 ByVal pH As Long, _
+                 ByVal lOffsetL As Long, _
+                 Optional ByVal lOffsetH As Long) As LARGE_INTEGER
+    Dim cValue  As Currency
+    Dim cOffset As Currency
+    
+    GetMem8 pL, cValue
+    GetMem8 lOffsetL, cOffset
+    
+    cValue = cValue + cOffset
+    
+    GetMem8 cValue, x64PtrOffset
+    
+End Function
+
+
+Private Sub Form_Unload(Cancel As Integer)
+    VirtualFree mpCode, 0, MEM_RELEASE
+End Sub
