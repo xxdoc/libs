@@ -108,9 +108,7 @@ Function SaveHistory(Optional maxEntries As Long = 50)
     If AryIsEmpty(history) Then Exit Function
     
     If UBound(history) > maxEntries Then
-        Dim startIndex As Long
-        startIndex = UBound(history) - maxEntries
-        For i = startIndex To UBound(history)
+        For i = 0 To maxEntries
             push entries, history(i)
         Next
         history = entries

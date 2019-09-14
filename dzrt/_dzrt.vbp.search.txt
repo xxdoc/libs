@@ -1,3 +1,6 @@
+folderd
+CopyMemory
+CopyMemory_
 %ap%
 benchmark
 ExpandEnvironmentStrings

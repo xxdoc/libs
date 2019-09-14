@@ -19,7 +19,11 @@ Private Declare Function GetShortPathName Lib "kernel32" Alias "GetShortPathName
 Private Declare Function GetModuleFileName Lib "kernel32" Alias "GetModuleFileNameA" (ByVal hModule As Long, ByVal lpFileName As String, ByVal nSize As Long) As Long
 Private Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
 Private Declare Function ExpandEnvironmentStrings Lib "kernel32" Alias "ExpandEnvironmentStringsA" (ByVal lpSrc As String, ByVal lpDst As String, ByVal nSize As Long) As Long
-   
+Private Declare Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
+
+
+Const VK_SHIFT = &H10
+Const VK_CONTROL As Integer = &H11 'Ctrl
 Private Const HWND_TOPMOST = -1
 Private Const HWND_NOTOPMOST = -2
 Private Const LB_GETCOUNT = &H18B
@@ -101,12 +105,14 @@ Private Declare Function UrlUnescape Lib "shlwapi" Alias "UrlUnescapeA" ( _
 
 Private OnBits(0 To 31) As Long
 Private crc_table() As Long
+Private bitPatterns() 'used in testbit as optimization init on first use..
 
 Public base64 As New CBase64
 Public hash As New CWinHash
 Public fso As New CFileSystem3
 Public cmdline As New CCmdLine
 Public zlib As New CZlib
+Public extCtl As New CExtControls
 
 Function ExpandEnvStr(str) As String
 
@@ -181,82 +187,6 @@ Function tocsv(ParamArray x()) As String
     tocsv = Join(tmp, ",") & vbCrLf
 End Function
 
-Function cast(varIn, varOut, Optional allowFilePaths As Boolean = False) As Boolean
-    On Error Resume Next
-    Dim b() As Byte
-    Dim i() As Integer
-    Dim l() As Long
-    Dim c() As Currency
-    Dim d() As Double
-    
-    Dim sz As Long
-    Dim bytes As Long
-    
-    On Error GoTo hell
-    
-    If TypeName(varIn) = "Object" Or TypeName(varOut) = "Object" Then
-        Err.Raise "Invalid use of cast object type not supported"
-    End If
-    
-    If Not allowFilePaths Then
-        If TypeName(varIn) = TypeName(varOut) Then
-            varOut = varIn
-            Exit Function
-        End If
-    End If
-        
-    b() = LoadData(varIn, allowFilePaths)
-    bytes = UBound(b) + 1
-    
-    If TypeName(varOut) = "String" Or TypeName(varOut) = "Variant" Then
-        varOut = StrConv(b, vbUnicode, LANG_US)
-    ElseIf TypeName(varOut) = "Byte()" Then
-        varOut = b()
-    ElseIf TypeName(varOut) = "Integer()" Then
-        If bytes Mod 2 <> 0 Then
-            sz = bytes + (bytes Mod 2)
-            ReDim Preserve b(sz)
-        End If
-        ReDim i((bytes / 2) - 1)
-        CopyMemory_ ByVal VarPtr(i(0)), ByVal VarPtr(b(0)), bytes
-        varOut = i()
-    ElseIf TypeName(varOut) = "Long()" Then
-        If bytes Mod 4 <> 0 Then
-            sz = bytes + (bytes Mod 4)
-            ReDim Preserve b(sz)
-        End If
-        ReDim l((bytes / 4) - 1)
-        CopyMemory_ ByVal VarPtr(l(0)), ByVal VarPtr(b(0)), bytes
-        varOut = l()
-    ElseIf TypeName(varOut) = "Double()" Then
-        If bytes Mod 8 <> 0 Then
-            sz = bytes + (bytes Mod 8)
-            ReDim Preserve b(sz)
-        End If
-        ReDim d((bytes / 8) - 1)
-        CopyMemory_ ByVal VarPtr(d(0)), ByVal VarPtr(b(0)), bytes
-        varOut = d()
-    ElseIf TypeName(varOut) = "Currency()" Then
-        If bytes Mod 8 <> 0 Then
-            sz = bytes + (bytes Mod 8)
-            ReDim Preserve b(sz)
-        End If
-        ReDim c((bytes / 8) - 1)
-        CopyMemory_ ByVal VarPtr(c(0)), ByVal VarPtr(b(0)), bytes
-        varOut = c()
-    Else
-        varOut = Empty
-        cast = False
-        Exit Function
-    End If
-    
-    cast = True
-    
-Exit Function
-hell:
-    cast = False
-
-End Function
 
 Function GetTickCount() As Long
     GetTickCount = GetTickCount_()
@@ -274,8 +204,8 @@ End Function
     Sleep_ dwMilliseconds
  End Sub
  
- Sub CopyMemory(Destination As Long, Source As Long, ByVal Length As Long)
-     CopyMemory_ ByVal Destination, ByVal Source, Length
+ Sub memcpy(Destination As Long, Source As Long, ByVal Length As Long)
+     CopyMemory ByVal Destination, ByVal Source, Length
  End Sub
  
  Function SendMessage(ByVal hWnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
@@ -319,6 +249,75 @@ Function EndBenchMark(Optional ByRef t As Long = -111) As String
         loadTime = endTime - t
     End If
     EndBenchMark = loadTime / 1000 & " seconds"
+End Function
+
+Public Function FileSize(fpath As String) As String
+    Dim fsize As Long
+    Dim szName As String
+    On Error GoTo hell
+    
+    fsize = FileLen(fpath)
+    
+    szName = " bytes"
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Kb"
+    End If
+    
+    If fsize > 1024 Then
+        fsize = fsize / 1024
+        szName = " Mb"
+    End If
+    
+    FileSize = fsize & szName
+    
+    Exit Function
+hell:
+    
+End Function
+
+Function HexStrToLng(ByVal x As String, Optional ByRef hadErr As Boolean) As Long
+    On Error Resume Next
+    x = trim(x)
+    If InStr(1, x, "0x", vbTextCompare) > 0 Then x = Replace(x, "0x", Empty, , , vbTextCompare)
+    If Left(x, 1) <> "&h" Then x = "&h" & x
+    HexStrToLng = CLng(x)
+    hadErr = (Err.Number <> 0)
+End Function
+
+Function Extract(value, marker1, marker2, ByRef outVar, _
+                Optional includeMarkers As Boolean = False, _
+                Optional start As Long = 1, _
+                Optional ByRef lastPos As Long, _
+                Optional method As VbCompareMethod = vbBinaryCompare _
+) As Long
+
+    Dim a As Long, b As Long
+    
+    lastPos = 0
+    outVar = Empty
+    
+    If Len(marker1) = 0 Then
+        a = 1
+    Else
+        a = InStr(start, value, marker1, method)
+        If a < 1 Then Exit Function
+    End If
+    
+    a = a + Len(marker1)
+    If Len(marker2) = 0 Then
+        outVar = Mid(value, a)
+    Else
+        b = InStr(a, value, marker2, method)
+        If b < 1 Then Exit Function
+        
+        lastPos = b + Len(marker2)
+        outVar = Mid(value, a, b - a)
+    End If
+    
+    If includeMarkers Then outVar = marker1 & outVar & marker2
+    Extract = Len(outVar)
+    
 End Function
 
 Public Function isIde() As Boolean
@@ -385,8 +384,8 @@ Sub FormPos(fform As Object, Optional andSize As Boolean = False, Optional save_
     
 End Sub
 
-Sub SaveMySetting(key, Value)
-    SaveSetting App.EXEName, "Settings", key, Value
+Sub SaveMySetting(key, value)
+    SaveSetting App.EXEName, "Settings", key, value
 End Sub
 
 Function GetMySetting(key, Optional defaultval = "")
@@ -441,8 +440,24 @@ Function RandomNum() As Long
     
 End Function
 
+Function ctrlDown() As Boolean
+    ctrlDown = (GetKeyState(VK_CONTROL) < 0)
+End Function
+
+Function shiftDown() As Boolean
+    shiftDown = (GetKeyState(VK_SHIFT) < 0)
+End Function
+
+
+'my traditional simple prototype for general use
+Function ReadFile(filename) As String
+    Dim ret As String
+    If Not ReadFile2(filename, ret) Then Exit Function
+    ReadFile = ret
+End Function
+
 'can load a byte array, string, or string array of lines split at either crlf or lf
-Function ReadFile(filename, ByRef data) As Boolean 'this one should be binary safe...
+Function ReadFile2(filename, ByRef data) As Boolean 'this one should be binary safe...
   On Error GoTo hell
   Dim f As Long
   Dim b() As Byte
@@ -466,14 +481,13 @@ Function ReadFile(filename, ByRef data) As Boolean 'this one should be binary sa
         End If
         data = t2
   Else
-  
         data = CStr(StrConv(b(), vbUnicode, LANG_US))
   End If
   
-  ReadFile = True
+  ReadFile2 = True
   
   Exit Function
-hell:   ReadFile = False
+hell:   ReadFile2 = False
 End Function
 
 Function WriteFile(path, it) As Boolean 'this one should be binary safe...
@@ -509,26 +523,26 @@ Function AppendFile(path, it) As Boolean  'not binary safe
     AppendFile = (Err.Number = 0)
 End Function
 
-Sub push(ary, Value) 'this modifies parent ary object
+Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x
        
     x = UBound(ary)
     ReDim Preserve ary(x + 1)
     
-    If IsObject(Value) Then
-        Set ary(x + 1) = Value
+    If IsObject(value) Then
+        Set ary(x + 1) = value
     Else
-        ary(x + 1) = Value
+        ary(x + 1) = value
     End If
     
     Exit Sub
 init:
     ReDim ary(0)
-    If IsObject(Value) Then
-        Set ary(0) = Value
+    If IsObject(value) Then
+        Set ary(0) = value
     Else
-        ary(0) = Value
+        ary(0) = value
     End If
 End Sub
 
@@ -599,150 +613,24 @@ Public Function isHexNum(v, Optional ByRef dataOut) As Boolean
     If Err.Number = 0 Then isHexNum = True
 End Function
 
-Function lbCount(hListBox As Long) As Long
-   lbCount = SendMessage(hListBox, LB_GETCOUNT, ByVal CLng(0), ByVal CLng(0))
-End Function
-
-Public Sub lbScrollTo(hListBox As Long, Optional ByVal index As Long = -1)
-    If index = -1 Then index = lbCount(hListBox)
-    SendMessage hListBox, LB_SETTOPINDEX, ByVal index - 1, ByVal 0
-End Sub
-
-Function lbCopy(lstBox As Object) As String
-    
-    Dim i As Long
-    Dim tmp() As String
-    
-    For i = 0 To lstBox.ListCount
-        push tmp, lstBox.List(i)
-    Next
-    
-    lbCopy = Join(tmp, vbCrLf)
-    
-End Function
-
-Sub lbAppend(lstBox As Object, txt, Optional ByVal index = -1)
-    On Error GoTo hell
-    If index = -1 Then index = lstBox.ListCount - 1
-    If index < 0 Then Exit Sub
-    lstBox.List(index) = lstBox.List(index) & txt
-hell:
-End Sub
-
-Sub lbUpdate(lstBox As Object, txt, Optional ByVal index = -1)
-    On Error GoTo hell
-    If index = -1 Then index = lstBox.ListCount - 1
-    If index < 0 Then Exit Sub
-    lstBox.List(index) = txt
-hell:
-End Sub
-
-
-Public Sub lvColumnSort(ListViewControl As Object, Column As Object)
-    On Error Resume Next
-    Const lvwAscending As Long = 0
-    Const lvwDescending As Long = 1
-     
-    With ListViewControl
-       If .SortKey <> Column.index - 1 Then
-             .SortKey = Column.index - 1
-             .SortOrder = lvwAscending
-       Else
-             If .SortOrder = lvwAscending Then
-              .SortOrder = lvwDescending
-             Else
-              .SortOrder = lvwAscending
-             End If
-       End If
-       .sorted = -1
-    End With
-End Sub
-
-Function lvGetAllElements(lv As Object) As String
-    Dim ret() As String, i As Integer, tmp As String
-    Dim li 'As ListItem
-    
-    On Error Resume Next
-    
-    For i = 1 To lv.ColumnHeaders.count
-        tmp = tmp & lv.ColumnHeaders(i).Text & vbTab
-    Next
-    
-    push ret, tmp
-    push ret, String(50, "-")
-        
-    For Each li In lv.ListItems
-        tmp = li.Text & vbTab
-        For i = 1 To lv.ColumnHeaders.count - 1
-            tmp = tmp & li.SubItems(i) & vbTab
-        Next
-        push ret, tmp
-    Next
-    
-    lvGetAllElements = Join(ret, vbCrLf)
-    
-End Function
-
-Function lvGetColumn(lv As Object, colIndex As Long) As String
-    Dim ret() As String, i As Integer, tmp As String
-    Dim li 'As ListItem
-    
-    On Error Resume Next
-    
-    If colIndex > lv.ColumnHeaders.count Then Exit Function
-    If colIndex < 0 Then Exit Function
-    
-    'push ret, lv.ColumnHeaders(colIndex + 1).Text
-    'push ret, String(50, "-")
-        
-    For Each li In lv.ListItems
-        If colIndex = 0 Then
-            push ret, li.Text
-        Else
-            push ret, li.SubItems(colIndex)
-        End If
-    Next
-    
-    lvGetColumn = Join(ret, vbCrLf)
-    
-End Function
-
-Function cboFromFile(cbo As Object, fPath) As Long
-    Dim fs As New CFileStream
-    On Error GoTo hell
-    
-    cbo.Clear
-    fs.Open_ fPath, otRead
-    While Not fs.eof
-        cbo.AddItem fs.ReadLine
-    Wend
-    
-hell:
-    On Error Resume Next
-    fs.Close_
-    cboFromFile = cbo.ListCount
-    
-End Function
-
-
-Function Rpad(v, Optional l As Long = 8, Optional char As String = " ")
+Function Rpad(v, Optional L As Long = 8, Optional char As String = " ")
     On Error GoTo hell
     Dim x As Long
     x = Len(v)
-    If x < l Then
-        Rpad = v & String(l - x, char)
+    If x < L Then
+        Rpad = v & String(L - x, char)
     Else
 hell:
         Rpad = v
     End If
 End Function
 
-Function lpad(v, Optional l As Long = 8, Optional char As String = " ")
+Function lpad(v, Optional L As Long = 8, Optional char As String = " ")
     On Error GoTo hell
     Dim x As Long
     x = Len(v)
-    If x < l Then
-        lpad = String(l - x, char) & v
+    If x < L Then
+        lpad = String(L - x, char) & v
     Else
 hell:
         lpad = v
@@ -1537,7 +1425,7 @@ Function cjoin(a As Collection, b As Collection) As Collection
 End Function
 
 Function isIn(needle, haystack, Optional ByRef index) As Boolean
-    Dim t As String, j As String, x
+    Dim t As String, J As String, x
     Dim i As Long
     
     On Error GoTo hell
@@ -1553,8 +1441,8 @@ Function isIn(needle, haystack, Optional ByRef index) As Boolean
         If index > 0 Then isIn = True
     ElseIf InStr(t, "()") > 0 Then 'its an array
         For i = LBound(haystack) To UBound(haystack)
-            j = TypeName(haystack(i))
-            If j = "String" Or t = "Variant" Then
+            J = TypeName(haystack(i))
+            If J = "String" Or t = "Variant" Then
                  index = InStr(1, haystack(i), needle, vbTextCompare)
                  If index > 0 Then
                     isIn = True
@@ -1573,14 +1461,14 @@ Function isIn(needle, haystack, Optional ByRef index) As Boolean
         i = 0
         For Each x In haystack
             i = i + 1
-            j = TypeName(x)
+            J = TypeName(x)
             If IsObject(needle) And IsObject(x) Then
                  If ObjPtr(needle) = ObjPtr(x) Then
                     isIn = True
                     index = i
                     Exit For
                  End If
-            ElseIf j = "String" Or t = "Variant" Then
+            ElseIf J = "String" Or t = "Variant" Then
                  index = InStr(1, haystack(i), needle, vbTextCompare)
                  If index > 0 Then
                     isIn = True
@@ -1710,141 +1598,202 @@ Public Function html_decode(ByVal iString As String, ByRef outVal) As Boolean
     
 End Function
 
-Public Function fgFill(FlexGrid As Object, rs As Object) As Long
-'*******************************************************
-'PURPOSE: Populate MSFlexGrid with data from an
-'         ADO Recordset
-'PARAMETERS:  FlexGrid: MsFlexGrid to Populate
-'             RS: Open ADO Recordset
-'RETURNS:     True if successful, false otherwise
-'REQUIRES:    -- Reference to Microsoft Active Data Objects
-'             -- Recordset should be open with cursor set at
-'                first row when passed and must
-'                support recordcount property
-'             -- FlexGrid should be empty when passed
-'EXAMPLE:
-'Dim conn As New ADODB.Connection
-'Dim rs As New ADODB.Recordset
-'Dim sConnString As String
-'
-'sConnString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\MyDatabase.mdb"
-'conn.Open sConnString
-'rs.Open " SELECT * FROM MyTable", oConn, adOpenKeyset, adLockOptimistic
-'PopulateFlexGrid MSFlexGrid1, rs
-'
-'rs.Close
-'conn.Close
-'***********************************************************
-'**********************************************
-            
-    On Error GoTo ErrorHandler
 
-    If TypeName(FlexGrid) <> "MSFlexGrid" Then Exit Function
-    If TypeName(rs) <> "Recordset" Then Exit Function
-    'If Not TypeOf rs Is ADODB.Recordset Then Exit Function
-    
-    Dim i As Integer
-    Dim j As Integer
-    
-    initFlexGrid FlexGrid
-    
-    With FlexGrid
-  
-        If Not rs.eof Then
-        
-            '.Rows = rs.RecordCount + 1
-            .Cols = rs.fields.count
-            .AddItem ""
-            
-            For i = 0 To rs.fields.count - 1
-                .TextMatrix(0, i) = rs.fields(i).Name
-            Next
-        
-            i = 1
-            Do While Not rs.eof
-            
-                .AddItem ""
-                For j = 0 To rs.fields.count - 1
-                    If Not IsNull(rs.fields(j).Value) Then
-                        .TextMatrix(i, j) = trim(rs.fields(j).Value)
-                    End If
-                Next
-        
-                i = i + 1
-                rs.MoveNext
-            Loop
-        
-        
-        End If
-        fgFill = .rows
-    End With
-    
-    Exit Function
-ErrorHandler:
-    fgFill = -1
-    
-End Function
 
-Private Function initFlexGrid(fg As Object)
-    
+Function cast(varIn, varOut, Optional allowFilePaths As Boolean = False) As Boolean
     On Error Resume Next
-    Dim i As Long
+    Dim b() As Byte
+    Dim i() As Integer
+    Dim L() As Long
+    Dim c() As Currency
+    Dim d() As Double
     
-    With fg
-        .Clear
-        .FixedRows = 1
-        .FixedCols = 0
-        For i = .rows - 1 To 0 Step -1
-            .RemoveItem i
-        Next
-    End With
+    Dim sz As Long
+    Dim bytes As Long
     
+    On Error GoTo hell
+    
+    If TypeName(varIn) = "Object" Or TypeName(varOut) = "Object" Then
+        Err.Raise "Invalid use of cast object type not supported"
+    End If
+    
+    If Not allowFilePaths Then
+        If TypeName(varIn) = TypeName(varOut) Then
+            varOut = varIn
+            Exit Function
+        End If
+    End If
+        
+    b() = LoadData(varIn, allowFilePaths)
+    bytes = UBound(b) + 1
+    
+    If TypeName(varOut) = "String" Or TypeName(varOut) = "Variant" Then
+        varOut = StrConv(b, vbUnicode, LANG_US)
+    ElseIf TypeName(varOut) = "Byte()" Then
+        varOut = b()
+    ElseIf TypeName(varOut) = "Integer()" Then
+        If bytes Mod 2 <> 0 Then
+            sz = bytes + (bytes Mod 2)
+            ReDim Preserve b(sz)
+        End If
+        ReDim i((bytes / 2) - 1)
+        CopyMemory ByVal VarPtr(i(0)), ByVal VarPtr(b(0)), bytes
+        varOut = i()
+    ElseIf TypeName(varOut) = "Long()" Then
+        If bytes Mod 4 <> 0 Then
+            sz = bytes + (bytes Mod 4)
+            ReDim Preserve b(sz)
+        End If
+        ReDim L((bytes / 4) - 1)
+        CopyMemory ByVal VarPtr(L(0)), ByVal VarPtr(b(0)), bytes
+        varOut = L()
+    ElseIf TypeName(varOut) = "Double()" Then
+        If bytes Mod 8 <> 0 Then
+            sz = bytes + (bytes Mod 8)
+            ReDim Preserve b(sz)
+        End If
+        ReDim d((bytes / 8) - 1)
+        CopyMemory ByVal VarPtr(d(0)), ByVal VarPtr(b(0)), bytes
+        varOut = d()
+    ElseIf TypeName(varOut) = "Currency()" Then
+        If bytes Mod 8 <> 0 Then
+            sz = bytes + (bytes Mod 8)
+            ReDim Preserve b(sz)
+        End If
+        ReDim c((bytes / 8) - 1)
+        CopyMemory ByVal VarPtr(c(0)), ByVal VarPtr(b(0)), bytes
+        varOut = c()
+    Else
+        varOut = Empty
+        cast = False
+        Exit Function
+    End If
+    
+    cast = True
+    
+Exit Function
+hell:
+    cast = False
+
 End Function
 
-'copies all the data from a flexgrid into well formatted rows for text display
-'use delimiter to skip padding and have in csv type format,
-'delimiter not checked for in data
-Public Sub fgCopy(FlexGrid As Object, Optional delimiter)
 
-   Dim colWidths() As Long
-   Dim rows() As String
-   Dim fields() As String
-   Dim d As String
-   Dim c As Long, r As Long, maxwidth As Long
-   
-   If TypeName(FlexGrid) <> "MSFlexGrid" Then Exit Sub
-   
-   With FlexGrid
-   
-        ReDim colWidths(.Cols)
+Function LngToBytes(s As String, ByRef out_b() As Byte, Optional intOnly As Boolean) As Boolean
+        On Error Resume Next
         
-        If Len(delimiter) = 0 Then
-            For c = 0 To .Cols - 1
-                For r = 0 To .rows - 1
-                    maxwidth = Len(.TextMatrix(r, c))
-                    If maxwidth > colWidths(c) Then colWidths(c) = maxwidth
-                Next
-            Next
+        Dim tmp, L As Long, b() As Byte, hadErr As Boolean, i As Integer
+        tmp = s
+
+        If Right(LCase(tmp), 1) = "d" And Len(tmp) > 1 Then
+            tmp = Mid(tmp, 1, Len(tmp) - 1)
+            L = CLng(tmp)
+            If intOnly Then i = CInt(L)
+            If Err.Number > 0 Then Exit Function
+        Else
+            L = HexStrToLng(tmp, hadErr)
+            If intOnly Then i = CInt(L)
+            If hadErr Or Err.Number > 0 Then Exit Function
         End If
         
-        For r = 0 To .rows - 1
-            Erase fields
-            For c = 0 To .Cols - 1
-                d = .TextMatrix(r, c)
-                If Len(delimiter) = 0 Then
-                    d = d & Space(colWidths(c) - Len(d) + 2)
-                Else
-                    d = d & delimiter
-                End If
-                push fields, d
-            Next
-            push rows, Join(fields, "")
-        Next
-    End With
+        If intOnly Then
+            ReDim b(1)
+            CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(i), 2
+        Else
+            ReDim b(3)
+            CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(L), 4
+        End If
+  
+        out_b = b
+        LngToBytes = True
+        
+End Function
+
+Function SngToBytes(tmp As String, ByRef out_b() As Byte) As Boolean
+       On Error Resume Next
+        
+       Dim s As Single, b() As Byte
+       
+       s = tmp
+       If Err.Number <> 0 Then Exit Function
     
-    Clipboard.Clear
-    Clipboard.SetText Join(rows, vbCrLf)
-   
-End Sub
+       ReDim b(LenB(s) - 1)
+       CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(s), UBound(b) + 1
+         
+       out_b = b
+       SngToBytes = True
+        
+End Function
+
+Function CurToBytes(tmp As String, ByRef out_b() As Byte) As Boolean
+       On Error Resume Next
+        
+       Dim s As Currency, b() As Byte
+       
+       s = tmp
+       If Err.Number <> 0 Then Exit Function
+    
+       ReDim b(LenB(s) - 1)
+       CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(s), UBound(b) + 1
+         
+       out_b = b
+       CurToBytes = True
+        
+End Function
+
+Function DblToBytes(tmp As String, ByRef out_b() As Byte) As Boolean
+       On Error Resume Next
+        
+       Dim s As Double, b() As Byte
+       
+       s = tmp
+       If Err.Number <> 0 Then Exit Function
+    
+       ReDim b(LenB(s) - 1)
+       CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(s), UBound(b) + 1
+         
+       out_b = b
+       DblToBytes = True
+        
+End Function
+
+Function DateToBytes(tmp As String, ByRef out_b() As Byte) As Boolean
+       On Error Resume Next
+        
+       Dim s As Date, b() As Byte
+       
+       s = tmp
+       If Err.Number <> 0 Then Exit Function
+    
+       ReDim b(LenB(s) - 1)
+       CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(s), UBound(b) + 1
+         
+       out_b = b
+       DateToBytes = True
+        
+End Function
 
 
+Function bitTest(ByVal val As Long, bit) As Boolean
+    If AryIsEmpty(bitPatterns) Then
+        bitPatterns = Array(0, &H1, &H2, &H4, &H8, &H10, &H20, &H40, &H80, &H100, &H200, &H400, &H800, &H1000, &H2000, &H4000, &H8000, &H10000, &H20000, &H40000, &H80000, &H100000, &H200000, &H400000, &H800000, &H1000000, &H2000000, &H4000000, &H8000000, &H10000000, &H20000000, &H40000000, &H80000000)
+    End If
+    If bit > 32 Or bit < 1 Then Err.Raise "invalid bit number 1-32 only"
+    bitTest = ((val And bitPatterns(bit)) > 0)
+End Function
+
+Function toBinary(ByVal val As Long, Optional maxBits As Long = 32) As String
+    
+    Dim ret As String, J, i
+    
+    If maxBits < 1 Or maxBits > 32 Then maxBits = 32
+    
+    For i = maxBits To 1 Step -1
+        J = J + 1
+        ret = ret & IIf(bitTest(val, i), "1", "0")
+        If J Mod 8 = 0 Then ret = ret & " "
+        If J Mod 16 = 0 Then ret = ret & " "
+    Next
+    
+    toBinary = ret
+    
+End Function
