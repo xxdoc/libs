@@ -1,0 +1,11 @@
+ Dim Path As String
+
+    With New MiniZipDir
+        .OpenZip App.Path & "\sample.zip"
+        Path = .FirstFile()
+        Do While Len(Path)
+            Text1.SelText = Path & vbNewLine
+            Path = .NextFile()
+        Loop
+        .CloseZip
+    End With
