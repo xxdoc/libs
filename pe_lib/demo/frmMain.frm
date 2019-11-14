@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form1 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "VB PE Framework v .2 - dzzie  http://sandsprite.com"
@@ -12,7 +12,7 @@ Begin VB.Form Form1
    MinButton       =   0   'False
    ScaleHeight     =   4440
    ScaleWidth      =   7890
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
    Begin VB.TextBox txtCompiled 
       Height          =   285
       Left            =   1020
@@ -207,6 +207,8 @@ End Sub
 
 Private Sub Form_Load()
     ConfigureListView lvSects
+    txtFile = "C:\Users\home\Desktop\dd\3ef.dll"
+    Command1_Click
 End Sub
 
 Private Sub cmdListImports_Click()
@@ -240,7 +242,7 @@ Private Sub cmdListExports_Click()
     End If
     
     For Each exp In pe.Exports.functions
-        push ret(), exp.FunctionOrdial & vbTab & Hex(exp.FunctionAddress) & vbTab & exp.FunctionName
+        push ret(), Hex(exp.FunctionOrdial) & vbTab & Hex(exp.FunctionAddress) & vbTab & exp.FunctionName
     Next
     
     frmLister.ShowList ret

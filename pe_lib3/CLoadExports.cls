@@ -53,43 +53,22 @@ Public errMessage As String
 Public CurrentImage As String
 
 Private mParent As CPEEditor
+Private ExportDllName As String 'binary compat already set cant expose :-\
 
-Function dumpNames() As Collection
-    On Error Resume Next
-    Dim c As New Collection
-    Dim e As CExport
-    
-    Set dumpNames = c
-    
-    For Each e In functions
-        If Len(e.FunctionName) > 0 Then
-            c.add e.FunctionName
-        Else
-            c.add "@" & e.FunctionOrdial
-        End If
-    Next
-    
-End Function
-
+'fixed 11.14.2019 (only took 17 yrs! holy crap i am old)
 Friend Sub LoadExports(fhandle As Long, ByVal rvaExportDirectoryTable As Long, parent As CPEEditor)
     
-    Dim offsetExportTable As Long
-    
+    Dim ied As IMAGE_EXPORT_DIRECTORY
+    Dim firstOrdial As Long, oset As Long, pointer As Long, i As Long, nameUb As Long, offsetExportTable As Long, ord As Integer
+    Dim func() As Long
+    Dim names() As String
+    Dim nameOrdinals() As Integer '2 bytes each
+    Dim n As String, ns As String
+
     Set mParent = parent
     
     If rvaExportDirectoryTable < 1 Then Exit Sub
 
-    Dim ied As IMAGE_EXPORT_DIRECTORY
-    Dim firstOrdial As Long
-    Dim oset As Long
-    Dim pointer As Long
-    Dim i As Long
- 
-    
-    Dim func() As Long
-    Dim names() As String
-    Dim ordials() As Integer '2bytes each
-    
     'ntdll sent me for a loop :(
     'Debug.Print "RvaExportDir: " & Hex(offset.RvaExportDirectory)
     
@@ -103,137 +82,108 @@ Friend Sub LoadExports(fhandle As Long, ByVal rvaExportDirectoryTable As Long, p
     End If
     
     offsetExportTable = offsetExportTable + 1 '0 based file offsets
-
     Get fhandle, offsetExportTable, ied
     firstOrdial = ied.base
-    oset = mParent.RvaToOffset(ied.AddressOfFunctions) + 1
         
-    'Debug.Print "AdrofFunc: " & Hex(ied.AddressOfFunctions)
-    'Debug.Print "FileOffset:" & Hex(oset)
+    If ied.Name > 0 Then
+        ExportDllName = ExtractExportName(fhandle, mParent.RvaToOffset(ied.Name))
+    End If
+        
+    'Debug.Print "AddressOfFunctions foff: " & Hex(mParent.RvaToOffset(ied.AddressOfFunctions) + 1) & " Count: " & ied.NumberOfFunctions
+    'Debug.Print "AddressOfNameOrdinals foff: " & Hex(mParent.RvaToOffset(ied.AddressOfNameOrdinals) + 1)
+    'Debug.Print "AddressOfNames foff: " & Hex(mParent.RvaToOffset(ied.AddressOfNames) + 1) & " Count: " & ied.NumberOfNames
     
-    If ied.NumberOfFunctions > 10000 Then 'something fishy
-        mParent.errMessage = "To many exports: " & ied.NumberOfFunctions
-        Exit Sub
+    'extract ordinals for named exports
+    ReDim nameOrdinals(ied.NumberOfNames) 'default all 0
+    If ied.AddressOfNameOrdinals > 0 Then
+        Get fhandle, mParent.RvaToOffset(ied.AddressOfNameOrdinals) + 1, nameOrdinals
     End If
     
-    For i = 0 To ied.NumberOfFunctions - 1
-        Get fhandle, (oset + (i * 4)), pointer
-        'If i = 0 Then Debug.Print "FuncPointer 0: " & Hex(pointer)
-        push func(), pointer
-        'Debug.Print "Fx Addr " & i & ":" & Hex(pointer)
-    Next
-    
-    'Debug.Print "AddofNames: " & Hex(ied.AddressOfNames)
-    
+    'extract all named exports names
     oset = mParent.RvaToOffset(ied.AddressOfNames) + 1
-    
-    'Debug.Print "FileOffset: " & Hex(oset)
-    
-    Dim ns As String
     For i = 0 To ied.NumberOfNames - 1
         Get fhandle, (oset + (i * 4)), pointer
-        'If i = 0 Then
-        '    Debug.Print "Name pointer rva: " & Hex(pointer)
-        '    Debug.Print "Name pointer foffset: " & Hex(offset.RvaToOffset(pointer))
-        'End If
         ns = ExtractExportName(fhandle, mParent.RvaToOffset(pointer))
-        'If i = 0 Then Debug.Print "Name: " & ns
         push names(), ns
+        nameOrdinals(i) = nameOrdinals(i) + firstOrdial
+        'Debug.Print "Name: "; i & " = " & ns & " ord: " & Hex(nameOrdinals(i) + firstOrdial)
+    Next
+    
+    'build a list of all exported function addresses
+    ReDim func(ied.NumberOfFunctions)
+    Get fhandle, mParent.RvaToOffset(ied.AddressOfFunctions) + 1, func()
+    
+    For i = 0 To ied.NumberOfFunctions - 1
+        If func(i) <> 0 Then 'unused slots left empty
+            ord = i + firstOrdial
+            n = OrdForName(nameOrdinals, names, ord)
+            'Debug.Print "Fx Addr " & Hex(ord) & ":" & Hex(func(i)) & " " & n
+            AddExport func(i), n, CLng(ord)
+        End If
     Next
 
-    If ied.NumberOfNames > 0 Then
-        Dim hasOrdials As Boolean
-        Dim nameUb As Long, n As String
-        
-        nameUb = ied.NumberOfNames - 1
-        hasOrdials = IIf(ied.AddressOfNameOrdinals > 0, True, False)
-        
-        If hasOrdials Then
-            ReDim ordials(nameUb)
-            Get fhandle, mParent.RvaToOffset(ied.AddressOfNameOrdinals) + 1, ordials
-        End If
-        
-        For i = 0 To nameUb
-           
-           'old method was simply:
-           'If i > nameUb Then n = Empty Else n = names(i)
-           'AddExport func(i), n, (ordials(i) + firstOrdial)
-           'except failed for ntdll whos first ordial is #6 and 1st name offset is 305!
-           
-           n = names(i)
-           If hasOrdials And ordials(i) <= UBound(func) Then 'sanity check for new calc
-                AddExport func(ordials(i)), n, (ordials(i) + firstOrdial)
-           Else
-                'Stop
-                'Debug.Print "Export Weirdness " & fpath & " i=" & i & " ordial(i)=" & ordials(i)
-                AddExport func(i), "--> " & n, (ordials(i) + firstOrdial)
-           End If
-           
-        Next
-    Else
-        
-        'this part actually probably isnt right but it doesnt crash....see mswstr10.dll
-        hasOrdials = IIf(ied.AddressOfNameOrdinals > 0, True, False)
-        nameUb = ied.NumberOfFunctions - 1
-        
-        If hasOrdials Then
-            ReDim ordials(nameUb)
-            Get fhandle, mParent.RvaToOffset(ied.AddressOfNameOrdinals) + 1, ordials
-        End If
-        
-        For i = 0 To nameUb
-           
-           'old method was simply:
-           'If i > nameUb Then n = Empty Else n = names(i)
-           'AddExport func(i), n, (ordials(i) + firstOrdial)
-           'except failed for ntdll whos first ordial is #6 and 1st name offset is 305!
-           
-           n = Empty
-           If hasOrdials And ordials(i) <= UBound(func) Then 'sanity check for new calc
-                AddExport func(ordials(i)), n, (ordials(i) + firstOrdial)
-           Else
-                'Stop
-                'Debug.Print "Export Weirdness " & fpath & " i=" & i & " ordial(i)=" & ordials(i)
-                AddExport func(i), "--> " & n, (ordials(i) + firstOrdial)
-           End If
-           
-        Next
-        
-    End If
-    
-    OrdialSortCollection
+    'OrdialSortCollection
  
-    
 End Sub
 
-Private Function OrdialSortCollection()
-    
-    Dim x As CExport
-    Dim tmp As New Collection
-    Dim i As Long
-    
+Private Function OrdForName(ords() As Integer, names() As String, ord As Integer) As String
+    Dim i As Integer
+    For i = 0 To UBound(ords)
+        If ord = ords(i) Then
+            OrdForName = names(i)
+            Exit Function
+        End If
+    Next
+End Function
+
+Function dumpNames() As Collection
     On Error Resume Next
-    For i = 0 To &HFFF
-        If objKeyExistsInCollection(functions, "ordial:" & i) Then
-            Set x = functions("ordial:" & i)
-            If Not x Is Nothing Then
-                tmp.add x, "ordial:" & i
-                functions.Remove "ordial:" & i
-            End If
+    Dim c As New Collection
+    Dim e As CExport
+    
+    Set dumpNames = c
+    'todo: bug not loading funcs by ordinal?
+    
+    For Each e In functions
+        'MsgBox """" & typename(e.FunctionName)  & """"
+        'MsgBox TypeName(e.FunctionName) & " " & Len(e.FunctionName) & " """ & e.FunctionName & """"
+        If Len(Trim(Replace(e.FunctionName, Chr(0), ""))) > 0 Then
+            c.Add e.FunctionName
+        Else
+            c.Add "@" & e.FunctionOrdial
         End If
     Next
     
-    For Each x In functions
-        If Len(x.FunctionName) > 0 Then tmp.add x
-    Next
-    
-    Set functions = tmp
-    
-    
-Exit Function
-hell: DoEvents
-    
 End Function
+
+'Private Function OrdialSortCollection()
+'
+'    Dim x As CExport
+'    Dim tmp As New Collection
+'    Dim i As Long
+'
+'    On Error Resume Next
+'    For i = 0 To &HFFF
+'        If objKeyExistsInCollection(functions, "ordial:" & i) Then
+'            Set x = functions("ordial:" & i)
+'            If Not x Is Nothing Then
+'                tmp.Add x, "ordial:" & i
+'                functions.Remove "ordial:" & i
+'            End If
+'        End If
+'    Next
+'
+'    For Each x In functions
+'        If Len(x.FunctionName) > 0 Then tmp.Add x
+'    Next
+'
+'    Set functions = tmp
+'
+'
+'Exit Function
+'hell: DoEvents
+'
+'End Function
 
 Private Function ExtractExportName(f As Long, pointer As Long) As String
      Dim b As Byte
@@ -260,9 +210,9 @@ Private Sub AddExport(address As Long, Name As String, Optional ordial As Long)
     m.FunctionOrdial = ordial
     On Error GoTo hell
     If Not objKeyExistsInCollection(functions, "ordial:" & ordial) Then
-        functions.add m, "ordial:" & ordial
+        functions.Add m, "ordial:" & ordial
     Else
-        If ordial = 0 Then functions.add m
+        If ordial = 0 Then functions.Add m
     End If
     
     Exit Sub
