@@ -148,9 +148,9 @@ Function dumpNames() As Collection
         'MsgBox """" & typename(e.FunctionName)  & """"
         'MsgBox TypeName(e.FunctionName) & " " & Len(e.FunctionName) & " """ & e.FunctionName & """"
         If Len(Trim(Replace(e.FunctionName, Chr(0), ""))) > 0 Then
-            c.Add e.FunctionName
+            c.Add "@" & e.FunctionOrdial & " " & e.FunctionName '& " = " & Hex(mParent.RVAtoVA(e.FunctionAddress))
         Else
-            c.Add "@" & e.FunctionOrdial
+            c.Add "@" & e.FunctionOrdial '& " = " & Hex(mParent.RVAtoVA(e.FunctionAddress))
         End If
     Next
     
