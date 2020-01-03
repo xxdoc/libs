@@ -16,6 +16,7 @@ Option Explicit
 'http://sandsprite.com
 '
 '2.13.18 - should be x64 safe now...
+'1.3.20  - added safety checks on Rva=0 and scanstring loop max len
 
 Public Modules As New Collection  'of CImport
 Private fhandle As Long 'my FileHandle
@@ -92,11 +93,11 @@ Private Sub LoadModuleImports()
         If isOrdial Then
             ImportFx = "@" & lookup.toString() 'if we switch to decimal change ordLookup for impHash
             'Debug.Print ImportFx
-            m.functions.add ImportFx
+            m.functions.Add ImportFx
         Else
             ImportFx = ScanString(mParent.RvaToOffset(lookup.lo), True) 'is this x64 safe?
             'Debug.Print ImportFx
-            m.functions.add ImportFx
+            If Len(ImportFx) > 0 Then m.functions.Add ImportFx 'if 0 should we abort all and assume corrupt for safety?
         End If
         
         If mParent.is64bit Then
@@ -115,7 +116,7 @@ Private Sub LoadModuleImports()
 
     Wend
     
-    Modules.add m, CStr(m.DllName)
+    Modules.Add m, CStr(m.DllName)
 
 Exit Sub
 hell: MsgBox Err.Description
@@ -125,7 +126,10 @@ End Sub
 Private Function ScanString(offset As Long, Optional getHint As Boolean = False) As String
     Dim b As Byte, i As Long, ret As String
     Dim Hint As Integer '2 bytes
-     
+    Const maxLen As Long = 100
+    
+    If offset = 0 Then Exit Function
+    
     i = offset + 1
     
     If getHint Then
@@ -135,10 +139,11 @@ Private Function ScanString(offset As Long, Optional getHint As Boolean = False)
     
     Get fhandle, i, b
      
-    While b <> 0
+    Do While b <> 0
         ret = ret & Chr(b)
+        If Len(ret) > maxLen Then Exit Do
         Get fhandle, , b
-    Wend
+    Loop
     
     ScanString = ret
  

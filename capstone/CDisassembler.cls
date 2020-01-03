@@ -10,7 +10,7 @@ Attribute VB_Name = "CDisassembler"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 
 'Capstone Disassembly Engine bindings for VB6
@@ -18,7 +18,6 @@ Option Explicit
 'Author:  David Zimmer <david.zimmer@fireeye.com>, <dzzie@yahoo.com>
 'License: Apache
 'Copyright: FireEye 2017
-
 
 'NOTE: the VB code was built and tested against Capstone v3.0 rc4
 '      if the capstone C structures change, the VB code will have to
@@ -37,6 +36,17 @@ Public vMinor As Long
 
 Public errMsg As String
 Public lastErr As cs_err
+
+Function About() As String
+    Dim x() As String
+    push x, "Capstone Disassembly Engine bindings for VB6 v1.0"
+    push x, "Contributed by FireEye FLARE Team"
+    push x, "Author:  David Zimmer <david.zimmer@fireeye.com>, <dzzie@yahoo.com>"
+    push x, "License: Apache"
+    push x, "Copyright: FireEye 2017"
+    push x, "Built for Capstone v3.0 rc4"
+    About = Join(x, vbCrLf)
+End Function
 
 Private Function CheckPath(pth As String) As Long
     

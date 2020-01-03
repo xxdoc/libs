@@ -1,0 +1,29 @@
+       Private Declare Function vbaNew Lib "msvbvm60" _
+                         Alias "__vbaNew" ( _
+                         ByRef lpObjectInformation As Any) As IUnknown
+        
+        GetMem4 ByVal pVBHeader + &H30, pProjInfo
+        GetMem4 ByVal pProjInfo + &H4, pObjTable
+        GetMem2 ByVal pObjTable + &H2A, lTotalObjects
+        GetMem4 ByVal pObjTable + &H30, pObjDesc
+        
+        For lIndex = 0 To lTotalObjects - 1
+            
+            GetMem4 ByVal pObjDesc + &H28, lModuleType
+            GetMem4 ByVal pObjDesc + &H18, pModname
+            
+          If  (pModname matches "Form2") Then   'pseudo code
+                    
+                    GetMem4 ByVal pObjDesc, pObjInfo
+                    Set cTempObj = vbaNew(ByVal pObjInfo) 'But here ObjPtr(Form2) is not equal to ObjPtr(cTempObj)
+                    
+                    Exit For
+                    
+            End If
+          
+            
+            pObjDesc = pObjDesc + &H30
+            
+        Next
+
+    End If

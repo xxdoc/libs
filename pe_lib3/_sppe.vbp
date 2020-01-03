@@ -1,7 +1,7 @@
 Type=OleDll
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
-Reference=*\G{C76AEA4D-5CD1-43D8-8A0F-8CC96040E0BB}#1.0#0#C:\WINDOWS\vbUtypes.dll#Sandsprite Unsigned Math Library For VB6
-Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
+Reference=*\G{C76AEA4D-5CD1-43D8-8A0F-8CC96040E0BB}#1.0#0#..\vb6_utypes\vbUtypes.dll#Sandsprite Unsigned Math Library For VB6
+Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; mscomctl.ocx
 Module=modPEStructs; modPEStructs.bas
 Class=CExport; CExport.cls
 Class=CImport; CImport.cls

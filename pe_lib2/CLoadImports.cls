@@ -14,6 +14,7 @@ Attribute VB_Exposed = True
 Option Explicit
 'dzzie@yahoo.com
 'http://sandsprite.com
+'1.3.20  - added safety checks on Rva=0 and scanstring loop max len
 
 Public Modules As New Collection  'of CImport
 Private fhandle As Long 'my FileHandle
@@ -82,7 +83,7 @@ Private Sub LoadModuleImports(iid As IMAGE_IMPORT_DIRECTORY)
         Else
             ImportFx = ScanString(mParent.RvaToOffset(ImportLookup), True)
             'Debug.Print ImportFx
-            m.functions.Add ImportFx
+            If Len(ImportFx) > 0 Then m.functions.Add ImportFx 'if 0 should we abort all and assume corrupt for safety?
         End If
         
         i = i + 4 'next record is 4 bytes away
@@ -102,7 +103,10 @@ End Sub
 Private Function ScanString(offset As Long, Optional getHint As Boolean = False) As String
     Dim b As Byte, i As Long, ret As String
     Dim Hint As Integer '2 bytes
-     
+    Const maxLen As Long = 100
+    
+    If offset = 0 Then Exit Function
+    
     i = offset + 1
     
     If getHint Then
@@ -112,10 +116,11 @@ Private Function ScanString(offset As Long, Optional getHint As Boolean = False)
     
     Get fhandle, i, b
      
-    While b <> 0
+    Do While b <> 0
         ret = ret & Chr(b)
+        If Len(ret) > maxLen Then Exit Do
         Get fhandle, , b
-    Wend
+    Loop
     
     ScanString = ret
  
