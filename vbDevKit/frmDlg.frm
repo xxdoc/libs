@@ -421,12 +421,12 @@ End Function
 
 Private Sub Form_Resize()
     On Error Resume Next
-    Frame1.Width = Me.Width
+    Frame1.Width = Me.Width - 150
     Frame2.Left = Frame1.Width - Frame2.Width - 200
-    Frame1.Top = Me.Height - Frame1.Height - 400
+    Frame1.Top = Me.Height - Frame1.Height - 600
     Frame3.Left = Me.Width - Frame3.Width - 200
-    Dir1.Height = Me.Height - Frame1.Height - 1000
-    Dir1.Width = Me.Width - Dir1.Left - 200
+    Dir1.Height = Me.Height - Frame1.Height - 1200
+    Dir1.Width = Me.Width - Dir1.Left - 350
     Text1.Width = Dir1.Width
     Picture1.Height = Dir1.Height
     Drive1.Width = Me.Width - Dir1.Left - Frame3.Width - 400

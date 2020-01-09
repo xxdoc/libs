@@ -1,0 +1,47 @@
+
+http://www.vbrichclient.com/#/en/Downloads.htm
+
+Downloads
+
+The 3 Base-Dlls of the toolset are contained in this minimum-package:
+
+vbRC5BaseDlls.zip  (~ 2.7MB, current version: 5.0.68, last update: 2019-05-12  ... latest SQLite-version: 3.28)
+
+Out of the contained dlls you'd have only:
+
+    vbRichClient5.dll   <-- this one here to register (either per regsvr32 in Admin-Mode - or per incl. Script: RegisterRC5inPlace.vbs) 
+    vb_cairo_sqlite.dll
+    DirectCOM.dll
+
+In addition, please keep those Dlls always together in their Folder - also when you deploy them with your App.
+
+The RichClient offers in addition, another useful Binding to a powerful OpenSource-Library - 
+an easy usable Browser-Component, which is deployable with your own Apps, based on WebKit.
+
+WebKitCairo.7z  (~ 3.3MB)
+
+WebKitCairoNewLibCurl.zip  (~ 6.5MB)
+
+This Component is optional, but pretty easy to integrate into the above Base-Framework - over a simple
+Copy-Operation (without registering anything). For that you will only have to "drop" the Folder 'WebKitCairo',
+which is contained in the above *.7z-archive, into the Folder on your FileSystem, which already contains
+the 3 Base-Dlls.
+After this is done, you can already use the cwBrowser-Widget, contained in the vbWidgets.dll package.
+
+vbWidgets: 
+
+The just mentioned vbWidgets.dll  (together with its complete Sourcecode) is now hosted on GitHub:
+Here's a direct link to the latest activities and commits on the GitHub-Repo.
+Zip-Download-> of the current master-branch (incl. the latest vbWidgets.dll-Binary, ~ 237KB)
+
+Potential contributors - please contact me per E-Mail if not sure, how to proceed ...
+
+But the usual procedure would be, to create ones own "personal fork" of the vbWidgets-Repo on GitHub... and since GitHub-Forks keep their 'Origin' from which they were "derived", there's the simple option, to send Pull-Requests to the Originator-Repo automatically (on each Resync of your own personal Forks). Those Pull-Requests will trigger an E-Mail on my end - so that I will finally be able, to do the Merging directly from your Pull-Requests (your contributed changes/enhancements).
+
+
+That much to the Base-Components. More and concrete Demo-Downloads are available over the Demos-Menu.
+E.g. a very complete Cairo-Drawing-Tutorial, but also a Tutorial for the new Form-Engine - as well as a new
+Widget-Tutorial are offered there.
+
+Those Tutorials are recommended as a "first read" (in exactly the order, as they're listed above).
+After that, the "combining Demos" will be a lot easier to follow.

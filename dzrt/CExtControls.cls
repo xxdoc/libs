@@ -125,6 +125,17 @@ Function lvGetColumn(lv As Object, colIndex As Long) As String
     
 End Function
 
+Function lvSelCount(lv As Object) As Long
+    On Error Resume Next
+    Dim i As Long, li As Object
+    For Each li In lv.ListItems
+        If li.selected Then
+            If Err.Number = 0 Then i = i + 1
+        End If
+    Next
+    lvSelCount = i
+End Function
+
 Function cboFromFile(cbo As Object, fpath) As Long
     Dim fs As New CFileStream
     On Error GoTo hell

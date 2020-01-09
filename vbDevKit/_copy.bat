@@ -5,4 +5,4 @@ copy vbdevkit.dll D:\_code\iDef\MAP\dependancies\
 copy vbdevkit.dll D:\_code\iDef\MultiPot\dependancy\
 copy vbdevkit.dll D:\_code\RE_Plugins\IDA_JScript_w_DukDbg\binary_snapshot\
 copy vbdevkit.dll D:\_code\RE_Plugins\IDA_JScript\
-pause
+REM pause - cant use pause when run from post compile process script hang ide!
