@@ -2,12 +2,12 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Object = "{9A143468-B450-48DD-930D-925078198E4D}#1.1#0"; "hexed.ocx"
 Begin VB.Form frmResList 
-   Caption         =   "Form1"
+   Caption         =   "frmResList"
    ClientHeight    =   7020
    ClientLeft      =   165
    ClientTop       =   735
    ClientWidth     =   14340
-   LinkTopic       =   "Form1"
+   LinkTopic       =   "frmResList"
    ScaleHeight     =   7020
    ScaleWidth      =   14340
    StartUpPosition =   3  'Windows Default
@@ -26,7 +26,7 @@ Begin VB.Form frmResList
       MultiLine       =   -1  'True
       ScrollBars      =   3  'Both
       TabIndex        =   1
-      Text            =   "Form1.frx":0000
+      Text            =   "frmResList.frx":0000
       Top             =   120
       Width           =   10755
    End

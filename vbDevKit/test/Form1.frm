@@ -19,21 +19,25 @@ Option Explicit
 
 Private Sub Form_Load()
 
-Dim c As New clsIniFile
+Dim dlg As New CCmnDlg
 
-c.LoadFile App.path & "\blah.ini"
+MsgBox dlg.FolderDialog2
 
-
-MsgBox c.AddKey("fart", "smart", "guy")
-c.AddKey "fart", "smart", "guy2"
-
-MsgBox c.SectionExists("fart")
-
-
-c.Save
-
-Shell "notepad """ & App.path & "\blah.ini" & """", vbNormalFocus
-End
+'Dim c As New clsIniFile
+'
+'c.LoadFile App.Path & "\blah.ini"
+'
+'
+'MsgBox c.AddKey("fart", "smart", "guy")
+'c.AddKey "fart", "smart", "guy2"
+'
+'MsgBox c.SectionExists("fart")
+'
+'
+'c.Save
+'
+'Shell "notepad """ & App.Path & "\blah.ini" & """", vbNormalFocus
+'End
 
 End Sub
 

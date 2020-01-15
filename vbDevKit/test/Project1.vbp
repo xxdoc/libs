@@ -1,6 +1,6 @@
 Type=Exe
-Class=clsIniFile; ..\..\..\..\..\DOCUME~1\ADMINI~1\Desktop\vbKit\test\CLSINI~1.CLS
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\..\WINNT\system32\STDOLE2.TLB#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
+Reference=*\G{DDC88AC2-2723-4C1B-9D61-C4F4D7CF5375}#2.9#0#..\vbDevKit.dll#Vb Developers Library From Sandsprite.com
 Form=Form1.frm
 Startup="Form1"
 HelpFile=""

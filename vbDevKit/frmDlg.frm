@@ -301,7 +301,7 @@ Private Sub cmdNewFolder_Click()
     If Err.Number <> 0 Then
         MsgBox Err.Description
     Else
-        Text1 = Dir1.path & "\" & fName
+        Text1 = Replace(Dir1.path & "\" & fName, "\\", "\")
         'Dir1.Refresh
     End If
 End Sub
@@ -411,6 +411,8 @@ Function BrowseForFolder(Optional initDir As String, Optional specialFolder As S
         Text1 = GetSpecialFolder(specialFolder)
     ElseIf FolderExists(initDir) Then
         Text1 = initDir
+    ElseIf FileExists(initDir) Then
+        Text1 = GetParentFolder(initDir)
     End If
     
     Me.Show 1, owner  'modal does not return until cancel or save hit..
@@ -445,6 +447,8 @@ Private Sub imgMyDocs_Click()
 End Sub
 
 Private Sub Text1_Change()
+    On Error Resume Next
+    Text1 = Replace(Text1, "\\", "\")
     If FolderExists(Text1) And Text1 <> Dir1.path Then
         Dir1.path = Text1
     End If
@@ -498,12 +502,38 @@ Private Function FileExists(path As String) As Boolean
 hell: FileExists = False
 End Function
 
+'Private Function GetParentFolder(path) As String
+'    Dim tmp, ub
+'    tmp = Split(path, "\")
+'    ub = tmp(UBound(tmp))
+'    GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
+'    If Right(GetParentFolder, 1) = ":" Then GetParentFolder = GetParentFolder & "\"
+'End Function
+
 Private Function GetParentFolder(path) As String
-    Dim tmp, ub
-    tmp = Split(path, "\")
-    ub = tmp(UBound(tmp))
-    GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
-    If Right(GetParentFolder, 1) = ":" Then GetParentFolder = GetParentFolder & "\"
+    Dim tmp() As String
+    Dim my_path
+    Dim ub As String
+    
+    On Error GoTo hell
+    If Len(path) = 0 Then Exit Function
+    
+    my_path = path
+    While Len(my_path) > 0 And Right(my_path, 1) = "\"
+        my_path = Mid(my_path, 1, Len(my_path) - 1)
+    Wend
+    
+    tmp = Split(my_path, "\")
+    tmp(UBound(tmp)) = Empty
+    my_path = Replace(Join(tmp, "\"), "\\", "\")
+    If VBA.Right(my_path, 1) = "\" Then my_path = Mid(my_path, 1, Len(my_path) - 1)
+    
+    GetParentFolder = my_path
+    Exit Function
+    
+hell:
+    GetParentFolder = Empty
+    
 End Function
 
 Private Function GetSpecialFolder(sf As SpecialFolders) As String
