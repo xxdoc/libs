@@ -142,9 +142,9 @@ End Enum
 Public dlg As New CCmnDlg
 
 #If isDZRT Then
-    Function FileProperties(ByVal fPath As String, Optional checkSignature As Boolean = False) As CFileProperties
+    Function FileProperties(ByVal fpath As String, Optional checkSignature As Boolean = False, Optional customFieldsCSV As String = "") As CFileProperties
         Dim f As New CFileProperties
-        f.LoadFileInfo fPath, checkSignature
+        f.LoadFileInfo fpath, checkSignature, customFieldsCSV
         Set FileProperties = f
     End Function
 #End If
@@ -345,18 +345,18 @@ Function FileNameFromPath(fullpath)
     End If
 End Function
 
-Function DeleteFile(fPath)
+Function DeleteFile(fpath)
  On Error GoTo hadErr
     
     Dim attributes As VbFileAttribute
 
-    attributes = GetAttr(fPath)
+    attributes = GetAttr(fpath)
     If (attributes And vbReadOnly) Then
         attributes = attributes - vbReadOnly
-        SetAttr fPath, attributes
+        SetAttr fpath, attributes
     End If
     
-    Kill fPath
+    Kill fpath
     DeleteFile = True
  Exit Function
 hadErr:
@@ -370,8 +370,8 @@ Sub Rename(fullpath, newName)
   Name fullpath As pf & "\" & newName
 End Sub
 
-Sub SetAttribute(fPath, it As VbFileAttribute)
-   SetAttr fPath, it
+Sub SetAttribute(fpath, it As VbFileAttribute)
+   SetAttr fpath, it
 End Sub
 
 Function GetExtension(path, Optional withDot = True)
@@ -399,7 +399,7 @@ Function GetBaseName(path)
     End If
 End Function
 
-Function ChangeExt(path, ByVal ext, Optional doit = True)
+Function ChangeExt(path, ByVal ext, Optional doIt = True)
     Dim bn, pf, np
     
     pf = GetParentFolder(path)
@@ -407,7 +407,7 @@ Function ChangeExt(path, ByVal ext, Optional doit = True)
     ext = IIf(Left(ext, 1) = ".", ext, "." & ext)
     np = pf & "\" & bn & ext
     
-    If FileExists(path) And doit Then
+    If FileExists(path) And doIt Then
         Name path As np
     End If
     
@@ -577,38 +577,38 @@ Sub AppendFile(path, it)
 End Sub
 
 
-Function Copy(fPath, toFolder)
+Function Copy(fpath, toFolder)
    Dim basename, newName
    If FolderExists(toFolder) Then
-       basename = FileNameFromPath(fPath)
+       basename = FileNameFromPath(fpath)
        toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
        newName = toFolder & basename
-       FileCopy fPath, newName
+       FileCopy fpath, newName
        Copy = newName
    Else 'assume tofolder is actually new desired file path
-       FileCopy fPath, toFolder
+       FileCopy fpath, toFolder
        Copy = toFolder
    End If
 End Function
 
-Function Move(fPath, toFolder)
+Function Move(fpath, toFolder)
     Dim fname As String
-    fname = FileNameFromPath(fPath)
+    fname = FileNameFromPath(fpath)
     toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
     
-    Name fPath As toFolder & fname
+    Name fpath As toFolder & fname
     Move = toFolder & fname
     
 End Function
 
-Function CreateFile(fPath)
+Function CreateFile(fpath)
     On Error GoTo hell
     Dim f As Long
     f = FreeFile
-    If FileExists(fPath) Then Exit Function
-    Open fPath For Binary As f
+    If FileExists(fpath) Then Exit Function
+    Open fpath For Binary As f
     Close f
-    If FileExists(fPath) Then CreateFile = True
+    If FileExists(fpath) Then CreateFile = True
 hell:
 End Function
 
@@ -642,14 +642,14 @@ Private Sub delTree(folderPath, Optional Force = True)
    
 End Sub
 
-Private Sub push(ary, Value) 'this modifies parent ary object
+Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init: ReDim ary(0): ary(0) = Value
+init: ReDim ary(0): ary(0) = value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean
@@ -778,12 +778,12 @@ End Function
 
 
 
-Public Function FileSize(fPath As String) As String
+Public Function FileSize(fpath As String) As String
     Dim fsize As Long
     Dim szName As String
     On Error GoTo hell
     
-    fsize = FileLen(fPath)
+    fsize = FileLen(fpath)
     
     szName = " bytes"
     If fsize > 1024 Then

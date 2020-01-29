@@ -24,6 +24,7 @@ Option Explicit
 
 
 Public OptionalHeader As New COptionalHeader
+Public NTHeaders As New CNTHeader
 Public Imports As New CLoadImports
 Public Exports As New CLoadExports
 Public Sections As New Collection
@@ -151,7 +152,7 @@ Property Get Resources() As CResources
     
     Set res = New CResources
     
-    If isLoaded Then res.loadSelf Me
+    If isLoaded Then res.LoadSelf Me
     Set Resources = res
     
 End Property
@@ -191,7 +192,7 @@ Property Get DebugDirectory() As CDebugDir
     
     Set dbgDir = New CDebugDir
     
-    dbgDir.loadSelf Me
+    dbgDir.LoadSelf Me
     Set DebugDirectory = dbgDir
     
 End Property
@@ -210,11 +211,12 @@ Property Get CompiledDate() As String
     
     base = DateSerial(1970, 1, 1)
     compiled = DateAdd("s", NTHEADER.FileHeader.TimeDateStamp, base)
-    CompiledDate = "GMT: " & Format(compiled, "ddd mmm d h:nn:ss yyyy")
-
+    CompiledDate = Format(compiled, "mmm d yyyy h:nn:ss") 'compatiable with cdate()
+    '"GMT: " & Format(compiled, "ddd mmm d h:nn:ss yyyy")
+    
 End Property
 
-Function LoadFile(fpath As String) As Boolean
+Function LoadFile(fPath As String) As Boolean
     On Error GoTo hell
         
         Dim i As Long
@@ -237,6 +239,7 @@ Function LoadFile(fpath As String) As Boolean
         SubSysVersion = Empty
     
         Set OptionalHeader = New COptionalHeader
+        Set NTHeaders = New CNTHeader
         Set Imports = New CLoadImports
         Set Exports = New CLoadExports
         Set Sections = New Collection
@@ -244,15 +247,16 @@ Function LoadFile(fpath As String) As Boolean
         Set relocs = Nothing
         Set dbgDir = Nothing
         
-        If Not FileExists(fpath) Then Err.Raise 1
+        If Not FileExists(fPath) Then Err.Raise 1
 
         f = FreeFile
         
-        Open fpath For Binary Access Read As f
+        Open fPath For Binary Access Read As f
         Get f, , DOSHEADER
         Get f, DOSHEADER.e_lfanew + 1, NTHEADER
         
         If NTHEADER.Signature <> "PE" & Chr(0) & Chr(0) Then Err.Raise 2
+        NTHeaders.LoadSelf NTHEADER
         
         MachineType = getMachineType(NTHEADER.FileHeader.Machine) 'sets is64Bit/is32Bit
         OptionalHeader.LoadStruc f, is64Bit
@@ -264,7 +268,7 @@ Function LoadFile(fpath As String) As Boolean
         Close f
         LoadFile = True
         isLoaded = True
-        LoadedFile = fpath
+        LoadedFile = fPath
         
         cli = OptionalHeader.ddVirtualAddress(eDATA_DIRECTORY.CLI_Header)
         GetDotNetAttributes cli
@@ -276,7 +280,7 @@ hell:
     Close f
     
     Select Case Err.Number
-        Case 1: errMessage = "File not found: " & fpath
+        Case 1: errMessage = "File not found: " & fPath
         Case 2: errMessage = "Invalid PE signature: " & NTHEADER.Signature
         Case Else: errMessage = Err.Description
     End Select

@@ -307,6 +307,7 @@ Private Sub cmdNewFolder_Click()
 End Sub
 
 Private Sub Command1_Click()
+    'SaveSetting "vbdevkit", "frmDlg", "lastDir", Text1
     FolderName = Text1
     Me.Visible = False
 End Sub
@@ -396,17 +397,32 @@ End Sub
 
 Private Sub Drive1_Change()
     On Error Resume Next
+    Dim a As Long, root As String
     If ignoreDriveChange Then Exit Sub
-    Dir1.path = Drive1.Drive
+    a = InStr(Drive1.Drive, ":")
+    If a > 1 Then
+        root = Mid(Drive1.Drive, 1, a) & "\"
+    Else
+        root = Drive1.Drive
+    End If
+    Dir1.path = root
 End Sub
 
 Private Sub Form_Load()
-    Text1 = GetSpecialFolder(sf_DESKTOP)
+    'Dim defaultDir As String
+    'defaultDir = GetSetting("vbdevkit", "frmDlg", "lastDir", GetSpecialFolder(sf_DESKTOP))
+    'If FolderExists(defaultDir) Then
+    '    Text1 = defaultDir
+    'Else
+        Text1 = GetSpecialFolder(sf_DESKTOP)
+    'End If
     SHAutoComplete Text1.hWnd, SHACF_FILESYS_DIRS
 End Sub
 
 Function BrowseForFolder(Optional initDir As String, Optional specialFolder As SpecialFolders = -1, Optional owner As Form = Nothing) As String
 
+    FolderName = Empty 'if prev selected then form X hit problem
+    
     If specialFolder <> -1 Then
         Text1 = GetSpecialFolder(specialFolder)
     ElseIf FolderExists(initDir) Then

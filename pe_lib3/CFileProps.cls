@@ -43,14 +43,14 @@ End Property
 
 Friend Sub Load(strVersionInfo() As String, strLangCharset2 As String)
 
-    CompanyName = strVersionInfo(0)
-    FileDescription = strVersionInfo(1)
-    FileVersion = strVersionInfo(2)
-    InternalName = strVersionInfo(3)
-    LegalCopyright = strVersionInfo(4)
-    OrigionalFileName = strVersionInfo(5)
-    ProductName = strVersionInfo(6)
-    ProductVersion = strVersionInfo(7)
-    LanguageID = strLangCharset2
+    CompanyName = Trim(strVersionInfo(0))
+    FileDescription = Trim(strVersionInfo(1))
+    FileVersion = Trim(strVersionInfo(2))
+    InternalName = Trim(strVersionInfo(3))
+    LegalCopyright = Trim(strVersionInfo(4))
+    OrigionalFileName = Trim(strVersionInfo(5))
+    ProductName = Trim(strVersionInfo(6))
+    ProductVersion = Trim(strVersionInfo(7))
+    LanguageID = Trim(strLangCharset2)
     
 End Sub

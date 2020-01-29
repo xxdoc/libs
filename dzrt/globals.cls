@@ -63,6 +63,7 @@ Public Enum dbServers
     db_DSN
     db_FileDsn
     db_dBase
+    db_mysql5
 End Enum
 
 Public Enum CompressTypes
@@ -672,7 +673,9 @@ Function ado_BuildConnectionString(dbServer As dbServers, dbName As String, Opti
         Case db_dBase
             baseString = "Driver={Microsoft dBASE Driver (*.dbf)};DriverID=277;Dbq=____;"
         Case db_mysql
-            baseString = "Driver={mySQL};Server=" & server & ";Port=" & Port & ";Stmt=;Option=16834;Database=____;"
+            baseString = "Driver={mySQL};Server=" & server & ";Port=" & Port & ";Stmt=;Option=16834;Database=____;User=" & User & ";Password=" & pass & ";"
+        Case db_mysql5
+            baseString = "Driver={MySQL ODBC 5.1 Driver};Server=" & server & ";Database=____;User=" & User & ";Password=" & pass & ";Option=3;"
         Case db_MsSql2k
             baseString = "Driver={SQL Server};Server=" & server & ";Database=____;"
         Case db_JetAccess2k
@@ -696,6 +699,12 @@ Function ado_BuildConnectionString(dbServer As dbServers, dbName As String, Opti
 End Function
 
 Function ado_buildInsert(tblName, fields, ParamArray params()) As String
+    Dim values()
+    values() = params() 'force byval
+    ado_buildInsert = ado_buildInsert2(tblName, fields, values)
+End Function
+
+Function ado_buildInsert2(tblName, fields, params()) As String
 
     Dim sSql As String, sTmp As String, i As Integer, x
     Dim values()
@@ -712,12 +721,19 @@ Function ado_buildInsert(tblName, fields, ParamArray params()) As String
     Next
     
     sTmp = Join(values, ",")
-    ado_buildInsert = Replace(sSql, "____", sTmp)
+    ado_buildInsert2 = Replace(sSql, "____", sTmp)
      
     
 End Function
 
+
 Function ado_buildUpdate(tblName, criteria, fields, ParamArray params()) As String
+    Dim values()
+    values() = params() 'force byval
+    ado_buildUpdate = ado_buildUpdate2(tblName, criteria, fields, values)
+End Function
+
+Function ado_buildUpdate2(tblName, criteria, fields, params()) As String
 
     Dim sSql As String, sTmp As String, i As Integer
     Dim values()
@@ -743,7 +759,7 @@ Function ado_buildUpdate(tblName, criteria, fields, ParamArray params()) As Stri
     Next
     
     sTmp = Join(tmp, ",")
-    ado_buildUpdate = Replace(sSql, "____", sTmp)
+    ado_buildUpdate2 = Replace(sSql, "____", sTmp)
     
 End Function
 

@@ -93,7 +93,7 @@ End Property
 
 Property Let errMessage(msg As String)
     If errMsgs Is Nothing Then Set errMsgs = New Collection
-    errMsgs.add msg
+    errMsgs.Add msg
 End Property
 
 Property Get dotNetVersion(Optional full As Boolean = False) As String
@@ -248,7 +248,8 @@ Property Get CompiledDate() As String
     
     base = DateSerial(1970, 1, 1)
     compiled = DateAdd("s", NTHEADER.FileHeader.TimeDateStamp, base)
-    CompiledDate = "GMT: " & Format(compiled, "ddd mmm d h:nn:ss yyyy")
+    CompiledDate = Format(compiled, "mmm d yyyy h:nn:ss") 'compatiable with cdate()
+    '"GMT: " & Format(compiled, "ddd mmm d h:nn:ss yyyy")
 
 End Property
 
@@ -385,7 +386,7 @@ Private Sub LoadSections(fhand As Long, nth As IMAGE_NT_HEADERS)
         Set CSect = New CSection
         CSect.LoadStruc udtSH
         CSect.index = i
-        Sections.add CSect
+        Sections.Add CSect
     Next
     
 '    CanAddSection = False
@@ -408,7 +409,7 @@ Function VAtoRVA(ByVal va As ULong64) As ULong64
 End Function
 
 Function RVAtoVA(ByVal rva As ULong64) As ULong64
-    Set RVAtoVA = OptionalHeader.ImageBase.add(rva)
+    Set RVAtoVA = OptionalHeader.ImageBase.Add(rva)
 End Function
 
 Function VAtoOffset(ByVal va As ULong64) As Long
@@ -449,7 +450,7 @@ Function OffsetToVA(ByVal fOffset As Long, Optional sectName As String) As ULong
     rva = OffsetToRVA(fOffset, sectName)
     
     If rva <> 0 Then
-        Set OffsetToVA = OptionalHeader.ImageBase.add(rva)
+        Set OffsetToVA = OptionalHeader.ImageBase.Add(rva)
     Else
         Set OffsetToVA = New ULong64
     End If

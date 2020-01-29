@@ -25,6 +25,7 @@ Class=CResDir; CResDir.cls
 Class=CResData; CResData.cls
 Class=CDebugDir; CDebugDir.cls
 Class=CDumpFix; CDumpFix.cls
+Class=CNTHeader; CNTHeader.cls
 Startup="(None)"
 HelpFile=""
 Title="sppe2"
