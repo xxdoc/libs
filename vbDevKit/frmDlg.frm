@@ -3,7 +3,7 @@ Begin VB.Form frmDlg
    Caption         =   "Browse For Folder"
    ClientHeight    =   3975
    ClientLeft      =   2775
-   ClientTop       =   3765
+   ClientTop       =   4065
    ClientWidth     =   6675
    LinkTopic       =   "Form1"
    ScaleHeight     =   3975
@@ -19,17 +19,29 @@ Begin VB.Form frmDlg
       BorderStyle     =   0  'None
       Caption         =   "Frame3"
       Height          =   405
-      Left            =   5070
+      Left            =   4590
       TabIndex        =   10
       Top             =   60
-      Width           =   1455
+      Width           =   1935
+      Begin VB.CommandButton cmdHistory 
+         Appearance      =   0  'Flat
+         Height          =   375
+         Left            =   1440
+         Picture         =   "frmDlg.frx":0000
+         Style           =   1  'Graphical
+         TabIndex        =   14
+         ToolTipText     =   "History"
+         Top             =   0
+         Width           =   390
+      End
       Begin VB.CommandButton Command4 
          Appearance      =   0  'Flat
          Height          =   375
          Left            =   480
-         Picture         =   "frmDlg.frx":0000
+         Picture         =   "frmDlg.frx":046C
          Style           =   1  'Graphical
          TabIndex        =   13
+         ToolTipText     =   "Up Directory"
          Top             =   0
          Width           =   390
       End
@@ -37,19 +49,21 @@ Begin VB.Form frmDlg
          Appearance      =   0  'Flat
          Height          =   375
          Left            =   0
-         Picture         =   "frmDlg.frx":0440
+         Picture         =   "frmDlg.frx":08AC
          Style           =   1  'Graphical
          TabIndex        =   12
+         ToolTipText     =   "Back"
          Top             =   0
          Width           =   390
       End
       Begin VB.CommandButton cmdNewFolder 
          Appearance      =   0  'Flat
          Height          =   375
-         Left            =   990
-         Picture         =   "frmDlg.frx":0880
+         Left            =   960
+         Picture         =   "frmDlg.frx":0CEC
          Style           =   1  'Graphical
          TabIndex        =   11
+         ToolTipText     =   "New Folder"
          Top             =   0
          Width           =   390
       End
@@ -89,7 +103,7 @@ Begin VB.Form frmDlg
       End
       Begin VB.TextBox Text1 
          Height          =   345
-         Left            =   1395
+         Left            =   1380
          OLEDropMode     =   1  'Manual
          TabIndex        =   5
          Text            =   "supports drag and drop"
@@ -110,7 +124,7 @@ Begin VB.Form frmDlg
       Left            =   1485
       TabIndex        =   3
       Top             =   90
-      Width           =   3495
+      Width           =   3015
    End
    Begin VB.PictureBox Picture1 
       BackColor       =   &H00808080&
@@ -124,14 +138,14 @@ Begin VB.Form frmDlg
       Begin VB.Image imgMyDocs 
          Height          =   810
          Left            =   45
-         Picture         =   "frmDlg.frx":0CC0
+         Picture         =   "frmDlg.frx":112C
          Top             =   1215
          Width           =   1170
       End
       Begin VB.Image imgDesktop 
          Height          =   750
          Left            =   0
-         Picture         =   "frmDlg.frx":3ECC
+         Picture         =   "frmDlg.frx":4338
          Top             =   135
          Width           =   1185
       End
@@ -150,6 +164,13 @@ Begin VB.Form frmDlg
       TabIndex        =   2
       Top             =   135
       Width           =   465
+   End
+   Begin VB.Menu mnuPopup 
+      Caption         =   "mnuPopup"
+      Begin VB.Menu mnuRecent 
+         Caption         =   ""
+         Index           =   0
+      End
    End
 End
 Attribute VB_Name = "frmDlg"
@@ -210,14 +231,14 @@ Private history() As String
 Private ignoreDriveChange As Boolean
 Private pt As POINTAPI
 
-''Public Enum SpecialFolders
+'Public Enum SpecialFolders
 '
-Const sf_DESKTOP = &H0     '<desktop>
+'    sf_DESKTOP = &H0 '<desktop>
 '    'sf_INTERNET = &H1 'Internet Explorer (icon on desktop)
 '    sf_PROGRAMS = &H2 'Start Menu\Programs
 '    'sf_CONTROLS = &H3'My Computer\Control Panel
 '    'sf_PRINTERS = &H4'My Computer\Printers
-Const sf_PERSONAL = &H5    'My Documents
+'    sf_PERSONAL = &H5 'My Documents
 '    sf_FAVORITES = &H6 '<user name>\Favourites
 '    sf_STARTUP = &H7 'Start Menu\Programs\Startup
 '    sf_RECENT = &H8 '<user name>\Recent
@@ -228,7 +249,7 @@ Const sf_PERSONAL = &H5    'My Documents
 '    sf_MYMUSIC = &HD '"My Music" folder
 '    sf_MYVIDEO = &HE '"My Videos" folder
 '    sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
-Const sf_DRIVES = &H11    'My Computer
+'    sf_DRIVES = &H11 'My Computer
 '    'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
 ''    sf_NETHOOD = &H13'<user name>\nethood
 '    sf_FONTS = &H14 'windows\fonts
@@ -292,6 +313,12 @@ Const sf_DRIVES = &H11    'My Computer
 'End Enum
 
 
+Const MAX_RECENTS = 9
+
+Private Sub cmdHistory_Click()
+    If mnuRecent(0).Caption <> "" Then PopupMenu mnuPopup
+End Sub
+
 Private Sub cmdNewFolder_Click()
     Dim fName As String
     fName = InputBox("Create new folder in: " & vbCrLf & vbCrLf & Dir1.path)
@@ -301,13 +328,12 @@ Private Sub cmdNewFolder_Click()
     If Err.Number <> 0 Then
         MsgBox Err.Description
     Else
-        Text1 = Replace(Dir1.path & "\" & fName, "\\", "\")
+        Text1 = Dir1.path & "\" & fName
         'Dir1.Refresh
     End If
 End Sub
 
 Private Sub Command1_Click()
-    'SaveSetting "vbdevkit", "frmDlg", "lastDir", Text1
     FolderName = Text1
     Me.Visible = False
 End Sub
@@ -377,6 +403,7 @@ Private Sub Dir1_Click()
     
 End Sub
 
+
 Private Sub Timer1_Timer()
     Timer1.Enabled = False
     SetCursorPos pt.x, pt.Y
@@ -395,6 +422,7 @@ Sub MoveMouseCursor(ByVal x As Long, ByVal Y As Long, Optional ByVal hWnd As Lon
     End If
 End Sub
 
+
 Private Sub Drive1_Change()
     On Error Resume Next
     Dim a As Long, root As String
@@ -409,14 +437,10 @@ Private Sub Drive1_Change()
 End Sub
 
 Private Sub Form_Load()
-    'Dim defaultDir As String
-    'defaultDir = GetSetting("vbdevkit", "frmDlg", "lastDir", GetSpecialFolder(sf_DESKTOP))
-    'If FolderExists(defaultDir) Then
-    '    Text1 = defaultDir
-    'Else
-        Text1 = GetSpecialFolder(sf_DESKTOP)
-    'End If
+    LoadRecents
+    Text1 = GetSpecialFolder(sf_DESKTOP)
     SHAutoComplete Text1.hWnd, SHACF_FILESYS_DIRS
+    mnuPopup.Visible = False
 End Sub
 
 Function BrowseForFolder(Optional initDir As String, Optional specialFolder As SpecialFolders = -1, Optional owner As Form = Nothing) As String
@@ -433,6 +457,7 @@ Function BrowseForFolder(Optional initDir As String, Optional specialFolder As S
     
     Me.Show 1, owner  'modal does not return until cancel or save hit..
     BrowseForFolder = FolderName
+    AddToRecentList FolderName
     Unload Me
     
 End Function
@@ -517,14 +542,6 @@ Private Function FileExists(path As String) As Boolean
   Exit Function
 hell: FileExists = False
 End Function
-
-'Private Function GetParentFolder(path) As String
-'    Dim tmp, ub
-'    tmp = Split(path, "\")
-'    ub = tmp(UBound(tmp))
-'    GetParentFolder = Replace(Join(tmp, "\"), "\" & ub, "")
-'    If Right(GetParentFolder, 1) = ":" Then GetParentFolder = GetParentFolder & "\"
-'End Function
 
 Private Function GetParentFolder(path) As String
     Dim tmp() As String
@@ -630,3 +647,108 @@ Private Function AryIsEmpty(ary) As Boolean
   Exit Function
 oops: AryIsEmpty = True
 End Function
+
+
+'-----------------------------------------------------------
+
+Private Sub mnuRecent_Click(Index As Integer)
+    Text1 = mnuRecent(Index).Tag
+End Sub
+
+
+Sub LoadRecents()
+    
+    On Error Resume Next
+    
+    Dim recents() As String
+    Dim i As Long
+    
+    For i = 1 To MAX_RECENTS
+        Load mnuRecent(i)
+        mnuRecent(i).Visible = False
+    Next
+    
+    recents = Split(GetSetting("vbDevKit", "frmDlg", "Recents", ",,,"), ",")
+    
+    For i = 0 To MAX_RECENTS
+        If i > UBound(recents) Then Exit For
+        If FolderExists(recents(i)) Then
+            mnuRecent(i).Visible = True
+            mnuRecent(i).Tag = recents(i)
+            mnuRecent(i).Caption = AbbreviatedPathForDisplay(recents(i))
+        Else
+            mnuRecent(i).Visible = False
+        End If
+    Next
+
+End Sub
+
+
+Sub AddToRecentList(folder As String)
+
+    'On Error GoTo errHandle
+    On Error Resume Next
+    
+    If Len(folder) = 0 Then Exit Sub
+    
+    Dim x, i
+    Dim c As New Collection
+    c.Add folder 'new one is always first...
+    
+    For i = 0 To MAX_RECENTS
+        If Len(mnuRecent(i).Tag) > 0 Then
+            If mnuRecent(i).Tag <> folder Then           'no duplicate entries
+                If FolderExists(mnuRecent(i).Tag) Then   'only keep files which still exist
+                    c.Add mnuRecent(i).Tag
+                End If
+            End If
+        End If
+        mnuRecent(i).Tag = Empty                   'out with the old
+        mnuRecent(i).Caption = Empty
+        mnuRecent(i).Visible = False
+    Next
+    
+    For i = 0 To MAX_RECENTS
+        If i > c.Count - 1 Then Exit For
+        mnuRecent(i).Tag = c(i + 1)                'in with the new..
+        mnuRecent(i).Caption = AbbreviatedPathForDisplay(c(i + 1))
+        mnuRecent(i).Visible = True
+    Next
+    
+    For i = 0 To MAX_RECENTS
+        x = x & mnuRecent(i).Tag & ","
+    Next
+
+    SaveSetting "vbDevKit", "frmDlg", "Recents", x
+
+Exit Sub
+errHandle:
+    MsgBox "Error_frmDlg_AddToRecentList: " & Err.Description
+
+End Sub
+
+Function AbbreviatedPathForDisplay(ByVal FullPath) As String
+    Dim tmp() As String, abbrivate As Boolean, fName As String
+    Const maxLen = 50
+    
+    If InStr(FullPath, "\") > 0 Then
+        If Len(FullPath) < maxLen Then
+            AbbreviatedPathForDisplay = FullPath
+        Else
+            tmp = Split(FullPath, "\")
+            fName = tmp(UBound(tmp))
+            FullPath = Replace(FullPath, fName, Empty)
+            If Len(FullPath) > maxLen Then
+                  FullPath = Mid(FullPath, 1, maxLen - Len(fName))
+                  AbbreviatedPathForDisplay = FullPath & "...\" & fName
+            ElseIf Len(fName) > 10 Then
+                  AbbreviatedPathForDisplay = FullPath & "\" & Mid(fName, 1, 8) & "..."
+            Else
+                  AbbreviatedPathForDisplay = FullPath & "\" & fName
+            End If
+        End If
+    End If
+    
+End Function
+
+

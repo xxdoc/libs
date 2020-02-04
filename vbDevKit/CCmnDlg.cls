@@ -290,7 +290,17 @@ End Function
 
 Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optional title = "Save File") As String
     
-    If Len(initDir) <> 0 Then lastDir = initDir
+    Dim tmp As String
+
+    If IsMissing(defaultFileName) Then defaultFileName = ""
+    
+    If Len(initDir) <> 0 Then
+        lastDir = initDir
+    Else
+        If Len(defaultFileName) > 0 And InStr(defaultFileName, "\") > 0 Then
+            lastDir = GetParentFolder(defaultFileName)
+        End If
+    End If
     
     o.lStructSize = Len(o)
     o.hWndOwner = GetForegroundWindow()
@@ -310,7 +320,6 @@ Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optio
         o.nMaxFile = Len(o.lpstrFile) + 1
     End If
 
-    Dim tmp As String
     tmp = IIf(GetSaveFileName(o), Trim$(o.lpstrFile), "")
     If tmp <> "" Then
         If FileExists(tmp) Then

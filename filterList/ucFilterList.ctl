@@ -7,6 +7,12 @@ Begin VB.UserControl ucFilterList
    ClientWidth     =   7605
    ScaleHeight     =   6315
    ScaleWidth      =   7605
+   Begin VB.Timer tmrFilter 
+      Enabled         =   0   'False
+      Interval        =   400
+      Left            =   6480
+      Top             =   4440
+   End
    Begin VB.TextBox txtFilter 
       Height          =   330
       Left            =   540
@@ -166,6 +172,8 @@ Sub setFont(Optional name As String = "tahoma", Optional size As Integer = 10)
     lvFilter.Font.name = name
     lv.Font.size = size
     lvFilter.Font.size = size
+    txtFilter.Font.name = name
+    txtFilter.Font.size = size
 End Sub
 
 Property Get selItems() As Collection
@@ -325,7 +333,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
         i = i + 1
     Next
     
-    txtFilter_Change
+    ApplyFilter
     
 End Function
 
@@ -560,8 +568,22 @@ Private Function ColorConstantsToLong(ByVal s As String) As Long
     
 End Function
 
-Private Sub txtFilter_Change()
+Private Sub tmrFilter_Timer()
+    tmrFilter.Enabled = False
+    Call ApplyFilter
+End Sub
 
+'on huge lists it can take a while so let them finish typing first
+Private Sub txtFilter_Change()
+    If lv.ListItems.count > 100 Then
+        tmrFilter.Enabled = False 'reset the timer it will apply once they pause and wait
+        tmrFilter.Enabled = True
+    Else
+        ApplyFilter
+    End If
+End Sub
+
+Sub ApplyFilter()
     Dim li As ListItem
     Dim t As String
     Dim useSubtractiveFilter As Boolean

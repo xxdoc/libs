@@ -1,0 +1,2 @@
+
+CCmdDlg.ColorDialog2 (adobe style color picker)

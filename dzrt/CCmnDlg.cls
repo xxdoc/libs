@@ -211,9 +211,17 @@ Function OpenMulti(Optional initDir = "", Optional title = "Open File") As Colle
      
 End Function
 
-Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optional title = "Save File") As String
+Function SaveDialog(Optional ByVal defaultFileName = "", Optional initDir = "", Optional title = "Save File") As String
     
-    If Len(initDir) <> 0 Then lastDir = initDir
+    If IsMissing(defaultFileName) Then defaultFileName = ""
+    
+    If Len(initDir) <> 0 Then
+        lastDir = initDir
+    Else
+        If Len(defaultFileName) > 0 And InStr(defaultFileName, "\") > 0 Then
+            lastDir = GetParentFolder(defaultFileName)
+        End If
+    End If
     
     o.lStructSize = Len(o)
     o.hWndOwner = GetForegroundWindow()
