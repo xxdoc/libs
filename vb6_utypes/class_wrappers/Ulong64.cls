@@ -135,20 +135,20 @@ Property Get hi() As Long
     GetLongs hi
 End Property
 
-Property Let hi(x As Long)
+Property Let hi(X As Long)
     Dim a As Long, b As Long
     GetLongs a, b
-    SetLongs x, b
+    SetLongs X, b
 End Property
 
 Property Get lo() As Long
     GetLongs , lo
 End Property
 
-Property Let lo(x As Long)
+Property Let lo(X As Long)
     Dim a As Long, b As Long
     GetLongs a, b
-    SetLongs a, x
+    SetLongs a, X
 End Property
 
 Function toString(Optional m As modes = mHex) As String
@@ -234,13 +234,7 @@ End Function
 
 
 Private Sub Class_Initialize()
-'    hLib = LoadLibrary("UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\System32\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
-'    If ensureUTypes() Then hLib = modGeneral.hUTypes
+    If ensureUTypes() Then hLib = modGeneral.hUtypes
     padLeft = False
     useTick = True
 End Sub

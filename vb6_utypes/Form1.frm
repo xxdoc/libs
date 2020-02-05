@@ -102,6 +102,9 @@ Private Declare Function rand Lib "utypes.dll" Alias "vc_rand" () As Long
 Private Declare Function crc64s Lib "utypes.dll" (ByVal wStrPtr As Long, Optional asciiOnly As Long = 1) As Currency
 Private Declare Function crc64 Lib "utypes.dll" (ByRef stream As Byte, ByVal sz As Long) As Currency
 
+Private Declare Function entropy Lib "utypes.dll" (ByRef stream As Byte, ByVal sz As Long) As Double
+
+
 Private Sub Command1_Click()
     On Error Resume Next
     Dim a As Long
@@ -195,7 +198,14 @@ Private Sub Form_Load()
     d = crc64(b(0), UBound(b) + 1)
     List1.AddItem "crc64(" & s & ") = " & Get64(d)
     
- 
+    Dim ee As Double, bb() As Byte
+    bb = StrConv("AAAAA", vbFromUnicode) 'String(100, "A") 'these match a pure C test
+    ee = entropy(bb(0), UBound(bb) + 1)
+    List1.AddItem "entropy(AAAAA) = " & ee
+    
+    bb = StrConv("abcdefghijklmnop", vbFromUnicode)
+    ee = entropy(bb(0), UBound(bb) + 1)
+    List1.AddItem "entropy(abcdefghijklmnop) = " & ee
     
     
 End Sub

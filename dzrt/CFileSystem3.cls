@@ -76,7 +76,7 @@ Public Enum SpecialFolders
     sf_MYMUSIC = &HD '"My Music" folder
     sf_MYVIDEO = &HE '"My Videos" folder
     sf_DESKTOPDIRECTORY = &H10 '<user name>\Desktop
-    'sf_DRIVES = &H11'My Computer
+    sf_DRIVES = &H11 'My Computer
     'sf_NETWORK = &H12'Network Neighborhood (My Network Places)
 '    sf_NETHOOD = &H13'<user name>\nethood
     sf_FONTS = &H14 'windows\fonts
@@ -332,16 +332,16 @@ blah:
 End Function
 
 'web or file path
-Function FileNameFromPath(fullpath)
+Function FileNameFromPath(FullPath)
     Dim tmp() As String
     Dim marker As String
     marker = "\"
-    If InStr(fullpath, "/") > 0 Then marker = "/"
-    If InStr(fullpath, marker) > 0 Then
-        tmp = split(fullpath, marker)
+    If InStr(FullPath, "/") > 0 Then marker = "/"
+    If InStr(FullPath, marker) > 0 Then
+        tmp = split(FullPath, marker)
         FileNameFromPath = CStr(tmp(UBound(tmp)))
     Else
-        FileNameFromPath = CStr(fullpath) 'maybe its just a file name already..
+        FileNameFromPath = CStr(FullPath) 'maybe its just a file name already..
     End If
 End Function
 
@@ -364,10 +364,10 @@ hadErr:
 DeleteFile = False
 End Function
 
-Sub Rename(fullpath, newName)
+Sub Rename(FullPath, newName)
   Dim pf
-  pf = GetParentFolder(fullpath)
-  Name fullpath As pf & "\" & newName
+  pf = GetParentFolder(FullPath)
+  Name FullPath As pf & "\" & newName
 End Sub
 
 Sub SetAttribute(fpath, it As VbFileAttribute)
@@ -400,18 +400,18 @@ Function GetBaseName(path)
 End Function
 
 Function ChangeExt(path, ByVal ext, Optional doIt = True)
-    Dim bn, pf, np
+    Dim bn, pf, nP
     
     pf = GetParentFolder(path)
     bn = GetBaseName(path)
     ext = IIf(Left(ext, 1) = ".", ext, "." & ext)
-    np = pf & "\" & bn & ext
+    nP = pf & "\" & bn & ext
     
     If FileExists(path) And doIt Then
-        Name path As np
+        Name path As nP
     End If
     
-    ChangeExt = np
+    ChangeExt = nP
     
 End Function
 
@@ -642,20 +642,20 @@ Private Sub delTree(folderPath, Optional Force = True)
    
 End Sub
 
-Private Sub push(ary, value) 'this modifies parent ary object
-    On Error GoTo init
-    Dim x As Long
-    x = UBound(ary) '<-throws Error If Not initalized
+Private Sub push(ary, Value) 'this modifies parent ary object
+    On Error GoTo Init
+    Dim X As Long
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init: ReDim ary(0): ary(0) = value
+Init: ReDim ary(0): ary(0) = Value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
-    Dim x As Long
-    x = UBound(ary)
+    Dim X As Long
+    X = UBound(ary)
     AryIsEmpty = False
   Exit Function
 oops: AryIsEmpty = True

@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 enum op{
 	op_add = 0,
@@ -29,6 +30,26 @@ struct x64{
 	unsigned int lo;
 	unsigned int hi;
 };
+
+double __stdcall entropy(unsigned char* buf, unsigned int length)
+{
+	double temp;
+	double bytes[256] = {0.0};
+	double e = 1.4426950408889634073599246810023;
+
+	for(int i = 0; i < length; i++){
+		unsigned char c = buf[i];
+		bytes[c] += 1;
+	}
+
+    for(int j = 0; j < 256; j++){
+        temp = bytes[j] / (double)length;
+        if(temp) e += ( -log(temp) / log((double)2) ) * bytes[j];
+    }
+
+    e = e /(double)length;
+    return e;
+}
 
 void __stdcall vc_srand(unsigned int v1){srand(v1);}
 unsigned int __stdcall vc_rand(){return rand();}
