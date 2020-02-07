@@ -376,6 +376,7 @@ End Sub
 
 Function GetExtension(path, Optional withDot = True)
     Dim tmp() As String, pos As Long, ub
+    If Len(path) = 0 Then Exit Function
     tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     pos = InStrRev(ub, ".")
@@ -390,6 +391,7 @@ End Function
 Function GetBaseName(path)
     Dim tmp() As String
     Dim ub
+    If Len(path) = 0 Then Exit Function
     tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
@@ -664,6 +666,7 @@ End Function
 Function FolderName(ByVal folderPath)
     Dim ret, tmp() As String
     If FileExists(folderPath) Then folderPath = GetParentFolder(folderPath)
+    If Len(folderPath) = 0 Then Exit Function
     tmp = split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _

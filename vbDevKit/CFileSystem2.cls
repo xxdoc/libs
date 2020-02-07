@@ -190,18 +190,18 @@ Function CreateFolder(path As String) As Boolean
 blah:
 End Function
 
-Function FileNameFromPath(fullpath As String) As String
+Function FileNameFromPath(FullPath As String) As String
     Dim tmp() As String
-    If InStr(fullpath, "\") > 0 Then
-        tmp = Split(fullpath, "\")
+    If InStr(FullPath, "\") > 0 Then
+        tmp = Split(FullPath, "\")
         FileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
 
-Function WebFileNameFromPath(fullpath As String)
+Function WebFileNameFromPath(FullPath As String)
     Dim tmp() As String
-    If InStr(fullpath, "/") > 0 Then
-        tmp = Split(fullpath, "/")
+    If InStr(FullPath, "/") > 0 Then
+        tmp = Split(FullPath, "/")
         WebFileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
@@ -226,10 +226,10 @@ hadErr:
 DeleteFile = False
 End Function
 
-Sub Rename(fullpath As String, newName As String)
+Sub Rename(FullPath As String, newName As String)
   Dim pf As String
-  pf = GetParentFolder(fullpath)
-  Name fullpath As pf & "\" & newName
+  pf = GetParentFolder(FullPath)
+  Name FullPath As pf & "\" & newName
 End Sub
 
 Sub SetAttribute(fpath, it As VbFileAttribute)
@@ -239,6 +239,7 @@ End Sub
 Function GetExtension(path) As String
     Dim tmp() As String
     Dim ub As String
+    If Len(path) = 0 Then Exit Function
     tmp = Split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
@@ -251,6 +252,7 @@ End Function
 Function GetBaseName(path As String) As String
     Dim tmp() As String
     Dim ub As String
+    If Len(path) = 0 Then Exit Function
     tmp = Split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
@@ -492,6 +494,7 @@ End Function
 
 Function FolderName(folderPath) As String
     Dim ret As String, tmp() As String
+    If Len(folderPath) = 0 Then Exit Function
     tmp = Split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _

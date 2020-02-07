@@ -192,34 +192,34 @@ Function CreateFolder(path As String) As Boolean
 blah:
 End Function
 
-Function FileNameFromPath(fullpath As String) As String
+Function FileNameFromPath(FullPath As String) As String
     Dim tmp() As String
-    If InStr(fullpath, "\") > 0 Then
-        tmp = split(fullpath, "\")
+    If InStr(FullPath, "\") > 0 Then
+        tmp = split(FullPath, "\")
         FileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
 
-Function WebFileNameFromPath(fullpath As String)
+Function WebFileNameFromPath(FullPath As String)
     Dim tmp() As String
-    If InStr(fullpath, "/") > 0 Then
-        tmp = split(fullpath, "/")
+    If InStr(FullPath, "/") > 0 Then
+        tmp = split(FullPath, "/")
         WebFileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
 
-Function DeleteFile(fPath As String) As Boolean
+Function DeleteFile(fpath As String) As Boolean
  On Error GoTo hadErr
     
     Dim attributes As VbFileAttribute
 
-    attributes = GetAttr(fPath)
+    attributes = GetAttr(fpath)
     If (attributes And vbReadOnly) Then
         attributes = attributes - vbReadOnly
-        SetAttr fPath, attributes
+        SetAttr fpath, attributes
     End If
 
-    Kill fPath
+    Kill fpath
     DeleteFile = True
     
  Exit Function
@@ -228,19 +228,20 @@ hadErr:
 DeleteFile = False
 End Function
 
-Sub Rename(fullpath As String, newName As String)
+Sub Rename(FullPath As String, newName As String)
   Dim pf As String
-  pf = GetParentFolder(fullpath)
-  Name fullpath As pf & "\" & newName
+  pf = GetParentFolder(FullPath)
+  Name FullPath As pf & "\" & newName
 End Sub
 
-Sub SetAttribute(fPath, it As VbFileAttribute)
-   SetAttr fPath, it
+Sub SetAttribute(fpath, it As VbFileAttribute)
+   SetAttr fpath, it
 End Sub
 
 Function GetExtension(path) As String
     Dim tmp() As String
     Dim ub As String
+    If Len(path) = 0 Then Exit Function
     tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
@@ -253,6 +254,7 @@ End Function
 Function GetBaseName(path As String) As String
     Dim tmp() As String
     Dim ub As String
+    If Len(path) = 0 Then Exit Function
     tmp = split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
@@ -411,82 +413,82 @@ Sub AppendFile(path, it)
 End Sub
 
 
-Function Copy(fPath As String, toFolder As String)
-   Dim baseName As String, newName As String
+Function Copy(fpath As String, toFolder As String)
+   Dim basename As String, newName As String
    If FolderExists(toFolder) Then
-       baseName = FileNameFromPath(fPath)
+       basename = FileNameFromPath(fpath)
        toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
-       newName = toFolder & baseName
-       FileCopy fPath, newName
+       newName = toFolder & basename
+       FileCopy fpath, newName
        Copy = newName
    Else 'assume tofolder is actually new desired file path
-       FileCopy fPath, toFolder
+       FileCopy fpath, toFolder
        Copy = toFolder
    End If
 End Function
 
-Function Move(fPath As String, toFolder As String)
-    Dim fName As String
-    fName = FileNameFromPath(fPath)
+Function Move(fpath As String, toFolder As String)
+    Dim fname As String
+    fname = FileNameFromPath(fpath)
     toFolder = IIf(Right(toFolder, 1) = "\", toFolder, toFolder & "\")
     
-    Name fPath As toFolder & fName
-    Move = toFolder & fName
+    Name fpath As toFolder & fname
+    Move = toFolder & fname
     
 End Function
 
-Function CreateFile(fPath As String) As Boolean
+Function CreateFile(fpath As String) As Boolean
     On Error GoTo hell
     Dim f As Long
     f = FreeFile
-    If FileExists(fPath) Then Exit Function
-    Open fPath For Binary As f
+    If FileExists(fpath) Then Exit Function
+    Open fpath For Binary As f
     Close f
-    If FileExists(fPath) Then CreateFile = True
+    If FileExists(fpath) Then CreateFile = True
 hell:
 End Function
 
 
-Function DeleteFolder(folderPath As String, Optional force As Boolean = True) As Boolean
+Function DeleteFolder(folderPath As String, Optional Force As Boolean = True) As Boolean
  On Error GoTo failed
-   Call delTree(folderPath, force)
+   Call delTree(folderPath, Force)
    RmDir folderPath
    DeleteFolder = True
  Exit Function
 failed:  DeleteFolder = False
 End Function
 
-Private Sub delTree(folderPath As String, Optional force As Boolean = True)
+Private Sub delTree(folderPath As String, Optional Force As Boolean = True)
    Dim sfi() As String, sfo() As String, i As Integer
    sfi() = GetFolderFiles(folderPath)
    sfo() = GetSubFolders(folderPath)
-   If Not AryIsEmpty(sfi) And force = True Then
+   If Not AryIsEmpty(sfi) And Force = True Then
         For i = 0 To UBound(sfi)
             DeleteFile sfi(i)
         Next
    End If
    
-   If Not AryIsEmpty(sfo) And force = True Then
+   If Not AryIsEmpty(sfo) And Force = True Then
         For i = 0 To UBound(sfo)
             Call DeleteFolder(sfo(i), True)
         Next
    End If
 End Sub
 
-Private Sub push(ary, value) 'this modifies parent ary object
-    On Error GoTo init
-    Dim x As Long
-    x = UBound(ary) '<-throws Error If Not initalized
+Private Sub push(ary, Value) 'this modifies parent ary object
+    On Error GoTo Init
+    Dim X As Long
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init: ReDim ary(0): ary(0) = value
+Init: ReDim ary(0): ary(0) = Value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
-    Dim x As Long
-    x = UBound(ary)
+    Dim X As Long
+    X = UBound(ary)
     AryIsEmpty = False
   Exit Function
 oops: AryIsEmpty = True
@@ -494,6 +496,7 @@ End Function
 
 Function FolderName(folderPath) As String
     Dim ret As String, tmp() As String
+    If Len(folderPath) = 0 Then Exit Function
     tmp = split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _
