@@ -5,6 +5,7 @@ Begin VB.Form frmDlg
    ClientLeft      =   2775
    ClientTop       =   4065
    ClientWidth     =   6675
+   Icon            =   "frmDlg.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   3975
    ScaleWidth      =   6675
@@ -27,7 +28,7 @@ Begin VB.Form frmDlg
          Appearance      =   0  'Flat
          Height          =   375
          Left            =   1440
-         Picture         =   "frmDlg.frx":0000
+         Picture         =   "frmDlg.frx":10CA
          Style           =   1  'Graphical
          TabIndex        =   14
          ToolTipText     =   "History"
@@ -38,7 +39,7 @@ Begin VB.Form frmDlg
          Appearance      =   0  'Flat
          Height          =   375
          Left            =   480
-         Picture         =   "frmDlg.frx":046C
+         Picture         =   "frmDlg.frx":1536
          Style           =   1  'Graphical
          TabIndex        =   13
          ToolTipText     =   "Up Directory"
@@ -49,7 +50,7 @@ Begin VB.Form frmDlg
          Appearance      =   0  'Flat
          Height          =   375
          Left            =   0
-         Picture         =   "frmDlg.frx":08AC
+         Picture         =   "frmDlg.frx":1976
          Style           =   1  'Graphical
          TabIndex        =   12
          ToolTipText     =   "Back"
@@ -60,7 +61,7 @@ Begin VB.Form frmDlg
          Appearance      =   0  'Flat
          Height          =   375
          Left            =   960
-         Picture         =   "frmDlg.frx":0CEC
+         Picture         =   "frmDlg.frx":1DB6
          Style           =   1  'Graphical
          TabIndex        =   11
          ToolTipText     =   "New Folder"
@@ -138,14 +139,14 @@ Begin VB.Form frmDlg
       Begin VB.Image imgMyDocs 
          Height          =   810
          Left            =   45
-         Picture         =   "frmDlg.frx":112C
+         Picture         =   "frmDlg.frx":21F6
          Top             =   1215
          Width           =   1170
       End
       Begin VB.Image imgDesktop 
          Height          =   750
          Left            =   0
-         Picture         =   "frmDlg.frx":4338
+         Picture         =   "frmDlg.frx":5402
          Top             =   135
          Width           =   1185
       End

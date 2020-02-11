@@ -1,0 +1,30 @@
+
+seal also: \_wqweto\rot
+
+Friend Sub AddToROT() 
+  Dim LRet As Long 
+  Dim TGUID As GUID1 
+' "{4E66DD81-18D8-4F97-A955-8589476621FD}" 
+On Error Resume Next 
+With TGUID 
+   .Data1 = &H4E66DD81 
+   .Data2 = &H18D8 
+   .Data3 = &H4F97 
+   .Data4(0) = &HA9 
+   .Data4(1) = &H55 
+   .Data4(2) = &H85 
+   .Data4(3) = &H89 
+   .Data4(4) = &H47 
+   .Data4(5) = &H66 
+   .Data4(6) = &H21 
+   .Data4(7) = &HFD 
+End With 
+    LRet = RegisterActiveObject(ObjPtr(Me), VarPtr(TGUID), 
+ACTIVEOBJECT_STRONG, OLEInstance) 
+End Sub 
+
+Friend Sub RemoveFromROT() 
+ On Error Resume Next 
+  If OLEInstance <> 0 Then RevokeActiveObject OLEInstance, 0 
+  CoDisconnectObject ObjPtr(Me), 0 
+End Sub
