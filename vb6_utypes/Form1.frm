@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   3855
    ScaleWidth      =   7980
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command3 
+      Caption         =   "Command3"
+      Height          =   375
+      Left            =   300
+      TabIndex        =   3
+      Top             =   3360
+      Width           =   855
+   End
    Begin VB.CommandButton Command2 
       Caption         =   "vc rand"
       Height          =   375
@@ -64,6 +72,7 @@ Enum op
     op_lt = 11
     op_gteq = 12
     op_lteq = 13
+    op_rol32 = 14
 End Enum
 
 Enum modes
@@ -146,6 +155,20 @@ Private Sub Command2_Click()
     For i = 0 To 25
         List1.AddItem Hex(rand())
     Next
+End Sub
+
+Private Sub Command3_Click()
+    Dim i(), x, j, k As Long
+    
+    List1.Clear
+    i = Array(1, 2, 4, &HA, &HFFFFFFFF)
+    For j = 1 To 2
+        For Each x In i
+            k = ULong(x, j, op_rol32)
+            List1.AddItem "ULong(" & x & "," & j & ", op_rol32) = " & Hex(k)
+        Next
+    Next
+    
 End Sub
 
 Private Sub Form_Load()

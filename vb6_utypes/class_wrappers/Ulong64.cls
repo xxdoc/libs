@@ -26,6 +26,7 @@ Enum op
     op_lt = 11
     op_gteq = 12
     op_lteq = 13
+    op_rol32 = 14
 End Enum
 
 Enum modes
@@ -303,3 +304,8 @@ Function lessThanEqual(operand2) As Boolean
     Set a = raw_op(operand2, op_lteq)
     lessThanEqual = Not (a.rawValue = 0)
 End Function
+
+Function rol32(operand2) As ULong64
+    Set rol32 = raw_op(operand2, op_rol32)
+End Function
+

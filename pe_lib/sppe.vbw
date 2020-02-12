@@ -1,4 +1,4 @@
-modPEStructs = 44, 44, 1033, 769, 
+modPEStructs = 44, 44, 1033, 769, Z
 CExport = 286, 286, 1066, 906, C
 CImport = 154, 154, 1030, 764, 
 CLoadExports = 127, 73, 1035, 898, 
