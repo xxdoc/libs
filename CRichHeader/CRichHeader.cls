@@ -17,7 +17,7 @@ Public ErrorMsg As String
 Public entries As Collection 'of CToolID
 Public DanS As Long
 Public Rich As Long
-Public Size As Long
+Public size As Long
 Public clearData 'variant as byte()
 Public checkSum As Long
 Public calcChecksum As Long
@@ -56,7 +56,7 @@ Private Sub initVars()
     Set entries = New Collection 'of CToolID
     DanS = 0
     Rich = 0
-    Size = 0
+    size = 0
     checkSum = 0
     calcChecksum = 0
 End Sub
@@ -73,7 +73,7 @@ Function dump() As String
     
     push tmp, "DanS:" & DanS
     push tmp, "Rich:" & Rich
-    push tmp, "Size: " & Size
+    push tmp, "Size: " & size
     
     If checkSumOk Then
         push tmp, "checkSum: 0x" & Hex(checkSum) & " Matches!"
@@ -98,7 +98,7 @@ Property Get checkSumOk() As Boolean
     checkSumOk = (checkSum = calcChecksum)
 End Property
 
-Property Get strClearData(Optional mode As rhcdModes) As String
+Property Get strClearData(Optional mode As rhcdModes = rhcd_Binary) As String
     
     Dim b() As Byte, i, x
     
@@ -157,7 +157,7 @@ Function Load(fpath) As Boolean
    Dim pth As String, f As Long, e_lfanew As Long, i As Long
    Dim b() As Byte, tool As CToolId
    Dim sig As String * 2, sig4 As String * 4
-   Dim tmp As Long, upack() As Long
+   Dim tmp As Long, uPack() As Long
    
    Const SIZE_DOS_HEADER = &H40
    Const POS_E_LFANEW = &H3C
@@ -213,7 +213,7 @@ Function Load(fpath) As Boolean
     For i = (Rich - 4) To SIZE_DOS_HEADER Step -4
         Get f, i, tmp
         tmp = tmp Xor checkSum
-        push upack, tmp
+        push uPack, tmp
         If tmp = &H536E6144 Then Exit For 'DanS marker
     Next
     
@@ -225,7 +225,7 @@ Function Load(fpath) As Boolean
     DanS = i
     'Debug.Print "Dans file offset: " & DanS - 1
     
-    upack = AryReverse(upack)
+    uPack = AryReverse(uPack)
     'Open "C:\Users\home\Desktop\New folder\x.dat" For Binary As 11
     'For i = 0 To UBound(upack)
     '    Put 11, , upack(i)
@@ -234,8 +234,8 @@ Function Load(fpath) As Boolean
     
     'DanS is _always_ followed by three zero dwords
     For i = 1 To 3
-        If upack(i) <> 0 Then
-            ErrorMsg = "DanS not followed by 0 @ " & i & " = " & Hex(upack(i))
+        If uPack(i) <> 0 Then
+            ErrorMsg = "DanS not followed by 0 @ " & i & " = " & Hex(uPack(i))
             GoTo cleanup
         End If
     Next
@@ -259,23 +259,23 @@ Function Load(fpath) As Boolean
     Next
     
     'now add checksum for the clear_data fields ignoring the DanS marker and the alignment 0 0 0 fields..
-    For i = 4 To UBound(upack) Step 2
+    For i = 4 To UBound(uPack) Step 2
     
-        calcChecksum = add32(calcChecksum, rol32(upack(i), upack(i + 1)))
+        calcChecksum = add32(calcChecksum, rol32(uPack(i), uPack(i + 1)))
         'Debug.Print Join(Array(i + dans - 1, Hex(calcChecksum), Hex(upack(i)), Hex(upack(i + 1))), " ")
         
         'parse the entries and add to global collection
         Set tool = New CToolId
-        tool.LoadSelf upack(i), upack(i + 1)
+        tool.LoadSelf uPack(i), uPack(i + 1)
         entries.Add tool
         'Debug.Print tool.dump()
         
     Next
     '------------- end calculate checksum -------------------------------
     
-    Size = (UBound(upack) + 1) * 4
-    ReDim b(Size)
-    CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(upack(0)), Size
+    size = (UBound(uPack) + 1) * 4
+    ReDim b(size - 1)
+    CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(uPack(0)), size
     'Debug.Print HexDump(b)
     clearData = b()
     
