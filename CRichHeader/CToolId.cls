@@ -21,8 +21,15 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As An
 
 Friend Sub LoadSelf(upack0 As Long, upack1 As Long)
 
-        CopyMemory ByVal VarPtr(Compiler), ByVal VarPtr(upack0), 2
-        CopyMemory ByVal VarPtr(ProductID), ByVal VarPtr(upack0) + 2, 2
+        'better not to use varptr with public class members, it was working but
+        'they are usually actually hidden get/let ymmv
+        Dim c As Integer, p As Integer
+        
+        CopyMemory ByVal VarPtr(c), ByVal VarPtr(upack0), 2
+        CopyMemory ByVal VarPtr(p), ByVal VarPtr(upack0) + 2, 2
+        
+        Compiler = c
+        ProductID = p
         Count = upack1
         
         'Debug.Print Join(Array(Compiler, Hex(ProductID), Hex(Count), InternalName, VSVersion), " ")

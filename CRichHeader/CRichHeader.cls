@@ -49,7 +49,18 @@ Enum rhcdModes
     rhcd_Binary
     rhcd_Hex
 End Enum
-    
+     
+Private Sub initVars()
+    ErrorMsg = Empty
+    clearData = Empty
+    Set entries = New Collection 'of CToolID
+    DanS = 0
+    Rich = 0
+    Size = 0
+    checkSum = 0
+    calcChecksum = 0
+End Sub
+
 
 Function dump() As String
 
@@ -61,6 +72,7 @@ Function dump() As String
     End If
     
     push tmp, "DanS:" & DanS
+    push tmp, "Rich:" & Rich
     push tmp, "Size: " & Size
     
     If checkSumOk Then
@@ -145,19 +157,14 @@ Function Load(fpath) As Boolean
    Dim pth As String, f As Long, e_lfanew As Long, i As Long
    Dim b() As Byte, tool As CToolId
    Dim sig As String * 2, sig4 As String * 4
+   Dim tmp As Long, upack() As Long
    
    Const SIZE_DOS_HEADER = &H40
    Const POS_E_LFANEW = &H3C
    
    On Error GoTo cleanup
    
-    ErrorMsg = Empty
-    Set entries = New Collection 'of CToolID
-    DanS = 0
-    Size = 0
-    clearData = Empty
-    checkSum = 0
-    calcChecksum = 0
+   initVars
 
    If Not FileExists(fpath) Then
         ErrorMsg = "File not found"
@@ -197,20 +204,17 @@ Function Load(fpath) As Boolean
         GoTo cleanup
     End If
         
-    '## We found a valid 'Rich' signature in the header from here on
+    'We found a valid 'Rich' signature in the header from here on
     Get f, Rich + 4, checkSum
     'Debug.Print "Checksum is 0x" & Hex(checkSum)
     
-    '## xor backwards with csum until either 'DanS' or end of the DOS header,
-    '## inverse the list to get original order
-    Dim tmp As Long, upack() As Long
+    'xor backwards with csum until either 'DanS' or end of the DOS header,
+    'inverse the list to get original order
     For i = (Rich - 4) To SIZE_DOS_HEADER Step -4
         Get f, i, tmp
         tmp = tmp Xor checkSum
         push upack, tmp
-        If tmp = &H536E6144 Then 'DanS
-            Exit For
-        End If
+        If tmp = &H536E6144 Then Exit For 'DanS marker
     Next
     
     If i <= SIZE_DOS_HEADER Then
@@ -228,7 +232,7 @@ Function Load(fpath) As Boolean
     'Next
     'Close 11
     
-    '## DanS is _always_ followed by three zero dwords
+    'DanS is _always_ followed by three zero dwords
     For i = 1 To 3
         If upack(i) <> 0 Then
             ErrorMsg = "DanS not followed by 0 @ " & i & " = " & Hex(upack(i))
@@ -248,7 +252,7 @@ Function Load(fpath) As Boolean
     'Debug.Print HexDump(b)
 
     'Calculate correct checksum, first Dos stub with elfanew 0'ed - end at DanS start
-    calcChecksum = DanS - 1
+    calcChecksum = DanS - 1 '-1 because of 1 based vb file offsets
     For i = 0 To DanS - 2
         calcChecksum = add32(calcChecksum, rol32(CLng(b(i)), CInt(i)))
         'Debug.Print Join(Array(i, Hex(b(i)), Hex(calcChecksum)), " ")
@@ -272,14 +276,17 @@ Function Load(fpath) As Boolean
     Size = (UBound(upack) + 1) * 4
     ReDim b(Size)
     CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(upack(0)), Size
-    Debug.Print HexDump(b)
+    'Debug.Print HexDump(b)
     clearData = b()
+    
+    'to 0 based offsets
+    Rich = Rich - 1
+    DanS = DanS - 1
     
     Load = True
 
-
 cleanup:
-    If Err.Number <> 0 Then ErrorMsg = ErrorMsg & " err: " & Err.Description
+    If Err.Number <> 0 Then ErrorMsg = ErrorMsg & " - err: " & Err.Description
     On Error Resume Next
     Close f
     
