@@ -61,6 +61,49 @@ Private Sub initVars()
     calcChecksum = 0
 End Sub
 
+'yara pe.rich_signature.version(verion,[toolId]) compatiable
+Function version(compiler As Long, Optional toolID As rhToolID) As Boolean
+    
+    Dim t As CToolId
+    
+    For Each t In entries
+        If compiler = t.compiler Then
+            If toolID > 0 Then
+                If toolID = t.toolID Then
+                    version = True
+                    Exit Function
+                End If
+            Else
+                version = True
+                Exit Function
+            End If
+        End If
+    Next
+                
+End Function
+
+'yara pe.rich_signature.toolid(toolid, [version]) compatiable
+Function toolID(tid As rhToolID, Optional compiler As Long) As Boolean
+    
+    Dim t As CToolId
+    
+    For Each t In entries
+        If tid = t.toolID Then
+            If compiler > 0 Then
+                If compiler = t.compiler Then
+                    toolID = True
+                    Exit Function
+                End If
+            Else
+                toolID = True
+                Exit Function
+            End If
+        End If
+    Next
+                
+End Function
+
+
 
 Function dump() As String
 
@@ -71,8 +114,8 @@ Function dump() As String
         Exit Function
     End If
     
-    push tmp, "DanS:" & DanS
-    push tmp, "Rich:" & Rich
+    push tmp, "offset DanS:" & DanS
+    push tmp, "offset Rich:" & Rich
     push tmp, "Size: " & size
     
     If checkSumOk Then
@@ -85,7 +128,10 @@ Function dump() As String
     push tmp, ""
     push tmp, "clearData: " & strClearData(rhcd_Readable)
     push tmp, ""
-     
+    
+    push tmp, entries.Count & " entries"
+    push tmp, String(50, "-")
+    
     For Each t In entries
         push tmp, t.dump(vbCrLf, True) & vbCrLf
     Next
@@ -366,8 +412,6 @@ Private Function AryReverse(ary)
     AryReverse = tmp
 End Function
 
-
-
 Private Function FileExists(path) As Boolean
   On Error GoTo hell
     
@@ -378,3 +422,23 @@ Private Function FileExists(path) As Boolean
   Exit Function
 hell: FileExists = False
 End Function
+
+
+'Function test_longs_to_bytes()
+'
+'    Dim uPack() As Long, size As Long, b() As Byte
+'
+'    ReDim uPack(1)
+'    uPack(0) = &H11223344
+'    uPack(1) = &H55667788
+'
+'    size = (UBound(uPack) + 1) * 4
+'    ReDim b(size - 1)
+'
+'    CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(uPack(0)), size
+'    Debug.Print HexDump(b) 'dzrt reference
+'
+'
+'End Function
+
+
