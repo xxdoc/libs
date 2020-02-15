@@ -25,15 +25,12 @@ Option Base 1
 ' any type..but variant itself is not accepted, except for the writeStr function which converts everything
 ' to a string as expected
 '
-' while we can not support UDTs file vb get/put you could use my CMemStruct class with it
 
 'todo:
 '     support optionBase0 for read/write user offsets?
 '     strong type primitives ReadByte/WriteByte ?
 '     option raise err on fail?
-'     toFile/fromFile
-'     reset/resize
-'     encrypt/decrypt
+'     resize ?
 '
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
 
@@ -49,6 +46,20 @@ Enum mb_StrTypes
     mb_fixedSize
 End Enum
 
+Public Enum hexOutFormats
+    hoDump
+    hoSpaced
+    hoHexOnly
+End Enum
+
+Private Const LANG_US = &H409
+
+Sub clear()
+    pointer = 1
+    lastErr = Empty
+    Erase buf
+End Sub
+
 Property Get Buffer() As Byte()
    Buffer = buf()
 End Property
@@ -61,12 +72,12 @@ Property Get curOffset() As Long
     curOffset = pointer
 End Property
 
-Property Let curOffset(x As Long)
-    If x < 1 Then
+Property Let curOffset(X As Long)
+    If X < 1 Then
         lastErr = "Offset can not be < 1"
         Err.Raise 122, "CMemBuf", lastErr
     End If
-    pointer = x
+    pointer = X
 End Property
 
 Private Sub Class_Initialize()
@@ -112,7 +123,7 @@ Function sizeInBounds(size As Long, Optional offset As Long = -1) As Boolean
 End Function
 
 Function HexDump(Optional ByVal Length As Long = -1, Optional ByVal startAt As Long = 1, Optional hexFormat As hexOutFormats = hoDump) As String
-    HexDump = Module1.HexDump(buf, Length, startAt, hexFormat)
+    HexDump = HexDump_Internal(buf, Length, startAt, hexFormat)
 End Function
 
 Function readStr(Optional offset As Long = -1, Optional readType As mb_StrTypes = mb_cstr, Optional fixedWidth As Long = 0) As String
@@ -156,25 +167,25 @@ Function writeStr(data As Variant, Optional offset As Long = -1, Optional writeT
     
     On Error GoTo hell
     
-    Dim s As String, n As String, bb() As Byte, x, sz As Integer
+    Dim s As String, n As String, bb() As Byte, X, sz As Integer
     
     lastErr = Empty
     If offset <> -1 Then curOffset = offset 'raise error on bad value..
    
     writeStr = True
     If IsArray(data) Then
-        For Each x In data
+        For Each X In data
             GoSub writeStr_internal
         Next
     Else
-        x = data
+        X = data
         GoSub writeStr_internal
     End If
     
 Exit Function
     
 writeStr_internal: 'gosub is ugly but we dont want to have two copies of this code to keep synced on bugfix doing an internal fx is ok too but equally sloppy
-    s = x
+    s = X
     If writeType = mb_cstr Then s = s & Chr(0)
     bb = StrConv(s, vbFromUnicode)
     sz = UBound(bb) + 1
@@ -190,10 +201,60 @@ hell:
      lastErr = "WriteStr Err: " & Err.Description
 End Function
 
+Function writeFromMem(memAddress As Long, size As Long, Optional offset As Long = -1) As Boolean
+    Dim b() As Byte
+    ReDim b(1 To size)
+    CopyMemory ByVal VarPtr(b(1)), ByVal memAddress, size
+    writeFromMem = write_(b, offset)
+End Function
+
+'you better know what your doing or crashity crash in mysterious ways at some point in future...
+Function saveToMem(memAddress As Long, Optional size As Long, Optional offset As Long = -1) As Boolean
+    If size > UBound(buf) + 1 Then Exit Function
+    CopyMemory ByVal memAddress, ByVal VarPtr(buf(1)), size
+    saveToMem = True
+End Function
+
+Function toFile(ByVal fPath As String, Optional fileOffset As Long = 1) As Boolean
+    On Error Resume Next
+    Dim f As Long
+    f = FreeFile
+    Open fPath For Binary As f
+    If Err.Number <> 0 Then Exit Function
+    Put f, fileOffset, buf()
+    Close f
+    toFile = (Err.Number = 0)
+End Function
+
+Function fromFile(ByVal fPath As String, Optional fileOffset As Long = 1, Optional ByVal dataSize As Long = -1) As Boolean
+    On Error Resume Next
+    Dim f As Long
+    
+    If dataSize = -1 Then dataSize = FileLen(fPath)
+    If fileOffset <> 1 Then dataSize = dataSize - fileOffset
+    
+    If Err.Number <> 0 Then
+        lastErr = Err.Description
+        Exit Function
+    End If
+    
+    f = FreeFile
+    Open fPath For Binary As f
+    If Err.Number <> 0 Then Exit Function
+    Me.clear
+    ReDim buf(1 To dataSize)
+    Get f, fileOffset, buf
+    Close f
+    
+    If Err.Number <> 0 Then lastErr = Err.Description
+        
+    fromFile = (Err.Number = 0)
+    
+End Function
 
 Function write_(data As Variant, Optional offset As Long = -1) As Boolean
     
-    Dim sz As Long, n As String, x
+    Dim sz As Long, n As String, X
     Dim i As Integer, b As Byte, l As Long, s As String, c As Currency, d As Double
     Dim ii() As Integer, bb() As Byte, ll() As Long, ss() As String, cc() As Currency, dd() As Double
     Dim lb As Long, ub As Long, ab As Long
@@ -322,7 +383,7 @@ End Function
 
 Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
     
-    Dim sz As Long, n As String, x
+    Dim sz As Long, n As String, X
     Dim i As Integer, b As Byte, l As Long, s As String, c As Currency, d As Double
     Dim ii() As Integer, bb() As Byte, ll() As Long, ss() As String, cc() As Currency, dd() As Double
     Dim lb As Long, ub As Long, ab As Long
@@ -458,14 +519,191 @@ outOfBounds:
 End Function
 
 'are these worth it?
-Function ReadLong(ByRef x As Long, Optional offset As Long = -1) As Boolean
-    ReadLong = read(x, offset)
+Function ReadLong(ByRef X As Long, Optional offset As Long = -1) As Boolean
+    ReadLong = read(X, offset)
 End Function
 
-Function ReadByte(ByRef x As Byte, Optional offset As Long = -1) As Boolean
-    ReadByte = read(x, offset)
+Function ReadByte(ByRef X As Byte, Optional offset As Long = -1) As Boolean
+    ReadByte = read(X, offset)
 End Function
 
-Function WriteLong(ByVal x As Long, Optional offset As Long = -1) As Boolean
-    WriteLong = write_(x, offset)
+Function WriteLong(ByVal X As Long, Optional offset As Long = -1) As Boolean
+    WriteLong = write_(X, offset)
 End Function
+
+Public Function rc4(ByVal password As Variant, Optional overWriteBuf As Boolean = True) As Byte()
+    
+    On Error GoTo hell
+    
+    Dim RB(0 To 255) As Integer, X As Long, Y As Long, Z As Long
+    Dim plen As Long, key() As Byte, ByteArray() As Byte, temp As Byte
+    
+    lastErr = Empty
+    ByteArray() = buf()
+    
+    If TypeName(password) = "Byte()" Then
+        key() = password
+        If UBound(key) > 255 Then ReDim Preserve key(255)
+    Else
+        If Len(password) = 0 Then password = "xxx"
+
+        If Len(password) > 256 Then
+            key() = StrConv(Left$(CStr(password), 256), vbFromUnicode, LANG_US)
+        Else
+            key() = StrConv(CStr(password), vbFromUnicode, LANG_US)
+        End If
+    End If
+    
+    plen = UBound(key) + 1
+ 
+    'Debug.Print "key=" & HexDump(Key)
+    'Debug.Print "data=" & HexDump(ByteArray)
+    
+    For X = 0 To 255
+        RB(X) = X
+    Next X
+    
+    X = 0: Y = 0: Z = 0
+    For X = 0 To 255
+        Y = (Y + RB(X) + key(X Mod plen)) Mod 256
+        temp = RB(X)
+        RB(X) = RB(Y)
+        RB(Y) = temp
+    Next X
+    
+    X = 0: Y = 0: Z = 0
+    For X = LBound(ByteArray) To UBound(ByteArray)
+        Y = (Y + 1) Mod 256
+        Z = (Z + RB(Y)) Mod 256
+        temp = RB(Y)
+        RB(Y) = RB(Z)
+        RB(Z) = temp
+        ByteArray(X) = ByteArray(X) Xor (RB((RB(Y) + RB(Z)) Mod 256))
+    Next X
+    
+    If overWriteBuf Then buf = ByteArray
+    rc4 = ByteArray
+    
+Exit Function
+hell:
+    lastErr = "rc4 err: " & Err.Description
+
+End Function
+
+
+'library code below
+Private Function HexDump_Internal(bAryOrStrData, Optional ByVal Length As Long = -1, Optional ByVal startAt As Long = 1, Optional hexFormat As hexOutFormats = hoDump) As String
+    Dim s() As String, chars As String, tmp As String
+    On Error Resume Next
+    Dim ary() As Byte
+    Dim offset As Long
+    Const LANG_US = &H409
+    Dim i As Long, tt, h, X
+    Dim hexOnly As Long
+    
+    offset = 0
+    If hexFormat <> hoDump Then hexOnly = 1
+    
+    If TypeName(bAryOrStrData) = "Byte()" Then
+        ary() = bAryOrStrData
+    Else
+        ary = StrConv(CStr(bAryOrStrData), vbFromUnicode, LANG_US)
+    End If
+    
+    If startAt < 1 Then startAt = 1
+    If Length < 1 Then Length = -1
+    
+    While startAt Mod 16 <> 0
+        startAt = startAt - 1
+    Wend
+    
+    startAt = startAt + 1
+    
+    chars = "   "
+    For i = startAt To UBound(ary) + 1
+        tt = Hex(ary(i - 1))
+        If Len(tt) = 1 Then tt = "0" & tt
+        tmp = tmp & tt & " "
+        X = ary(i - 1)
+        'chars = chars & IIf((x > 32 And x < 127) Or x > 191, Chr(x), ".") 'x > 191 causes \x0 problems on non us systems... asc(chr(x)) = 0
+        chars = chars & IIf((X > 32 And X < 127), Chr(X), ".")
+        If i > 1 And i Mod 16 = 0 Then
+            h = Hex(offset)
+            While Len(h) < 6: h = "0" & h: Wend
+            If hexOnly = 0 Then
+                push s, h & "   " & tmp & chars
+            Else
+                push s, tmp
+            End If
+            offset = offset + 16
+            tmp = Empty
+            chars = "   "
+        End If
+        If Length <> -1 Then
+            Length = Length - 1
+            If Length = 0 Then Exit For
+        End If
+    Next
+    
+    'if read length was not mod 16=0 then
+    'we have part of line to account for
+    If tmp <> Empty Then
+        If hexOnly = 0 Then
+            h = Hex(offset)
+            While Len(h) < 6: h = "0" & h: Wend
+            h = h & "   " & tmp
+            While Len(h) <= 56: h = h & " ": Wend
+            push s, h & chars
+        Else
+            push s, tmp
+        End If
+    End If
+    
+    HexDump_Internal = Join(s, vbCrLf)
+    
+    If hexOnly <> 0 Then
+        If hexFormat = hoHexOnly Then HexDump_Internal = Replace(HexDump_Internal, " ", "")
+        HexDump_Internal = Replace(HexDump_Internal, vbCrLf, "")
+    End If
+    
+End Function
+
+
+Sub push(ary, Value) 'this modifies parent ary object
+    On Error GoTo Init
+    Dim X, lb As Long
+       
+    X = UBound(ary)
+    ReDim Preserve ary(X + 1)
+    
+    If IsObject(Value) Then
+        Set ary(X + 1) = Value
+    Else
+        ary(X + 1) = Value
+    End If
+    
+    Exit Sub
+Init:
+    lb = optionBase 'in case the module uses option base 1 (as this one does)
+    ReDim ary(lb)
+    If IsObject(Value) Then
+        Set ary(lb) = Value
+    Else
+        ary(lb) = Value
+    End If
+End Sub
+
+Private Function optionBase() As Byte
+  optionBase = LBound(Array())
+End Function
+
+Function AryIsEmpty(ary) As Boolean
+  On Error GoTo oops
+  Dim X
+    If IsObject(UBound(ary)) Then AryIsEmpty = False
+    'x = UBound(ary)
+  Exit Function
+oops: AryIsEmpty = True
+End Function
+
+
