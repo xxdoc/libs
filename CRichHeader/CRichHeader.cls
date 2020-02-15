@@ -21,7 +21,7 @@ Public size As Long
 Public clearData 'variant as byte()
 Public checkSum As Long
 Public calcChecksum As Long
-
+Public exists As Boolean
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
 
@@ -59,6 +59,7 @@ Private Sub initVars()
     size = 0
     checkSum = 0
     calcChecksum = 0
+    exists = False
 End Sub
 
 'yara pe.rich_signature.version(verion,[toolId]) compatiable
@@ -250,7 +251,8 @@ Function Load(fpath) As Boolean
         GoTo cleanup
     End If
         
-    'We found a valid 'Rich' signature in the header from here on
+    'We found a valid 'Rich' signature in the header
+    exists = True
     Get f, Rich + 4, checkSum
     'Debug.Print "Checksum is 0x" & Hex(checkSum)
     
