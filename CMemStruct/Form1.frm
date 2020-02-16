@@ -46,6 +46,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 'todo: parse vb/c structs into named CMemStruct's
+'      add support for some of kaitai struct language? https://kaitai.io/
 
 Private Type vbTest
     byte1 As Byte

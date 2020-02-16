@@ -19,7 +19,7 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   7560
+      Height          =   7260
       Left            =   60
       TabIndex        =   0
       Top             =   120
@@ -91,8 +91,26 @@ Private Sub Form_Load()
     Dim u2 As udt1
     Dim emptyUDT As udt1
     Dim tmp As String
-    
+    Dim b() As Byte
+
+    'mb.optBase0 = True
+    'mb.optRaiseErr = True
     tmp = Environ("temp") & "\xx.bin"
+    
+'testing changing array bounds on load up
+'    ReDim b(4)
+'    For i = 0 To UBound(b)
+'        b(i) = &H21 + i
+'    Next
+'    mb.Buffer = b
+'    d mb.HexDump
+'    mb.truncate 2
+'    mb.write_ CInt(&H33)    'note pointer at start, int is two bytes
+'    mb.write_ CByte(&H55), 4 'auto extends size
+'    d mb.HexDump
+'    mb.clear
+'    Exit Sub
+    
     
     u.b = &H44
     'u.b2 = &H33
@@ -162,5 +180,10 @@ Private Sub Form_Load()
     d mb.readStr(, mb_bstr)
     d mb.readStr(, mb_fixedSize, 2)
     d ""
+    
+    If Not mb.write_(Me) Then
+        d "mb.write(object) failed - expected"
+    End If
+    
     
 End Sub

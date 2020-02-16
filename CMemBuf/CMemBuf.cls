@@ -27,9 +27,7 @@ Option Base 1
 '
 
 'todo:
-'     support optionBase0 for read/write user offsets?
 '     strong type primitives ReadByte/WriteByte ?
-'     option raise err on fail?
 '     resize ?
 '
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
@@ -37,8 +35,8 @@ Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As An
 Private buf() As Byte 'can not be public vb sayz
 Private pointer As Long
 Public lastErr As String
-'Public optBase0 As Boolean
-'public optRaiseErr as boolean
+Public optBase0 As Boolean
+Public optRaiseErr As Boolean
 
 Enum mb_StrTypes
     mb_cstr
@@ -60,29 +58,71 @@ Sub clear()
     Erase buf
 End Sub
 
+Sub truncate(size As Long)
+    If optBase0 Then size = size + 1
+    If size < 1 Then
+        Me.clear
+    Else
+        ReDim Preserve buf(size)
+        If pointer > size Then pointer = size
+    End If
+End Sub
+
 Property Get Buffer() As Byte()
-   Buffer = buf()
+
+    Dim b() As Byte
+   
+    If optBase0 Then
+       ReDim b(0 To UBound(buf) - 1)
+       CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(buf(1)), UBound(buf)
+       Buffer = b
+    Else
+       Buffer = buf()
+    End If
+    
 End Property
 
 Property Let Buffer(b() As Byte)
-    buf() = b()
+    
+    Dim ub As Long, lb As Long, ab As Long
+    
+    Me.clear
+    If AryIsEmpty(b) Then Exit Property
+        
+    If LBound(b) = 1 Then
+        buf() = b()
+    Else
+        ub = UBound(b)
+        lb = LBound(b)
+        ab = ub - lb + 1
+        'Debug.Print "Array bounds: " & ub & "," & lb & "," & ab
+        ReDim buf(1 To ab)
+        CopyMemory ByVal VarPtr(buf(1)), ByVal VarPtr(b(lb)), ab
+    End If
+    
+    
 End Property
 
 Property Get curOffset() As Long
     curOffset = pointer
+    If optBase0 Then curOffset = curOffset - 1
 End Property
 
-Property Let curOffset(X As Long)
+Property Let curOffset(ByVal X As Long)
+    
+    If optBase0 Then X = X + 1
+    
     If X < 1 Then
-        lastErr = "Offset can not be < 1"
-        Err.Raise 122, "CMemBuf", lastErr
+        lastErr = "Invalid offset"
+        Err.Raise 122, "CMemBuf.curOffset", lastErr
     End If
+    
     pointer = X
+    
 End Property
 
 Private Sub Class_Initialize()
     pointer = 1
-    'OptionBase1 = True
 End Sub
 
 Function ensureSize(ByVal size As Long, Optional offset As Long = -1) As Boolean
@@ -165,7 +205,9 @@ End Function
 
 Function writeStr(data As Variant, Optional offset As Long = -1, Optional writeType As mb_StrTypes = mb_cstr) As Boolean
     
-    On Error GoTo hell
+    If Not optRaiseErr Then
+        On Error GoTo hell
+    End If
     
     Dim s As String, n As String, bb() As Byte, X, sz As Integer
     
@@ -210,13 +252,25 @@ End Function
 
 'you better know what your doing or crashity crash in mysterious ways at some point in future...
 Function saveToMem(memAddress As Long, Optional size As Long, Optional offset As Long = -1) As Boolean
-    If size > UBound(buf) + 1 Then Exit Function
-    CopyMemory ByVal memAddress, ByVal VarPtr(buf(1)), size
+    
+    Dim o As Long
+    
+    o = 1
+    If offset <> -1 Then    'its a partial copy of some latter portion of the buf
+        curOffset = offset 'performs validation
+        o = curOffset
+        If size + o > UBound(buf) + 1 Then Exit Function
+    Else
+        If size > UBound(buf) + 1 Then Exit Function
+    End If
+    
+    CopyMemory ByVal memAddress, ByVal VarPtr(buf(o)), size
     saveToMem = True
+    
 End Function
 
 Function toFile(ByVal fPath As String, Optional fileOffset As Long = 1) As Boolean
-    On Error Resume Next
+    If Not optRaiseErr Then On Error Resume Next
     Dim f As Long
     f = FreeFile
     Open fPath For Binary As f
@@ -227,9 +281,10 @@ Function toFile(ByVal fPath As String, Optional fileOffset As Long = 1) As Boole
 End Function
 
 Function fromFile(ByVal fPath As String, Optional fileOffset As Long = 1, Optional ByVal dataSize As Long = -1) As Boolean
-    On Error Resume Next
+    If Not optRaiseErr Then On Error Resume Next
     Dim f As Long
     
+    Me.clear
     If dataSize = -1 Then dataSize = FileLen(fPath)
     If fileOffset <> 1 Then dataSize = dataSize - fileOffset
     
@@ -241,13 +296,12 @@ Function fromFile(ByVal fPath As String, Optional fileOffset As Long = 1, Option
     f = FreeFile
     Open fPath For Binary As f
     If Err.Number <> 0 Then Exit Function
-    Me.clear
+    
     ReDim buf(1 To dataSize)
     Get f, fileOffset, buf
     Close f
     
     If Err.Number <> 0 Then lastErr = Err.Description
-        
     fromFile = (Err.Number = 0)
     
 End Function
@@ -259,7 +313,7 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
     Dim ii() As Integer, bb() As Byte, ll() As Long, ss() As String, cc() As Currency, dd() As Double
     Dim lb As Long, ub As Long, ab As Long
     
-    On Error GoTo hell
+    If Not optRaiseErr Then On Error GoTo hell
     
     If offset <> -1 Then curOffset = offset 'raise error on bad value..
     
@@ -298,15 +352,6 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
         ensureSize sz
         CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(l), sz
         pointer = pointer + sz
-        
-'    ElseIf n = "String" Then
-'        s = data
-'        bb = StrConv(s, vbFromUnicode)
-'        sz = UBound(bb) + 1
-'        ensureSize sz
-'        CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(bb(LBound(bb))), sz
-'        pointer = pointer + sz
-        
         
     ElseIf n = "Currency" Then
         c = data
@@ -357,19 +402,10 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
         CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(dd(lb)), sz
         pointer = pointer + sz
         
-'    ElseIf n = "String()" Then
-'        For Each x In data
-'            s = x
-'            bb = StrConv(s, vbFromUnicode)
-'            sz = UBound(bb) + 1
-'            ensureSize sz
-'            CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(bb(LBound(bb))), sz
-'            pointer = pointer + sz
-'        Next
-        
     Else
         lastErr = "Unsupported type: " & n
         write_ = False
+        If optRaiseErr Then Err.Raise 2323, "CMembuf.write", lastErr
     End If
     
 Exit Function
@@ -388,7 +424,7 @@ Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
     Dim ii() As Integer, bb() As Byte, ll() As Long, ss() As String, cc() As Currency, dd() As Double
     Dim lb As Long, ub As Long, ab As Long
     
-    On Error GoTo hell
+    If Not optRaiseErr Then On Error GoTo hell
     
     If offset <> -1 Then curOffset = offset 'raise error on bad value..
     
@@ -425,15 +461,7 @@ Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
         CopyMemory ByVal VarPtr(l), ByVal VarPtr(buf(pointer)), sz
         pointer = pointer + sz
         data = l
-        
-'    ElseIf n = "String" Then
-'        s = data
-'        sz = UBound(bb) + 1
-'        ensureSize sz
-'        CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(bb(LBound(bb))), sz
-'        pointer = pointer + sz
-'        data = StrConv(bb, vbUnicode, &H409)
-        
+   
     ElseIf n = "Currency" Then
         sz = 8
         If Not sizeInBounds(sz) Then GoTo outOfBounds
@@ -488,19 +516,10 @@ Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
         pointer = pointer + sz
         data = dd
         
-'    ElseIf n = "String()" Then
-'        For Each x In data
-'            s = x
-'            bb = StrConv(s, vbFromUnicode)
-'            sz = UBound(bb) + 1
-'            ensureSize sz
-'            CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(bb(LBound(bb))), sz
-'            pointer = pointer + sz
-'        Next
-'
     Else
         lastErr = "Unsupported type: " & n
         read = False
+        If optRaiseErr Then Err.Raise 2323, "CMemBuf.read", lastErr
     End If
     
 Exit Function
@@ -533,7 +552,7 @@ End Function
 
 Public Function rc4(ByVal password As Variant, Optional overWriteBuf As Boolean = True) As Byte()
     
-    On Error GoTo hell
+    If Not optRaiseErr Then On Error GoTo hell
     
     Dim RB(0 To 255) As Integer, X As Long, Y As Long, Z As Long
     Dim plen As Long, key() As Byte, ByteArray() As Byte, temp As Byte
