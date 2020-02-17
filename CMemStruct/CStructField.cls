@@ -14,6 +14,8 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Public fieldType As ms_fieldType
+Public lastErr As String
+
 Private m_Value                      'note: m_Value is a variant, its vartype is explicitly set when loaded,  bit tests will fail if you reset it to the wrong type..
 Public name As String
 Private m_size As Long
@@ -26,23 +28,34 @@ Enum ms_fieldType 'const m_Value = size dont change..
     msf_blob = 10
 End Enum
 
+Function hadErr() As Boolean
+    hadErr = (Len(lastErr) > 0)
+End Function
+
+'value is the default member of the class
 Property Get Value()
+Attribute Value.VB_UserMemId = 0
     Value = m_Value
 End Property
 
+Property Let Value(x)
+    SetValue x
+End Property
+
+'the setvalue function allows the user an explicit boolean return value that .value = does not
 'we need be careful end user does not inadvertantly change the variant value type must match field type so we control it..
-Function SetValue(v, Optional errMsg) As Boolean
+Function SetValue(v) As Boolean
     On Error GoTo hell
     
-    errMsg = Empty
+    lastErr = Empty
     If fieldType = msf_byte Then v = CByte(v)
     If fieldType = msf_int Then v = CInt(v)
     If fieldType = msf_long Then v = CLng(v)
     If fieldType = msf_cur Then v = CCur(v)
     
     If fieldType = msf_blob Then
-        SetValue = SetBlobValue(v, errMsg)
-        If Len(errMsg) > 0 Then Exit Function
+        SetValue = SetBlobValue(v)
+        If Len(lastErr) > 0 Then Exit Function
     Else
         m_Value = v
     End If
@@ -51,20 +64,22 @@ Function SetValue(v, Optional errMsg) As Boolean
     
     Exit Function
 hell:
-    errMsg = Err.Description
+    lastErr = Err.Description
 
 End Function
 
 
-Private Function SetBlobValue(bAryOrStr, Optional errMsg) As Boolean
+Private Function SetBlobValue(bAryOrStr) As Boolean
     Dim tmp() As Byte
     Dim s As String
     
     On Error GoTo hell
     
+    lastErr = Empty
+    
     If TypeName(bAryOrStr) = "Byte()" Then
         If UBound(bAryOrStr) > m_size - 1 Then
-            errMsg = "Byte array to large can not fit into blob"
+            lastErr = "Byte array to large can not fit into blob"
             Exit Function
         Else
             tmp() = bAryOrStr
@@ -75,7 +90,7 @@ Private Function SetBlobValue(bAryOrStr, Optional errMsg) As Boolean
         s = CStr(bAryOrStr)
         tmp() = StrConv(s, vbFromUnicode, &H409)
         If UBound(tmp) > m_size - 1 Then
-            errMsg = "String to large can not fit into blob"
+            lastErr = "String to large can not fit into blob"
             Exit Function
         Else
             If UBound(tmp) < m_size - 1 Then ReDim Preserve tmp(m_size - 1)
@@ -84,7 +99,7 @@ Private Function SetBlobValue(bAryOrStr, Optional errMsg) As Boolean
     End If
     
     Exit Function
-hell: errMsg = Err.Description
+hell: lastErr = Err.Description
     
 End Function
 

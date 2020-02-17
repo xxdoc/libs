@@ -1,4 +1,6 @@
 Attribute VB_Name = "Module1"
+Option Explicit
+
 Global bitFlags(31) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
 Private Declare Function htonl Lib "ws2_32.dll" (ByVal hostlong As Long) As Long
@@ -23,6 +25,7 @@ End Function
 
 Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
+    Dim x
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = Value
@@ -35,7 +38,7 @@ Function HexDumpB(b() As Byte, Optional hexOnly = 0) As String
 End Function
 
 Function HexDump(ByVal str, Optional hexOnly = 0) As String
-    Dim s() As String, chars As String, tmp As String
+    Dim s() As String, chars As String, tmp As String, i, tt, x, h
     On Error Resume Next
     Dim ary() As Byte
     Dim offset As Long
