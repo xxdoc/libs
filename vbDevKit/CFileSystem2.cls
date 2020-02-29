@@ -236,6 +236,7 @@ Sub SetAttribute(fpath, it As VbFileAttribute)
    SetAttr fpath, it
 End Sub
 
+'always returns lcase
 Function GetExtension(path) As String
     Dim tmp() As String
     Dim ub As String
@@ -243,7 +244,7 @@ Function GetExtension(path) As String
     tmp = Split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
-       GetExtension = Mid(ub, InStrRev(ub, "."), Len(ub))
+       GetExtension = LCase(Mid(ub, InStrRev(ub, "."), Len(ub)))
     Else
        GetExtension = ""
     End If
@@ -262,16 +263,21 @@ Function GetBaseName(path As String) As String
     End If
 End Function
 
+'can also just accept a file name
 Function ChangeExt(path As String, ext As String)
-    Dim bn As String
-    ext = IIf(Left(ext, 1) = ".", ext, "." & ext)
-    If FileExists(path) Then
-        Rename path, GetBaseName(path) & ext
-    Else
-        'hack to just accept a file name might not be worth supporting
-        bn = Mid(path, 1, InStr(1, path, ".") - 1)
-        ChangeExt = bn & ext
+    Dim newPath As String
+    
+    If Left(ext, 1) <> "." Then ext = "." & ext
+    newPath = GetBaseName(path) & ext
+    
+    If LCase(path) <> LCase(newPath) Then
+        If FileExists(path) Then
+            Rename path, newPath
+        End If
     End If
+    
+    ChangeExt = newPath
+
 End Function
 
 Function SafeFileName(proposed As String) As String

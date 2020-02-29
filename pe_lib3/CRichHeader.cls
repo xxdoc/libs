@@ -10,10 +10,8 @@ Attribute VB_Name = "CRichHeader"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
-
-'https://www.ntcore.com/files/richsign.htm
 
 Public ErrorMsg As String
 Public entries As Collection 'of CToolID

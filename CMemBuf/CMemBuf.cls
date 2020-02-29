@@ -19,7 +19,10 @@ Option Base 1
 'the main functions are read/write and they will behave appropiratly based on the data type passed
 'in to the data function.
 '
-'--> It is expected that the variables passed in will be strongly typed and not variants. <--
+'--> It is expected that the variables passed in will be strongly typed and not objects <--
+'    variants writes will work since they will default to base type ie var1 = 22 will default to int
+'    but you dont know explicitly what size they will default to as its based on value..so not really
+'    wise to use them..they wont work for reads..I should probably ban them...
 '
 ' We need to know their size to write them to a byte buffer, we accept a variant arg so we can accept
 ' any type..but variant itself is not accepted, except for the writeStr function which converts everything
@@ -310,6 +313,7 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
     
     Dim sz As Long, n As String, X
     Dim i As Integer, b As Byte, l As Long, s As String, c As Currency, d As Double
+    Dim bool As Boolean, sng As Single, bbool() As Boolean, ssng() As Single
     Dim ii() As Integer, bb() As Byte, ll() As Long, ss() As String, cc() As Currency, dd() As Double
     Dim lb As Long, ub As Long, ab As Long
     
@@ -338,7 +342,6 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
         CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(i), sz
         pointer = pointer + sz
        
-        
     ElseIf n = "Byte" Then
         sz = 1
         b = data
@@ -346,11 +349,25 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
         CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(b), sz
         pointer = pointer + sz
         
+    ElseIf n = "Boolean" Then
+        sz = 2
+        bool = data
+        ensureSize sz
+        CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(bool), sz
+        pointer = pointer + sz
+        
     ElseIf n = "Long" Then
         sz = 4
         l = data
         ensureSize sz
         CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(l), sz
+        pointer = pointer + sz
+        
+    ElseIf n = "Single" Then
+        sz = 4
+        sng = data
+        ensureSize sz
+        CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(sng), sz
         pointer = pointer + sz
         
     ElseIf n = "Currency" Then
@@ -365,6 +382,13 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
         sz = 8
         ensureSize sz
         CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(d), sz
+        pointer = pointer + sz
+        
+    ElseIf n = "Boolean()" Then
+        bbool = data
+        sz = ab * 2
+        ensureSize sz
+        CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(bbool(lb)), sz
         pointer = pointer + sz
         
     ElseIf n = "Byte()" Then
@@ -386,6 +410,13 @@ Function write_(data As Variant, Optional offset As Long = -1) As Boolean
         sz = ab * 4
         ensureSize sz
         CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(ll(lb)), sz
+        pointer = pointer + sz
+        
+    ElseIf n = "Single()" Then
+        ssng = data
+        sz = ab * 4
+        ensureSize sz
+        CopyMemory ByVal VarPtr(buf(pointer)), ByVal VarPtr(ssng(lb)), sz
         pointer = pointer + sz
     
     ElseIf n = "Currency()" Then
@@ -423,6 +454,7 @@ Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
     Dim i As Integer, b As Byte, l As Long, s As String, c As Currency, d As Double
     Dim ii() As Integer, bb() As Byte, ll() As Long, ss() As String, cc() As Currency, dd() As Double
     Dim lb As Long, ub As Long, ab As Long
+    Dim bool As Boolean, sng As Single, bbool() As Boolean, ssng() As Single
     
     If Not optRaiseErr Then On Error GoTo hell
     
@@ -455,12 +487,26 @@ Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
         pointer = pointer + sz
         data = b
         
+    ElseIf n = "Boolean" Then
+        sz = 2
+        If Not sizeInBounds(sz) Then GoTo outOfBounds
+        CopyMemory ByVal VarPtr(bool), ByVal VarPtr(buf(pointer)), sz
+        pointer = pointer + sz
+        data = bool
+        
     ElseIf n = "Long" Then
         sz = 4
         If Not sizeInBounds(sz) Then GoTo outOfBounds
         CopyMemory ByVal VarPtr(l), ByVal VarPtr(buf(pointer)), sz
         pointer = pointer + sz
         data = l
+        
+    ElseIf n = "Single" Then
+        sz = 4
+        If Not sizeInBounds(sz) Then GoTo outOfBounds
+        CopyMemory ByVal VarPtr(sng), ByVal VarPtr(buf(pointer)), sz
+        pointer = pointer + sz
+        data = sng
    
     ElseIf n = "Currency" Then
         sz = 8
@@ -484,6 +530,14 @@ Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
         pointer = pointer + sz
         data = bb
         
+    ElseIf n = "Boolean()" Then
+        sz = ab * 2
+        If Not sizeInBounds(sz) Then GoTo outOfBounds
+        ReDim bbool(lb To ub)
+        CopyMemory ByVal VarPtr(bbool(lb)), ByVal VarPtr(buf(pointer)), sz
+        pointer = pointer + sz
+        data = bbool
+        
     ElseIf n = "Integer()" Then
         sz = ab * 2
         If Not sizeInBounds(sz) Then GoTo outOfBounds
@@ -499,6 +553,14 @@ Function read(ByRef data As Variant, Optional offset As Long = -1) As Boolean
         CopyMemory ByVal VarPtr(ll(lb)), ByVal VarPtr(buf(pointer)), sz
         pointer = pointer + sz
         data = ll
+        
+    ElseIf n = "Single()" Then
+        sz = ab * 4
+        If Not sizeInBounds(sz) Then GoTo outOfBounds
+        ReDim ssng(lb To ub)
+        CopyMemory ByVal VarPtr(ssng(lb)), ByVal VarPtr(buf(pointer)), sz
+        pointer = pointer + sz
+        data = ssng
         
     ElseIf n = "Currency()" Then
         sz = ab * 8
