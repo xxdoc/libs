@@ -51,9 +51,25 @@ Public Type IMAGE_IMPORT_DIRECTORY
     pThunk As Long
 End Type
 
+'typedef struct _IMAGE_SECTION_HEADER {
+'  BYTE  Name[IMAGE_SIZEOF_SHORT_NAME];
+'  union {
+'    DWORD PhysicalAddress;
+'    DWORD VirtualSize;
+'  } Misc;
+'  DWORD VirtualAddress;
+'  DWORD SizeOfRawData;
+'  DWORD PointerToRawData;
+'  DWORD PointerToRelocations;
+'  DWORD PointerToLinenumbers;
+'  WORD  NumberOfRelocations;
+'  WORD  NumberOfLinenumbers;
+'  DWORD Characteristics;
+'} IMAGE_SECTION_HEADER,
+
 Public Type IMAGE_SECTION_HEADER 'https://msdn.microsoft.com/en-us/library/windows/desktop/ms680341(v=vs.85).aspx
-    nameSec As String * 6
-    PhisicalAddress As Integer
+    nameSec As String * 8
+    'PhisicalAddress As Integer
     VirtualSize As Long
     VirtualAddress As Long
     SizeOfRawData As Long
@@ -103,7 +119,7 @@ Public Type IMAGE_OPTIONAL_HEADER
     Win32VersionValue As Long
     SizeOfImage As Long
     SizeOfHeaders As Long
-    CheckSum As Long
+    checkSum As Long
     Subsystem As Integer
     DllCharacteristics As Integer
     SizeOfStackReserve As Long
@@ -137,7 +153,7 @@ Public Type IMAGE_OPTIONAL_HEADER_64
     Win32VersionValue As Long
     SizeOfImage As Long
     SizeOfHeaders As Long
-    CheckSum As Long
+    checkSum As Long
     Subsystem As Integer
     DllCharacteristics As Integer
     SizeOfStackReserve As Currency                         'changed
@@ -211,14 +227,14 @@ End Function
 
 
 
-Sub push(ary, Value) 'this modifies parent ary object
+Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = Value
+    ary(UBound(ary)) = value
     Exit Sub
-init:     ReDim ary(0): ary(0) = Value
+init:     ReDim ary(0): ary(0) = value
 End Sub
 
 Function GetHextxt(t As TextBox, v As Long) As Boolean

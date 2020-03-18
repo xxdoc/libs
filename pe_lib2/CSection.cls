@@ -16,7 +16,7 @@ Option Explicit
 'http://sandsprite.com
 
 Public nameSec As String
-Public PhisicalAddress As Integer
+Public PhisicalAddress As Integer 'unused error
 Public VirtualSize As Long
 Public VirtualAddress As Long
 Public SizeOfRawData As Long
@@ -33,7 +33,7 @@ Public index As Long 'used for collection index
     
     With sh
         nameSec = Replace(.nameSec, Chr(0), "") 'string *6 extra null
-        PhisicalAddress = .PhisicalAddress
+        'PhisicalAddress = .PhisicalAddress
         VirtualSize = .VirtualSize
         VirtualAddress = .VirtualAddress
         SizeOfRawData = .SizeOfRawData
@@ -51,7 +51,7 @@ Public index As Long 'used for collection index
     
     With GetStruc
         .nameSec = nameSec
-        .PhisicalAddress = PhisicalAddress
+        '.PhisicalAddress = PhisicalAddress
         .VirtualSize = VirtualSize
         .VirtualAddress = VirtualAddress
         .SizeOfRawData = SizeOfRawData

@@ -10,7 +10,7 @@ Attribute VB_Name = "CWindow"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 
 Public hwnd As Long
@@ -164,11 +164,11 @@ Property Get isValid() As Boolean
     isValid = Not (IsWindow(hwnd) = 0)
 End Property
 
-Function CopyRemoteListView(Optional dest As ListView, Optional colSeperator As String = vbTab) As Collection
-    Set CopyRemoteListView = LV_Duplicate(hwnd, dest, colSeperator)
+Function CopyRemoteListView(Optional destLV As Object, Optional colSeperator As String = vbTab) As Collection
+    Set CopyRemoteListView = LV_Duplicate(hwnd, destLV, colSeperator)
 End Function
 
-Function CopyRemoteTreeView(Optional dest As TreeView) As Collection
+Function CopyRemoteTreeView(Optional destTV As Object) As Collection
    Dim TargetTreeview As dmTreeView
    Dim tvEntries As New Collection
    
@@ -178,7 +178,7 @@ Function CopyRemoteTreeView(Optional dest As TreeView) As Collection
    If Not dmGetTreeviewInfo(TargetTreeview) Then Exit Function
    If TargetTreeview.ItemCount < 1 Then Exit Function
 
-   CopyTargetTreeview TargetTreeview, dest, tvEntries
+   CopyTargetTreeview TargetTreeview, destTV, tvEntries
    
 End Function
 
@@ -192,7 +192,7 @@ Function FindChild(ByVal className As String) As Cwindow
     
 End Function
 
-Function CopyListBox(Optional toListBox As ListBox) As Collection
+Function CopyListBox(Optional toListBox As Object) As Collection
     Dim count As Long
     Dim i As Long
     Dim itemText As String
@@ -221,7 +221,7 @@ Function CopyListBox(Optional toListBox As ListBox) As Collection
     
 End Function
 
-Function CopyComboBox(Optional toCombo As ComboBox) As Collection
+Function CopyComboBox(Optional toCombo As Object) As Collection
     Dim count As Long
     Dim i As Long
     Dim itemText As String
@@ -378,7 +378,7 @@ Property Get IsIEServerWindow() As Boolean
     IsIEServerWindow = Morcillo.IsIEServerWindow(hwnd)
 End Property
 
-Function IEDOMFromhWnd() As HTMLDocument
+Function IEDOMFromhWnd() As Object 'HTMLDocument
     Set IEDOMFromhWnd = Morcillo.IEDOMFromhWnd(hwnd)
 End Function
 

@@ -1,7 +1,7 @@
 Type=Exe
 Form=Form1.frm
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
-Class=CTarFile; CTarFile.cls
+Module=Module1; Module1.bas
 IconForm="Form1"
 Startup="Form1"
 Command32=""
@@ -13,7 +13,6 @@ MinorVer=0
 RevisionVer=0
 AutoIncrementVer=0
 ServerSupportFiles=0
-VersionCompanyName="sandsprite"
 CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
@@ -29,6 +28,3 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
-
-[MS Transaction Server]
-AutoRefresh=1

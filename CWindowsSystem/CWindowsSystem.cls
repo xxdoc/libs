@@ -10,7 +10,7 @@ Attribute VB_Name = "CWindowsSystem"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Private Type sockaddr_in
     sin_family As Integer
     sin_port As Integer
@@ -158,6 +158,10 @@ Public Enum EShellShowConstants
 End Enum
 
 Private Declare Function RtlGetVersion Lib "NTDLL" (ByRef lpVersionInformation As Long) As Long
+
+Function ShowManualCopyForm()
+    Form1.Show
+End Function
 
 Function GetWindowsVersion(Optional includeBuild As Boolean = False) As String
     Dim tOSVw(&H54) As Long

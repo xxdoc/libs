@@ -1,4 +1,4 @@
-modPEStructs = 44, 44, 1011, 926, C
+modPEStructs = 44, 44, 1011, 926, 
 CExport = 132, 132, 972, 606, C
 CImport = 110, 110, 823, 730, 
 CLoadExports = 198, 198, 977, 877, 
@@ -21,5 +21,5 @@ CResEntry = 176, 176, 1016, 652,
 CResDir = 198, 198, 1038, 674, 
 CResData = 176, 176, 1016, 650, 
 CDebugDir = 219, 173, 1098, 802, 
-CDumpFix = 88, 88, 774, 509, 
+CDumpFix = 88, 88, 774, 509, Z
 CNTHeader = 182, 182, 1027, 664, C
