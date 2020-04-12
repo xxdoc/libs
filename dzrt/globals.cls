@@ -853,8 +853,10 @@ Function HexDump(bAryOrStrData, Optional ByVal Length As Long = -1, Optional ByV
     If hexFormat <> hoDump Then hexOnly = 1
     
     If TypeName(bAryOrStrData) = "Byte()" Then
+        If AryIsEmpty(bAryOrStrData) Then Exit Function
         ary() = bAryOrStrData
     Else
+        If Len(CStr(bAryOrStrData)) = 0 Then Exit Function
         ary = StrConv(CStr(bAryOrStrData), vbFromUnicode, LANG_US)
     End If
     
@@ -1652,8 +1654,6 @@ Public Function html_decode(ByVal iString As String, ByRef outVal) As Boolean
     
 End Function
 
-
-
 Function cast(varIn, varOut, Optional allowFilePaths As Boolean = False) As Boolean
     On Error Resume Next
     Dim b() As Byte
@@ -1687,32 +1687,36 @@ Function cast(varIn, varOut, Optional allowFilePaths As Boolean = False) As Bool
         varOut = b()
     ElseIf TypeName(varOut) = "Integer()" Then
         If bytes Mod 2 <> 0 Then
-            sz = bytes + (bytes Mod 2)
+            sz = bytes + 2 - (bytes Mod 2)
             ReDim Preserve b(sz)
+            bytes = sz
         End If
         ReDim i((bytes / 2) - 1)
         CopyMemory ByVal VarPtr(i(0)), ByVal VarPtr(b(0)), bytes
         varOut = i()
     ElseIf TypeName(varOut) = "Long()" Then
         If bytes Mod 4 <> 0 Then
-            sz = bytes + (bytes Mod 4)
+            sz = bytes + 4 - (bytes Mod 4)
             ReDim Preserve b(sz)
+            bytes = sz
         End If
         ReDim L((bytes / 4) - 1)
         CopyMemory ByVal VarPtr(L(0)), ByVal VarPtr(b(0)), bytes
         varOut = L()
     ElseIf TypeName(varOut) = "Double()" Then
         If bytes Mod 8 <> 0 Then
-            sz = bytes + (bytes Mod 8)
+            sz = bytes + 8 - (bytes Mod 8)
             ReDim Preserve b(sz)
+            bytes = sz
         End If
         ReDim d((bytes / 8) - 1)
         CopyMemory ByVal VarPtr(d(0)), ByVal VarPtr(b(0)), bytes
         varOut = d()
     ElseIf TypeName(varOut) = "Currency()" Then
         If bytes Mod 8 <> 0 Then
-            sz = bytes + (bytes Mod 8)
+            sz = bytes + 8 - (bytes Mod 8)
             ReDim Preserve b(sz)
+            bytes = sz
         End If
         ReDim c((bytes / 8) - 1)
         CopyMemory ByVal VarPtr(c(0)), ByVal VarPtr(b(0)), bytes
