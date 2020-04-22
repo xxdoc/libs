@@ -45,16 +45,16 @@ Option Explicit
 'VB6 Wrapper by:  dzzie@yahoo.com  http://sandsprite.com
 'same license as libdasm
 
-'to make libdasm compatiable with vb6 compile as a dll and add following to top of libdasmn.c
+'to make libdasm compatiable with vb6 compile as a dll and add following to top of libdasm.c
 '  #define EXPORT comment(linker, "/EXPORT:"__FUNCTION__"="__FUNCDNAME__)
 '
 '  change following prototypes to stdcall and add #pragma EXPORT to first line of function body
-'       int __stdcall get_instruction(PINSTRUCTION inst, BYTE *addr, enum Mode mode)
-'       int __stdcall get_instruction_string(INSTRUCTION *inst, enum Format format, DWORD offset, char *string, int length)
+'       int __stdcall get_instruction
+'       int __stdcall get_instruction_string
 '       {
 '       #pragma EXPORT
 '
-'precompiled version is available at http://github.com/dzzie/libs/libdasm
+'precompiled version is available at https://github.com/dzzie/libs/tree/master/libdasm
 
 Private Type Operand
     operType As Long       ' Operand type (register, memory, etc) - enum Operand
@@ -153,7 +153,7 @@ Private Sub Form_Load()
     baseOffset = &H131C40
     
     b() = toBytes("8BFF 55 8BEC E8 06F4FFFF E8 11000000 5d c3")
-    
+   
     If AryIsEmpty(b) Then
         Text1 = "Failed to convert hex to bytes"
         Exit Sub
