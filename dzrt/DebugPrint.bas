@@ -30,19 +30,24 @@ Const DoDebugPrint As Boolean = True
 
 Private Function canStartServer() As Boolean
     Dim pth As String
+    
     pth = GetSetting("dbgWindow", "settings", "path", "")
     If Not FileExists(pth) Then Exit Function
+    
     Shell pth, vbNormalFocus
-    canStartServer = (Err.Number = 0)
-    Sleep 400
-    ValidateTargetHwnd
+    
+    If Err.Number = 0 Then
+        canStartServer = True
+        Sleep 400
+        ValidateTargetHwnd
+    End If
+    
 End Function
 
-Public Sub DebugPrint(vArgs)
-    ' Commas are allowed, but not semicolons.
-    '
+Public Sub DebugPrint(sMsg As String)
+
     If Not DoDebugPrint Then Exit Sub
-    '
+
     Static bErrorMessageShown As Boolean
     
     ValidateTargetHwnd
@@ -56,27 +61,9 @@ Public Sub DebugPrint(vArgs)
             End If
         End If
     End If
-    
-    '
-    Dim v       As Variant
-    Dim sMsg    As String
-    Dim bNext   As Boolean
-    
-    If IsArray(vArgs) Then
-        For Each v In vArgs
-            If bNext Then
-                sMsg = sMsg & Space$(8&)
-                sMsg = Left$(sMsg, (Len(sMsg) \ 8&) * 8&)
-            End If
-            bNext = True
-            sMsg = sMsg & CStr(v)
-        Next
-    Else
-        sMsg = CStr(vArgs)
-    End If
-    
-    '
+
     SendStringToAnotherWindow sMsg
+    
 End Sub
 
 Private Sub ValidateTargetHwnd()

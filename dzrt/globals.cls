@@ -116,20 +116,22 @@ Public zlib As New CZlib
 Public extCtl As New CExtControls
 
 Public Sub dbgPrint(ParamArray values() As Variant)
+
+    Dim v       As Variant
+    Dim sMsg    As String
+    Dim bNext   As Boolean
     
-    Dim i As Long, tmp()
-    
-    For i = 0 To UBound(values)
-        If IsNull(values(i)) Then
-            push tmp, "[Null]"
-        ElseIf IsObject(values(i)) Then
-            push tmp, "[Object:" & TypeName(values(i)) & "]"
-        Else
-            push tmp, values(i)
+    For Each v In values
+        If bNext Then
+            sMsg = sMsg & Space$(8&)
+            sMsg = Left$(sMsg, (Len(sMsg) \ 8&) * 8&)
         End If
+        bNext = True
+        sMsg = sMsg & CStr(v)
     Next
+
+    modDebugPrint.DebugPrint sMsg
     
-    modDebugPrint.DebugPrint tmp
 End Sub
 
 Public Sub dbgPrintf(ByVal msg As String, ParamArray values() As Variant)
@@ -155,6 +157,9 @@ Public Sub dbgClear()
      modDebugPrint.DebugPrint "<cls>"
 End Sub
 
+Public Sub dbgDiv()
+    modDebugPrint.DebugPrint "<div>"
+End Sub
 
 Function ExpandEnvStr(str) As String
 
