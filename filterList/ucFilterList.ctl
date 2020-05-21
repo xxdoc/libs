@@ -7,6 +7,12 @@ Begin VB.UserControl ucFilterList
    ClientWidth     =   7605
    ScaleHeight     =   6315
    ScaleWidth      =   7605
+   Begin VB.Timer tmrFilter 
+      Enabled         =   0   'False
+      Interval        =   400
+      Left            =   5880
+      Top             =   4440
+   End
    Begin VB.TextBox txtFilter 
       Height          =   330
       Left            =   540
@@ -56,6 +62,14 @@ Begin VB.UserControl ucFilterList
       BorderStyle     =   1
       Appearance      =   1
       NumItems        =   0
+   End
+   Begin VB.Image imgX 
+      Height          =   225
+      Left            =   2580
+      Picture         =   "ucFilterList.ctx":0000
+      Stretch         =   -1  'True
+      Top             =   4380
+      Width           =   165
    End
    Begin VB.Label Label1 
       Caption         =   "Filter"
@@ -123,7 +137,7 @@ Attribute VB_Exposed = False
 'site:    http://sandsprite.com
 'License: free for any use
 '
-'9.9.16 - added bold and color: to filter capabilities
+'note this version is not synced with the newest!
 
 Public AllowDelete As Boolean
 
@@ -140,11 +154,6 @@ Event DblClick()
 Event ItemClick(ByVal Item As MSComctlLib.ListItem)
 Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 
-Event ItemDeleted(Item As MSComctlLib.ListItem, ByRef cancel As Boolean) 'handle each item (like delete file or entry from db)
-Event BeforeDelete(ByRef cancel As Boolean) 'allows you to cancel
-Event DeletesComplete(count As Long) 'if multiselect=true..then you want to know when complete..
-Event UserHitReturnInFilter() 'allows user to "select" a single item in filter list by hitting return..
-
 #If 0 Then
     Dim x, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
 #End If
@@ -160,13 +169,19 @@ Property Let Locked(x As Boolean)
     txtFilter.Enabled = Not x
 End Property
     
-Sub setFont(Optional name As String = "tahoma", Optional size As Integer = 10)
-    On Error Resume Next
-    lv.Font.name = name
-    lvFilter.Font.name = name
-    lv.Font.size = size
-    lvFilter.Font.size = size
-End Sub
+Property Get SelCount() As Long
+    Dim v As ListView
+    Dim li As ListItem
+    Dim cnt As Long
+    
+    Set v = currentLV
+    For Each li In v.ListItems
+        If li.selected Then cnt = cnt + 1
+    Next
+    
+    SelCount = cnt
+    
+End Property
 
 Property Get selItems() As Collection
 
@@ -177,12 +192,11 @@ Property Get selItems() As Collection
     Set selItems = c
  
     For Each li In currentLV.ListItems
-        If li.Selected Then c.Add li
+        If li.selected Then c.Add li
     Next
     
 End Property
-
-
+    
 Property Get FilterColumn() As Long
     FilterColumn = m_FilterColumn
 End Property
@@ -205,10 +219,10 @@ Property Let FilterColumn(x As Long)
     
     'remove the visual marker that this is the filter column
     Set ch = lv.ColumnHeaders(m_FilterColumn)
-    ch.Text = Trim(Replace(ch.Text, "*", Empty))
+    ch.Text = trim(Replace(ch.Text, "*", Empty))
     
     Set ch = lvFilter.ColumnHeaders(m_FilterColumn)
-    ch.Text = Trim(Replace(ch.Text, "*", Empty))
+    ch.Text = trim(Replace(ch.Text, "*", Empty))
 
     'add the visual marker to the new column
     Set ch = lv.ColumnHeaders(x)
@@ -257,23 +271,10 @@ Property Let GridLines(x As Boolean)
     lvFilter.GridLines = x
 End Property
 
-Property Get selCount() As Long
-    Dim clv As ListView
-    Dim x As Long
-    
-    Set clv = currentLV
-    For i = 1 To clv.ListItems.count
-        If clv.ListItems(i).Selected Then x = x + 1
-    Next
-    
-    selCount = x
-    
-End Property
-
 'which ever one is currently displayed
 Property Get currentLV() As ListView
     On Error Resume Next
-    If lvFilter.Visible Then
+    If lvFilter.visible Then
         Set currentLV = lvFilter
     Else
         Set currentLV = lv
@@ -284,23 +285,19 @@ Property Get mainLV() As ListView
     Set mainLV = lv
 End Property
 
+
+'compatability with normal listview
+Property Get SelectedItem() As ListItem
+    Set SelectedItem = selItem
+End Property
+
 Property Get selItem() As ListItem
     On Error Resume Next
-    
-    If lvFilter.Visible Then
+    If lvFilter.visible Then
         Set selItem = lvFilter.SelectedItem
     Else
         Set selItem = lv.SelectedItem
     End If
-    
-    'there is no user selection, but only one filtered list entry
-    'this is as good as a user selection..
-    If lvFilter.Visible Then
-        If selItem Is Nothing And currentLV.ListItems.count = 1 Then
-            Set selItem = currentLV.ListItems(1)
-        End If
-    End If
-        
 End Property
 
 Property Get Filter() As String
@@ -325,7 +322,7 @@ Function AddItem(txt, ParamArray subItems()) As ListItem
         i = i + 1
     Next
     
-    txtFilter_Change
+    ApplyFilter
     
 End Function
 
@@ -344,7 +341,15 @@ Sub Clear()
     
     lv.ListItems.Clear
     lvFilter.ListItems.Clear
-    
+End Sub
+
+Sub SetFont(Name As String, Size As Long)
+    lv.font.Name = Name
+    lv.font.Size = Size
+    lvFilter.font.Name = Name
+    lvFilter.font.Size = Size
+    txtFilter.font.Name = Name
+    txtFilter.font.Size = Size
 End Sub
 
 Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
@@ -361,10 +366,10 @@ Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
         i = i + 1
         If InStr(t, "*") > 0 Then
             fc = i
-            t = Trim(Replace(t, "*", Empty))
+            t = trim(Replace(t, "*", Empty))
         End If
-        lv.ColumnHeaders.Add , , Trim(t)
-        lvFilter.ColumnHeaders.Add , , Trim(t)
+        lv.ColumnHeaders.Add , , trim(t)
+        lvFilter.ColumnHeaders.Add , , trim(t)
     Next
     
     If fc <> -1 Then FilterColumn = fc  'this sets the visual marker on the column if they specified it..
@@ -381,79 +386,74 @@ Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
         Next
     End If
     
-    UserControl_Resize
+End Sub
+
+Sub SelectAll(Optional selected As Boolean = True)
+    Dim v As ListView, li As ListItem
     
+    If Not Me.MultiSelect Then Exit Sub
+    If lv.visible Then Set v = lv Else Set v = lvFilter
+    
+    For Each li In v
+        li.selected = selected
+    Next
+        
+End Sub
+
+Private Sub imgX_Click()
+    txtFilter.Text = Empty
 End Sub
 
 Private Sub lv_KeyDown(KeyCode As Integer, Shift As Integer)
 
     Dim i As Long
-    Dim cancel As Boolean
-    Dim cnt As Long
+    Dim li As ListItem
     
     On Error Resume Next
     
     If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
-    
-        RaiseEvent BeforeDelete(cancel)
-        If cancel Then Exit Sub
-        
         For i = lv.ListItems.count To 1 Step -1
-            If lv.ListItems(i).Selected Then
-                cancel = False
-                RaiseEvent ItemDeleted(lv.ListItems(i), cancel)
-                If Not cancel Then
-                    lv.ListItems.Remove i
-                    cnt = cnt + 1
-                End If
-            End If
+            If lv.ListItems(i).selected Then lv.ListItems.Remove i
         Next
-        
-        If cnt > 0 Then RaiseEvent DeletesComplete(cnt)
-        
     End If
+    
+    If KeyCode = vbKeyA And Shift = 2 Then SelectAll 'ctrl-a
+    
+    If KeyCode = vbKeyC And Shift = 2 Then 'ctrl-C
+        Clipboard.Clear
+        Clipboard.SetText GetAllElements()
+    End If
+    
              
 End Sub
 
 Private Sub lvFilter_KeyDown(KeyCode As Integer, Shift As Integer)
-
     Dim i As Long
     Dim liMain As ListItem
-    Dim cancel As Boolean
-    Dim cnt As Long
     
     On Error Resume Next
     
     If m_Locked Then Exit Sub
     
     If KeyCode = vbKeyDelete And AllowDelete Then
-        
-        RaiseEvent BeforeDelete(cancel)
-        If cancel Then Exit Sub
-        
         For i = lvFilter.ListItems.count To 1 Step -1
-            If lvFilter.ListItems(i).Selected Then
+            If lvFilter.ListItems(i).selected Then
                 Set liMain = getMainListItemFor(lvFilter.ListItems(i))
-                If Not liMain Is Nothing Then
-                    cancel = False
-                    RaiseEvent ItemDeleted(liMain, cancel)
-                    If Not cancel Then
-                        lv.ListItems.Remove liMain.Index
-                        lvFilter.ListItems.Remove i
-                        cnt = cnt + 1
-                    End If
-                Else
-                    'this should not happen...just error checking..
-                End If
+                If Not liMain Is Nothing Then lv.ListItems.Remove liMain.Index
+                lvFilter.ListItems.Remove i
             End If
         Next
-        
-        If cnt > 0 Then RaiseEvent DeletesComplete(cnt)
-        
     End If
+    
+    If KeyCode = vbKeyA And Shift = 2 Then SelectAll 'ctrl-a
              
+    If KeyCode = vbKeyC And Shift = 2 Then 'ctrl-C
+        Clipboard.Clear
+        Clipboard.SetText GetAllElements()
+    End If
+    
 End Sub
 
 
@@ -497,7 +497,7 @@ Private Sub mnuFilterHelp_Click()
                 "on by seperating with commas. You can also\n" & _
                 "utilize a subtractive filter if the first \n" & _
                 "character in the textbox is a minus sign\n" & _
-                "Filter also understands: bold, color:red|blue|etc\n\n" & _
+                "Filter also understands: bold,selected, color:red|blue|etc\n\n" & _
                 "The FilterColumn is marked with an * this is \n" & _
                 "the column that is being searched. You can \n" & _
                 "modify it on the filter menu, or by entering\n" & _
@@ -524,7 +524,7 @@ Public Sub InvertSelection()
     If Not MultiSelect Then Exit Sub
     Dim li As ListItem
     For Each li In Me.currentLV.ListItems
-        li.Selected = Not li.Selected
+        li.selected = Not li.selected
     Next
 End Sub
 
@@ -541,7 +541,7 @@ Private Sub mnuToggleMulti_Click()
     Me.MultiSelect = Not lv.MultiSelect
 End Sub
 
-Private Function ColorConstantsToLong(ByVal s As String) As Long
+Function ColorConstantsToLong(ByVal s As String) As Long
     
     Dim c As ColorConstants
     s = LCase(s)
@@ -560,8 +560,22 @@ Private Function ColorConstantsToLong(ByVal s As String) As Long
     
 End Function
 
-Private Sub txtFilter_Change()
+Private Sub tmrFilter_Timer()
+    tmrFilter.Enabled = False
+    Call ApplyFilter
+End Sub
 
+'on huge lists it can take a while so let them finish typing first
+Private Sub txtFilter_Change()
+    If lv.ListItems.count > 100 Then
+        tmrFilter.Enabled = False 'reset the timer it will apply once they pause and wait
+        tmrFilter.Enabled = True
+    Else
+        ApplyFilter
+    End If
+End Sub
+
+Sub ApplyFilter()
     Dim li As ListItem
     Dim t As String
     Dim useSubtractiveFilter As Boolean
@@ -582,7 +596,6 @@ Private Sub txtFilter_Change()
         If IsNumeric(t) Then GoTo hideExit 'they are going to change the FilterColumn on "cmdline"
     End If
     
-    
     If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
         If Len(txtFilter) = 1 Then GoTo hideExit
         If VBA.Right(txtFilter, 1) = "," Then Exit Sub 'they are adding more criteria
@@ -591,7 +604,7 @@ Private Sub txtFilter_Change()
     'should multiple (csv) filters only apply on hitting return?
     'so you can see full list to work off of?
     
-    lvFilter.Visible = True
+    lvFilter.visible = True
     lvFilter.ListItems.Clear
     Set indexMapping = New Collection
     
@@ -626,7 +639,9 @@ Private Sub txtFilter_Change()
          
          addit = False
          If txtFilter = "bold" Then
-            If li.Bold = True Then addit = True
+            If li.bold = True Then addit = True
+         ElseIf txtFilter = "selected" Then
+            If li.selected = True Then addit = True
          ElseIf isColor Then
             If li.ForeColor = lColor Then addit = True
          Else
@@ -659,20 +674,23 @@ Private Sub txtFilter_Change()
 Exit Sub
 
 hideExit:
-            lvFilter.Visible = False
+            lvFilter.visible = False
             Exit Sub
             
     
 End Sub
 
-
 Sub CloneListItemTo(li As ListItem, lv As ListView)
     Dim li2 As ListItem, i As Integer
+    
     Set li2 = lv.ListItems.Add(, , li.Text)
+    
     For i = 1 To lv.ColumnHeaders.count - 1
         li2.subItems(i) = li.subItems(i)
     Next
+    
     If li.ForeColor <> vbBlack Then SetLiColor li2, li.ForeColor
+    If li.selected Then li2.selected = True
     
     On Error Resume Next
     If IsObject(li.Tag) Then
@@ -764,11 +782,9 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
                 If IsNumeric(t) Then
                     FilterColumn = CLng(t)
                     Filter = Empty
-                    Exit Sub
                 End If
             End If
         End If
-        RaiseEvent UserHitReturnInFilter
     End If
             
 End Sub
@@ -776,7 +792,7 @@ End Sub
 Private Sub UserControl_Initialize()
     m_FilterColumn = -1
     m_FilterColumnPreset = -1
-    mnuAlertColWidths.Visible = isIde()
+    mnuAlertColWidths.visible = isIde()
 End Sub
 
 Private Sub UserControl_Resize()
@@ -787,7 +803,9 @@ Private Sub UserControl_Resize()
         lv.Width = .Width
         lv.Height = .Height - txtFilter.Height - 300
         txtFilter.Top = .Height - txtFilter.Height - 150
-        txtFilter.Width = .Width - txtFilter.Left '- lblTools.Width - 100
+        txtFilter.Width = .Width - txtFilter.Left - imgX.Width '- lblTools.Width - 100
+        imgX.Top = txtFilter.Top
+        imgX.Left = txtFilter.Width + txtFilter.Left ' 100
         'lblTools.Left = .Width - lblTools.Width
         Label1.Top = txtFilter.Top + 30
         'lblTools.Top = txtFilter.Top + 30
@@ -812,7 +830,7 @@ Public Sub ColumnSort(Column As ColumnHeader)
     On Error Resume Next
     
     Set ListViewControl = lv
-    If lvFilter.Visible Then Set ListViewControl = lvFilter
+    If lvFilter.visible Then Set ListViewControl = lvFilter
         
     With ListViewControl
        If .SortKey <> Column.Index - 1 Then
@@ -825,7 +843,7 @@ Public Sub ColumnSort(Column As ColumnHeader)
               .SortOrder = lvwAscending
              End If
        End If
-       .Sorted = -1
+       .sorted = -1
     End With
     
 End Sub
@@ -839,7 +857,7 @@ Public Function GetAllElements(Optional selectedOnly As Boolean = False) As Stri
     On Error Resume Next
     
     Set ListViewControl = lv
-    If lvFilter.Visible Then Set ListViewControl = lvFilter
+    If lvFilter.visible Then Set ListViewControl = lvFilter
         
     For i = 1 To ListViewControl.ColumnHeaders.count
         tmp = tmp & ListViewControl.ColumnHeaders(i).Text & vbTab
@@ -851,7 +869,7 @@ Public Function GetAllElements(Optional selectedOnly As Boolean = False) As Stri
     For Each li In ListViewControl.ListItems
     
         If selectedOnly Then
-            If Not li.Selected Then GoTo nextone
+            If Not li.selected Then GoTo nextone
         End If
             
         tmp = li.Text & vbTab
@@ -875,18 +893,18 @@ Function GetAllText(Optional subItemRow As Long = 0, Optional selectedOnly As Bo
     On Error Resume Next
     
     Set ListViewControl = lv
-    If lvFilter.Visible Then Set ListViewControl = lvFilter
+    If lvFilter.visible Then Set ListViewControl = lvFilter
     
     For i = 1 To ListViewControl.ListItems.count
         If subItemRow = 0 Then
             x = ListViewControl.ListItems(i).Text
-            If selectedOnly And Not ListViewControl.ListItems(i).Selected Then x = Empty
+            If selectedOnly And Not ListViewControl.ListItems(i).selected Then x = Empty
             If Len(x) > 0 Then
                 push tmp, x
             End If
         Else
             x = ListViewControl.ListItems(i).subItems(subItemRow)
-            If selectedOnly And Not ListViewControl.ListItems(i).Selected Then x = Empty
+            If selectedOnly And Not ListViewControl.ListItems(i).selected Then x = Empty
             If Len(x) > 0 Then
                 push tmp, x
             End If
@@ -917,15 +935,3 @@ Private Sub UserControl_Terminate()
     m_Locked = False
     Me.Clear
 End Sub
-
-
-
-
-
-
-
-
-
-
-
-

@@ -20,7 +20,7 @@ Private Declare Function NtAllocateVirtualMemory Lib "ntdll.dll" (ByVal ProcHand
 Private Declare Function RtlCompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, ByVal UNKNOWN_PARAMETER As Long, OutputSize As Long, ByVal WorkSpace As Long) As Long
 Private Declare Function RtlDecompressBuffer Lib "NTDLL" (ByVal flags As Integer, ByVal BuffUnCompressed As Long, ByVal UnCompSize As Long, ByVal BuffCompressed As Long, ByVal CompBuffSize As Long, OutputSize As Long) As Long
 Private Declare Function NtFreeVirtualMemory Lib "ntdll.dll" (ByVal ProcHandle As Long, BaseAddress As Long, regionsize As Long, ByVal flags As Long) As Long
-Public Declare Sub CopyMemory_ Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
+Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Function GetModuleHandle Lib "kernel32" Alias "GetModuleHandleA" (ByVal lpModuleName As String) As Long
  
 Public hUTypes As Long
@@ -259,9 +259,9 @@ Public Function RTLDeCompress(ByRef bytBuf() As Byte, BitOut() As Byte, Optional
     
 End Function
 
- Sub CopyMemory(Destination As Long, Source As Long, ByVal Length As Long)
-     CopyMemory_ ByVal Destination, ByVal Source, Length
- End Sub
+' Sub CopyMemory(Destination As Long, Source As Long, ByVal Length As Long)
+'     CopyMemory_ ByVal Destination, ByVal Source, Length
+' End Sub
  
 'this function will convert any of the following to a byte array:
 '   read a file if path supplied and allowFilePaths = true
@@ -275,7 +275,7 @@ Function LoadData(fileStringOrByte, Optional allowFilePaths As Boolean = True) A
     Dim f As Long
     Dim size As Long
     Dim b() As Byte
-    Dim l() As Long    ' must cast to specific array type or
+    Dim L() As Long    ' must cast to specific array type or
     Dim i() As Integer ' else you are reading part of the variant structure..
     
     If allowFilePaths And FileExists(fileStringOrByte) Then
@@ -289,11 +289,11 @@ Function LoadData(fileStringOrByte, Optional allowFilePaths As Boolean = True) A
     ElseIf TypeName(fileStringOrByte) = "Integer()" Then
         i() = fileStringOrByte
         ReDim b((UBound(i) * 2) - 1)
-        CopyMemory VarPtr(b(0)), VarPtr(i(0)), UBound(b) + 1
+        CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(i(0)), UBound(b) + 1
     ElseIf TypeName(fileStringOrByte) = "Long()" Then
-        l() = fileStringOrByte
-        ReDim b((UBound(l) * 4) - 1)
-        CopyMemory VarPtr(b(0)), VarPtr(l(0)), UBound(b) + 1
+        L() = fileStringOrByte
+        ReDim b((UBound(L) * 4) - 1)
+        CopyMemory ByVal VarPtr(b(0)), ByVal VarPtr(L(0)), UBound(b) + 1
     Else
         b() = StrConv(CStr(fileStringOrByte), vbFromUnicode, LANG_US)
     End If
@@ -410,7 +410,7 @@ ret0:
 End Function
 
 
-'supports %x, %c, %s, %d, %10d \t \n %%
+'supports %x, %c, %s, %d, %10d \t \n %% %-20s
 Function printf(ByVal msg As String, vars() As Variant) As String
 
     Dim t
@@ -451,6 +451,7 @@ Private Function HandleMarker(base, ByVal marker, var) As String
     Dim spacer As String
     Dim prefix As String
     Dim count As Long
+    Dim leftJustify As Boolean
     
     If Len(base) > Len(marker) Then
         newBase = Mid(base, Len(marker) + 1) 'remove the marker..
@@ -471,6 +472,10 @@ Private Function HandleMarker(base, ByVal marker, var) As String
     
     If Len(marker) > 1 Then 'it has some more formatting involved..
         marker = Mid(marker, 1, Len(marker) - 1) 'trim off type
+        If Left(marker, 1) = "-" Then
+            leftJustify = True
+            marker = Mid(marker, 2)  'trim off left justify marker
+        End If
         If Left(marker, 1) = "0" Then
             spacer = "0"
             marker = Mid(marker, 2)
@@ -481,8 +486,12 @@ Private Function HandleMarker(base, ByVal marker, var) As String
         If count > 0 Then prefix = String(count, spacer)
     End If
     
-    HandleMarker = prefix & nVal & newBase
-            
+    If leftJustify Then
+        HandleMarker = nVal & prefix & newBase
+    Else
+        HandleMarker = prefix & nVal & newBase
+    End If
+    
 End Function
 
 Private Function ExtractSpecifier(v)

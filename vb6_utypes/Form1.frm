@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   3855
    ScaleWidth      =   7980
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command3 
+      Caption         =   "Command3"
+      Height          =   375
+      Left            =   300
+      TabIndex        =   3
+      Top             =   3360
+      Width           =   855
+   End
    Begin VB.CommandButton Command2 
       Caption         =   "vc rand"
       Height          =   375
@@ -64,6 +72,7 @@ Enum op
     op_lt = 11
     op_gteq = 12
     op_lteq = 13
+    op_rol32 = 14
 End Enum
 
 Enum modes
@@ -101,6 +110,9 @@ Private Declare Function rand Lib "utypes.dll" Alias "vc_rand" () As Long
 
 Private Declare Function crc64s Lib "utypes.dll" (ByVal wStrPtr As Long, Optional asciiOnly As Long = 1) As Currency
 Private Declare Function crc64 Lib "utypes.dll" (ByRef stream As Byte, ByVal sz As Long) As Currency
+
+Private Declare Function entropy Lib "utypes.dll" (ByRef stream As Byte, ByVal sz As Long) As Double
+
 
 Private Sub Command1_Click()
     On Error Resume Next
@@ -143,6 +155,20 @@ Private Sub Command2_Click()
     For i = 0 To 25
         List1.AddItem Hex(rand())
     Next
+End Sub
+
+Private Sub Command3_Click()
+    Dim i(), x, j, k As Long
+    
+    List1.Clear
+    i = Array(1, 2, 4, &HA, &HFFFFFFFF)
+    For j = 1 To 2
+        For Each x In i
+            k = ULong(x, j, op_rol32)
+            List1.AddItem "ULong(" & x & "," & j & ", op_rol32) = " & Hex(k)
+        Next
+    Next
+    
 End Sub
 
 Private Sub Form_Load()
@@ -195,7 +221,14 @@ Private Sub Form_Load()
     d = crc64(b(0), UBound(b) + 1)
     List1.AddItem "crc64(" & s & ") = " & Get64(d)
     
- 
+    Dim ee As Double, bb() As Byte
+    bb = StrConv("AAAAA", vbFromUnicode) 'String(100, "A") 'these match a pure C test
+    ee = entropy(bb(0), UBound(bb) + 1)
+    List1.AddItem "entropy(AAAAA) = " & ee
+    
+    bb = StrConv("abcdefghijklmnop", vbFromUnicode)
+    ee = entropy(bb(0), UBound(bb) + 1)
+    List1.AddItem "entropy(abcdefghijklmnop) = " & ee
     
     
 End Sub

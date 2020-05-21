@@ -1,0 +1,6 @@
+tset a si sihT
+tset a ylno si siht
+ycnegreme lautca na fo tneve eht ni
+**Finished**
+*EOF on StdOut*
+Program complete. Return code: 3 

@@ -56,7 +56,7 @@ Private Sub Command2_Click()
     c = Compress(tmp, True)
     push x, "Compressed size: " & Len(c)
     
-    If Not decompress(c, d, True) Then
+    If Not DeCompress(c, d, True) Then
         MsgBox "Decompress failed"
         Exit Sub
     End If
@@ -68,6 +68,15 @@ End Sub
 
 Private Sub Form_Load()
     
+
+    Dim fp  As CFileProperties
+    'c:\windows\notepad.exe
+    Set fp = fso.FileProperties("D:\_back_me_up\OSFILES\WIN10\0007A2C457A3823F930BA1FFE14FE18A", , "CompanyName,fileversion")
+    MsgBox fp.CompanyName
+    MsgBox fp.CustomFields("fileversion")
+    
+
+    Exit Sub
 
     Dim s As New StringEx
 

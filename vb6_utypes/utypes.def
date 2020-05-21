@@ -19,3 +19,4 @@ LIBRARY UTypes
 		vc_rand
 		crc64
 		crc64s
+		entropy

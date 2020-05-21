@@ -1,0 +1,9 @@
+Private Sub Form_Load()
+  Debug.Print HtmlToText("<html><body><p>Some HTML to be Parsed</p></body></html>")
+End Sub
+
+Function HtmlToText(sHTML As String) As String
+  With CreateObject("htmlfile")
+    .write sHTML: HtmlToText = .body.innerText
+  End With
+End Function

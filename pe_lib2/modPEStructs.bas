@@ -45,15 +45,15 @@ End Type
 
 Public Type IMAGE_IMPORT_DIRECTORY
     pFuncAry As Long
-    timeStamp As Long
+    timestamp As Long
     forwarder As Long
     pDllName As Long
     pThunk As Long
 End Type
 
 Public Type IMAGE_SECTION_HEADER
-    nameSec As String * 6
-    PhisicalAddress As Integer
+    nameSec As String * 8
+    'PhisicalAddress As Integer bugfix 3.17.20
     VirtualSize As Long
     VirtualAddress As Long
     SizeOfRawData As Long
@@ -77,7 +77,7 @@ End Type
 
 Public Type IMAGE_DATA_DIRECTORY
     VirtualAddress As Long
-    Size As Long
+    size As Long
 End Type
 
 
@@ -186,7 +186,7 @@ End Type
 
 Public Type RESOURCE_DATAENTRY
    Data_RVA As Long
-   Size As Long
+   size As Long
    CodePage As Long
    Reserved As Long
 End Type
@@ -234,14 +234,14 @@ Function GetHextxt(t As TextBox, v As Long) As Boolean
     
 End Function
 
-Function timeStampToDate(timeStamp As Long) As String
+Function timeStampToDate(timestamp As Long) As String
 
     On Error Resume Next
     Dim base As Date
     Dim compiled As Date
     
     base = DateSerial(1970, 1, 1)
-    compiled = DateAdd("s", timeStamp, base)
+    compiled = DateAdd("s", timestamp, base)
     timeStampToDate = "GMT: " & Format(compiled, "ddd mmm d h:nn:ss yyyy")
 
 End Function

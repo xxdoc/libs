@@ -106,7 +106,7 @@ tryAgain:
         Case 4: Exit Function
     End Select
     
-    pType = IIf(try = 0, PROV_RSA_AES, PROV_RSA_FULL)
+    pType = IIf(try < 2, PROV_RSA_AES, PROV_RSA_FULL)
     
     If Not CBool(CryptAcquireContext(CryptoProvider, ByVal sContainer, ByVal sProvider, pType, CRYPT_VERIFYCONTEXT)) Then
         sContainer = vbNullChar

@@ -1,0 +1,6 @@
+    Private Function ShiftRight8(ByVal Value As Long) As Long
+        Dim TopBit As Boolean
+        TopBit = Value And &H80000000
+        ShiftRight8 = (Value And &H7FFFFFFF) \ 256
+        If TopBit Then ShiftRight8 = ShiftRight8 Or &H800000
+    End Function

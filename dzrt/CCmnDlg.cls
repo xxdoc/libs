@@ -29,7 +29,7 @@ Private Type OPENFILENAME
     nMaxFileTitle As Long
     lpstrInitialDir As String
     lpstrTitle As String
-    flags As Long
+    Flags As Long
     nFileOffset As Integer
     nFileExtension As Integer
     lpstrDefExt As String
@@ -44,7 +44,7 @@ Private Type oColorDlg
     hInstance As Long
     rgbResult As Long
     lpCustColors As String
-    flags As Long
+    Flags As Long
     lCustData As Long
     lpfnHook As Long
     lpTemplateName As String
@@ -94,6 +94,13 @@ Private filt As FilterTypes
 Private lastDir As String
 
 #If isDZRT Then
+
+    Function ColorPicker(ByRef outColor As OLE_COLOR, Optional initColor As OLE_COLOR = vbBlack) As Boolean
+        Dim f As New frmColorPicker
+        ColorPicker = f.Init(initColor, outColor)
+        Unload f
+    End Function
+    
     Function FolderDialog2(Optional ByVal initDir = "") As String
         If Len(initDir) <> 0 Then lastDir = initDir
         If FileExists(initDir) Then initDir = GetParentFolder(initDir)
@@ -105,9 +112,9 @@ Private lastDir As String
     End Function
 #End If
 
-Property Let Filter(x As FilterTypes)
-    If x < 0 Or x > 5 Then x = 5
-    filt = x
+Property Let Filter(X As FilterTypes)
+    If X < 0 Or X > 5 Then X = 5
+    filt = X
 End Property
 
 Property Get Filter() As FilterTypes
@@ -160,7 +167,7 @@ Function OpenDialog(Optional initDir = "", Optional title = "Open File") As Stri
     o.nMaxFileTitle = 255
     o.lpstrInitialDir = lastDir
     o.lpstrTitle = CStr(title)
-    o.flags = 0
+    o.Flags = 0
 
     OpenDialog = IIf(GetOpenFileName(o), trim$(o.lpstrFile), "")
     OpenDialog = Replace(OpenDialog, Chr(0), Empty)
@@ -180,7 +187,7 @@ Function OpenMulti(Optional initDir = "", Optional title = "Open File") As Colle
     Dim lIndex As Long, lStart As Long
     
     With tOPENFILENAME
-        .flags = OFN_ALLOWMULTISELECT Or OFN_EXPLORER Or OFN_FILEMUSTEXIST Or OFN_LONGNAMES
+        .Flags = OFN_ALLOWMULTISELECT Or OFN_EXPLORER Or OFN_FILEMUSTEXIST Or OFN_LONGNAMES
         .hWndOwner = GetForegroundWindow()
         .nMaxFile = 2048
         .lpstrFilter = filters(filt)
@@ -211,9 +218,17 @@ Function OpenMulti(Optional initDir = "", Optional title = "Open File") As Colle
      
 End Function
 
-Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optional title = "Save File") As String
+Function SaveDialog(Optional ByVal defaultFileName = "", Optional initDir = "", Optional title = "Save File") As String
     
-    If Len(initDir) <> 0 Then lastDir = initDir
+    If IsMissing(defaultFileName) Then defaultFileName = ""
+    
+    If Len(initDir) <> 0 Then
+        lastDir = initDir
+    Else
+        If Len(defaultFileName) > 0 And InStr(defaultFileName, "\") > 0 Then
+            lastDir = GetParentFolder(defaultFileName)
+        End If
+    End If
     
     o.lStructSize = Len(o)
     o.hWndOwner = GetForegroundWindow()
@@ -226,7 +241,7 @@ Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optio
     o.lpstrInitialDir = lastDir
     o.lpstrTitle = CStr(title)
     o.lpstrDefExt = extensions(filt)
-    o.flags = 0
+    o.Flags = 0
     
     If Len(defaultFileName) > 0 Then
         o.lpstrFile = CStr(defaultFileName) & Space$(254)
@@ -257,7 +272,7 @@ Function ColorDialog() As Long
     c.hWndOwner = GetForegroundWindow()
     c.hInstance = App.hInstance
     c.lpCustColors = StrConv(cColors, vbUnicode, LANG_US)
-    c.flags = 0
+    c.Flags = 0
 
     If ChooseColor(c) <> 0 Then
         ColorDialog = c.rgbResult
@@ -312,9 +327,9 @@ End Function
 
 Private Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
-  Dim x
+  Dim X
   
-    x = UBound(ary)
+    X = UBound(ary)
     AryIsEmpty = False
   Exit Function
 oops: AryIsEmpty = True

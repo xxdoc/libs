@@ -190,18 +190,18 @@ Function CreateFolder(path As String) As Boolean
 blah:
 End Function
 
-Function FileNameFromPath(fullpath As String) As String
+Function FileNameFromPath(FullPath As String) As String
     Dim tmp() As String
-    If InStr(fullpath, "\") > 0 Then
-        tmp = Split(fullpath, "\")
+    If InStr(FullPath, "\") > 0 Then
+        tmp = Split(FullPath, "\")
         FileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
 
-Function WebFileNameFromPath(fullpath As String)
+Function WebFileNameFromPath(FullPath As String)
     Dim tmp() As String
-    If InStr(fullpath, "/") > 0 Then
-        tmp = Split(fullpath, "/")
+    If InStr(FullPath, "/") > 0 Then
+        tmp = Split(FullPath, "/")
         WebFileNameFromPath = CStr(tmp(UBound(tmp)))
     End If
 End Function
@@ -226,23 +226,25 @@ hadErr:
 DeleteFile = False
 End Function
 
-Sub Rename(fullpath As String, newName As String)
+Sub Rename(FullPath As String, newName As String)
   Dim pf As String
-  pf = GetParentFolder(fullpath)
-  Name fullpath As pf & "\" & newName
+  pf = GetParentFolder(FullPath)
+  Name FullPath As pf & "\" & newName
 End Sub
 
 Sub SetAttribute(fpath, it As VbFileAttribute)
    SetAttr fpath, it
 End Sub
 
+'always returns lcase
 Function GetExtension(path) As String
     Dim tmp() As String
     Dim ub As String
+    If Len(path) = 0 Then Exit Function
     tmp = Split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
-       GetExtension = Mid(ub, InStrRev(ub, "."), Len(ub))
+       GetExtension = LCase(Mid(ub, InStrRev(ub, "."), Len(ub)))
     Else
        GetExtension = ""
     End If
@@ -251,6 +253,7 @@ End Function
 Function GetBaseName(path As String) As String
     Dim tmp() As String
     Dim ub As String
+    If Len(path) = 0 Then Exit Function
     tmp = Split(path, "\")
     ub = tmp(UBound(tmp))
     If InStr(1, ub, ".") > 0 Then
@@ -260,16 +263,21 @@ Function GetBaseName(path As String) As String
     End If
 End Function
 
+'can also just accept a file name
 Function ChangeExt(path As String, ext As String)
-    Dim bn As String
-    ext = IIf(Left(ext, 1) = ".", ext, "." & ext)
-    If FileExists(path) Then
-        Rename path, GetBaseName(path) & ext
-    Else
-        'hack to just accept a file name might not be worth supporting
-        bn = Mid(path, 1, InStr(1, path, ".") - 1)
-        ChangeExt = bn & ext
+    Dim newPath As String
+    
+    If Left(ext, 1) <> "." Then ext = "." & ext
+    newPath = GetBaseName(path) & ext
+    
+    If LCase(path) <> LCase(newPath) Then
+        If FileExists(path) Then
+            Rename path, newPath
+        End If
     End If
+    
+    ChangeExt = newPath
+
 End Function
 
 Function SafeFileName(proposed As String) As String
@@ -492,6 +500,7 @@ End Function
 
 Function FolderName(folderPath) As String
     Dim ret As String, tmp() As String
+    If Len(folderPath) = 0 Then Exit Function
     tmp = Split(folderPath, "\")
     If Not AryIsEmpty(tmp) Then
         If Len(tmp(UBound(tmp))) <> 0 Then ret = tmp(UBound(tmp)) _

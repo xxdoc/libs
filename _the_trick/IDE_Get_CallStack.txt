@@ -1,0 +1,36 @@
+Option Explicit
+'
+Private Declare Function EbSetMode Lib "vba6" (ByVal Mode As Long) As Long
+Private Declare Function EbGetCallstackCount Lib "vba6" (ByRef Count As Long) As Long
+Private Declare Function EbGetCallstackFunction Lib "vba6" (ByVal Index As Long, P As Any, M As Any, F As Any, Ret As Long) As Long
+'
+
+Private Sub Command1_Click()
+    Test1
+End Sub
+
+Private Sub Test1()
+    Test2
+End Sub
+
+Private Function Test2()
+    MsgBox GetCallStack
+End Function
+
+Private Function GetCallStack() As String
+    Dim Ct As Long
+    Dim i As Long
+    Dim c As Long
+    Dim prj As String
+    Dim mdl As String
+    Dim func As String
+    '
+    EbSetMode 2
+    EbGetCallstackCount Ct
+    For i = Ct - 1 To 0 Step -1
+        EbGetCallstackFunction i, ByVal VarPtr(prj), ByVal VarPtr(mdl), ByVal VarPtr(func), c
+        GetCallStack = GetCallStack & prj & "." & mdl & "." & func & vbNewLine
+    Next
+    EbSetMode 1
+End Function
+

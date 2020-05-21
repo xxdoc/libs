@@ -52,8 +52,8 @@ Public Type IMAGE_IMPORT_DIRECTORY
 End Type
 
 Public Type IMAGE_SECTION_HEADER
-    nameSec As String * 6
-    PhisicalAddress As Integer
+    nameSec As String * 8
+    'PhisicalAddress As Integer 'bugfix 3.17.20 dang..20yr bug
     VirtualSize As Long
     VirtualAddress As Long
     SizeOfRawData As Long
@@ -153,14 +153,14 @@ End Function
 
 
 
-Sub push(ary, value) 'this modifies parent ary object
+Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Long
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 Function GetHextxt(t As TextBox, v As Long) As Boolean

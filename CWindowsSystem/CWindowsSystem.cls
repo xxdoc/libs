@@ -10,7 +10,7 @@ Attribute VB_Name = "CWindowsSystem"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Private Type sockaddr_in
     sin_family As Integer
     sin_port As Integer
@@ -53,8 +53,8 @@ Private Declare Function WSAIoctl Lib "ws2_32.dll" (ByVal s As Long, ByVal dwIoC
 Private Declare Sub CopyMemory2 Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, ByVal pSrc As Long, ByVal ByteLen As Long)
 Private Declare Function WSAStartup Lib "ws2_32.dll" (ByVal wVR As Long, lpWSAD As WSAData) As Long
 
-Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
-Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpszOp As String, ByVal lpszFile As String, ByVal lpszParams As String, ByVal LpszDir As String, ByVal FsShowCmd As Long) As Long
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpszOp As String, ByVal lpszFile As String, ByVal lpszParams As String, ByVal LpszDir As String, ByVal FsShowCmd As Long) As Long
 
 Private Declare Function Wow64DisableWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
 Private Declare Function Wow64RevertWow64FsRedirection Lib "kernel32.dll" (ByRef old As Long) As Long
@@ -125,7 +125,7 @@ End Enum
 Private Type SHELLEXECUTEINFO
         cbSize        As Long
         fMask         As Long
-        hWnd          As Long
+        hwnd          As Long
         lpVerb        As String
         lpFile        As String
         lpParameters  As String
@@ -158,6 +158,10 @@ Public Enum EShellShowConstants
 End Enum
 
 Private Declare Function RtlGetVersion Lib "NTDLL" (ByRef lpVersionInformation As Long) As Long
+
+Function ShowManualCopyForm()
+    Form1.Show
+End Function
 
 Function GetWindowsVersion(Optional includeBuild As Boolean = False) As String
     Dim tOSVw(&H54) As Long
@@ -192,11 +196,11 @@ Public Function GetWindowsVersionName() As String
 End Function
 
 
-Function ChildWindows(Optional hWnd As Long = 0, Optional classNameFilter As String) As Collection  'of CWindow
+Function ChildWindows(Optional hwnd As Long = 0, Optional classNameFilter As String) As Collection  'of CWindow
     
     Set modMain.ChildWindows = New Collection
     modMain.classFilter = classNameFilter
-    x = modMain.EnumChildWindows(0, AddressOf modMain.EnumChildProc, ByVal 0&)
+    x = modMain.EnumChildWindows(hwnd, AddressOf modMain.EnumChildProc, ByVal 0&)
     Set ChildWindows = modMain.ChildWindows
 
 End Function
@@ -272,7 +276,7 @@ Public Function RunElevated(ByVal FilePath As String, Optional ShellShowType As 
         .nShow = ShellShowType              ' How the program will be displayed
         .lpDirectory = PathGetFolder(FilePath)
         .lpParameters = EXEParameters       ' Each parameter must be separated by space. If the lpFile member specifies a document file, lpParameters should be NULL.
-        .hWnd = hWndOwner                   ' Owner window handle
+        .hwnd = hWndOwner                   ' Owner window handle
         .lpVerb = "runas"
     End With
 

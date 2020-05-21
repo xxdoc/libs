@@ -26,6 +26,7 @@ Enum op
     op_lt = 11
     op_gteq = 12
     op_lteq = 13
+    op_rol32 = 14
 End Enum
 
 Enum modes
@@ -135,20 +136,20 @@ Property Get hi() As Long
     GetLongs hi
 End Property
 
-Property Let hi(x As Long)
+Property Let hi(X As Long)
     Dim a As Long, b As Long
     GetLongs a, b
-    SetLongs x, b
+    SetLongs X, b
 End Property
 
 Property Get lo() As Long
     GetLongs , lo
 End Property
 
-Property Let lo(x As Long)
+Property Let lo(X As Long)
     Dim a As Long, b As Long
     GetLongs a, b
-    SetLongs a, x
+    SetLongs a, X
 End Property
 
 Function toString(Optional m As modes = mHex) As String
@@ -234,13 +235,7 @@ End Function
 
 
 Private Sub Class_Initialize()
-'    hLib = LoadLibrary("UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\System32\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
-'    If ensureUTypes() Then hLib = modGeneral.hUTypes
+    If ensureUTypes() Then hLib = modGeneral.hUtypes
     padLeft = False
     useTick = True
 End Sub
@@ -309,3 +304,8 @@ Function lessThanEqual(operand2) As Boolean
     Set a = raw_op(operand2, op_lteq)
     lessThanEqual = Not (a.rawValue = 0)
 End Function
+
+Function rol32(operand2) As ULong64
+    Set rol32 = raw_op(operand2, op_rol32)
+End Function
+

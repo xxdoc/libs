@@ -15,6 +15,7 @@ Option Explicit
 
 Public name As String      'in case instances get held in a collection or want to be named
 Public filePath As String
+Public lastErr As String
 
 Private m_size As Long
 Private fHandle As Long
@@ -135,7 +136,7 @@ Function toHexString() As String
     
 End Function
 
-Function fromHexString(str, Optional errMsg) As Boolean
+Function fromHexString(str) As Boolean
     
     Dim b() As Byte
     Dim i As Long, j As Long
@@ -143,9 +144,9 @@ Function fromHexString(str, Optional errMsg) As Boolean
     
     On Error GoTo hell
         
-    errMsg = Empty
+    lastErr = Empty
     If Len(str) Mod 2 <> 0 Then
-        errMsg = "String length must be divisible by 2"
+        lastErr = "String length must be divisible by 2"
         Exit Function
     End If
     
@@ -161,7 +162,7 @@ Function fromHexString(str, Optional errMsg) As Boolean
     fromHexString = True
     
     Exit Function
-hell: errMsg = "CharPos: " & i & " " & Err.Description
+hell: lastErr = "CharPos: " & i & " " & Err.Description
 End Function
 
 Function toBytes() As Byte()
@@ -283,14 +284,14 @@ End Sub
 'format specifiers (case insensitive)
 '   b = byte, l = long, i = int, c = currency, numeric val = blob size
 
-Function AddFields(formatString As String, Optional errMsg, Optional reset As Boolean = True, Optional ByVal name As String) As Boolean
+Function AddFields(ByVal formatString As String, Optional reset As Boolean = True, Optional ByVal name As String) As Boolean
     Dim f() As String, ff, t() As String, size As Long
     Dim ft As ms_fieldType, sf As CStructField
     
     On Error Resume Next
     
     Me.name = name
-    errMsg = Empty
+    lastErr = Empty
     f = Split(formatString, ",")
     
     If reset Then
@@ -303,12 +304,12 @@ Function AddFields(formatString As String, Optional errMsg, Optional reset As Bo
         t() = Split(ff, "*")
         
         If Len(t(0)) = 0 Then
-            errMsg = "No field name specified" 'for index?
+            lastErr = "No field name specified" 'for index?
             Exit Function
         End If
         
         If UBound(t) = 0 Then
-            errMsg = "field " & ff & " no type"
+            lastErr = "field " & ff & " no type"
             Exit Function
         End If
         
@@ -316,7 +317,7 @@ Function AddFields(formatString As String, Optional errMsg, Optional reset As Bo
             ft = msf_blob
             size = CLng(t(1))
             If size = 0 Then
-                errMsg = "Blob type can not have size 0"
+                lastErr = "Blob type can not have size 0"
                 Exit Function
             End If
         Else
@@ -329,7 +330,7 @@ Function AddFields(formatString As String, Optional errMsg, Optional reset As Bo
         End If
         
         If ft = 0 Then
-            errMsg = "Unknown type '" & t(1) & "' for field " & t(0)
+            lastErr = "Unknown type '" & t(1) & "' for field " & t(0)
             Exit Function
         End If
         
@@ -339,7 +340,7 @@ Function AddFields(formatString As String, Optional errMsg, Optional reset As Bo
         fields.Add sf, t(0)
         
         If Err.Number <> 0 Then 'todo get exact err number..
-            errMsg = "Duplicate field name? '" & t(0) & "'"
+            lastErr = "Duplicate field name? '" & t(0) & "'"
             Exit Function
         End If
     

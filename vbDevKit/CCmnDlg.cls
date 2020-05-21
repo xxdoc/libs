@@ -212,8 +212,12 @@ Private Sub Class_Initialize()
     extensions(4) = "bin"
     
     filt = AllFiles
-    lastDir = GetSpecialFolder(sf_DESKTOP)
-    
+    lastDir = GetSetting("vbdevkit", "frmDlg", "lastDir", GetSpecialFolder(sf_DESKTOP))
+     
+End Sub
+
+Private Sub Class_Terminate()
+    SaveSetting "vbdevkit", "frmDlg", "lastDir", lastDir
 End Sub
 
 Function OpenDialog(Optional initDir = "", Optional title = "Open File") As String
@@ -234,6 +238,8 @@ Function OpenDialog(Optional initDir = "", Optional title = "Open File") As Stri
 
     OpenDialog = IIf(GetOpenFileName(o), Trim$(o.lpstrFile), "")
     OpenDialog = Replace(OpenDialog, Chr(0), Empty)
+    
+    If Len(OpenDialog) > 0 Then lastDir = GetParentFolder(OpenDialog)
     
 End Function
 
@@ -277,13 +283,24 @@ Function OpenMulti(Optional initDir = "", Optional title = "Open File") As Colle
                 Next
             End If
         End With
+        If Len(vFiles(0)) > 0 Then lastDir = GetParentFolder(vFiles(0))
     End If
      
 End Function
 
 Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optional title = "Save File") As String
     
-    If Len(initDir) <> 0 Then lastDir = initDir
+    Dim tmp As String
+
+    If IsMissing(defaultFileName) Then defaultFileName = ""
+    
+    If Len(initDir) <> 0 Then
+        lastDir = initDir
+    Else
+        If Len(defaultFileName) > 0 And InStr(defaultFileName, "\") > 0 Then
+            lastDir = GetParentFolder(defaultFileName)
+        End If
+    End If
     
     o.lStructSize = Len(o)
     o.hWndOwner = GetForegroundWindow()
@@ -303,7 +320,6 @@ Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optio
         o.nMaxFile = Len(o.lpstrFile) + 1
     End If
 
-    Dim tmp As String
     tmp = IIf(GetSaveFileName(o), Trim$(o.lpstrFile), "")
     If tmp <> "" Then
         If FileExists(tmp) Then
@@ -316,7 +332,8 @@ Function SaveDialog(Optional ByVal defaultFileName, Optional initDir = "", Optio
     End If
     
     SaveDialog = Replace(SaveDialog, Chr(0), Empty)
-       
+    If Len(SaveDialog) > 0 Then lastDir = GetParentFolder(SaveDialog)
+    
 End Function
 
 Function ColorDialog() As Long
@@ -358,12 +375,14 @@ Function FolderDialog() As String
     End If
 
     FolderDialog = Replace(ret, Chr(0), Empty)
+    If Len(FolderDialog) > 0 Then lastDir = FolderDialog
 
 End Function
 
 Function FolderDialog2(Optional initDir = "") As String
-    If Len(initDir) <> 0 Then lastDir = initDir
+    If Len(initDir) <> 0 Then lastDir = initDir 'not saved across runs implemented on form with reg...
     FolderDialog2 = frmDlg.BrowseForFolder(lastDir)
+    If Len(FolderDialog2) > 0 Then lastDir = FolderDialog2
 End Function
 
 Private Function GetSpecialFolder(sf As SpecialFolders) As String
@@ -383,6 +402,32 @@ End Function
 Private Function FileExists(path) As Boolean
   If Len(path) = 0 Then Exit Function
   If Dir(path, vbHidden Or vbNormal Or vbReadOnly Or vbSystem) <> "" Then FileExists = True
+End Function
+
+Private Function GetParentFolder(path) As String
+    Dim tmp() As String
+    Dim my_path
+    Dim ub As String
+    
+    On Error GoTo hell
+    If Len(path) = 0 Then Exit Function
+    
+    my_path = path
+    While Len(my_path) > 0 And Right(my_path, 1) = "\"
+        my_path = Mid(my_path, 1, Len(my_path) - 1)
+    Wend
+    
+    tmp = Split(my_path, "\")
+    tmp(UBound(tmp)) = Empty
+    my_path = Replace(Join(tmp, "\"), "\\", "\")
+    If VBA.Right(my_path, 1) = "\" Then my_path = Mid(my_path, 1, Len(my_path) - 1)
+    
+    GetParentFolder = my_path
+    Exit Function
+    
+hell:
+    GetParentFolder = Empty
+    
 End Function
 
 

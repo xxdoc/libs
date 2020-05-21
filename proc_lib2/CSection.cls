@@ -16,7 +16,7 @@ Option Explicit
 'http://sandsprite.com
 
 Public nameSec As String
-Public PhysicalAddress As Integer
+Public PhysicalAddress As Integer 'dont use
 Public VirtualSize As Long
 Public VirtualAddress As Long
 Public SizeOfRawData As Long

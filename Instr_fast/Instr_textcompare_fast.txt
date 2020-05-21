@@ -1,0 +1,449 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"><title>code view</title>
+  <!-- http://www.xbeat.net/vbspeed/ -->
+  <link rel="STYLESHEET" href="Instr_textcompare_fast_files/speed.css" type="text/css">
+</head>
+
+<body class="code"><pre>Option Explicit
+
+Private Declare Function ArrPtr&amp; Lib "msvbvm60.dll" Alias "VarPtr" (ptr() As Any)
+Private Declare Sub RtlMoveMemory Lib "kernel32" (dst As Any, src As Any, ByVal nBytes&amp;)
+
+Private Header1(5) As Long
+Private Header2(5) As Long
+Private SafeArray1() As Integer
+Private SafeArray2() As Integer
+
+Private Declare Function CharUpperBuffW&amp; Lib "user32" (lpsz As Any, ByVal cchLength&amp;)
+Private Declare Function CharUpperBuffA&amp; Lib "user32" (lpsz As Any, ByVal cchLength&amp;)
+
+Private aUChars(&amp;H8000 To &amp;H7FFF) As Integer
+<br>
+Private Sub Class_Initialize()
+    <span class="rem">' Set up our template for looking at strings</span>
+    Header1(0) = 1              <span class="rem">' Number of dimensions</span>
+    Header1(1) = 2              <span class="rem">' Bytes per element (integer = 2)</span>
+    Header1(4) = &amp;H7FFFFFFF     <span class="rem">' Array size</span>
+
+    <span class="rem">' Force SafeArray1 to use Header1 as its own header</span>
+    RtlMoveMemory ByVal ArrPtr(SafeArray1), VarPtr(Header1(0)), 4
+
+    <span class="rem">' Set up our template for look at search text</span>
+    Header2(0) = 1                 <span class="rem">' Number of dimensions</span>
+    Header2(1) = 2                 <span class="rem">' Bytes per element (integer = 2)</span>
+    Header2(4) = &amp;H7FFFFFFF        <span class="rem">' Array size</span>
+
+    <span class="rem">' Force SafeArray1 to use Header1 as its own header</span>
+    RtlMoveMemory ByVal ArrPtr(SafeArray2), VarPtr(Header2(0)), 4
+
+    Dim c As Long
+    Dim ret As Long
+
+    <span class="rem">'here, we borrow the LUT from UCase04/UCase05:</span>
+    For c = &amp;H8000 To &amp;H7FFF: aUChars(c) = c: Next
+    If CharUpperBuffW(aUChars(-32768), &amp;H10000) = 0 Then
+        <span class="rem">' for 0 to 255 CharUpperBuffA &lt;=&gt; Asc(UCase$(Chr$(c)))</span>
+        ret = CharUpperBuffA(aUChars(0), 256 * 2)  <span class="rem">'2 bytes/char</span>
+    End If
+    <span class="rem">' patch the stooges</span>
+    <span class="rem">' š 154/353   Š 138/352</span>
+    <span class="rem">' œ 156/339   Œ 140/338</span>
+    <span class="rem">' ž 158/382   Ž 142/381</span>
+    <span class="rem">' ÿ 255/255   Ÿ 159/376</span>
+    aUChars(353) = 352
+    aUChars(339) = 338
+    aUChars(382) = 381
+    aUChars(255) = 376
+End Sub
+<br>
+Private Sub Class_Terminate()
+    <span class="rem">' Make SafeArray1 once again use its own header</span>
+    <span class="rem">' If this code doesn't run the IDE will crash</span>
+    RtlMoveMemory ByVal ArrPtr(SafeArray1), 0&amp;, 4
+    RtlMoveMemory ByVal ArrPtr(SafeArray2), 0&amp;, 4
+End Sub
+<br>
+Friend Function InStrCount06( _
+            ByRef sCheck As String, _
+            ByRef sMatch As String, _
+            Optional ByVal Start As Long = 1, _
+            Optional ByVal Compare As VbCompareMethod = vbBinaryCompare _
+            ) As Long
+    <span class="rem">'by Marzo Sette Torres Junior, marzojr@taskmail.com.br, 20021002</span>
+    Dim lLenCheck As Long, lLenMatch As Long
+    Dim j As Long, iFirstMatchChar As Integer
+    <span class="rem">'store the length of both strings:</span>
+    lLenCheck = Len(sCheck)
+    lLenMatch = Len(sMatch)
+    If lLenCheck Then
+        If lLenMatch Then
+            If Start &lt; 1 Then
+                <span class="rem">'silently correct invalid value:</span>
+                Start = 1
+            ElseIf Start &gt; lLenCheck Then
+                <span class="rem">'return zero</span>
+                Exit Function
+            End If
+            <span class="rem">'point the arrays to our strings:</span>
+            Header1(3) = StrPtr(sCheck)
+            Header2(3) = StrPtr(sMatch)
+            <span class="rem">'here we optimize slightly for Len(sMatch) = 1:</span>
+            If lLenMatch &gt; 1 Then
+                <span class="rem">'lLenCheck = lLenCheck - lLenMatch + 1</span>
+                Dim lDelta As Long
+                lDelta = lLenMatch - 1
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the last char of sMatch in a buffer:</span>
+                    iFirstMatchChar = SafeArray2(0)
+                    <span class="rem">'Here is where things get weird; we compare the first chars</span>
+                    <span class="rem">'of both strings. But then we continue from the *end* of sMatch</span>
+                    <span class="rem">'to the start (avoiding recheking the first chars).</span>
+                    For Start = Start - 1 To lLenCheck - lDelta
+                        If SafeArray1(Start) = iFirstMatchChar Then
+                            For j = 1 To lDelta
+                                If SafeArray1(Start + j) &lt;&gt; SafeArray2(j) Then GoTo NotEqual
+                            Next
+                            InStrCount06 = InStrCount06 + 1
+                            Start = Start + lDelta
+                        End If
+NotEqual:
+                    Next
+                Else
+                    <span class="rem">'Store the (ucase of) last char of sMatch in a buffer:</span>
+                    iFirstMatchChar = aUChars(SafeArray2(0))
+                    <span class="rem">'Here is where things get weird; we compare the ucases of</span>
+                    <span class="rem">'the first chars of both strings. But then we continue</span>
+                    <span class="rem">'from the *end* of sMatch to the start (avoiding recheking</span>
+                    <span class="rem">'the first chars).</span>
+                    For Start = Start - 1 To lLenCheck - lDelta
+                        If aUChars(SafeArray1(Start)) = iFirstMatchChar Then
+                            For j = 1 To lDelta
+                                If aUChars(SafeArray1(Start + j)) &lt;&gt; aUChars(SafeArray2(j)) Then GoTo NotEqual2
+                            Next
+                            InStrCount06 = InStrCount06 + 1
+                            Start = Start + lDelta
+                        End If
+NotEqual2:
+                    Next
+                End If
+            Else
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the only char of sMatch in a buffer:</span>
+                    iFirstMatchChar = SafeArray2(0)
+                    <span class="rem">'here we compare each char with iFirstMatchChar.</span>
+                    For Start = Start - 1 To lLenCheck
+                        If SafeArray1(Start) = iFirstMatchChar Then
+                            InStrCount06 = InStrCount06 + 1
+                        End If
+                    Next
+                Else
+                    <span class="rem">'Store the (ucase of the) only char of sMatch in a buffer:</span>
+                    iFirstMatchChar = aUChars(SafeArray2(0))
+                    <span class="rem">'here we compare the ucase of each char with iFirstMatchChar.</span>
+                    For Start = Start - 1 To lLenCheck
+                        If aUChars(SafeArray1(Start)) = iFirstMatchChar Then
+                            InStrCount06 = InStrCount06 + 1
+                        End If
+                    Next
+                End If
+            End If
+        End If
+    End If
+End Function
+
+<br>
+Friend Function InStrCount07( _
+            ByRef sCheck As String, _
+            ByRef sMatch As String, _
+            Optional ByVal Start As Long = 1, _
+            Optional ByVal Compare As VbCompareMethod = vbBinaryCompare _
+            ) As Long
+    <span class="rem">'by Marzo Sette Torres Junior, marzojr@taskmail.com.br, 20021006</span>
+    Dim lLenCheck As Long, lLenMatch As Long
+    Dim j As Long, iFirstMatchChar As Integer
+    <span class="rem">'store the length of both strings:</span>
+    lLenCheck = Len(sCheck)
+    lLenMatch = Len(sMatch)
+    If lLenCheck Then
+        If lLenMatch Then
+            If Start &lt; 1 Then
+                <span class="rem">'silently correct invalid value:</span>
+                Start = 1
+            ElseIf Start &gt; lLenCheck Then
+                <span class="rem">'return zero</span>
+                Exit Function
+            End If
+            <span class="rem">'point the arrays to our strings:</span>
+            Header1(3) = StrPtr(sCheck)
+            Header2(3) = StrPtr(sMatch)
+            <span class="rem">'here we optimize slightly for Len(sMatch) = 1:</span>
+            If lLenMatch &gt; 1 Then
+                Dim lDelta As Long
+                lDelta = lLenMatch - 1
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the first char of sMatch in a buffer:</span>
+                    iFirstMatchChar = SafeArray2(0)
+                    <span class="rem">'Here is where things get weird; we compare the first chars</span>
+                    <span class="rem">'of both strings. But then we continue from the *end* of sMatch</span>
+                    <span class="rem">'to the start (avoiding recheking the first chars).</span>
+                    For Start = Start - 1 To lLenCheck - lDelta
+                        If SafeArray1(Start) = iFirstMatchChar Then
+                            For j = lDelta To 1 Step -1
+                                If SafeArray1(Start + j) &lt;&gt; SafeArray2(j) Then GoTo NotEqual
+                            Next
+                            InStrCount07 = InStrCount07 + 1
+                            Start = Start + lDelta
+                        End If
+NotEqual:
+                    Next
+                Else
+                    <span class="rem">'change sMatch to uppercase</span>
+                    For j = lDelta To 1 Step -1
+                        SafeArray2(j) = aUChars(SafeArray2(j))
+                    Next
+                    <span class="rem">'Store the first char of sMatch in a buffer:</span>
+                    iFirstMatchChar = aUChars(SafeArray2(0))
+                    <span class="rem">'Here is where things get weird; we compare the ucases of</span>
+                    <span class="rem">'the first chars of both strings. But then we continue</span>
+                    <span class="rem">'from the *end* of sMatch to the start (avoiding recheking</span>
+                    <span class="rem">'the first chars).</span>
+                    For Start = Start - 1 To lLenCheck - lDelta
+                        If aUChars(SafeArray1(Start)) = iFirstMatchChar Then
+                            For j = lDelta To 1 Step -1
+                                If aUChars(SafeArray1(Start + j)) &lt;&gt; SafeArray2(j) Then GoTo NotEqual2
+                            Next
+                            InStrCount07 = InStrCount07 + 1
+                            Start = Start + lDelta
+                        End If
+NotEqual2:
+                    Next
+                End If
+            Else
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the only char of sMatch in a buffer:</span>
+                    iFirstMatchChar = SafeArray2(0)
+                    <span class="rem">'here we compare each char with iFirstMatchChar.</span>
+                    For Start = Start - 1 To lLenCheck
+                        If SafeArray1(Start) = iFirstMatchChar Then
+                            InStrCount07 = InStrCount07 + 1
+                        End If
+                    Next
+                Else
+                    <span class="rem">'Store the (ucase of the) only char of sMatch in a buffer:</span>
+                    iFirstMatchChar = aUChars(SafeArray2(0))
+                    <span class="rem">'here we compare the ucase of each char with iFirstMatchChar.</span>
+                    For Start = Start - 1 To lLenCheck
+                        If aUChars(SafeArray1(Start)) = iFirstMatchChar Then
+                            InStrCount07 = InStrCount07 + 1
+                        End If
+                    Next
+                End If
+            End If
+        End If
+    End If
+End Function
+
+<br>
+Friend Function InStrRev08( _
+            ByRef sCheck As String, _
+            ByRef sMatch As String, _
+            Optional ByVal Start As Long, _
+            Optional ByVal Compare As VbCompareMethod = vbBinaryCompare _
+            ) As Long
+    <span class="rem">'by Marzo Sette Torres Junior, marzojr@taskmail.com.br, 20020625</span>
+    Dim lLenCheck As Long, lLenMatch As Long
+    Dim i As Long, j As Long, iLastMatchChar As Integer
+    <span class="rem">'store the length of both strings:</span>
+    lLenCheck = Len(sCheck)
+    lLenMatch = Len(sMatch)
+    If lLenCheck Then
+        If lLenMatch Then
+            If Start &lt;= 0 Then
+                <span class="rem">'no Start was specified, so we start at the end:</span>
+                Start = lLenCheck
+            ElseIf Start &lt; lLenMatch Then
+                <span class="rem">'return zero</span>
+                Exit Function
+            End If
+            <span class="rem">'point the arrays to our strings:</span>
+            Header1(3) = StrPtr(sCheck)
+            Header2(3) = StrPtr(sMatch)
+            <span class="rem">'here we optimize slightly for Len(sMatch) = 1:</span>
+            If lLenMatch &gt; 1 Then
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the last char of sMatch in a buffer:</span>
+                    iLastMatchChar = SafeArray2(lLenMatch - 1)
+                    <span class="rem">'here we start at the *end* of sCheck and compare each char</span>
+                    <span class="rem">'with iLastMatchChar. If a match is found, we compare from</span>
+                    <span class="rem">'the next-to-last char of sMatch to the start of sMatch.</span>
+                    Do
+                        Start = Start - 1
+                        If SafeArray1(Start) = iLastMatchChar Then
+                            j = lLenMatch - 1
+                            i = Start - j
+                            Do
+                                j = j - 1
+                                If SafeArray1(i + j) &lt;&gt; SafeArray2(j) Then GoTo NotEqual
+                            Loop While j
+                            InStrRev08 = i + 1
+                            Exit Function
+                        End If
+NotEqual:
+                    Loop Until Start &lt; lLenMatch
+                Else
+                    <span class="rem">'Store the (ucase of) last char of sMatch in a buffer:</span>
+                    iLastMatchChar = aUChars(SafeArray2(lLenMatch - 1))
+                    <span class="rem">'here we start at the *end* of sCheck and compare the ucase</span>
+                    <span class="rem">'of each char with iLastMatchChar. If a match is found, we</span>
+                    <span class="rem">'compare ucases from the next-to-last char of sMatch to the</span>
+                    <span class="rem">'start of sMatch.</span>
+                    Do
+                        Start = Start - 1
+                        If aUChars(SafeArray1(Start)) = iLastMatchChar Then
+                            j = lLenMatch - 1
+                            i = Start - j
+                            Do
+                                j = j - 1
+                                If aUChars(SafeArray1(i + j)) &lt;&gt; aUChars(SafeArray2(j)) Then GoTo NotEqual2
+                            Loop While j
+                            InStrRev08 = i + 1
+                            Exit Function
+                        End If
+NotEqual2:
+                    Loop Until Start &lt; lLenMatch
+                End If
+            Else
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the only char of sMatch in a buffer:</span>
+                    iLastMatchChar = SafeArray2(0)
+                    <span class="rem">'here we start at the *end* of sCheck and compare each char</span>
+                    <span class="rem">'with iLastMatchChar.</span>
+                    While Start
+                        Start = Start - 1
+                        If SafeArray1(Start) = iLastMatchChar Then
+                            InStrRev08 = Start + 1
+                            Exit Function
+                        End If
+                    Wend
+                Else
+                    <span class="rem">'Store the (ucase of the) only char of sMatch in a buffer:</span>
+                    iLastMatchChar = aUChars(SafeArray2(0))
+                    <span class="rem">'here we start at the *end* of sCheck and compare the ucase</span>
+                    <span class="rem">'of each char with iLastMatchChar.</span>
+                    While Start
+                        Start = Start - 1
+                        If aUChars(SafeArray1(Start)) = iLastMatchChar Then
+                            InStrRev08 = Start + 1
+                            Exit Function
+                        End If
+                    Wend
+                End If
+            End If
+        Else
+            If Start &lt;= lLenCheck Then InStrRev08 = Start
+        End If
+    End If
+End Function
+
+<br>
+Friend Function InStr01( _
+            ByRef sCheck As String, _
+            ByRef sMatch As String, _
+            Optional ByVal Start As Long = 1, _
+            Optional ByVal Compare As VbCompareMethod = vbBinaryCompare _
+            ) As Long
+    <span class="rem">'by Marzo Sette Torres Junior, marzojr@taskmail.com.br, 20021002</span>
+    Dim lLenCheck As Long, lLenMatch As Long
+    Dim j As Long, iFirstMatchChar As Integer
+    <span class="rem">'store the length of both strings:</span>
+    lLenCheck = Len(sCheck)
+    lLenMatch = Len(sMatch)
+    If lLenCheck Then
+        If lLenMatch Then
+            If Start &lt; 1 Then
+                <span class="rem">'silently correct invalid value:</span>
+                Start = 1
+            ElseIf Start &gt; lLenCheck Then
+                <span class="rem">'return zero</span>
+                Exit Function
+            End If
+            <span class="rem">'point the arrays to our strings:</span>
+            Header1(3) = StrPtr(sCheck)
+            Header2(3) = StrPtr(sMatch)
+            <span class="rem">'here we optimize slightly for Len(sMatch) = 1:</span>
+            If lLenMatch &gt; 1 Then
+                <span class="rem">'lLenCheck = lLenCheck - lLenMatch + 1</span>
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the last char of sMatch in a buffer:</span>
+                    iFirstMatchChar = SafeArray2(0)
+                    <span class="rem">'Here is where things get weird; we compare the first chars</span>
+                    <span class="rem">'of both strings. But then we continue from the *end* of sMatch</span>
+                    <span class="rem">'to the start (avoiding recheking the first chars).</span>
+                    For Start = Start - 1 To lLenCheck - lLenMatch + 1
+                        If SafeArray1(Start) = iFirstMatchChar Then
+                            j = lLenMatch - 1
+                            Do
+                                If SafeArray1(Start + j) &lt;&gt; SafeArray2(j) Then GoTo NotEqual
+                                j = j - 1
+                            Loop While j
+                            InStr01 = Start + 1
+                            Exit Function
+                        End If
+NotEqual:
+                    Next
+                Else
+                    <span class="rem">'Store the (ucase of) last char of sMatch in a buffer:</span>
+                    iFirstMatchChar = aUChars(SafeArray2(0))
+                    <span class="rem">'Here is where things get weird; we compare the ucases of</span>
+                    <span class="rem">'the first chars of both strings. But then we continue</span>
+                    <span class="rem">'from the *end* of sMatch to the start (avoiding recheking</span>
+                    <span class="rem">'the first chars).</span>
+                    For Start = Start - 1 To lLenCheck - lLenMatch + 1
+                        If aUChars(SafeArray1(Start)) = iFirstMatchChar Then
+                            j = lLenMatch - 1
+                            Do
+                                If aUChars(SafeArray1(Start + j)) &lt;&gt; aUChars(SafeArray2(j)) Then GoTo NotEqual2
+                                j = j - 1
+                            Loop While j
+                            InStr01 = Start + 1
+                            Exit Function
+                        End If
+NotEqual2:
+                    Next
+                End If
+            Else
+                If Compare = vbBinaryCompare Then
+                    <span class="rem">'Store the only char of sMatch in a buffer:</span>
+                    iFirstMatchChar = SafeArray2(0)
+                    <span class="rem">'here we compare each char with iFirstMatchChar.</span>
+                    For Start = Start - 1 To lLenCheck
+                        If SafeArray1(Start) = iFirstMatchChar Then
+                            InStr01 = Start + 1
+                            Exit Function
+                        End If
+                    Next
+                Else
+                    <span class="rem">'Store the (ucase of the) only char of sMatch in a buffer:</span>
+                    iFirstMatchChar = aUChars(SafeArray2(0))
+                    <span class="rem">'here we compare the ucase of each char with iFirstMatchChar.</span>
+                    For Start = Start - 1 To lLenCheck
+                        If aUChars(SafeArray1(Start)) = iFirstMatchChar Then
+                            InStr01 = Start + 1
+                            Exit Function
+                        End If
+                    Next
+                End If
+            End If
+        Else
+            If Start &lt;= 0 Then
+                InStr01 = 1
+            Else
+                InStr01 = Start
+            End If
+        End If
+    End If
+End Function
+</pre>
+
+</body></html>

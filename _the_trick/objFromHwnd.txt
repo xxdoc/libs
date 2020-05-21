@@ -1,0 +1,15 @@
+
+Private Declare Function vbaObjSetAddref Lib "msvbvm60" Alias "__vbaObjSetAddref" (ByRef dstObject As Any, ByRef srcObjPtr As Any) As Long
+
+Public Function ComObjectFromPtr(ByVal Ptr As Long) As IUnknown
+    vbaObjSetAddref ComObjectFromPtr, ByVal Ptr
+End Function
+
+Public Function FormObjectFromPtr(ByVal Ptr As Long) As VB.Form
+    vbaObjSetAddref FormObjectFromPtr, ByVal Ptr
+End Function
+
+Dim frm As VB.Form
+Set frm = FormObjectFromPtr(hWndForForm)
+
+

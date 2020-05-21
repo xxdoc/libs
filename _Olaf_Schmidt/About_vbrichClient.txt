@@ -1,0 +1,46 @@
+About
+
+The vbRichClient-Framework (currently at Version 5), is a free available Set of 3 Dlls:
+
+    vbRichClient5.dll
+    vb_cairo_sqlite.dll
+    DirectCOM.dll
+
+The vbRichClient5.dll is written in VB6 - and a later Open-Sourcing under LGPL is planned.
+
+Its main-purpose is, to decouple from as many MS-COM-dependencies as possible, with the goal in mind,
+to achieve a self-hosting state easier later on, when the accompanying (VB6-compatible) Compiler will lift off.
+And if easier to achieve platform-portability (for the Compiler and the new Class-based Runtime) is the goal,
+then we need to start working with such a decoupling-framework already in the transition- and planning-phase.
+
+So, the lib offers a modern GUI-Framework which works Vector-based, using the cairo-library under the
+hood (no GDI/GDI+ or DirectX here ... and also nothing of the MS-CommonControls.dll is touched).
+
+The other larger part, which is often needed and used within "typical VB-Applications" is easy DB-Access
+(usually done over an accompanying Desktop-DB-File in *.mdb-Format). So what the framework also offers,
+is an easy to use (and nearly ADO-compatible) replacement for the MS-JET-Engine. This is, what makes
+up the other larger part of the accompanying satellite-binary: vb_cairo_sqlite.dll ... the SQLite-engine.
+
+So please consider all these efforts in the right context - although the RichClient may seem "big" to you
+(it contains a whole lot more of other useful classes as well), for me it is only "a step on the way to a
+new compiler-environment for VB6". 
+
+With version 5, the RichClient is in very good shape now (with regards to functionality and stability) to enter 
+this second phase of the plan, playing its role as a "rich", classbased Runtime-Extension for the current
+VB6-Compiler. The VB6-IDE will be used as the Development-Environment for this last transition-step:
+
+Developing a new IDE-Environment, based on the RichClient (to save Code-Lines and build the new 
+IDE on a graphics-platform, which already is to 90% independent of the OS' graphics-system) - thereby 
+integrating the new Compiler as tightly into the new IDE, as can be seen in the "Original": VB6. 
+
+When the new compiler (and new IDE-env.) is in a shape, that it can produce Binaries from at least
+VB6  *.cls and *.bas Modules, then the vbRichClient-Dll itself will be recompilable, and also the new
+IDE-Environment with the new Compiler will be recompilable with this first (VB6-generated) Compiler.
+
+The timeframe until "we" (I hope the community will not leave me alone with that) will achieve this 
+final self-hosting state, will be (realistically seen) another 1.5-2 years or so.
+
+In the meantime, the community has at least a modern framework for VB6 available, which hopefully
+helps out with a lot of existing problems in current VB6-projects.
+
+Olaf Schmidt, April 2013

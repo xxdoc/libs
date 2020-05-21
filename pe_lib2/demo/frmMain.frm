@@ -300,6 +300,7 @@ Private Sub cmdListExports_Click()
     
     For Each exp In pe.Exports.functions
         push ret(), exp.FunctionOrdial & vbTab & Hex(exp.FunctionAddress) & vbTab & exp.FunctionName
+        'push ret(), exp.FunctionName
     Next
     
     frmLister.ShowList ret
@@ -364,11 +365,12 @@ Sub ConfigureListView(lv As Object)
         lv.ColumnHeaders.Add , , "RawOffset"
         lv.ColumnHeaders.Add , , "RawSize"
         lv.ColumnHeaders.Add , , "Characteristics"
+        lv.ColumnHeaders.Add , , "Entropy"
         
-        lv.Width = (1250 * 6) + 250
+        lv.Width = (1250 * 7) + 250
         lv.Height = 1800
         
-        For i = 1 To 6
+        For i = 1 To 7
             lv.ColumnHeaders(i).Width = 1250
         Next
         
@@ -391,12 +393,14 @@ Sub FilloutListView(lv As Object, Sections As Collection)
         li.SubItems(3) = Hex(cs.PointerToRawData)
         li.SubItems(4) = Hex(cs.SizeOfRawData)
         li.SubItems(5) = Hex(cs.Characteristics)
+        li.SubItems(6) = fileEntropy(txtFile.Text, pe.RvaToOffset(cs.PointerToRawData + 1), cs.SizeOfRawData)
     Next
     
     Dim i As Integer
     For i = 1 To lv.ColumnHeaders.Count
         lv.ColumnHeaders(i).Width = 1000
     Next
+    
     With lv.ColumnHeaders(i - 1)
         .Width = lv.Width - .Left - 100
     End With
@@ -404,3 +408,65 @@ Sub FilloutListView(lv As Object, Sections As Collection)
     
 End Sub
 
+'ported from Detect It Easy - Binary::calculateEntropy
+'   https://github.com/horsicq/DIE-engine/blob/master/binary.cpp#L2319
+Function fileEntropy(pth As String, Optional offset As Long = 0, Optional leng As Long = -1) As Single
+    
+    Dim sz As Long
+    Dim fEntropy As Single
+    Dim bytes(255) As Single
+    Dim temp As Single
+    Dim nSize As Long
+    Dim nTemp As Long
+    Const BUFFER_SIZE = &H1000
+    Dim buf() As Byte
+    Dim f As Long
+    
+    On Error Resume Next
+    
+    f = FreeFile
+    Open pth For Binary Access Read As f
+    If Err.Number <> 0 Then GoTo ret0
+    
+    sz = LOF(f) - 1
+    
+    If leng = 0 Then GoTo ret0
+    
+    If leng = -1 Then
+        leng = sz - offset
+        If leng = 0 Then GoTo ret0
+    End If
+    
+    If offset >= sz Then GoTo ret0
+    If offset + leng > sz Then GoTo ret0
+    
+    Seek f, offset
+    nSize = leng
+    fEntropy = 1.44269504088896
+    ReDim buf(BUFFER_SIZE)
+    
+    'read the file in chunks and count how many times each byte value occurs
+    While (nSize > 0)
+        nTemp = IIf(nSize < BUFFER_SIZE, nSize, BUFFER_SIZE)
+        If nTemp <> BUFFER_SIZE Then ReDim buf(nTemp) 'last chunk, partial buffer
+        Get f, , buf()
+        For i = 0 To UBound(buf)
+            bytes(buf(i)) = bytes(buf(i)) + 1
+        Next
+        nSize = nSize - nTemp
+    Wend
+    
+    For i = 0 To UBound(bytes)
+        temp = bytes(i) / CSng(leng)
+        If temp <> 0 Then
+            fEntropy = fEntropy + (-Log(temp) / Log(2)) * bytes(i)
+        End If
+    Next
+    
+    Close f
+    fileEntropy = fEntropy / CSng(leng)
+    
+Exit Function
+ret0:
+    Close f
+End Function

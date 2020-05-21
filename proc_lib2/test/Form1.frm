@@ -21,6 +21,10 @@ Private Sub Form_Load()
     Dim p As New CProcessLib
     Dim c As Collection
     
+    Dim cp As CProcess
+    Set cp = p.SelectProcess()
+    End
+    
     'testing the auto drop of the dependancy dll/exe from resource file...works ok
     'Set c = p.EnumMutexes
     

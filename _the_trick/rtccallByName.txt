@@ -1,0 +1,95 @@
+Option Explicit
+
+Private Declare Function rtcCallByName Lib "msvbvm60" ( _
+                         ByRef vRet As Variant, _
+                         ByVal cObj As Object, _
+                         ByVal sMethod As Long, _
+                         ByVal eCallType As VbCallType, _
+                         ByRef pArgs() As Variant, _
+                         ByVal lcid As Long) As Long
+                         
+Private Sub Form_Load()
+
+    CallByName2 Me, "Sub1", VbMethod
+    CallByName2 Me, "Sub2", VbMethod, "Hello", "world"
+    
+End Sub
+
+Public Sub Sub1()
+    MsgBox "Sub1"
+End Sub
+
+Public Sub Sub2( _
+           ByRef sMsg1 As String, _
+           ByVal sMsg2 As String)
+    MsgBox "Sub2 " & sMsg1 & " " & sMsg2
+End Sub
+
+Private Function CallByName2( _
+                 ByVal cObject As Object, _
+                 ByRef sProcName As String, _
+                 ByVal eCallType As VbCallType, _
+                 ParamArray vArgs() As Variant) As Variant
+    Dim hr      As Long
+    Dim vLoc()
+    
+    vLoc = vArgs
+    
+    hr = rtcCallByName(CallByName2, cObject, StrPtr(sProcName), eCallType, vLoc, &H409)
+    
+    If hr < 0 Then
+        Err.Raise hr
+    End If
+    
+End Function
+
+
+---------------------------
+
+Option Explicit
+
+Private Declare Function rtcCallByName Lib "msvbvm60" ( _
+                         ByRef vRet As Variant, _
+                         ByVal cObj As Object, _
+                         ByVal sMethod As Long, _
+                         ByVal eCallType As VbCallType, _
+                         ByRef pArgs As Any, _
+                         ByVal lcid As Long) As Long
+Private Declare Function GetMem4 Lib "msvbvm60" ( _
+                         ByRef src As Any, _
+                         ByRef Dst As Any) As Long
+                         
+Private Sub Form_Load()
+
+    CallByName2 Me, "Sub1", VbMethod
+    CallByName2 Me, "Sub2", VbMethod, "Hello", "world"
+    
+End Sub
+
+Public Sub Sub1()
+    MsgBox "Sub1"
+End Sub
+
+Public Sub Sub2( _
+           ByRef sMsg1 As String, _
+           ByVal sMsg2 As String)
+    MsgBox "Sub2 " & sMsg1 & " " & sMsg2
+End Sub
+
+Private Function CallByName2( _
+                 ByVal cObject As Object, _
+                 ByRef sProcName As String, _
+                 ByVal eCallType As VbCallType, _
+                 ParamArray vArgs() As Variant) As Variant
+    Dim hr      As Long
+    Dim pVarg   As Long
+    
+    GetMem4 ByVal VarPtr(eCallType) + 4, pVarg
+    
+    hr = rtcCallByName(CallByName2, cObject, StrPtr(sProcName), eCallType, ByVal pVarg, &H409)
+    
+    If hr < 0 Then
+        Err.Raise hr
+    End If
+    
+End Function

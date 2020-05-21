@@ -1,11 +1,11 @@
 modPEStructs = 44, 44, 1033, 769, 
-CExport = 286, 286, 1066, 906, 
+CExport = 286, 286, 1066, 906, C
 CImport = 154, 154, 1030, 764, 
 CLoadExports = 127, 73, 1035, 898, 
 CLoadImports = 153, 96, 1029, 706, 
 COptionalHeader = 110, 110, 909, 651, 
-CPEEditor = 121, 30, 979, 682, Z
-CSection = 145, 90, 884, 666, 
+CPEEditor = 121, 30, 979, 682, 
+CSection = 145, 90, 884, 666, Z
 frmOffsets = 66, 66, 865, 607, , 154, 154, 953, 695, C
 CAssembler = 44, 44, 869, 585, 
 CDisassembler = 22, 22, 847, 563, 

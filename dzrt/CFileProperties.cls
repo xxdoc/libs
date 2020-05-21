@@ -20,6 +20,10 @@ Public OrigionalFileName As String
 Public ProductName As String
 Public ProductVersion As String
 Public LanguageID As String
+Public LegalTrademarks As String
+Public Comments As String
+
+Public CustomFields As New CollectionEx
 
 Public FileIsSigned As Boolean
 Public Signature As String
@@ -36,17 +40,17 @@ Private Declare Function GetFileVersionInfo Lib "Version.dll" Alias "GetFileVers
 Private Declare Function GetFileVersionInfoSize Lib "Version.dll" Alias "GetFileVersionInfoSizeA" (ByVal lptstrFilename As String, lpdwHandle As Long) As Long
 Private Declare Function VerQueryValue Lib "Version.dll" Alias "VerQueryValueA" (pBlock As Any, ByVal lpSubBlock As String, lplpBuffer As Any, puLen As Long) As Long
 Private Declare Function GetSystemDirectory Lib "kernel32" Alias "GetSystemDirectoryA" (ByVal path As String, ByVal cbBytes As Long) As Long
-Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, ByVal Source As Long, ByVal length As Long)
+Private Declare Sub MoveMemory Lib "kernel32" Alias "RtlMoveMemory" (dest As Any, ByVal Source As Long, ByVal Length As Long)
 Private Declare Function lstrcpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Private Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
-Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 Private Declare Function ShellExecuteEx Lib "shell32" (SEI As SHELLEXECUTEINFO) As Long
 
 Private Type SHELLEXECUTEINFO
     cbSize As Long
     fMask As Long
-    hwnd As Long
+    hWnd As Long
     lpVerb As String
     lpFile As String
     lpParameters As String
@@ -156,7 +160,8 @@ Function checkSignature() As Boolean
     
 End Function
 
-Friend Function LoadFileInfo(ByVal PathWithFilename As String, Optional doCheckSignature As Boolean)
+'field names are not case sensitive to api, the collectionEx keys are case sensitive to how you named them...
+Friend Function LoadFileInfo(ByVal PathWithFilename As String, Optional doCheckSignature As Boolean, Optional customFieldsCSV As String = "")
     ' return file-properties of given file  (EXE , DLL , OCX)
     'http://support.microsoft.com/default.aspx?scid=kb;en-us;160042
     
@@ -174,111 +179,147 @@ Friend Function LoadFileInfo(ByVal PathWithFilename As String, Optional doCheckS
     Dim bytBuff() As Byte
     Dim strBuffer As String
     Dim strLangCharset As String
-    Dim strVersionInfo(7) As String
+    Dim strVersionInfo() As String
     Dim strTemp As String
     Dim intTemp As Integer
-           
+    Dim tmp() As String
+    Dim x
+    
     ReDim bytBuff(500)
+    
+    Set CustomFields = New CollectionEx
+    CompanyName = Empty
+    FileDescription = Empty
+    FileVersion = Empty
+    InternalName = Empty
+    LegalCopyright = Empty
+    OrigionalFileName = Empty
+    ProductName = Empty
+    ProductVersion = Empty
+    LegalTrademarks = Empty
+    Comments = Empty
+    
+    If Len(customFieldsCSV) > 0 Then
+        tmp = split(customFieldsCSV, ",")
+    End If
     
     ' size
     lngBufferlen = GetFileVersionInfoSize(PathWithFilename, lngDummy)
-    If lngBufferlen > 0 Then
+    If lngBufferlen < 1 Then Exit Function
     
-       ReDim bytBuffer(lngBufferlen)
-       lngRc = GetFileVersionInfo(PathWithFilename, 0&, lngBufferlen, bytBuffer(0))
-       
-       If lngRc <> 0 Then
-          lngRc = VerQueryValue(bytBuffer(0), "\VarFileInfo\Translation", lngVerPointer, lngBufferlen)
-          If lngRc <> 0 Then
-             'lngVerPointer is a pointer to four 4 bytes of Hex number,
-             'first two bytes are language id, and last two bytes are code
-             'page. However, strLangCharset needs a  string of
-             '4 hex digits, the first two characters correspond to the
-             'language id and last two the last two character correspond
-             'to the code page id.
-             MoveMemory bytBuff(0), lngVerPointer, lngBufferlen
-             lngHexNumber = bytBuff(2) + bytBuff(3) * &H100 + bytBuff(0) * &H10000 + bytBuff(1) * &H1000000
-             strLangCharset = Hex(lngHexNumber)
-             'now we change the order of the language id and code page
-             'and convert it into a string representation.
-             'For example, it may look like 040904E4
-             'Or to pull it all apart:
-             '04------        = SUBLANG_ENGLISH_USA
-             '--09----        = LANG_ENGLISH
-             ' ----04E4 = 1252 = Codepage for Windows:Multilingual
-             Do While Len(strLangCharset) < 8
-                 strLangCharset = "0" & strLangCharset
-             Loop
-             
-             If Mid(strLangCharset, 2, 2) = LANG_ENGLISH Then
-               strLangCharset2 = "English (US)"
-             End If
+    ReDim bytBuffer(lngBufferlen)
+    lngRc = GetFileVersionInfo(PathWithFilename, 0&, lngBufferlen, bytBuffer(0))
+    
+    If lngRc = 0 Then Exit Function
+    
+    lngRc = VerQueryValue(bytBuffer(0), "\VarFileInfo\Translation", lngVerPointer, lngBufferlen)
+    If lngRc = 0 Then Exit Function
+    
+    'lngVerPointer is a pointer to four 4 bytes of Hex number,
+    'first two bytes are language id, and last two bytes are code
+    'page. However, strLangCharset needs a  string of
+    '4 hex digits, the first two characters correspond to the
+    'language id and last two the last two character correspond
+    'to the code page id.
+    MoveMemory bytBuff(0), lngVerPointer, lngBufferlen
+    lngHexNumber = bytBuff(2) + bytBuff(3) * &H100 + bytBuff(0) * &H10000 + bytBuff(1) * &H1000000
+    strLangCharset = Hex(lngHexNumber)
+    'now we change the order of the language id and code page
+    'and convert it into a string representation.
+    'For example, it may look like 040904E4
+    'Or to pull it all apart:
+    '04------        = SUBLANG_ENGLISH_USA
+    '--09----        = LANG_ENGLISH
+    ' ----04E4 = 1252 = Codepage for Windows:Multilingual
+    Do While Len(strLangCharset) < 8
+        strLangCharset = "0" & strLangCharset
+    Loop
+    
+    If Mid(strLangCharset, 2, 2) = LANG_ENGLISH Then
+      strLangCharset2 = "English (US)"
+    End If
 
-             If Mid(strLangCharset, 2, 2) = LANG_BULGARIAN Then strLangCharset2 = "Bulgarian"
-             If Mid(strLangCharset, 2, 2) = LANG_FRENCH Then strLangCharset2 = "French"
-             If Mid(strLangCharset, 2, 2) = LANG_NEUTRAL Then strLangCharset2 = "Neutral"
+    If Mid(strLangCharset, 2, 2) = LANG_BULGARIAN Then strLangCharset2 = "Bulgarian"
+    If Mid(strLangCharset, 2, 2) = LANG_FRENCH Then strLangCharset2 = "French"
+    If Mid(strLangCharset, 2, 2) = LANG_NEUTRAL Then strLangCharset2 = "Neutral"
 
-             Do While Len(strLangCharset) < 8
-                 strLangCharset = "0" & strLangCharset
-             Loop
+    Do While Len(strLangCharset) < 8
+        strLangCharset = "0" & strLangCharset
+    Loop
 
-             ' assign propertienames
-             strVersionInfo(0) = "CompanyName"
-             strVersionInfo(1) = "FileDescription"
-             strVersionInfo(2) = "FileVersion"
-             strVersionInfo(3) = "InternalName"
-             strVersionInfo(4) = "LegalCopyright"
-             strVersionInfo(5) = "OriginalFileName"
-             strVersionInfo(6) = "ProductName"
-             strVersionInfo(7) = "ProductVersion"
-             
-             Dim n As Long
-             
-             ' loop and get fileproperties
-             For intTemp = 0 To 7
-                strBuffer = String$(800, 0)
-                strTemp = "\StringFileInfo\" & strLangCharset & "\" & strVersionInfo(intTemp)
-                lngRc = VerQueryValue(bytBuffer(0), strTemp, lngVerPointer, lngBufferlen)
-                If lngRc <> 0 Then
-                   ' get and format data
-                   lstrcpy strBuffer, lngVerPointer
-                   n = InStr(strBuffer, Chr(0)) - 1
-                   If n > 0 Then
-                        strBuffer = Mid$(strBuffer, 1, n)
-                        strBuffer = Replace(strBuffer, Chr(0), Empty)
-                        strVersionInfo(intTemp) = Trim(strBuffer)
-                   End If
-                 Else
-                   ' property not found
-                   strVersionInfo(intTemp) = ""
-                End If
-             Next intTemp
-             
-          End If
-       End If
+    'property names
+    push strVersionInfo, "CompanyName"
+    push strVersionInfo, "FileDescription"
+    push strVersionInfo, "FileVersion"
+    push strVersionInfo, "InternalName"
+    push strVersionInfo, "LegalCopyright"
+    push strVersionInfo, "OriginalFileName"
+    push strVersionInfo, "ProductName"
+    push strVersionInfo, "ProductVersion"
+    push strVersionInfo, "LegalTrademarks"
+    push strVersionInfo, "Comments"
+
+    If Not AryIsEmpty(tmp) Then 'custom fields
+       For Each x In tmp
+           x = trim(x)
+           If Len(x) > 0 Then push strVersionInfo, x
+       Next
     End If
     
-    CompanyName = strVersionInfo(0)
-    FileDescription = strVersionInfo(1)
-    FileVersion = strVersionInfo(2)
-    InternalName = strVersionInfo(3)
-    LegalCopyright = strVersionInfo(4)
-    OrigionalFileName = strVersionInfo(5)
-    ProductName = strVersionInfo(6)
-    ProductVersion = strVersionInfo(7)
+    ReDim tmp(UBound(strVersionInfo)) 'to hold our values
+    
+    Dim n As Long
+    
+    ' loop and get fileproperties
+    For intTemp = 0 To UBound(strVersionInfo)
+       strBuffer = String$(800, 0)
+       strTemp = "\StringFileInfo\" & strLangCharset & "\" & strVersionInfo(intTemp)
+       lngRc = VerQueryValue(bytBuffer(0), strTemp, lngVerPointer, lngBufferlen)
+       If lngRc <> 0 Then
+          ' get and format data
+          lstrcpy strBuffer, lngVerPointer
+          n = InStr(strBuffer, Chr(0)) - 1
+          If n > 0 Then
+               strBuffer = Mid$(strBuffer, 1, n)
+               strBuffer = Replace(strBuffer, Chr(0), Empty)
+               tmp(intTemp) = trim(strBuffer)
+          End If
+        Else
+          ' property not found
+          tmp(intTemp) = ""
+       End If
+    Next intTemp
+
+    CompanyName = tmp(0)
+    FileDescription = tmp(1)
+    FileVersion = tmp(2)
+    InternalName = tmp(3)
+    LegalCopyright = tmp(4)
+    OrigionalFileName = tmp(5)
+    ProductName = tmp(6)
+    ProductVersion = tmp(7)
+    LegalTrademarks = tmp(8)
+    Comments = tmp(9)
+    
+    If UBound(strVersionInfo) > 9 Then
+        For n = 10 To UBound(strVersionInfo)
+            CustomFields.add tmp(n), strVersionInfo(n)
+        Next
+    End If
+    
     LanguageID = strLangCharset2
     
 End Function
 
 
-Private Sub push(ary, value) 'this modifies parent ary object
+Private Sub push(ary, Value) 'this modifies parent ary object
     On Error GoTo init
     Dim x As Integer
     x = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
-    ary(UBound(ary)) = value
+    ary(UBound(ary)) = Value
     Exit Sub
-init:     ReDim ary(0): ary(0) = value
+init:     ReDim ary(0): ary(0) = Value
 End Sub
 
 Private Function AryIsEmpty(ary) As Boolean

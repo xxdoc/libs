@@ -1,0 +1,27 @@
+
+
+Public Function ThreadProc( _
+                ByVal pVbHdr As Long) As Long
+    Dim cExpSrv As IUnknown
+    Dim tClsId  As tCurGUID
+    Dim tIID    As tCurGUID
+    'initialize runtime
+    Set cExpSrv = CreateIExprSrvObj(0, 4, 0)
+    
+    CoInitialize ByVal 0&
+    
+    tIID.c2 = 504403158265495.5712@
+    
+    VBDllGetClassObject GetModuleHandle(0), 0, pVbHdr, tClsId, tIID, 0  ' Thank you Trick for this line of code
+    'end of initialize runtime
+
+    
+    'do anything in this thread
+
+
+
+    Set cExpSrv = Nothing
+    CoUninitialize
+    
+End Function
+

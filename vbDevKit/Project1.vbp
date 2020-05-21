@@ -1,5 +1,5 @@
 Type=OleDll
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
 Class=clsCmnDlg; clsCmnDlg.cls
 Class=clsFileStream; clsFileStream.cls
 Class=clsFileSystem; clsFileSystem.cls
@@ -32,7 +32,7 @@ CompatibleEXE32="_vbDevKit.dll"
 VersionCompatible32="1"
 MajorVer=1
 MinorVer=1
-RevisionVer=27
+RevisionVer=47
 AutoIncrementVer=1
 ServerSupportFiles=0
 VersionComments="Free for Commercial and Non-Commercial Use"
@@ -54,8 +54,7 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
-DebugStartupOption=2
-DebugStartupComponent=C:\Documents and Settings\david\Desktop\Project1.exe
+DebugStartupOption=0
 
 [MS Transaction Server]
 AutoRefresh=1

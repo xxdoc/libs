@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "mscomctl.ocx"
 Begin VB.Form frmListProcess 
    BorderStyle     =   5  'Sizable ToolWindow
    Caption         =   "Choose Process"
@@ -14,12 +14,37 @@ Begin VB.Form frmListProcess
    ScaleWidth      =   6915
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin VB.OptionButton opt64 
+      Caption         =   "64"
+      Height          =   255
+      Left            =   4320
+      TabIndex        =   8
+      Top             =   3420
+      Width           =   555
+   End
+   Begin VB.OptionButton opt86 
+      Caption         =   "32"
+      Height          =   195
+      Left            =   3660
+      TabIndex        =   7
+      Top             =   3420
+      Width           =   495
+   End
+   Begin VB.OptionButton optAll 
+      Caption         =   "All"
+      Height          =   195
+      Left            =   3060
+      TabIndex        =   6
+      Top             =   3420
+      Value           =   -1  'True
+      Width           =   555
+   End
    Begin VB.TextBox txtSearch 
       Height          =   315
       Left            =   780
       TabIndex        =   4
       Top             =   3330
-      Width           =   3585
+      Width           =   2085
    End
    Begin MSComctlLib.ListView lv2 
       Height          =   1545
@@ -170,6 +195,9 @@ Dim selli As ListItem
 Dim cpi As New CProcessLib
 Private Declare Function GetCurrentProcessId Lib "kernel32.dll" () As Long
 Dim baseCaption As String
+Dim pc As Collection
+Private isInitilized As Boolean
+
 
 Private Sub Command1_Click()
     
@@ -182,7 +210,7 @@ Private Sub Command1_Click()
     
 End Sub
 
-Private Function LoadProccesses(c As Collection)
+Private Function LoadProccesses()
 
     Dim p As CProcess
     Dim li As ListItem
@@ -190,7 +218,13 @@ Private Function LoadProccesses(c As Collection)
     
     lv.ListItems.Clear
     
-    For Each p In c
+    For Each p In pc
+        If opt86.value Then
+            If p.is64Bit Then GoTo nextOne
+        End If
+        If opt64.value Then
+            If Not p.is64Bit Then GoTo nextOne
+        End If
         Set li = lv.ListItems.Add(, , pad(p.pid))
         Set li.Tag = p
         cc = InStr(p.User, ":")
@@ -202,13 +236,36 @@ Private Function LoadProccesses(c As Collection)
         li.SubItems(1) = IIf(p.is64Bit, "*64 ", "") & li.SubItems(1)
         'li.SubItems(2) = p.path
         li.SubItems(2) = p.fullpath 'can fail on win7?
+nextOne:
     Next
     
 End Function
 
 Function SelectProcess(c As Collection, Optional filter As String = Empty) As CProcess
 
-    LoadProccesses c
+    Set pc = c
+    filter = LCase(filter)
+    optAll.value = True
+    
+    If Right(filter, 3) = "-32" Then
+        opt86.value = True
+        If filter = "-32" Then
+            filter = Empty
+        Else
+            filter = Trim(Mid(filter, 1, Len(filter) - 3))
+        End If
+    End If
+    
+    If Right(filter, 4) = "-64" Then
+        opt64.value = True
+        If filter = "-64" Then
+            filter = Empty
+        Else
+            filter = Trim(Mid(filter, 1, Len(filter) - 3))
+        End If
+    End If
+    
+    LoadProccesses
     
     If Len(filter) > 0 Then
         txtSearch = filter
@@ -279,15 +336,18 @@ Private Sub Form_Resize()
     On Error Resume Next
     lv.Width = Me.Width - lv.Left - 200
     lv.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
-    lv.Height = Me.Height - lv.Top - 500 - Command1.Height
+    lv.Height = Me.Height - lv.Top - 650 - Command1.Height
     lv2.Move lv.Left, lv.Top, lv.Width, lv.Height
     lv2.ColumnHeaders(3).Width = lv.Width - lv.ColumnHeaders(3).Left - 350
-    Command1.Top = Me.Height - Command1.Height - 400
+    Command1.Top = Me.Height - Command1.Height - 550
     Command1.Left = Me.Width - Command1.Width - 400
     lblRefresh.Left = Command1.Left - lblRefresh.Width - 400
     lblRefresh.Top = Command1.Top
     txtSearch.Top = Command1.Top
     Label1.Top = Command1.Top
+    optAll.Top = Command1.Top
+    opt64.Top = Command1.Top
+    opt86.Top = Command1.Top
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -296,7 +356,8 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
 
 Private Sub lblRefresh_Click()
-     LoadProccesses cpi.GetRunningProcesses
+     Set pc = cpi.GetRunningProcesses
+     LoadProccesses
      If lv2.Visible Then txtSearch_Change
 End Sub
 
@@ -402,6 +463,18 @@ hell:
         pad = v
     End If
 End Function
+
+Private Sub opt64_Click()
+    LoadProccesses
+End Sub
+
+Private Sub opt86_Click()
+    LoadProccesses
+End Sub
+
+Private Sub optAll_Click()
+    LoadProccesses
+End Sub
 
 Private Sub txtSearch_Change()
     

@@ -26,6 +26,7 @@ Attribute VB_Exposed = True
 '    op_lt = 11
 '    op_gteq = 12
 '    op_lteq = 13
+'    op_rol32 = 14
 'End Enum
 '
 'Enum modes
@@ -163,13 +164,7 @@ Function raw_op(operand2, operation As op) As ULong
 End Function
 
 Private Sub Class_Initialize()
-'    hLib = LoadLibrary("UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\System32\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(Environ("windir") & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\UTypes.dll")
-'    If hLib = 0 Then hLib = LoadLibrary(App.Path & "\..\..\UTypes.dll")
-'    If ensureUTypes() Then hLib = modGeneral.hUTypes
+    If ensureUTypes() Then hLib = modGeneral.hUtypes
     padLeft = True
 End Sub
 
@@ -236,4 +231,8 @@ Function lessThanEqual(operand2) As Boolean
     Dim a As ULong
     Set a = raw_op(operand2, op_lteq)
     lessThanEqual = (a.rawValue = 1)
+End Function
+
+Function rol32(operand2) As ULong
+    Set rol32 = raw_op(operand2, op_rol32)
 End Function

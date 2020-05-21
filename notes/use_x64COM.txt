@@ -1,0 +1,131 @@
+
+http://www.vbforums.com/showthread.php?874733-Looking-for-advice-on-64-Bit-COM
+
+I have done something similar. I had a 64 Bit COM DLL that I wanted to talk to. The way it's done is by calling the API version of CreateObject(), and asks it to use the 64-Bit Dllhost.exe to host the 64-Bit COM DLL, then talk to it. This requires adding a registry entry at install time so Dllhost.exe is used. The value is of type String, and it should be left empty. Here is the registry entry that you need to create:
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Classes\APPID\{AppID_value}
+DllSurrogate=""
+
+To use CreateObject64() below, you call it like this:
+
+Dim o64 As Object
+
+Set o64 = CreateObject64("Project1.Class1")
+
+There is no error handling, but you could add Err.Raise, or add an extra ByRef parameter to return error information.
+
+VB Code:
+
+    Public Type TGUID
+       Data1 As Long
+       Data2 As Integer
+       Data3 As Integer
+       Data4(7) As Byte
+    End Type
+     
+    Public Const CLSCTX_INPROC_SERVER As Long = 1
+    Public Const CLSCTX_INPROC_HANDLER As Long = 2
+    Public Const CLSCTX_LOCAL_SERVER As Long = 4
+    Public Const CLSCTX_ENABLE_AAA As Long = &H10000
+    Public Const CLSCTX_REMOTE_SERVER As Long = 16
+    Public Const CLSCTX_SERVER As Long = (CLSCTX_INPROC_SERVER Or CLSCTX_LOCAL_SERVER)
+    Public Const CLSCTX_ALL As Long = (CLSCTX_INPROC_SERVER Or CLSCTX_INPROC_HANDLER Or CLSCTX_LOCAL_SERVER)
+    Public Const IID_IUnknown As String = "{00000000-0000-0000-C000-000000000046}"
+    Public Const IID_IDispatch As String = "{00020400-0000-0000-C000-000000000046}"
+     
+    Public Declare Function CoCreateInstance Lib "OLE32.DLL" (ByVal rclsid As Long, ByVal punkOuter As Long, ByVal dwClsContext As Long, ByVal riid As Long, ByRef ppv As Any) As Long
+    Public Declare Function CLSIDFromString Lib "OLE32.DLL" (ByVal lpsz As Long, ByRef pCLSID As TGUID) As Long
+    Public Declare Function CLSIDFromProgID Lib "OLE32.DLL" (ByRef TSzProgID As String, ByRef pCLSID As TGUID) As Long
+    Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, hpvSource As Any, ByVal cbCopy As Long)
+     
+    Public Function CreateObject64(ByRef sObjectName As String) As Object
+        Dim ret As Long
+        Dim pCLSID As TGUID
+        Dim IIDispatch As TGUID
+        Dim ppv As Long
+     
+        ret = CLSIDFromString(StrPtr(IID_IDispatch), IIDispatch)
+        ' Get object by GUID
+        'ret = CLSIDFromString(StrPtr("{11111111-2222-3333-4444-555555555555}"), pCLSID)
+        ' Get object by ProgID
+        ret = CLSIDFromProgID(StrPtr(sObjectName), pCLSID)
+        
+        If ret = 0 Then
+            ' Success
+            
+            ' Create Object
+            ret = CoCreateInstance(VarPtr(pCLSID), 0, CLSCTX_LOCAL_SERVER, VarPtr(IIDispatch), ppv)
+            
+            'Debug.Print "CoCreateInstance returned = " & Hex(ret) & ", ppv = " & Hex(ppv) & ", LastDllError = " & Err.LastDllError
+            
+            If ppv <> 0 Then
+                Set CreateObject64 = ObjFromPtr(ppv)
+            End If
+        Else
+            Debug.Print "CLSIDFromString failed, ret = " & Hex(ret) & ", LastDllError = " & Err.LastDllError
+        End If
+     
+    End Function
+     
+    ' Returns an object given its pointer
+    ' This function reverses the effect of the ObjPtr function
+    Public Function ObjFromPtr(ByVal pObj As Long) As Object
+        Dim obj As Object
+        ' force the value of the pointer into the temporary object variable
+        CopyMemory obj, pObj, 4
+        ' assign to the result (this increments the ref counter)
+        Set ObjFromPtr = obj
+        ' manually destroy the temporary object variable
+        ' (if you omit this step you'll get a GPF!)
+        CopyMemory obj, 0&, 4
+    End Function
+
+
+
+Another possibility would be to use VBScript as the "Execution-Host" for the 64Bit-Redemption-Dll...
+(*.vbs-Files will be started in a 64Bit-Host-Process by default on 64Bit-Windows).
+
+To make a given Dll regfree usable via VBScript (or also *.asp):
+- one needs to place a MyDllName.manifest file besides the Dll
+- and then use the following VBScript-Block, to instantiate an SxS-Helper:
+Code:
+
+Dim SxS
+Set SxS = CreateObject("Microsoft.Windows.ActCtx") 'create the SxS-Helper-Obj
+    SxS.Manifest = "Redemption.manifest" 'specify the path to the manifest-file of the Dll
+
+Dim Itm   'now create Objects regfree by using the CreateObject-Method of the SxS-Helper
+Set Itm = SxS.CreateObject("Redemption.SafeMailItem")
+
+The xml-content for the SxS-manifest-file of the Redemption-Dll would be the following:
+Code:
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <file name="Redemption.dll">
+    <comClass clsid="{4fd5c4d3-6c15-4ea0-9eb9-eee8fc74a91b}" threadingModel="Apartment" progid="Redemption.SafeContactItem" />
+    <comClass clsid="{620d55b0-f2fb-464e-a278-b4308db1db2b}" threadingModel="Apartment" progid="Redemption.SafeAppointmentItem" />
+    <comClass clsid="{741beefd-aec0-4aff-84af-4f61d15f5526}" threadingModel="Apartment" progid="Redemption.SafeMailItem" />
+    <comClass clsid="{7a41359e-0407-470f-b3f7-7c6a0f7c449a}" threadingModel="Apartment" progid="Redemption.SafeTaskItem" />
+    <comClass clsid="{c5aa36a1-8bd1-47e0-90f8-47e7239c6ea1}" threadingModel="Apartment" progid="Redemption.SafeJournalItem" />
+    <comClass clsid="{fa2cbafb-f7b1-4f41-9b7a-73329a6c1cb7}" threadingModel="Apartment" progid="Redemption.SafeMeetingItem" />
+    <comClass clsid="{11e2bc0c-5d4f-4e0c-b438-501ffe05a382}" threadingModel="Apartment" progid="Redemption.SafePostItem" />
+    <comClass clsid="{4a5e947e-c407-4dcc-a0b5-5658e457153b}" threadingModel="Apartment" progid="Redemption.MAPIUtils" />
+    <comClass clsid="{03c4c5f4-1893-444c-b8d8-002f0034da92}" threadingModel="Apartment" progid="Redemption.MAPIFolder" />
+    <comClass clsid="{7ed1e9b1-cb57-4fa0-84e8-fae653fe8e6b}" threadingModel="Apartment" progid="Redemption.SafeCurrentUser" />
+    <comClass clsid="{7c4a630a-de98-4e3e-8093-e8f5e159bb72}" threadingModel="Apartment" progid="Redemption.SafeDistList" />
+    <comClass clsid="{37587889-fc28-4507-b6d3-8557305f7511}" threadingModel="Apartment" progid="Redemption.AddressLists" />
+    <comClass clsid="{a6931b16-90fa-4d69-a49f-3abfa2c04060}" threadingModel="Apartment" progid="Redemption.MAPITable" />
+    <comClass clsid="{d46ba7b2-899f-4f60-85c7-4df5713f6f18}" threadingModel="Apartment" progid="Redemption.SafeReportItem" />
+    <comClass clsid="{ed323630-b4fd-4628-bc6a-d4cc44ae3f00}" threadingModel="Apartment" progid="Redemption.SafeInspector" />
+    <comClass clsid="{29ab7a12-b531-450e-8f7a-ea94c2f3c05f}" threadingModel="Apartment" progid="Redemption.RDOSession" />
+  </file>
+</assembly>
+
+Not sure whether that can make your "shelled Mini-Executable" obsolete - but *.vbs Files should be "shellable" nicely...
+(and - FWIW - could be generated on the fly - before shelling them).
+
+HTH
+
+Olaf 
+

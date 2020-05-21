@@ -1,5 +1,5 @@
 Type=OleDll
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
 Module=modPEStructs; modPEStructs.bas
 Class=CExport; CExport.cls
 Class=CImport; CImport.cls
@@ -23,7 +23,7 @@ Name="sppe"
 HelpContextID="0"
 Description="Sandsprite PE File Format Library"
 CompatibleMode="2"
-CompatibleEXE32="sppe.dll"
+CompatibleEXE32="_sppe.dll"
 VersionCompatible32="1"
 MajorVer=1
 MinorVer=0

@@ -1,0 +1,2 @@
+SpecialFolders
+lastDir
