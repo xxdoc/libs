@@ -33,6 +33,7 @@ Enum modes
     mUnsigned = 0
     mSigned = 1
     mHex = 2
+    mAuto = -1
 End Enum
 
 Public mode As modes
@@ -74,15 +75,16 @@ End Property
 Property Let Value(v)
     
     If TypeName(v) = "String" Then
-        fromString v
+        fromString v, -1
     ElseIf TypeName(v) = "ULong64" Then
         rawValue = v.Value
     ElseIf TypeName(v) = "ULong" Or TypeName(v) = "UInt" Or TypeName(v) = "UByte" Then
         SetLongs 0, v.Value
     ElseIf TypeName(v) = "Long" Or TypeName(v) = "Byte" Or TypeName(v) = "Integer" Then
         SetLongs 0, CLng(v)
-    ElseIf TypeName(v) = "Currency" Or TypeName(v) = "Double" Then
-        Me.rawValue = v
+    ElseIf TypeName(v) = "Currency" Or TypeName(v) = "Double" _
+        Or TypeName(v) = "Long" Or TypeName(v) = "Integer" Then
+            Me.rawValue = v
     Else
         Err.Raise 1, "ULong64.Value", "Unsupported conversion type to ULong64: " & TypeName(v)
     End If
@@ -177,11 +179,12 @@ Function toString(Optional m As modes = mHex) As String
 End Function
 
 
-Function fromString(ByVal s As String, Optional m As modes = mHex) As Boolean
+Function fromString(ByVal s As String, Optional m As modes = mAuto) As Boolean
     On Error GoTo hell
     s = Trim(s)
     s = Replace(s, "`", Empty)
     
+    If m = -1 Then m = mUnsigned
     If Left(s, 1) = "-" Then m = mSigned
     
     If LCase(Left(s, 2)) = "0x" Or LCase(Left(s, 2)) = "&h" Or LCase(Left(s, 2)) = "\x" Then

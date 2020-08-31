@@ -9,6 +9,14 @@ Begin VB.Form Form1
    ScaleHeight     =   6120
    ScaleWidth      =   12210
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton Command1 
+      Caption         =   "Command1"
+      Height          =   555
+      Left            =   8550
+      TabIndex        =   6
+      Top             =   4230
+      Width           =   2580
+   End
    Begin VB.CommandButton cmdCrc32Test 
       Caption         =   "Crc32"
       Height          =   675
@@ -300,5 +308,11 @@ End Sub
 
  
 Private Sub Command1_Click()
-
+    Dim x2 As ULong64
+    Dim x1 As New ULong64
+    
+    x1 = "0x1111`11111100"
+    Set x2 = x1.add("&h20")
+    List1.AddItem x2.toString(mHex)
+    
 End Sub

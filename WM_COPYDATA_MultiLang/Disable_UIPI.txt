@@ -1,0 +1,41 @@
+
+
+ Oct 1st, 2018, 07:48 AM #23
+dilettante
+
+    UIPI also will get in the way of passing window messages between processes. You can get around that but you need to jump through hoops. The elevated process needs to be digitally signed and located in System32, needs a uiAccess="true" manifest, and must call ChangeWindowMessageFilter() or ChangeWindowMessageFilterEx() for each uMsg number that it wants to receive from lower-integrity (non-elevated) processes.
+
+    If you really want to communicate between two processes that run at different integrity levels UDP and TCP are the most obvious choices. I'm not sure but Named Pipes and Mailslots may not be controlled by UIPI because these can already be protected through security attributes, however those can be clunkier for VB6 programmers to use. 
+
+   I tested this with the server running elevated and the client as a standard user: [VB6] PipeRPC - RPC Over Named Pipes.
+
+http://www.vbforums.com/showthread.php?649507-VB6-PipeRPC-RPC-Over-Named-Pipes
+
+    It worked fine, so UIPI doesn't seem to be an issue. The only downside is that we don't have a free and widely available ActiveX control for Named Pipes, so the server code uses a Timer control to poll. An alternative might be some code supporting a worker thread that could make blocking calls and notify the interactive thread and pass it the incoming data.
+
+    This allows bidirectional data transfers, but it is a sort of "procedure call" rather than a peer to peer communication relationship. You could also use Named Pipes more like TCP, but then both ends would need to poll for incoming data or else have worker threads.
+
+--------------------
+
+Fortunately, there is another (not documented) way to "disable" UIPI.
+
+Windows initializes UIPI during the process startup. If you create the process with a low integrity level, then UIPI will prevent it from accessing windows owned by medium/high integrity level processes.
+
+But no one said that it was not possible to change the integrity level of a process AFTER it is started. If you own the process, and you trust that it's not going to run any potentially malicious piece of code before main(), you can add code at the beginning of your main() to drop the integrity level. From now on, the process is going to run with the new integrity level and UIPI won't be updated.
+
+Dropping the integrity level is easy:
+
+Get a handle to the process token using OpenProcessToken and call SetTokenInformation on it with the TokenIntegrityLevel information class to set the new integrity level.
+
+But this is not all. If you only do this, your process won't be able to play sound. This is because when you play sound, audiodg.exe creates some objects on your behalf. At some point it will impersonate your token and open your process. Since your process was created with a medium integrity level token, the integrity/mandatory label on the process is Medium. When audiodg tries to open your process with your token, it does not have access and it fails.
+
+What you must do is change the security label on the process to be low integrity level. The easy way to do this is to create a SDDL string for the integrity label and to follow the code in this example. You should use this SDDL string: "S:(ML;;NWNR;;;LW)" It means that it's a SDDL for a SACL (S:), with a Mandatory Label ace type (ML), the ace access is No-Write-Up and No-Read-Up (NWNR) and the integrity level is low (LW). The example is using NW instead of NWNR but for a process it's better to prevent lower privileges processes from being able to read it's process memory.
+
+---------------------------
+
+If you don't want to disable UAC, you could try just disabling UIPI (User Interface Privilege Isolation).
+
+Open regedit and go to: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System
+
+Add a new DWORD (32-bit) Value called EnableUIPI and set it to 0.
+

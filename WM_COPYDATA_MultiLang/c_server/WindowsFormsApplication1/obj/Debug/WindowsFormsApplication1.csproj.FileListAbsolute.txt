@@ -1,0 +1,7 @@
+C:\Users\Dave\Desktop\VB_C_InterProcess\c_server\WindowsFormsApplication1\bin\Debug\WindowsFormsApplication1.exe
+C:\Users\Dave\Desktop\VB_C_InterProcess\c_server\WindowsFormsApplication1\bin\Debug\WindowsFormsApplication1.pdb
+C:\Users\Dave\Desktop\VB_C_InterProcess\c_server\WindowsFormsApplication1\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\Dave\Desktop\VB_C_InterProcess\c_server\WindowsFormsApplication1\obj\Debug\WindowsFormsApplication1.Properties.Resources.resources
+C:\Users\Dave\Desktop\VB_C_InterProcess\c_server\WindowsFormsApplication1\obj\Debug\WindowsFormsApplication1.csproj.GenerateResource.Cache
+C:\Users\Dave\Desktop\VB_C_InterProcess\c_server\WindowsFormsApplication1\obj\Debug\WindowsFormsApplication1.exe
+C:\Users\Dave\Desktop\VB_C_InterProcess\c_server\WindowsFormsApplication1\obj\Debug\WindowsFormsApplication1.pdb

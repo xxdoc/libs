@@ -1,0 +1,245 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033\deflangfe1041{\fonttbl{\f0\fswiss\fprq2\fcharset0 Arial;}{\f1\froman\fprq2\fcharset0 Times New Roman;}{\f2\fmodern\fprq1\fcharset0 Courier New;}{\f3\froman\fprq2\fcharset2 Symbol;}}
+{\colortbl ;\red51\green102\blue255;\red128\green0\blue0;}
+{\stylesheet{ Normal;}{\s1 heading 1;}{\s2 heading 2;}{\s3 heading 3;}}
+{\*\generator Msftedit 5.41.21.2509;}\viewkind4\uc1\pard\nowidctlpar\sb240\sa60\qc\kerning28\b\f0\fs36 PipeRPC\par
+\pard\nowidctlpar\sb120\sa60\qc\kerning0\b0\fs28 A Visual Basic 6.0 Control For Simple\line Remote Procedure Calls Over Named Pipes\par
+\pard\nowidctlpar\sb120\qr\fs21 Bob Riemersma\line first published: May 2011\line last revised: May 2011\f1\line\f0 version documented here: 1.1\f1\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\f0\fs32 1.\tab Legal\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 Copyright \'a9 2011 Robert D. Riemersma, Jr.\f1\line\f0 All Rights Reserved\par
+PipeRPC is free for general use for any legal purpose, and derivative works are encouraged.  Users are responsible for determining fitness and proper use.  No liability is accepted and no warranty or guarantee of support is offered.  This is \ldblquote as is\rdblquote  software and related documentation and examples.\f1\par
+\f0 PipeRPC and related materials may be freely distributed in source or binary form as long as the notices are kept intact.  Programs using PipeRPC do not require attribution in documentation or at runtime, however there is a \f2 Copyright\f0  property programs could use to display such information in About dialogs, etc. if desired.\f1\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\f0\fs32 2.\tab Introduction\f1\par
+\pard\nowidctlpar\sb120\kerning0\b0\f0\fs24 Visual Basic 6.0 developers often find it useful to divide applications into separate client and server programs.  But then they need some kind of \ldblquote glue\rdblquote  or communication path to tie these pieces together.\f1\par
+\f0 For Internet applications we have basically two choices: TCP and UDP using the Winsock control or HTTP using one of several HTTP Request objects.\par
+For LAN or single-machine applications we have a richer set of communication options.  However the alternative native to VB6 is DCOM which can be constraining because it requires a program structure as well as DCOM component registration that can sometimes be undesirable.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 How PipeRPC Helps\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 Using PipeRPC allows you to write your clients and servers as Standard EXE projects.  Instead of relying on DCOM registration the \ldblquote link\rdblquote  among your programs is one or more Named Pipe names.\par
+Clients make a simple message-oriented call passing a request and a response parameter.  Servers respond to a simple event with the request and response parameters, performing the request action and returning the response with results.\par
+No registration and no finicky Winsock control code or extraneous firewall rule changes are required.\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\fs32 3.\tab System Requirements\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 PipeRPC has modest client and server requirements:\par
+\pard\nowidctlpar\fi-360\li720\sb120\tx720\f3\'b7\tab\f0 Windows 2000 or later.\par
+\pard\nowidctlpar\fi-360\li720\sb120\f3\'b7\tab\f0 Windows Networking (\ldblquote File and Print Sharing\rdblquote ) enabled over TCP/IP, NetBEUI, or IPX/SPX for machine-to-machine operation.\f1\par
+\f3\'b7\tab\f0 If working over TCP/IP your firewalls must allow Windows Networking through.\par
+\f3\'b7\tab\f0 A common Workgroup or Domain and common Users for machine-to-machine operation.\par
+\pard\nowidctlpar\sb120 There are no special Windows Services required beyond the Windows Client and Server services.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Security Configuration Note\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 When multiple computers are involved they must be joined to the same Workgroup or Domain and the Users involved must be valid for each participating computer.\par
+In a home Workgroup LAN this means defining all Users involved at each computer involved, which should be normal practice anyway.  This also includes \ldblquote computers\rdblquote  running in a VM such as those supported by the Microsoft\'ae Virtual PC product.\par
+PipeRPC does not support \ldblquote Guest\rdblquote  user connections.\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\fs32 4.\tab Including PipeTCP in Your Applications\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 You simply add the files \f2 PipeRPC.ctl\f0  and \f2 PipeRPC.ctx\f0  to your project folder, then include the control via the IDE\rquote s \i Add File\'85\i0  dialog.\par
+You could also create a new ActiveX Control project named \f2 PipeRPCLib\f0  and add those files, then change the UserControl\rquote s \f2 Public\f0  property to \f2 True\f0 .  Compiling this project produces \f2 PipeRPCLib.ocx\f0 , which can be registered like any OCX for use in your programs.\f1\par
+\f0 PipeRPC combines both client and server operations into one control.\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\fs32 5.\tab Client Operations\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 Place an instance of PipeRPC onto a Form much as you might with a Winsock or Inet control.  When required you can create a control array of PipeRPC controls.\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 PipeCall Method\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This method is used by clients to make calls to a local or remote PipeRPC server.\f1\par
+\cf2\b\f2 Public Function PipeCall( _\f1\line\f2     ByRef Request() As Byte, _\f1\line\f2     ByRef Response() As Byte) As Long\par
+\cf0\b0\f0 You pass a single-dimension \f2 Request\f0  Byte array containing your input data.  \f2 Request\f0  can have any lower bound\par
+You also pass a \f2 Response\f0  dynamic Byte array that PipeRPC returns output data in.  This can have any lower bound, but \f2 Response\f0  will be returned with a lower bound of zero.  You \f2 ReDim\f0  this to the expected maximum size before each call (generally equal to the server\rquote s \f2 MaxResponse\f0  setting).\f1\par
+\f0 The function\rquote s return value will be zero (\f2 0\f0 ) for \ldblquote good results\rdblquote  or else a system error number to indicate any problem that occurs.  Common errors seen by clients include:\par
+\pard\nowidctlpar\li720\sb120\f2 Private Const ERROR_FILE_NOT_FOUND = 2&\line Private Const ERROR_SEM_TIMEOUT = 121&\line Private Const ERROR_PIPE_BUSY = 231&\line Private Const ERROR_PIPE_NOT_CONNECTED = 233&\par
+\pard\nowidctlpar\sb120\f0 You might also see security errors in the 1300 to 1399 range, etc.  These are all standard Windows system errors as documented at the MSDN Library Web site and on your MSDN Library CDs.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 OpenPipe Method\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This method is used by clients to establish a long-term connection to the server in order to efficiently make multiple calls as well as to reserve a Named Pipe instance at the server.\f1\par
+\cf2\b\f2 Public Function OpenPipe() As Long\f1\par
+\cf0\b0\f0 When complete your program should call \f2 ClosePipe\f0 .\f1\par
+\f0 The return value is zero (\f2 0\f0 ) for successful opens or a non-zero system error result on failure.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 ClosePipe Method\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This method is used to close the client\rquote s pipe instance that was opened using \f2 OpenPipe\f0 .\par
+\cf2\b\f2 Public Sub ClosePipe()\par
+\cf0\b0\f0 This is a simple call with no arguments or return value.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 PipeName Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property can only be set while PipeRPC is not connected.\f1\par
+\cf2\b\f2 PipeName As String\f1\par
+\cf0\b0\f2 PipeName\f0  specifies the name of the pipe, which must be a unique value using any characters except back-slashes (\f2\\\f0 ) and NULs.  The length is limited to 256 characters, which includes the prefix added by PipeRPC: "\f2\\\\\i\f0 <server>\i0\f2\\pipe\\\f0\rdblquote  when the actual pipe name is formed.\par
+\ul PipeName Examples\ulnone :\par
+\pard\nowidctlpar\li720\sb120\b\f2 "PipeRPC|MyApp|MyPipe"\par
+"a64dd1f0-7a38-11e0-819a-0800200c9a66"\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\i\f0\fs28 Server Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property can only be set while PipeRPC is not connected.  It is also used in servers.\f1\par
+\cf2\b\f2 Server As String\f1\par
+\cf0\b0\f0 The \f2 Server\f0  String contains the server machine name, and the default value of a period (\f2 "."\f0 ) means \ldblquote local machine.\rdblquote   In many cases you can also get away with the server\rquote s IPv4 address in dotted notation (when Windows Networking is bound to TCP/IP).\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 State Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This is a read-only property that returns a value indicating whether or not the PipeRPC control instance is currently connected to the pipe server.\par
+\cf2\b\f2 State As PipeRPCState\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\i\f0\fs28 Timeout Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property is used by clients to specify how long to wait to get a connection to the pipe server.  This applies to the \f2 OpenPipe\f0  call and to each \f2 PipeCall\f0  call when the PipeRPC control is in disconnected (\ldblquote free\rdblquote ) mode.\par
+\cf2\b\f2 Timeout As PipeRPCTimeoutMs\par
+\cf0\b0\f0 This is a value in Long milliseconds or one of several special values.  Client programs can only set this property while the PipeRPC control is not connected.\par
+Default value is \f2 ptoServerDefault\f0 .\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 PipeRPCState Enum\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This Enum defines several values that the \f2 State\f0  property can take.  These are the values that apply to clients:\par
+\cf2\b\f2 pstFree\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 The client is not currently connected to the pipe server.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pstListening\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value does not occur in client mode, but is used by a server to determine whether or not the PipeRPC instance is currently listening.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pstClientOpen\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 The client has an open connection to the pipe server.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 PipeRPCTimeoutMs Enum\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This Enum defines several special values for the \f2 Timeout\f0  property:\f1\par
+\cf2\b\f2 ptoServerDefault\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 Use the \f2 Timeout\f0  value specified by the pipe server.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 ptoNoWait\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 Do not wait at all.  If the server pipe is not immediately available fall through with an error result.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 ptoForever\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 Block and wait forever (or until a system error) on \f2 OpenPipe\f0  calls and \ldblquote free\rdblquote  (disconnected) \f2 PipeCall\f0  calls.\par
+\pard\nowidctlpar\sb120 A specific value in milliseconds can also be used for the \f2 Timeout\f0  property.\f1\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\f0\fs32 6.\tab Client Considerations\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 The \f2 PipeCall\f0  method\rquote s \f2 Request\f0  and \f2 Response\f0  should not exceed the maximum request and response lengths set at the server.\f1\par
+\f0 In practice Windows considers the server length maxima to be \ldblquote advisory\rdblquote  values and may allow somewhat larger messages.  But when the server sees a result indicating that a message (request) needs to be fragmented it will disconnect your client, which results in an error.\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\fs32 7.\tab Server Operations\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 Place an instance of PipeRPC onto a Form much as you might with a Winsock or Inet control.\par
+When required you can create a control array of PipeRPC controls.  However, unlike the Winsock control, one PipeRPC instance supports all of the client connections for any one unique Named Pipe.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 ClosePipe Method\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This method is used to close all open client pipe instances and stop listening, returning the PipeRPC instance to \ldblquote free\rdblquote  mode.\par
+\cf2\b\f2 Public Sub ClosePipe()\par
+\cf0\b0\f0 This is a simple call with no arguments or return value.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Listen Method\f1\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\f0\fs24 This method is used to place PipeRPC into server mode and listen for client connections and calls.\par
+\cf2\b\f2 Public Sub Listen()\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\i\f0\fs28 MaxClients Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property can only be set while PipeRPC is not listening.\f1\par
+\cf2\b\f2 MaxClients As Integer\par
+\cf0\b0\f0 This value can be from 1 to 255 (where 255 means \ldblquote unlimited\rdblquote ).  In many cases you will have just one client, so the default value is 1.  PipeRPC makes every attempt to keep unused slots closed to help reduce the memory impact of pipe instances.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 MaxRequest Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property is ignored in client mode and can only be set while PipeRPC is not listening.\f1\par
+\cf2\b\f2 MaxRequest As Long\par
+\cf0\b0 MaxRequest\f0  and \f2 MaxResponse\f0  are in bytes.  The valid range is from 1 to 65.536 bytes.  It is better to avoid making these larger than required, because they determine the amount of non-paged memory tied up by each active pipe instance.\par
+They set an approximate maximum size allowed for the clients\rquote  \f2 PipeCall\f0  argument \f2 Request\f0  and the server\rquote s returned \f2 PipeCall\f0  argument \f2 Response\f0 .\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 MaxResponse Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property is ignored in client mode and can only be set while PipeRPC is not listening.\f1\par
+\cf2\b\f2 MaxResponse As Long\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\i\f0\fs28 MultiPoll Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property is ignored in client mode, but servers can set it while PipeRPC is in \ldblquote free\rdblquote  mode (not listening or client-connected).\par
+\cf2\b\f2 MultiPoll As Boolean\f1\par
+\cf0\b0\f0 If set to \f2 True\f0 , every time PipeRPC\rquote s client pipe polling loop finds that a call was processed it makes another pass polling all of the client pipe instances again.  This can produce a more responsive server, however it also means the server is potentially doing a lot more work per poll-Timer tick.\par
+\ul Default Value\ulnone :\par
+\pard\nowidctlpar\li720\sb120\f2 False\f0 .\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 PipeName Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property can only be set in servers while PipeRPC is not listening.\f1\par
+\cf2\b\f2 PipeName As String\par
+\cf0\b0\f0 This is a unique name for the pipe (unique for the server\rquote s machine).  Its value is as described in \i Client Operations\i0  above, and can be up to 256 characters less the pipe prefix (see above) using any characters except backslash and NUL.\par
+Since this (and the server name in remote clients) is used to link clients to the server and must be unique you may want to make this configurable through a settings file or registry entry.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 State Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This is a read-only property that returns a value indicating whether or not the PipeRPC control instance is currently listening.\par
+\cf2\b\f2 State As PipeRPCState\f1\par
+\cf0\b0\f0 The Enum values are documented above under \i Client Operations\i0 .\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Timeout Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This property is used by servers to set the default value for clients.  This applies to the \f2 OpenPipe\f0  call and to each \f2 PipeCall\f0  call when the PipeRPC control is in disconnected (\ldblquote free\rdblquote ) mode.\par
+\cf2\b\f2 Timeout As PipeRPCTimeoutMs\par
+\cf0\b0\f0 This is a value in \f2 Long\f0  milliseconds or one of several special values.  Server programs can only set this property while the PipeRPC control is not listening.\par
+\ul Default Value\ulnone :\par
+\pard\nowidctlpar\li720\sb120\f2 ptoServerDefault\f0  (\f2 0\f0 ), and the \ldblquote default default\rdblquote  is hard-coded as \f2 PIPERPC_SERVER_DEFAULT_TIMEOUT\f0  (currently \f2 250\f0  milliseconds).\f1\par
+\pard\nowidctlpar\sb120\f0 The other Enum values are not recommended, but servers may wish to set a different value in milliseconds.  Note that \f2 1\f0  and \f2 -1\f0  are special values corresponding to the other Enum values.\f1\par
+\f0 The Enum values are documented above under \i Client Operations\i0 .\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Called Event\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This is the \ldblquote meat\rdblquote  of your server program, and where you receive requests, process them, and return results.  It looks like:\par
+\cf2\b\f2 Public Event Called( _\f1\line\f2     ByVal Pipe As Long, _\f1\line\f2     ByRef Request() As Byte, _\f1\line\f2     ByRef Response() As Byte)\par
+\cf0\b0\f0 Here \f2 Pipe\f0  is the client index of the pipe instance:\par
+\pard\nowidctlpar\li720\sb120 Pipe can be used to maintain session state \i but only if clients obey the rule to use \f2 OpenPipe\f0 /\f2 ClosePipe\f0  and not make \ldblquote free\rdblquote  mode \f2 PipeCalls\f0 !\i0\f1\par
+\f0 Otherwise it isn\rquote t useful.  If you do maintain session state be sure to use the other events to initialize and clear this state.\f1\par
+\pard\nowidctlpar\sb120\f2 Request\f0  will always arrive with a lower bound of zero.\par
+You must \f2 ReDim\f0  and fill in the \f2 Response\f0  argument but your server program can use any lower bound.  Do not make \f2 Response\f0  larger than \f2 MaxResponse\f0  though!\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Connected Event\f1\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\f0\fs24 This event is raised every time a client connects.\par
+\cf2\b\f2 Public Event Connected(ByVal Pipe As Long)\f1\par
+\cf0\b0\f0 Note that the \f2 Connected\f0  event is raised by each successful client \f2 OpenPipe\f0  call \i as well as each \ldblquote free\rdblquote  mode client \f2 PipeCall\f0 !\i0\f1\par
+\f0 This event can be helpful in maintaining stateful connections when your clients obey the open/close convention.  It can also be useful for activity logging or in gathering statistics.\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 Disconnected Event\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This event is raised every time a client disconnects.  See the \f2 Connected\f0  event for its use in maintaining session state.\par
+\cf2\b\f2 Public Event Disconnected( _\line     ByVal Pipe As Long, _\line     ByVal Reason As PipeRPCDisconnectReason, _\line     ByVal SystemError As Long)\par
+\cf0\b0\f0 The \f2 Reason\f0  argument can be useful in logging and troubleshooting, as can the \f2 SystemError\f0  argument.\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 PipeRPCDisconnectReason Enum\f1\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\f0\fs24 This Enum defines values that the \f2 Disconnected\f0  event\rquote s \f2 Reason\f0  argument can take:\par
+\cf2\b\f2 pdrNoReason\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value should never be seen by your server logic.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pdrConnectFailed\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This indicates a failed attempt to connect to an incoming client open, but should seldom be seen.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pdrClientDisconnect\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value indicates a normal client disconnection, either due to a \f2 ClosePipe\f0  call or a \ldblquote free\rdblquote  mode \f2 PipeCall\f0  completion.\f1\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pdrClosePipe\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value should be returned for any open client pipe instances when the server calls \f2 ClosePipe\f0 .\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pdrRequestTooLong\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value indicates that the client pipe instance was closed because reading the pipe produced a \f2 ERROR_MORE_DATA\f0  result.  PipeRPC does not accumulate long requests for processing.\f1\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pdrResponseTooShort\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value indicates that when your server tried to return a response it got an error indicating that only part of it could be sent, and then the client pipe instance was closed.  The client may receive the partial response however.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pdrReadError\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value indicates that the client pipe instance was closed because an unexpected read error occurred on the pipe.\par
+\pard\nowidctlpar\sb120\cf2\b\f2 pdrWriteError\par
+\pard\nowidctlpar\li720\sb120\cf0\b0\f0 This value indicates that the client pipe instance was closed because an unexpected write error occurred on the pipe.\f1\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\f0\fs32 8.\tab General Operations\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 PipeRPC has a few methods and properties that provide useful operations and general information.\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 CopyMemory Method\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This is a thin wrapper on th RTLMoveMemory API call.\par
+\cf2\b\f2 Public Sub CopyMemory( _\line     ByVal DestPointer As Long, _\line     ByVal SourcePointer As Long, _\line     ByVal LengthInBytes As Long)\f1\par
+\cf0\b0\f0 This method can be useful in PipeRPC programs for processing request and response arrays consisting of several fields.  Note that it expects pointers created using \f2 StrPtr(\i\f0 string variable\i0\f2 )\f0  and \f2 VarPtr(\i\f0 non-string variable\i0\f2 )\f0 and for arrays be sure to subscript the array element at which thecopy operation should start.\par
+\pard\keepn\nowidctlpar\s3\sb360\sa60\b\fs26 Examples:\par
+\pard\nowidctlpar\li720\sb120\f2\fs24 PipeRPC1.CopyMemory _\line     VarPtr(Request(17)), _\line     StrPtr(strData), _\line     LenB(strData)\par
+\b0\f0 This copies the Unicode contents of \f2 strData\f0  into \f2 Request\f0  beginning at byte \f2 17\f0 .\par
+\b\f2 PipeRPC1.CopyMemory _\line     VarPtr(Request(17)), _\line     StrPtr(StrConv(strData, vbFromUnicode), _\line     Len(strData)\par
+\b0\f0 This copies the converted ANSI contents of \f2 strData\f0  into \f2 Request\f0  beginning at byte \f2 17\f0 .\par
+\pard\keepn\nowidctlpar\s3\sb360\sa60\b\fs26 Note:\par
+\pard\nowidctlpar\sb120\b0\fs24 You can often use UDTs and \f2 LSet\f0  statements to do your request and response formatting.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 ComputerName Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This is a read-only property that contains the computer name of the host the server is running on:\par
+\cf2\b\f2 ComputerName As String\f1\par
+\cf0\b0\f0 The property is also available in client mode, but is probably most useful for servers where you may wish to display the value.\par
+It may also be useful in symmetric-call situations where a client sends its own \f2 ComputerName\f0  value in a \f2 PipeCall\f0  to the server allowing the server to open its own client connection back to the original client\rquote s second server-mode instance of PipeRPC.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Copyright Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This read-only property returns a multiline copyright string.\par
+\cf2\b\f2 Copyright As String\f1\par
+\cf0\b0\f0 Developers using PipeRPC should not tamper with this, but if they make significant changes they may wish to add their own additional notice to the end of the String Const \f2 COPYRIGHT_NOTICE\f0 .  For example you might want to add something like:\par
+\pard\nowidctlpar\li720\sb120\f2 & vbNewLine _\line & "Frobnitz Enhancement: " _\line & "Copyright \'a9 2014 William Finster"\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 Version Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This read-only property returns a combined PipeRPC version value:\par
+\cf2\b\f2 Version As Currency\f1\par
+\cf0\b0\f0 The value returned is in the format \f2 M.mmmm\f0  where \f2 M\f0  is the \f2 VersionMajor\f0  value and \f2 mmmm\f0  is the \f2 VersionMinor\f0  value.\f1\par
+\f0 Version \f2 12\f0 , \f2 5\f0  would be returned as the \f2 12.0005\f0  combined value.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 VersionMajor Property\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 This read-only property returns the separate \ldblquote major\rdblquote  version value:\par
+\cf2\b\f2 VersionMajor As Integer\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\i\f0\fs28 VersionMinor Property\f1\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\f0\fs24 This read-only property returns the separate \ldblquote minor\rdblquote  version value:\par
+\cf2\b\f2 VersionMinor As Integer\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\cf0\kerning32\f0\fs32 9.\tab Some Possible Uses For PipeRPC\par
+\pard\nowidctlpar\sb120\kerning0\b0\fs24 There are many things that you can do with PipeRPC that offer advantages over alternatives.\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 A General DCOM Alternative\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 As mentioned at the beginning of this document DCOM can have some disadvantages.  One \i advantage\i0  would be the client\rquote s ability to have the server automatically start and end based on object lifetime.  However this also requires DCOM registration and you have to write your server in a compatible fashion.\par
+Portable and other software packaged using registration-free COM techniques also can\rquote t use DCOM, so PipeRPC may offer a useful alternative!\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Link Between a Windows Service and its GUI\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 Starting with Windows Vista, \i Session 0 Isolation\i0  limits your ability to write interactive services.  One remedy is to break the service into a GUI client and a non-interactive service.  These need a communication path, and PipeRPC can be that path for you.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Link Between a Main Program and Worker Processes\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 Sometimes you have \ldblquote heavy lifting\rdblquote  or crunching to do in a program where the work would interfere with UI processing.  You might use a secondary process or processes written as Named Pipe clients using PipeRPC and make your Main user interface program a PipeRPC server.\par
+Start each worker process via the \f2 Shell()\f0  function, passing command line parameters with your \f2 PipeName\f0  (perhaps based on \f2 App.ThreadID\f0  for a unique value) and perhaps the task to be performed.\par
+Client \i worker\i0  processes can do \f2 PipeCall\f0 s to request work to do and get back results or \ldblquote go away\rdblquote  responses.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 General Purpose Client/Server Operation Across a LAN\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 You could write a server that logs, measures and monitors, gathers data, etc. that clients can request.  Or the server may control some specialized device allowing remote control by clients.\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\fs28 Bidirectional Peers\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 You can write a program meant for multiple copies (same machine or several) to act as peers.\f1\par
+\f0 Each program might have a server PipeRPC control and a PipeRPC client control (or control array).  Then they could make calls to each other.\par
+\pard\keepn\nowidctlpar\s1\fi-360\li360\sb360\sa60\tx360\kerning32\b\fs32 10.\tab Performance and Capacity Issues\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\kerning0\i\fs28 Call Rate\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 While Named Pipes can be very fast PipeRPC was designed in a simple manner, polling its active pipe instances for new calls.  This means it cannot handle an extremely high rate of \f2 PipeCall\f0 s and will slow the clients down a little.\par
+This could be enhanced to a much higher rate using Overlapped I/O or Completion Ports but these are fairly clumsy to use in VB6 alone.\par
+\pard\keepn\nowidctlpar\s3\sb360\sa60\b\fs26 MultiPoll\par
+\pard\nowidctlpar\sb120\b0\fs24 See the \f2 MultiPoll\f0  property above.  Setting this to \f2 True\f0  before calling the \f2 Listen\f0  method may produce better results.\par
+\pard\keepn\nowidctlpar\s3\sb360\sa60\b\fs26 PIPERPC_SERVER_POLL_INTERVAL\f1\par
+\pard\nowidctlpar\sb120\b0\f0\fs24 This Const private to PipeRPC may also be tweaked to produce a more responsive server or one that uses less of the server machine\rquote s available CPU resources.  The standard setting is 16 milliseconds, but making it smaller may not produce any significant difference.\f1\par
+\pard\keepn\nowidctlpar\s2\sb360\sa60\cf1\b\i\f0\fs28 Message Size Limits\par
+\pard\nowidctlpar\sb120\cf0\b0\i0\fs24 The \f2 Request\f0  and \f2 Response\f0  arrays can only be up to 65,536 bytes long.  Even making them that large can be an issue if lots of clients must be supported, due to the large non-paged memory buffers used.\par
+One solution is to use session state and a protocol where the messages contain a field indicating that continuation calls are being used.\par
+\pard\keepn\nowidctlpar\s3\sb360\sa60\b\fs26 Message Formatting\par
+\pard\nowidctlpar\sb120\b0\fs24 Anything besides the simplest application will need an agreement between the client and server about request and response layouts.  Example:\par
+\pard\nowidctlpar\li720\sb120\f2 TransactionCode\f0  byte 0, values 0 through 255\f1\par
+\f2 StatusCode\f0  byte 1, values 0 through 255\par
+\f2 CallForMoreData\f0  byte 2, value 0 = False, non-0 = True\par
+\f2 Data\f0  bytes 3 through end of array, application data of varying layouts\par
+\pard\nowidctlpar\sb120 Or you could pass \f2 PropertyBag.Content\f0  values, XML, etc.\par
+Another easy approach might be UDTs with \i fixed-length\i0  \f2 String\f0  values:\par
+\pard\nowidctlpar\li720\sb120\f2 Private Type RequestFormat\line     TransactionCode As Byte '1 byte\line     StatusCode As Byte      '1 byte\line     CallForMore As Boolean  '2 bytes\line     Data As String * 500    '1000 bytes\line End Type\line\line Private Type RequestBytes\line     Bytes(1 To 1004) As Byte\line End Type\par
+\pard\nowidctlpar\sb120\f0 You can copy between variables of these two types easily using an \f2 LSet\f0  statement since they are the same length.  Or skip a copy step and use \f2 CopyMemory\f0  to copy directly from a \f2 RequestFormat\f0  variable to a request array.\f1\par
+\par
+}
+ 
