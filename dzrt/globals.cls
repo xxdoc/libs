@@ -30,7 +30,7 @@ Private Const LB_GETCOUNT = &H18B
 Private Const LB_SETTOPINDEX = &H197
 Private startTime As Long
 
-Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount " () As Long
+Private Declare Function GetTickCount_ Lib "kernel32" Alias "GetTickCount" () As Long
 Private Declare Function LoadLibrary_ Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 Private Declare Function FreeLibrary_ Lib "kernel32" (ByVal hLibModule As Long) As Long
 Private Declare Function SendMessage_ Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long

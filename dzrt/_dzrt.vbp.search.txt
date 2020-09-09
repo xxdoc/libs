@@ -1,3 +1,4 @@
+gettickcount
 folderd
 CopyMemory
 CopyMemory_
