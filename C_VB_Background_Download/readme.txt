@@ -10,3 +10,4 @@ or detecting if server denied it the link because of wrong tls version etc.
 I was mostly focused on testing the multithreading access and feedback without
 having to add subclassing to the main form.
 
+wininet 异步下载
