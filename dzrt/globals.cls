@@ -698,15 +698,15 @@ Public Function isHexNum(v, Optional ByRef dataOut) As Boolean
     If Err.Number = 0 Then isHexNum = True
 End Function
 
-Function Rpad(v, Optional L As Long = 8, Optional char As String = " ")
+Function rpad(v, Optional L As Long = 8, Optional char As String = " ")
     On Error GoTo hell
     Dim X As Long
     X = Len(v)
     If X < L Then
-        Rpad = v & String(L - X, char)
+        rpad = v & String(L - X, char)
     Else
 hell:
-        Rpad = v
+        rpad = v
     End If
 End Function
 
@@ -719,6 +719,22 @@ Function lpad(v, Optional L As Long = 8, Optional char As String = " ")
     Else
 hell:
         lpad = v
+    End If
+End Function
+
+Function pad(v, Optional L As Long = 8, Optional char As String = " ", Optional padRight As Boolean = True)
+    On Error GoTo hell
+    Dim X As Long
+    X = Len(v)
+    If X < L Then
+        If padRight Then
+             pad = v & String(L - X, char)
+        Else
+             pad = String(L - X, char) & v
+        End If
+    Else
+hell:
+        pad = v
     End If
 End Function
 

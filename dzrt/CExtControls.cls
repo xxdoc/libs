@@ -76,23 +76,85 @@ Public Sub lvColumnSort(ListViewControl As Object, Column As Object)
     End With
 End Sub
 
+'Function lvGetAllElements(lv As Object) As String
+'    Dim ret() As String, i As Integer, tmp As String
+'    Dim lI 'As ListItem
+'
+'    On Error Resume Next
+'
+'    For i = 1 To lv.ColumnHeaders.count
+'        tmp = tmp & lv.ColumnHeaders(i).Text & vbTab
+'    Next
+'
+'    push ret, tmp
+'    push ret, String(50, "-")
+'
+'    For Each lI In lv.ListItems
+'        tmp = lI.Text & vbTab
+'        For i = 1 To lv.ColumnHeaders.count - 1
+'            tmp = tmp & lI.SubItems(i) & vbTab
+'        Next
+'        push ret, tmp
+'    Next
+'
+'    lvGetAllElements = Join(ret, vbCrLf)
+'
+'End Function
+
+Private Function pad(v, Optional L As Long = 8, Optional char As String = " ", Optional padRight As Boolean = True)
+    On Error GoTo hell
+    Dim X As Long
+    X = Len(v)
+    If X < L Then
+        If padRight Then
+             pad = v & String(L - X, char)
+        Else
+             pad = String(L - X, char) & v
+        End If
+    Else
+hell:
+        lpad = v
+    End If
+End Function
+
 Function lvGetAllElements(lv As Object) As String
-    Dim ret() As String, i As Integer, tmp As String
-    Dim li 'As ListItem
+    Dim ret() As String, i As Integer, tmp As String, max() As Long, tot As Long
+    Dim lI 'As ListItem,
     
     On Error Resume Next
     
-    For i = 1 To lv.ColumnHeaders.count
-        tmp = tmp & lv.ColumnHeaders(i).Text & vbTab
+    ReDim max(lv.ColumnHeaders.count)
+    
+    'check for max sizes of column headers
+    For i = 0 To lv.ColumnHeaders.count - 1
+        If Len(lv.ColumnHeaders(i + 1).Text) > max(i) Then max(i) = Len(lv.ColumnHeaders(i + 1).Text)
+    Next
+    
+    'and column elements
+    For Each lI In lv.ListItems
+        If Len(lI.Text) > max(0) Then max(0) = Len(lI.Text)
+        For i = 1 To lv.ColumnHeaders.count - 1
+            If Len(lI.subItems(i)) > max(i) Then max(i) = Len(lI.subItems(i))
+        Next
+    Next
+    
+    For i = 0 To UBound(max)
+        max(i) = max(i) + 3 'buffer
+    Next
+    
+    tot = max(0)
+    For i = 0 To lv.ColumnHeaders.count - 1
+        tmp = tmp & pad(lv.ColumnHeaders(i + 1).Text, max(i)) 'get the headers line
+        tot = tot + max(i)
     Next
     
     push ret, tmp
-    push ret, String(50, "-")
-        
-    For Each li In lv.ListItems
-        tmp = li.Text & vbTab
+    push ret, String(tot, "-")
+    
+    For Each lI In lv.ListItems
+        tmp = pad(lI.Text, max(0))
         For i = 1 To lv.ColumnHeaders.count - 1
-            tmp = tmp & li.SubItems(i) & vbTab
+            tmp = tmp & pad(lI.subItems(i), max(i))
         Next
         push ret, tmp
     Next
@@ -103,7 +165,7 @@ End Function
 
 Function lvGetColumn(lv As Object, colIndex As Long) As String
     Dim ret() As String, i As Integer, tmp As String
-    Dim li 'As ListItem
+    Dim lI 'As ListItem
     
     On Error Resume Next
     
@@ -113,11 +175,11 @@ Function lvGetColumn(lv As Object, colIndex As Long) As String
     'push ret, lv.ColumnHeaders(colIndex + 1).Text
     'push ret, String(50, "-")
         
-    For Each li In lv.ListItems
+    For Each lI In lv.ListItems
         If colIndex = 0 Then
-            push ret, li.Text
+            push ret, lI.Text
         Else
-            push ret, li.SubItems(colIndex)
+            push ret, lI.subItems(colIndex)
         End If
     Next
     
@@ -127,9 +189,9 @@ End Function
 
 Function lvSelCount(lv As Object) As Long
     On Error Resume Next
-    Dim i As Long, li As Object
-    For Each li In lv.ListItems
-        If li.selected Then
+    Dim i As Long, lI As Object
+    For Each lI In lv.ListItems
+        If lI.selected Then
             If Err.Number = 0 Then i = i + 1
         End If
     Next
@@ -209,8 +271,8 @@ Public Function fgFill(FlexGrid As Object, rs As Object) As Long
             
                 .AddItem ""
                 For J = 0 To rs.fields.count - 1
-                    If Not IsNull(rs.fields(J).value) Then
-                        .TextMatrix(i, J) = trim(rs.fields(J).value)
+                    If Not IsNull(rs.fields(J).Value) Then
+                        .TextMatrix(i, J) = trim(rs.fields(J).Value)
                     End If
                 Next
         
@@ -254,7 +316,7 @@ Public Sub fgCopy(FlexGrid As Object, Optional delimiter)
    Dim rows() As String
    Dim fields() As String
    Dim d As String
-   Dim c As Long, r As Long, maxwidth As Long
+   Dim c As Long, R As Long, maxwidth As Long
    
    If TypeName(FlexGrid) <> "MSFlexGrid" Then Exit Sub
    
@@ -264,17 +326,17 @@ Public Sub fgCopy(FlexGrid As Object, Optional delimiter)
         
         If Len(delimiter) = 0 Then
             For c = 0 To .Cols - 1
-                For r = 0 To .rows - 1
-                    maxwidth = Len(.TextMatrix(r, c))
+                For R = 0 To .rows - 1
+                    maxwidth = Len(.TextMatrix(R, c))
                     If maxwidth > colWidths(c) Then colWidths(c) = maxwidth
                 Next
             Next
         End If
         
-        For r = 0 To .rows - 1
+        For R = 0 To .rows - 1
             Erase fields
             For c = 0 To .Cols - 1
-                d = .TextMatrix(r, c)
+                d = .TextMatrix(R, c)
                 If Len(delimiter) = 0 Then
                     d = d & Space(colWidths(c) - Len(d) + 2)
                 Else
@@ -291,25 +353,25 @@ Public Sub fgCopy(FlexGrid As Object, Optional delimiter)
    
 End Sub
 
-Private Sub push(ary, value) 'this modifies parent ary object
-    On Error GoTo init
-    Dim x
+Private Sub push(ary, Value) 'this modifies parent ary object
+    On Error GoTo Init
+    Dim X
        
-    x = UBound(ary)
-    ReDim Preserve ary(x + 1)
+    X = UBound(ary)
+    ReDim Preserve ary(X + 1)
     
-    If IsObject(value) Then
-        Set ary(x + 1) = value
+    If IsObject(Value) Then
+        Set ary(X + 1) = Value
     Else
-        ary(x + 1) = value
+        ary(X + 1) = Value
     End If
     
     Exit Sub
-init:
+Init:
     ReDim ary(0)
-    If IsObject(value) Then
-        Set ary(0) = value
+    If IsObject(Value) Then
+        Set ary(0) = Value
     Else
-        ary(0) = value
+        ary(0) = Value
     End If
 End Sub
