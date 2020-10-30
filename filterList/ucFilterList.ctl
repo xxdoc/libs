@@ -157,6 +157,12 @@ Event DblClick()
 Event ItemClick(ByVal Item As MSComctlLib.ListItem)
 Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 
+Const LVM_FIRST = &H1000
+Const LVM_GETSELECTEDCOUNT = (LVM_FIRST + 50)
+
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+
+
 #If 0 Then
     Dim x, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
 #End If
@@ -178,10 +184,7 @@ Property Get SelCount() As Long
     Dim cnt As Long
     
     Set v = currentLV
-    For Each li In v.ListItems
-        If li.selected Then cnt = cnt + 1
-    Next
-    
+    cnt = SendMessage(v.hwnd, LVM_GETSELECTEDCOUNT, 0, 0)
     SelCount = cnt
     
 End Property
@@ -459,11 +462,13 @@ Private Sub lvFilter_KeyDown(KeyCode As Integer, Shift As Integer)
     
 End Sub
 
-Function totalColumn(colIndex As Long, Optional ByRef hadErr As Boolean) As Long
+Function totalColumn(ByVal colIndex As Long, Optional ByRef hadErr As Boolean) As Long
     On Error Resume Next
     Dim i As Long, tot As Long, li As ListItem
     
-    If colIndex >= currentLV.ColumnHeaders.Count Then
+    colIndex = colIndex - 1 'we expect a 1 based index to be consistant
+    
+    If colIndex < 0 Or colIndex > currentLV.ColumnHeaders.Count Then
         hadErr = True
         Exit Function
     End If
@@ -483,24 +488,15 @@ Function totalColumn(colIndex As Long, Optional ByRef hadErr As Boolean) As Long
 
 End Function
 
-
 Private Sub mnuTotalCol_Click()
     Dim i As Long, tmp As String, b As Boolean, tot As Long
     On Error Resume Next
-    tmp = InputBox("Enter column index or name to total (0-" & (lv.ColumnHeaders.Count - 1) & ")")
+    tmp = InputBox("Enter column index to total (1-" & (lv.ColumnHeaders.Count) & ")")
     If Len(tmp) = 0 Then Exit Sub
-    If IsNumeric(tmp) Then
-        i = CLng(tmp)
-        If Err.Number <> 0 Then Exit Sub
-        tot = totalColumn(i, b)
-        MsgBox "Total for " & lv.ColumnHeaders(i + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
-    Else
-        i = ColIndexForName(tmp)
-        If i >= 0 Then
-            tot = totalColumn(i, b)
-            MsgBox "Total for " & lv.ColumnHeaders(i + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
-        End If
-    End If
+    i = CLng(tmp)
+    If Err.Number <> 0 Then Exit Sub
+    tot = totalColumn(i, b)
+    MsgBox "Total for " & lv.ColumnHeaders(i).Text & " = " & tot & IIf(b, " An error was generated", ""), vbInformation
 End Sub
 
 Private Sub mnuAlertColWidths_Click()
@@ -548,7 +544,9 @@ Private Sub mnuFilterHelp_Click()
                 "the column that is being searched. You can \n" & _
                 "modify it on the filter menu, or by entering\n" & _
                 "/[index] in the filter textbox and hitting return\n" & _
-                "/tot [0-index or colName] is also a supported here\n\n" & _
+                "/t [1-ColCount] | or colName to total column is also supported\n" & _
+                "/d will filter for unique entries only\n" & _
+                "numeric columns support > [index] or < [index] filters\n\n" & _
                 "Pressing escape in the filter textbox will clear it.\n\n" & _
                 "If the AllowDelete property has been set, you can\n" & _
                 "select list items and press the delete key to remove\n" & _
@@ -622,11 +620,51 @@ Private Sub txtFilter_Change()
     End If
 End Sub
 
+Function distinctFilter()
+    Dim vals As New Collection, v As String
+    Dim li As ListItem
+    
+    On Error Resume Next
+    
+    If m_FilterColumn = -1 Then Exit Function
+    
+    lvFilter.Visible = True
+    lvFilter.ListItems.Clear
+    
+    For Each li In lv.ListItems
+        If m_FilterColumn = 1 Then
+            v = li.Text
+        Else
+            v = li.subItems(m_FilterColumn - 1)
+        End If
+        If Not KeyExistsInCollection(vals, v) Then
+            vals.Add v, v
+            CloneListItemTo li, lvFilter
+            'Debug.Print "unique: " & v
+        End If
+    Next
+    
+End Function
+
+Private Function myIsNumeric(ByVal v, ByRef outV As Long) As Boolean
+    On Error GoTo hell
+    If IsNumeric(v) Then
+        outV = CLng(v)
+    Else
+        v = Replace(v, "0x", Empty)
+        outV = CLng("&h" & v)
+    End If
+    myIsNumeric = True
+hell:
+End Function
+
 Sub ApplyFilter()
     Dim li As ListItem
     Dim t As String
     Dim useSubtractiveFilter As Boolean
     Dim tmp() As String, addit As Boolean, x
+    Dim gtMode As Boolean, ltMode As Boolean
+    Dim uv As Long, v As Long
     
     On Error Resume Next
     
@@ -639,9 +677,23 @@ Sub ApplyFilter()
     End If
         
     If VBA.Left(txtFilter, 1) = "/" Then
-        GoTo hideExit
-        't = Replace(txtFilter, "/", Empty)
-        'If IsNumeric(t) Then GoTo hideExit 'they are going to change the FilterColumn on "cmdline"
+        t = Replace(txtFilter, "/", Empty)
+        If IsNumeric(t) Then GoTo hideExit 'they are going to change the FilterColumn on "cmdline"
+    End If
+    
+    If txtFilter = "/distinct" Or txtFilter = "/d" Then
+         distinctFilter
+         Exit Sub
+    End If
+    
+    If VBA.Left(txtFilter, 1) = ">" Then
+        gtMode = True
+        If Len(Trim(txtFilter)) = 1 Then GoTo hideExit
+    End If
+    
+    If VBA.Left(txtFilter, 1) = "<" Then
+        ltMode = True
+        If Len(Trim(txtFilter)) = 1 Then GoTo hideExit
     End If
     
     If VBA.Left(txtFilter, 1) = "-" Then 'they are typing a subtractive filter..give them time to formulate it..
@@ -649,6 +701,25 @@ Sub ApplyFilter()
         If VBA.Right(txtFilter, 1) = "," Then Exit Sub 'they are adding more criteria
     End If
 
+    If Left(txtFilter, 2) = "/t" Then
+         t = Trim(Mid(txtFilter, 3))
+         If myIsNumeric(t, uv) Then  'we will use converted UserVal (uv) value below..
+            If uv > 0 Or uv <= lv.ColumnHeaders.Count Then
+                v = totalColumn(uv, addit)
+                MsgBox "Total for " & lv.ColumnHeaders(uv).Text & " = " & v & IIf(addit, " - An error was generated", ""), vbInformation
+                txtFilter = Empty
+            End If
+         Else
+            uv = ColIndexForName(t) + 1 '0 based , -1 on error
+            If uv > 0 Then
+                tot = totalColumn(uv, addit)
+                MsgBox "Total for " & lv.ColumnHeaders(uv).Text & " = " & tot & IIf(addit, vbCrLf & vbCrLf & " - An error was generated", ""), vbInformation
+                txtFilter = Empty
+            End If
+         End If
+         GoTo hideExit
+    End If
+    
     'should multiple (csv) filters only apply on hitting return?
     'so you can see full list to work off of?
     
@@ -675,6 +746,14 @@ Sub ApplyFilter()
         sMatch = txtFilter
     End If
     
+    If ltMode Or gtMode Then
+        t = Mid(txtFilter, 2)
+        If Not myIsNumeric(t, uv) Then 'we will use converted UserVal (uv) value below..
+            ltMode = False
+            gtMode = False
+        End If
+    End If
+    
     'we allow for csv multiple criteria, also
     'you can use a subtractive filter like -mnu,cmd,lv
      For Each li In lv.ListItems
@@ -686,7 +765,13 @@ Sub ApplyFilter()
          End If
          
          addit = False
-         If txtFilter = "bold" Then
+         
+         If gtMode Or ltMode Then
+            If myIsNumeric(t, v) Then
+                If gtMode Then If v > uv Then addit = True
+                If ltMode Then If v < uv Then addit = True
+            End If
+         ElseIf txtFilter = "bold" Then
             If li.Bold = True Then addit = True
          ElseIf txtFilter = "selected" Then
             If li.selected = True Then addit = True
@@ -775,6 +860,7 @@ End Sub
 
 Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     If m_Locked Then Exit Sub
+    If Me.SelCount > 1 Then Exit Sub 'uses sendmessage its ok..
     RaiseEvent ItemClick(Item)
 End Sub
 
@@ -801,6 +887,7 @@ End Sub
 
 Private Sub lvFilter_ItemClick(ByVal Item As MSComctlLib.ListItem)
     If m_Locked Then Exit Sub
+    If Me.SelCount > 1 Then Exit Sub 'uses sendmessage its ok..we dont want client to do processing on select all
     RaiseEvent ItemClick(Item)
 End Sub
 
@@ -830,20 +917,21 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
                 If IsNumeric(t) Then
                     FilterColumn = CLng(t)
                     Filter = Empty
-                ElseIf Left(t, 3) = "tot" Then
-                    t = Trim(Replace(t, "tot", Empty))
-                    If IsNumeric(t) Then
-                        tot = totalColumn(CLng(t), b)
-                        MsgBox "Total for " & lv.ColumnHeaders(CLng(t) + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
-                    Else
-                        i = ColIndexForName(t)
-                        If i >= 0 Then
-                            tot = totalColumn(i, b)
-                            MsgBox "Total for " & lv.ColumnHeaders(i + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
-                        End If
-                    End If
-                    Filter = Empty
                 End If
+'                ElseIf Left(t, 3) = "tot" Then
+'                    t = Trim(Mid(t, 4))
+'                    If IsNumeric(t) Then
+'                        tot = totalColumn(CLng(t), b)
+'                        MsgBox "Total for " & lv.ColumnHeaders(CLng(t) + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
+'                    Else
+'                        i = ColIndexForName(t)
+'                        If i >= 0 Then
+'                            tot = totalColumn(i, b)
+'                            MsgBox "Total for " & lv.ColumnHeaders(i + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
+'                        End If
+'                    End If
+'                    Filter = Empty
+'                End If
                 
             End If
             
@@ -1013,3 +1101,13 @@ Private Sub UserControl_Terminate()
     m_Locked = False
     Me.Clear
 End Sub
+
+Private Function KeyExistsInCollection(c As Collection, val As String) As Boolean
+    On Error GoTo nope
+    Dim t
+    t = c(val)
+    KeyExistsInCollection = True
+ Exit Function
+nope: KeyExistsInCollection = False
+End Function
+

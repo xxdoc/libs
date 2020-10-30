@@ -8,7 +8,7 @@ Begin VB.Form Form1
    LinkTopic       =   "Form1"
    ScaleHeight     =   8730
    ScaleWidth      =   9540
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
    Begin VB.CheckBox chkCencelDelete 
       Caption         =   "Cancel Delete in event"
       Height          =   285
