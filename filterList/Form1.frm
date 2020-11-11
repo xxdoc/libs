@@ -125,6 +125,11 @@ Private Sub Form_Load()
     lvFilter.MultiSelect = True
     lvFilter.SetFont "tahoma", 9
     
+    'Debug.Print "'" & lvFilter.pad("a") & "'"
+    'End
+    
+    
+    
     'you can set the filtercolumn either with the property manually, or by adding an * in the column header..
     'lvFilter.FilterColumn = 2
     lvFilter.SetColumnHeaders "test1,test2,test3*,test4,x"
@@ -135,7 +140,7 @@ Private Sub Form_Load()
         Set li = lvFilter.AddItem("text" & i, , , , i)
         li.subItems(1) = "taco1 " & i
         li.subItems(2) = "test3 " & i
-        li.subItems(3) = "test4 " & i
+        li.subItems(3) = String(RandomNumber(20, 5), Chr(RandomNumber(Asc("z"), &H41)))
         li.Tag = "whatever"
         
         Set li = lvFilter.AddItem("item " & i, , , , i * 2)
@@ -150,6 +155,15 @@ Private Sub Form_Load()
     lvFilter.SetLiColor li, vbBlue
     
 End Sub
+
+Public Function RandomNumber(ByVal MaxValue As Long, Optional _
+ByVal MinValue As Long = 0)
+
+  On Error Resume Next
+  Randomize Timer
+  RandomNumber = Int((MaxValue - MinValue + 1) * Rnd) + MinValue
+
+End Function
 
 Private Sub Form_Resize()
     On Error Resume Next
@@ -183,7 +197,7 @@ Private Sub lvFilter_ItemDeleted(Item As MSComctlLib.ListItem, cancel As Boolean
     End If
 End Sub
 
-Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 

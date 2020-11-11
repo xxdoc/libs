@@ -155,7 +155,7 @@ Event Click()
 'Event ColumnClick(ByVal ColumnHeader As MSComctlLib.ColumnHeader)
 Event DblClick()
 Event ItemClick(ByVal Item As MSComctlLib.ListItem)
-Event MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Event MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
 
 Const LVM_FIRST = &H1000
 Const LVM_GETSELECTEDCOUNT = (LVM_FIRST + 50)
@@ -164,7 +164,7 @@ Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hw
 
 
 #If 0 Then
-    Dim x, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
+    Dim X, y, Column, nextone 'force lowercase so ide doesnt switch around on its own whim...
 #End If
 
 'note when locked you wont receive events, and can not add items..
@@ -172,10 +172,10 @@ Property Get Locked() As Boolean
     Locked = m_Locked
 End Property
 
-Property Let Locked(x As Boolean)
-    m_Locked = x
-    txtFilter.BackColor = IIf(x, &HC0C0C0, vbWhite)
-    txtFilter.Enabled = Not x
+Property Let Locked(X As Boolean)
+    m_Locked = X
+    txtFilter.BackColor = IIf(X, &HC0C0C0, vbWhite)
+    txtFilter.Enabled = Not X
 End Property
     
 Property Get SelCount() As Long
@@ -207,20 +207,20 @@ Property Get FilterColumn() As Long
     FilterColumn = m_FilterColumn
 End Property
 
-Property Let FilterColumn(x As Long)
+Property Let FilterColumn(X As Long)
     On Error Resume Next
     Dim tmp As String
     Dim ch As ColumnHeader
     
     If lv.ColumnHeaders.Count = 0 Then
-        m_FilterColumnPreset = x
+        m_FilterColumnPreset = X
         Exit Property
     End If
     
-    If x <= 0 Then x = 1
+    If X <= 0 Then X = 1
     
-    If x > lv.ColumnHeaders.Count Then
-        x = lv.ColumnHeaders.Count
+    If X > lv.ColumnHeaders.Count Then
+        X = lv.ColumnHeaders.Count
     End If
     
     'remove the visual marker that this is the filter column
@@ -231,13 +231,13 @@ Property Let FilterColumn(x As Long)
     ch.Text = Trim(Replace(ch.Text, "*", Empty))
 
     'add the visual marker to the new column
-    Set ch = lv.ColumnHeaders(x)
+    Set ch = lv.ColumnHeaders(X)
     ch.Text = ch.Text & " *"
     
-    Set ch = lvFilter.ColumnHeaders(x)
+    Set ch = lvFilter.ColumnHeaders(X)
     ch.Text = ch.Text & " *"
 
-    m_FilterColumn = x
+    m_FilterColumn = X
     
 End Property
 
@@ -252,29 +252,29 @@ Property Get MultiSelect() As Boolean
     MultiSelect = lv.MultiSelect
 End Property
 
-Property Let MultiSelect(x As Boolean)
-    lv.MultiSelect = x
-    lvFilter.MultiSelect = x
-    mnuToggleMulti.Checked = x
+Property Let MultiSelect(X As Boolean)
+    lv.MultiSelect = X
+    lvFilter.MultiSelect = X
+    mnuToggleMulti.Checked = X
 End Property
 
 Property Get HideSelection() As Boolean
     HideSelection = lv.MultiSelect
 End Property
 
-Property Let HideSelection(x As Boolean)
-    lv.HideSelection = x
-    lvFilter.HideSelection = x
-    mnuHideSel.Checked = x
+Property Let HideSelection(X As Boolean)
+    lv.HideSelection = X
+    lvFilter.HideSelection = X
+    mnuHideSel.Checked = X
 End Property
 
 Property Get GridLines() As Boolean
     GridLines = lv.GridLines
 End Property
 
-Property Let GridLines(x As Boolean)
-    lv.GridLines = x
-    lvFilter.GridLines = x
+Property Let GridLines(X As Boolean)
+    lv.GridLines = X
+    lvFilter.GridLines = X
 End Property
 
 'which ever one is currently displayed
@@ -520,12 +520,12 @@ End Sub
 
 Private Sub mnuCopyColumn_Click()
     On Error Resume Next
-    Dim x As Long
-    x = InputBox("Enter column index to copy", , 1)
-    If Len(x) = 0 Then Exit Sub
-    x = CLng(x) - 1 'we are 0 based internally..
+    Dim X As Long
+    X = InputBox("Enter column index to copy", , 1)
+    If Len(X) = 0 Then Exit Sub
+    X = CLng(X) - 1 'we are 0 based internally..
     Clipboard.Clear
-    Clipboard.SetText Me.GetAllText(x)
+    Clipboard.SetText Me.GetAllText(X)
 End Sub
 
 Private Sub mnuCopySel_Click()
@@ -575,11 +575,11 @@ End Sub
 
 Private Sub mnuSetFilterCol_Click()
     On Error Resume Next
-    Dim x As Long
-    x = InputBox("Enter column that filter searches", , FilterColumn)
-    If Len(x) = 0 Then Exit Sub
-    x = CLng(x)
-    FilterColumn = x
+    Dim X As Long
+    X = InputBox("Enter column that filter searches", , FilterColumn)
+    If Len(X) = 0 Then Exit Sub
+    X = CLng(X)
+    FilterColumn = X
 End Sub
 
 Private Sub mnuToggleMulti_Click()
@@ -662,7 +662,7 @@ Sub ApplyFilter()
     Dim li As ListItem
     Dim t As String
     Dim useSubtractiveFilter As Boolean
-    Dim tmp() As String, addit As Boolean, x
+    Dim tmp() As String, addit As Boolean, X
     Dim gtMode As Boolean, ltMode As Boolean
     Dim uv As Long, v As Long
     
@@ -786,9 +786,9 @@ Sub ApplyFilter()
                push tmp, sMatch
             End If
             
-            For Each x In tmp
-                If Len(x) > 0 Then
-                    If InStr(1, t, x, vbTextCompare) > 0 Then
+            For Each X In tmp
+                If Len(X) > 0 Then
+                    If InStr(1, t, X, vbTextCompare) > 0 Then
                         addit = Not addit
                         Exit For
                     End If
@@ -864,9 +864,9 @@ Private Sub lv_ItemClick(ByVal Item As MSComctlLib.ListItem)
     RaiseEvent ItemClick(Item)
 End Sub
 
-Private Sub lv_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lv_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
     If m_Locked Then Exit Sub
-    RaiseEvent MouseUp(Button, Shift, x, y)
+    RaiseEvent MouseUp(Button, Shift, X, y)
 End Sub
 
 Private Sub lvFilter_Click()
@@ -891,9 +891,9 @@ Private Sub lvFilter_ItemClick(ByVal Item As MSComctlLib.ListItem)
     RaiseEvent ItemClick(Item)
 End Sub
 
-Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
     If m_Locked Then Exit Sub
-    RaiseEvent MouseUp(Button, Shift, x, y)
+    RaiseEvent MouseUp(Button, Shift, X, y)
 End Sub
 
 Private Sub txtFilter_KeyPress(KeyAscii As Integer)
@@ -1014,33 +1014,81 @@ Public Sub ColumnSort(Column As ColumnHeader)
     
 End Sub
 
-Public Function GetAllElements(Optional selectedOnly As Boolean = False) As String
+Private Function pad(v, Optional L As Long = 8, Optional char As String = " ", Optional padRight As Boolean = True)
+    On Error GoTo hell
+    Dim X As Long
+    X = Len(v)
+    If X < L Then
+        If padRight Then
+             pad = v & String(L - X, char)
+        Else
+             pad = String(L - X, char) & v
+        End If
+    Else
+hell:
+        pad = v
+    End If
+End Function
+
+Public Function GetAllElements(Optional selectedOnly As Boolean = False, Optional incHeader As Boolean = True, Optional autoPad As Boolean = True) As String
     Dim ret() As String, i As Integer, tmp As String
     Dim li As ListItem
     Dim ListViewControl As ListView
     Dim include  As Boolean
+    Dim maxLen() As Long, sz As Long
     
     On Error Resume Next
     
     Set ListViewControl = lv
     If lvFilter.Visible Then Set ListViewControl = lvFilter
+    
+    'calculate min field width (including col header text)
+    '------------------------------------------------------
+    ReDim maxLen(ListViewControl.ColumnHeaders.Count) 'default 0 pad ok with that..
+         
+    If autoPad Then
+    
+         If incHeader Then
+            For i = 1 To ListViewControl.ColumnHeaders.Count
+                sz = Len(ListViewControl.ColumnHeaders(i).Text)
+                If sz > maxLen(i - 1) Then maxLen(i - 1) = sz
+            Next
+         End If
         
-    For i = 1 To ListViewControl.ColumnHeaders.Count
-        tmp = tmp & ListViewControl.ColumnHeaders(i).Text & vbTab
-    Next
-
-    push ret, tmp
-    push ret, String(50, "-")
-
+         For Each li In ListViewControl.ListItems
+             If selectedOnly Then
+                If Not li.selected Then GoTo nextSize
+             End If
+             sz = Len(li.Text)
+             If sz > maxLen(0) Then maxLen(0) = sz
+             For i = 1 To ListViewControl.ColumnHeaders.Count - 1
+                  sz = Len(li.subItems(i))
+                  If sz > maxLen(i) Then maxLen(i) = sz
+             Next
+nextSize:
+         Next
+         
+    End If
+    '------------------------------------------------------
+    
+    If incHeader Then
+        For i = 1 To ListViewControl.ColumnHeaders.Count
+            tmp = tmp & pad(ListViewControl.ColumnHeaders(i).Text, maxLen(i - 1) + 2) & vbTab
+        Next
+        
+        push ret, tmp
+        push ret, String(50, "-")
+    End If
+ 
     For Each li In ListViewControl.ListItems
     
         If selectedOnly Then
             If Not li.selected Then GoTo nextone
         End If
             
-        tmp = li.Text & vbTab
+        tmp = pad(li.Text, maxLen(0) + 2) & vbTab
         For i = 1 To ListViewControl.ColumnHeaders.Count - 1
-            tmp = tmp & li.subItems(i) & vbTab
+            tmp = tmp & pad(li.subItems(i), maxLen(i) + 2) & vbTab
         Next
         push ret, tmp
         
@@ -1053,7 +1101,7 @@ End Function
 
 Function GetAllText(Optional subItemRow As Long = 0, Optional selectedOnly As Boolean = False) As String
     Dim i As Long
-    Dim tmp() As String, x As String
+    Dim tmp() As String, X As String
     Dim ListViewControl As ListView
     
     On Error Resume Next
@@ -1063,16 +1111,16 @@ Function GetAllText(Optional subItemRow As Long = 0, Optional selectedOnly As Bo
     
     For i = 1 To ListViewControl.ListItems.Count
         If subItemRow = 0 Then
-            x = ListViewControl.ListItems(i).Text
-            If selectedOnly And Not ListViewControl.ListItems(i).selected Then x = Empty
-            If Len(x) > 0 Then
-                push tmp, x
+            X = ListViewControl.ListItems(i).Text
+            If selectedOnly And Not ListViewControl.ListItems(i).selected Then X = Empty
+            If Len(X) > 0 Then
+                push tmp, X
             End If
         Else
-            x = ListViewControl.ListItems(i).subItems(subItemRow)
-            If selectedOnly And Not ListViewControl.ListItems(i).selected Then x = Empty
-            If Len(x) > 0 Then
-                push tmp, x
+            X = ListViewControl.ListItems(i).subItems(subItemRow)
+            If selectedOnly And Not ListViewControl.ListItems(i).selected Then X = Empty
+            If Len(X) > 0 Then
+                push tmp, X
             End If
         End If
     Next
@@ -1082,8 +1130,8 @@ End Function
 
 Private Sub push(ary, value) 'this modifies parent ary object
     On Error GoTo init
-    Dim x As Integer
-    x = UBound(ary) '<-throws Error If Not initalized
+    Dim X As Integer
+    X = UBound(ary) '<-throws Error If Not initalized
     ReDim Preserve ary(UBound(ary) + 1)
     ary(UBound(ary)) = value
     Exit Sub
