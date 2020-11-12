@@ -11,7 +11,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-' We use this class to pass IUnknown as an extra parameter to callback functions.
+'dzzie
 
 Public growthCycles As Long
 

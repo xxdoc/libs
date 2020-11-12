@@ -1,7 +1,10 @@
 Attribute VB_Name = "modDeclares"
 Option Explicit
 'this is to (start to) eliminate the need for the vblibcurl.tlb
-'vblibcurl.tlb -> vc6 oleview -> \tools\typedef_conv3
+'typelibs put imports right into our import table, so dependancy dlls
+'must be found on startup by windows loader, we cant hunt for them
+'during dev this can be annoying unless you put everything in system path
+'(and remember to update them if they change in dev)
 
 Public Enum curlioerr
     CURLIOE_OK = 0
@@ -452,6 +455,10 @@ Public Enum CURLMcode
     CURLM_LAST = 5
 End Enum
 
+
+
+'basic api
+'---------------------------------------------------------------------
 '[entry(0x60000000), helpstring("Cleanup an easy session")]
 'void _stdcall vbcurl_easy_cleanup([in] long easy);
 Public Declare Sub vbcurl_easy_cleanup Lib "vblibcurl.dll" (ByVal easy As Long)
@@ -464,6 +471,12 @@ Public Declare Sub vbcurl_easy_cleanup Lib "vblibcurl.dll" (ByVal easy As Long)
 '                [in] long easy,
 '                [in] CURLINFO info,
 '                [in] VARIANT* pv);
+Public Declare Function vbcurl_easy_getinfo Lib "vblibcurl.dll" ( _
+    ByVal easy As Long, _
+    ByVal info As CURLINFO, _
+    ByRef value As Variant _
+) As CURLcode
+
 
 '[entry(0x60000003), helpstring("Initialize an easy session")]
 'long _stdcall vbcurl_easy_init();
@@ -494,6 +507,10 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '[entry(0x60000007), helpstring("Get a string description of an error code")]
 'BSTR _stdcall vbcurl_easy_strerror([in] CURLcode err);
 
+
+
+'forms
+'---------------------------------------------------------------------
 '[entry(0x60000008), helpstring("Add two option/value pairs to a form part")]
 'CURLFORMcode _stdcall vbcurl_form_add_four_to_part(
 '                [in] long part,
@@ -532,6 +549,11 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '[entry(0x6000000e), helpstring("Free a form and all its parts")]
 'void _stdcall vbcurl_form_free([in] long form);
 
+
+
+
+'multi handles
+'---------------------------------------------------------------------
 '[entry(0x6000000f), helpstring("Add an easy handle")]
 'CURLMcode _stdcall vbcurl_multi_add_handle(
 '                [in] long multi,
@@ -571,6 +593,12 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '[entry(0x60000017), helpstring("Get a string description of an error code")]
 'BSTR _stdcall vbcurl_multi_strerror([in] CURLMcode err);
 
+
+
+
+
+'string lists
+'---------------------------------------------------------------------
 '[entry(0x60000018), helpstring("Append a string to an slist")]
 'void _stdcall vbcurl_slist_append(
 '                [in] long slist,
@@ -582,6 +610,11 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '[entry(0x6000001a), helpstring("Free a created string list")]
 'void _stdcall vbcurl_slist_free([in] long slist);
 
+
+
+
+'escape/unescape
+'---------------------------------------------------------------------
 '[entry(0x6000001b), helpstring("Escape an URL")]
 'BSTR _stdcall vbcurl_string_escape(
 '                [in] BSTR url,
@@ -592,6 +625,11 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '                [in] BSTR url,
 '                [in] long len);
 
+
+
+
+'version/build info
+'---------------------------------------------------------------------
 '[entry(0x6000001d), helpstring("Get the underlying libcurl version string")]
 'BSTR _stdcall vbcurl_string_version();
 
