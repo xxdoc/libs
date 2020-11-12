@@ -33,5 +33,8 @@ The samples include:
 
 -- SSLGet.bas: Retrive an https web page.
 
--- VersionData.bas: Dump internal cURL version data.
+-- VersionData.bas: Dump internal cURL version data.\
+
+-- Project1.vbp: sample gui and test code for single 
+                 thread download to mem or file -dz
 
