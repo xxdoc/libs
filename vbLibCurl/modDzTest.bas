@@ -10,6 +10,8 @@ Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal 
 'one instance for simplicity, if using multi api I would pass in
 'objptr and collection lookup over stolen references like in origial demos
 Private resp As CCurlResponse
+Public dllPath As String
+Public caBundleFound As Boolean
 
 Function initLib() As Boolean
     
@@ -31,12 +33,19 @@ Function initLib() As Boolean
     For Each b In base
         hLib = LoadLibrary(b & "\" & dll)
         If hLib <> 0 Then
+            dllPath = b
             Form1.List1.AddItem "Loaded " & b & "\" & dll
             hLib2 = LoadLibrary(b & "\" & "vb" & dll)
             If hLib2 = 0 Then
                 Form1.List1.AddItem "Failed to load vbLibcurl.dll from same directory?!"
             Else
                 Form1.List1.AddItem "Loaded vbLibCurl.dll from same directory."
+                If FileExists(dllPath & "\curl-ca-bundle.crt") Then
+                    caBundleFound = True
+                    Form1.List1.AddItem "Found curl-ca-bundle.crt"
+                Else
+                    Form1.List1.AddItem "curl-ca-bundle.crt not found ssl will not work..."
+                End If
             End If
             Exit For
         End If
@@ -82,6 +91,8 @@ Function Download(Url As String, Optional toFile As String, Optional INotify As 
     vbcurl_easy_setopt easy, CURLOPT_VERBOSE, True
     vbcurl_easy_setopt easy, CURLOPT_TIMEOUT, timeout
     
+    If caBundleFound Then vbcurl_easy_setopt easy, CURLOPT_CAINFO, dllPath & "\curl-ca-bundle.crt"
+
     ret = vbcurl_easy_perform(easy)
     resp.queryHeaders
    
@@ -105,7 +116,12 @@ Private Function DebugFunction(ByVal info As curl_infotype, ByVal rawBytes As Lo
     Dim tmp As String, i As Long
     Dim b() As Byte
     
-    If info = CURLINFO_DATA_IN Then Exit Function '3 every data packet we dont care...maybe disable debug func now?
+    If info >= 3 Then Exit Function
+    
+'    If info = CURLINFO_DATA_IN Then Exit Function '3 every data packet we dont care...maybe disable debug func now?
+'    If info = CURLINFO_DATA_OUT Then Exit Function
+'    If info = CURLINFO_SSL_DATA_IN Then Exit Function
+'    If info = CURLINFO_SSL_DATA_OUT Then Exit Function
     
     ReDim b(numBytes - 1)
     CopyMemory ByVal VarPtr(b(0)), ByVal rawBytes, numBytes
