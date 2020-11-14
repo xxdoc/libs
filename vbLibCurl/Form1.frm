@@ -19,6 +19,22 @@ Begin VB.Form Form1
    ScaleHeight     =   8505
    ScaleWidth      =   13365
    StartUpPosition =   2  'CenterScreen
+   Begin VB.TextBox txtConnectTimeout 
+      Height          =   360
+      Left            =   7650
+      TabIndex        =   16
+      Text            =   "15"
+      Top             =   1395
+      Width           =   465
+   End
+   Begin VB.TextBox txtTimeout 
+      Height          =   360
+      Left            =   4365
+      TabIndex        =   14
+      Text            =   "0"
+      Top             =   1395
+      Width           =   510
+   End
    Begin VB.CommandButton cmdAbort 
       Caption         =   "Abort"
       Height          =   420
@@ -84,6 +100,22 @@ Begin VB.Form Form1
       Text            =   "http://sandsprite.com/tools.php"
       Top             =   135
       Width           =   10995
+   End
+   Begin VB.Label Label7 
+      Caption         =   "Connect timeout    (s)"
+      Height          =   285
+      Left            =   5535
+      TabIndex        =   15
+      Top             =   1440
+      Width           =   3120
+   End
+   Begin VB.Label Label6 
+      Caption         =   "Total DL Timeout    (s)"
+      Height          =   285
+      Left            =   2115
+      TabIndex        =   13
+      Top             =   1440
+      Width           =   3390
    End
    Begin VB.Label Label5 
       Caption         =   "Empty SaveAs path = mem only"
@@ -191,20 +223,35 @@ Private Sub cmdBrowse_Click()
 End Sub
 
 Private Sub cmdDl_Click()
-    
-    On Error GoTo hell
+
+    On Error Resume Next
     
     Dim X, resp As CCurlResponse
-    
+    Dim totalTimeout As Long, connectTimeout As Long
+        
     List1.Clear
     txtOutput = Empty
     abort = False
     
+    totalTimeout = CLng(txtTimeout)
+    If Err.Number <> 0 Then
+        List1.AddItem "Invalid total timeout"
+        Exit Sub
+    End If
+    
+    connectTimeout = CLng(txtConnectTimeout)
+    If Err.Number <> 0 Then
+        List1.AddItem "Invalid connect timeout"
+        Exit Sub
+    End If
+    
+    On Error GoTo hell
+    
     If Len(txtSaveAs) = 0 Then
-        Set resp = Download(txtUrl, , Me)
+        Set resp = Download(txtUrl, , Me, connectTimeout, totalTimeout)
         txtOutput = resp.dump & vbCrLf & vbCrLf & resp.memFile.asString
     Else
-        Set resp = Download(txtUrl, txtSaveAs, Me)
+        Set resp = Download(txtUrl, txtSaveAs, Me, connectTimeout, totalTimeout)
         txtOutput = resp.dump
         'txtOutput = txtOutput & vbCrLf & "MD5: " & hash.HashFile(txtSaveAs)
     End If

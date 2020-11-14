@@ -10,7 +10,6 @@ Class=ICurlProgress; ICurlProgress.cls
 Module=modSupport; modSupport.bas
 Startup="Form1"
 ExeName32="Project1.exe"
-Path32="samples"
 Command32=""
 Name="Project1"
 HelpContextID="0"
@@ -37,4 +36,4 @@ ThreadPerObject=0
 MaxNumberOfThreads=1
 
 [fastBuild]
-fullPath=D:\_code\libs\_misc\curl\libcurlvb-1_01\samples\Project1.exe
+fullPath=%ap%\Project1.exe

@@ -62,7 +62,7 @@ End Function
 'if toFile is empty then we download to CMemBuffer only and return that
 'else we will return the written file size as long
 'if we fail to open the output file this will raise an error
-Function Download(Url As String, Optional toFile As String, Optional INotify As ICurlProgress, Optional timeout As Long = 15) As CCurlResponse
+Function Download(Url As String, Optional toFile As String, Optional INotify As ICurlProgress, Optional connectTimeout As Long = 15, Optional totalDLTimeout As Long = 0) As CCurlResponse
     
     Dim easy As Long, v As Variant
     Dim ret As CURLcode 'enum
@@ -89,8 +89,8 @@ Function Download(Url As String, Optional toFile As String, Optional INotify As 
     vbcurl_easy_setopt easy, CURLOPT_WRITEFUNCTION, AddressOf WriteFunction
     vbcurl_easy_setopt easy, CURLOPT_DEBUGFUNCTION, AddressOf DebugFunction
     vbcurl_easy_setopt easy, CURLOPT_VERBOSE, True
-    vbcurl_easy_setopt easy, CURLOPT_TIMEOUT, timeout
-    
+    If totalDLTimeout > 0 Then vbcurl_easy_setopt easy, CURLOPT_TIMEOUT, totalDLTimeout
+    If connectTimeout > 0 Then vbcurl_easy_setopt easy, CURLOPT_CONNECTTIMEOUT, connectTimeout
     If caBundleFound Then vbcurl_easy_setopt easy, CURLOPT_CAINFO, dllPath & "\curl-ca-bundle.crt"
 
     ret = vbcurl_easy_perform(easy)

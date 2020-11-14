@@ -18,7 +18,7 @@ Public ResponseCode 'As Long
 'Public DownloadSize 'As Long
 Public DownloadLength 'As Long
 Public TotalTime 'As Long
-Public BytesReceived As Long 'huge downloads could overflow
+Public BytesReceived As Double 'huge downloads could overflow
 Public abort As Boolean
 Public hCurl As Long
 Public memFile As CMemBuffer
