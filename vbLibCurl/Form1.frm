@@ -2,7 +2,7 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form1 
    Caption         =   "vbLibCurl Demo"
-   ClientHeight    =   8505
+   ClientHeight    =   8790
    ClientLeft      =   60
    ClientTop       =   405
    ClientWidth     =   13365
@@ -16,7 +16,7 @@ Begin VB.Form Form1
       Strikethrough   =   0   'False
    EndProperty
    LinkTopic       =   "Form1"
-   ScaleHeight     =   8505
+   ScaleHeight     =   8790
    ScaleWidth      =   13365
    StartUpPosition =   2  'CenterScreen
    Begin VB.TextBox txtConnectTimeout 
@@ -68,14 +68,14 @@ Begin VB.Form Form1
       MultiLine       =   -1  'True
       ScrollBars      =   2  'Vertical
       TabIndex        =   8
-      Top             =   4995
+      Top             =   5265
       Width           =   12300
    End
    Begin VB.ListBox List1 
       Height          =   2220
-      Left            =   765
+      Left            =   945
       TabIndex        =   5
-      Top             =   1890
+      Top             =   2475
       Width           =   12345
    End
    Begin VB.CommandButton cmdDl 
@@ -100,6 +100,15 @@ Begin VB.Form Form1
       Text            =   "http://sandsprite.com/tools.php"
       Top             =   135
       Width           =   10995
+   End
+   Begin VB.Label Label8 
+      Caption         =   "Note: VB file commands have 2gb max file size limit switch to API if necessary"
+      ForeColor       =   &H00FF0000&
+      Height          =   330
+      Left            =   1125
+      TabIndex        =   17
+      Top             =   1935
+      Width           =   11220
    End
    Begin VB.Label Label7 
       Caption         =   "Connect timeout    (s)"
@@ -128,9 +137,9 @@ Begin VB.Form Form1
    Begin VB.Label Label4 
       Caption         =   "Output"
       Height          =   375
-      Left            =   45
+      Left            =   0
       TabIndex        =   7
-      Top             =   4455
+      Top             =   5130
       Width           =   915
    End
    Begin VB.Label Label3 
@@ -138,7 +147,7 @@ Begin VB.Form Form1
       Height          =   240
       Left            =   45
       TabIndex        =   6
-      Top             =   1620
+      Top             =   2430
       Width           =   690
    End
    Begin VB.Label Label2 

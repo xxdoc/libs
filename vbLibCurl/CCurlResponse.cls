@@ -13,6 +13,7 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
+Public CurlReturnCode As CURLcode
 Public ContentType
 Public ResponseCode 'As Long
 'Public DownloadSize 'As Long
@@ -54,7 +55,7 @@ Friend Function notifyParent(size As Long) As Long
         ret = vbcurl_easy_getinfo(hCurl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, v)
         If ret = CURLE_OK Then DownloadLength = v
         
-        'ret = vbcurl_easy_getinfo(hCurl, CURLINFO_SIZE_DOWNLOAD, v)
+        'ret = vbcurl_easy_getinfo(hCurl, CURLINFO_SIZE_DOWNLOAD, v) 'this must be bytes downloaded so far..
         'If ret = CURLE_OK Then DownloadSize = v
         
         If Not INotify Is Nothing Then INotify.Init Me
@@ -74,6 +75,7 @@ End Function
 Function dump() As String
     Dim tmp() As String
     
+    push tmp, "CurlCode = " & curlCode2Text(Me.CurlReturnCode)
     push tmp, "ContentType = " & ContentType
     push tmp, "ResponseCode = " & ResponseCode
     'push tmp, "DownloadSize  = " & DownloadSize

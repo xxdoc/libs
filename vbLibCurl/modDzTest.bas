@@ -93,7 +93,7 @@ Function Download(Url As String, Optional toFile As String, Optional INotify As 
     If connectTimeout > 0 Then vbcurl_easy_setopt easy, CURLOPT_CONNECTTIMEOUT, connectTimeout
     If caBundleFound Then vbcurl_easy_setopt easy, CURLOPT_CAINFO, dllPath & "\curl-ca-bundle.crt"
 
-    ret = vbcurl_easy_perform(easy)
+    resp.CurlReturnCode = vbcurl_easy_perform(easy)
     resp.queryHeaders
    
     vbcurl_easy_cleanup easy
@@ -173,6 +173,84 @@ Function info2Text(i As curl_infotype) As String
     If Len(s) = 0 Then s = "Unknown " & i
     
     info2Text = s
+    
+End Function
+
+Function curlCode2Text(x As CURLcode) As String
+    
+    Dim s As String
+    s = "Unknown " & x
+    
+    If x = 0 Then s = "CURLE_OK"
+    If x = 42 Then s = "CURLE_ABORTED_BY_CALLBACK"
+    If x = 44 Then s = "CURLE_BAD_CALLING_ORDER"
+    If x = 61 Then s = "CURLE_BAD_CONTENT_ENCODING"
+    If x = 36 Then s = "CURLE_BAD_DOWNLOAD_RESUME"
+    If x = 43 Then s = "CURLE_BAD_FUNCTION_ARGUMENT"
+    If x = 46 Then s = "CURLE_BAD_PASSWORD_ENTERED"
+    If x = 7 Then s = "CURLE_COULDNT_CONNECT"
+    If x = 6 Then s = "CURLE_COULDNT_RESOLVE_HOST"
+    If x = 5 Then s = "CURLE_COULDNT_RESOLVE_PROXY"
+    If x = 2 Then s = "CURLE_FAILED_INIT"
+    If x = 63 Then s = "CURLE_FILESIZE_EXCEEDED"
+    If x = 37 Then s = "CURLE_FILE_COULDNT_READ_FILE"
+    If x = 9 Then s = "CURLE_FTP_ACCESS_DENIED"
+    If x = 15 Then s = "CURLE_FTP_CANT_GET_HOST"
+    If x = 16 Then s = "CURLE_FTP_CANT_RECONNECT"
+    If x = 32 Then s = "CURLE_FTP_COULDNT_GET_SIZE"
+    If x = 19 Then s = "CURLE_FTP_COULDNT_RETR_FILE"
+    If x = 29 Then s = "CURLE_FTP_COULDNT_SET_ASCII"
+    If x = 17 Then s = "CURLE_FTP_COULDNT_SET_BINARY"
+    If x = 25 Then s = "CURLE_FTP_COULDNT_STOR_FILE"
+    If x = 31 Then s = "CURLE_FTP_COULDNT_USE_REST"
+    If x = 30 Then s = "CURLE_FTP_PORT_FAILED"
+    If x = 21 Then s = "CURLE_FTP_QUOTE_ERROR"
+    If x = 64 Then s = "CURLE_FTP_SSL_FAILED"
+    If x = 10 Then s = "CURLE_FTP_USER_PASSWORD_INCORRECT"
+    If x = 14 Then s = "CURLE_FTP_WEIRD_227_FORMAT"
+    If x = 11 Then s = "CURLE_FTP_WEIRD_PASS_REPLY"
+    If x = 13 Then s = "CURLE_FTP_WEIRD_PASV_REPLY"
+    If x = 8 Then s = "CURLE_FTP_WEIRD_SERVER_REPLY"
+    If x = 12 Then s = "CURLE_FTP_WEIRD_USER_REPLY"
+    If x = 20 Then s = "CURLE_FTP_WRITE_ERROR"
+    If x = 41 Then s = "CURLE_FUNCTION_NOT_FOUND"
+    If x = 52 Then s = "CURLE_GOT_NOTHING"
+    If x = 34 Then s = "CURLE_HTTP_POST_ERROR"
+    If x = 33 Then s = "CURLE_HTTP_RANGE_ERROR"
+    If x = 22 Then s = "CURLE_HTTP_RETURNED_ERROR"
+    If x = 45 Then s = "CURLE_INTERFACE_FAILED"
+    If x = 67 Then s = "CURLE_LAST"
+    If x = 38 Then s = "CURLE_LDAP_CANNOT_BIND"
+    If x = 62 Then s = "CURLE_LDAP_INVALID_URL"
+    If x = 39 Then s = "CURLE_LDAP_SEARCH_FAILED"
+    If x = 40 Then s = "CURLE_LIBRARY_NOT_FOUND"
+    If x = 24 Then s = "CURLE_MALFORMAT_USER"
+    If x = 50 Then s = "CURLE_OBSOLETE"
+    If x = 28 Then s = "CURLE_OPERATION_TIMEOUTED"
+    If x = 27 Then s = "CURLE_OUT_OF_MEMORY"
+    If x = 18 Then s = "CURLE_PARTIAL_FILE"
+    If x = 26 Then s = "CURLE_READ_ERROR"
+    If x = 56 Then s = "CURLE_RECV_ERROR"
+    If x = 55 Then s = "CURLE_SEND_ERROR"
+    If x = 65 Then s = "CURL_SEND_FAIL_REWIND"
+    If x = 57 Then s = "CURLE_SHARE_IN_USE"
+    If x = 60 Then s = "CURLE_SSL_CACERT"
+    If x = 58 Then s = "CURLE_SSL_CERTPROBLEM"
+    If x = 59 Then s = "CURLE_SSL_CIPHER"
+    If x = 35 Then s = "CURLE_SSL_CONNECT_ERROR"
+    If x = 66 Then s = "CURLE_SSL_ENGINE_INITFAILED"
+    If x = 53 Then s = "CURLE_SSL_ENGINE_NOTFOUND"
+    If x = 54 Then s = "CURLE_SSL_ENGINE_SETFAILED"
+    If x = 51 Then s = "CURLE_SSL_PEER_CERTIFICATE"
+    If x = 49 Then s = "CURLE_TELNET_OPTION_SYNTAX"
+    If x = 47 Then s = "CURLE_TOO_MANY_REDIRECTS"
+    If x = 48 Then s = "CURLE_UNKNOWN_TELNET_OPTION"
+    If x = 1 Then s = "CURLE_UNSUPPORTED_PROTOCOL"
+    If x = 3 Then s = "CURLE_URL_MALFORMAT"
+    If x = 4 Then s = "CURLE_URL_MALFORMAT_USER"
+    If x = 23 Then s = "CURLE_WRITE_ERROR"
+
+    curlCode2Text = s
     
 End Function
 

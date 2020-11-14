@@ -25,3 +25,6 @@ The following tools/compilers were used in the build process:
     gcc-mingw-w64-i686 10-win32
     gcc-mingw-w64-x86_64 10-win32
     mingw-w64 8.0.0-1 
+
+
+we dont use curl.exe but i included it just in case it might be handy

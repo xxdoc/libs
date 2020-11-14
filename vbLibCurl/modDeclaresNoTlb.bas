@@ -188,8 +188,8 @@ Public Enum CURLoption
     CURLOPT_LOW_SPEED_LIMIT = 19
     CURLOPT_LOW_SPEED_TIME = 20
     CURLOPT_MAXCONNECTS = 71
-    CURLOPT_MAXFILESIZE = 114
-    CURLOPT_MAXFILESIZE_LARGE = 30117
+    CURLOPT_MAXFILESIZE = 114            'good up to 2gb
+    CURLOPT_MAXFILESIZE_LARGE = 30117    'over 2gb pass in curl_off_t struct https://curl.se/libcurl/c/CURLOPT_MAXFILESIZE_LARGE.html
     CURLOPT_MAXREDIRS = 68
     CURLOPT_NETRC = 51
     CURLOPT_NETRC_FILE = 10118
@@ -474,7 +474,7 @@ Public Declare Sub vbcurl_easy_cleanup Lib "vblibcurl.dll" (ByVal easy As Long)
 Public Declare Function vbcurl_easy_getinfo Lib "vblibcurl.dll" ( _
     ByVal easy As Long, _
     ByVal info As CURLINFO, _
-    ByRef value As Variant _
+    ByRef Value As Variant _
 ) As CURLcode
 
 
@@ -499,7 +499,7 @@ Public Declare Function vbcurl_easy_perform Lib "vblibcurl.dll" (ByVal easy As L
 Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
     ByVal easy As Long, _
     ByVal opt As CURLoption, _
-    ByRef value As Variant _
+    ByRef Value As Variant _
 ) As CURLcode
 
 
