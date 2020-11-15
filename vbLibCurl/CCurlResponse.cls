@@ -20,7 +20,7 @@ Public headers As New Collection
 Public DebugMsgs As New Collection
 
 Public TotalTime
-Public ContentType
+Public contentType
 Public ResponseCode
 Public DownloadLength 'if not set in header then will be -1
 Public BytesReceived As Double
@@ -64,7 +64,7 @@ Sub Finalize()
     
     ''set request stats in this class
     ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_CONTENT_TYPE, v)
-    If ret = CURLE_OK Then ContentType = v
+    If ret = CURLE_OK Then contentType = v
     
     ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_RESPONSE_CODE, v)
     If ret = CURLE_OK Then ResponseCode = v
@@ -77,7 +77,8 @@ Sub Finalize()
         hFile = 0
     End If
     
-    If Not owner.INotify Is Nothing Then owner.INotify.Complete Me
+    'If Not owner.INotify Is Nothing Then owner.INotify.Complete Me
+    owner.TriggerEvent ceComplete, Me
     
 End Sub
 
@@ -94,12 +95,14 @@ End Property
 'response header from server
 Friend Function addHeader(msg As String)
     headers.Add msg
-    If Not owner.INotify Is Nothing Then owner.INotify.Header Me, msg
+    'If Not owner.INotify Is Nothing Then owner.INotify.Header Me, msg
+    owner.TriggerEvent ceHeader, Me, msg
 End Function
 
 Friend Function addInfo(info As curl_infotype, msg As String)
     DebugMsgs.Add msg
-    If Not owner.INotify Is Nothing Then owner.INotify.InfoMsg Me, info, msg
+    'If Not owner.INotify Is Nothing Then owner.INotify.InfoMsg Me, info, msg
+    owner.TriggerEvent ceInfo, Me, info, msg
 End Function
 
 Friend Function notifyParent(size As Long) As Long
@@ -112,11 +115,13 @@ Friend Function notifyParent(size As Long) As Long
     If Not gotSizes Then
         ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, v)
         If ret = CURLE_OK Then DownloadLength = v
-        If Not owner.INotify Is Nothing Then owner.INotify.Init Me
+        'If Not owner.INotify Is Nothing Then owner.INotify.Init Me
+        owner.TriggerEvent ceInit, Me
         gotSizes = True
     End If
     
-    If Not owner.INotify Is Nothing Then owner.INotify.progress Me 'consumer can set abort if desired...
+    'If Not owner.INotify Is Nothing Then owner.INotify.Progress Me 'consumer can set abort if desired...
+    owner.TriggerEvent ceProgress, Me
     
     If abort Then
         notifyParent = 0
@@ -130,7 +135,7 @@ Function dump() As String
     Dim tmp() As String
     
     push tmp, "CurlCode = " & curlCode2Text(Me.CurlReturnCode)
-    push tmp, "ContentType = " & ContentType
+    push tmp, "ContentType = " & contentType
     push tmp, "ResponseCode = " & ResponseCode
     push tmp, "DownloadLength  = " & DownloadLength
     push tmp, "TotalTime = " & TotalTime

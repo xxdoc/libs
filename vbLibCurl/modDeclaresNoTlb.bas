@@ -475,7 +475,7 @@ Public Declare Sub vbcurl_easy_cleanup Lib "vblibcurl.dll" (ByVal easy As Long)
 Public Declare Function vbcurl_easy_getinfo Lib "vblibcurl.dll" ( _
     ByVal easy As Long, _
     ByVal info As CURLINFO, _
-    ByRef Value As Variant _
+    ByRef value As Variant _
 ) As CURLcode
 
 
@@ -503,6 +503,7 @@ Public Declare Function vbcurl_easy_perform Lib "vblibcurl.dll" (ByVal easy As L
 
 '[entry(0x60000005), helpstring("Reset an easy handle")]
 'void _stdcall vbcurl_easy_reset([in] long easy);
+Public Declare Sub vbcurl_easy_reset Lib "vblibcurl.dll" (ByVal easy As Long)
 
 '[entry(0x60000006), helpstring("Set option for easy transfer")]
 'CURLcode _stdcall vbcurl_easy_setopt(
@@ -512,7 +513,7 @@ Public Declare Function vbcurl_easy_perform Lib "vblibcurl.dll" (ByVal easy As L
 Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
     ByVal easy As Long, _
     ByVal opt As CURLoption, _
-    ByRef Value As Variant _
+    ByRef value As Variant _
 ) As CURLcode
 
 
@@ -531,17 +532,35 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '                [in] VARIANT* val1,
 '                [in] CURLformoption opt2,
 '                [in] VARIANT* val2);
+Public Declare Function vbcurl_form_add_four_to_part Lib "vblibcurl.dll" ( _
+    ByVal hPart As Long, _
+    ByVal opt1 As CURLformoption, _
+    ByRef name As Variant, _
+    ByVal opt2 As CURLformoption, _
+    ByRef value As Variant _
+) As CURLFORMcode
 
 '[entry(0x60000009), helpstring("Add an option/value pair to a form part")]
 'CURLFORMcode _stdcall vbcurl_form_add_pair_to_part(
 '                [in] long part,
 '                [in] CURLformoption opt,
 '                [in] VARIANT* val);
+Public Declare Function vbcurl_form_add_pair_to_part Lib "vblibcurl.dll" ( _
+    ByVal hPart As Long, _
+    ByVal opt1 As CURLformoption, _
+    ByRef field1 As Variant _
+) As CURLFORMcode
 
 '[entry(0x6000000a), helpstring("Add a completed part to a multi-part form")]
 'CURLFORMcode _stdcall vbcurl_form_add_part(
 '                [in] long form,
 '                [in] long part);
+Public Declare Function vbcurl_form_add_part Lib "vblibcurl.dll" ( _
+    ByVal hForm As Long, _
+    ByVal hPart As Long _
+) As CURLFORMcode
+
+
 
 '[entry(0x6000000b), helpstring("Add three option/value pairs to a form part")]
 'CURLFORMcode _stdcall vbcurl_form_add_six_to_part(
@@ -552,15 +571,30 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '                [in] VARIANT* val2,
 '                [in] CURLformoption opt3,
 '                [in] VARIANT* val3);
+Public Declare Function vbcurl_form_add_six_to_part Lib "vblibcurl.dll" ( _
+    ByVal hPart As Long, _
+    ByVal opt1 As CURLformoption, _
+    ByRef field1 As Variant, _
+    ByVal opt2 As CURLformoption, _
+    ByRef field2 As Variant, _
+    ByVal opt3 As CURLformoption, _
+    ByRef field3 As Variant _
+) As CURLFORMcode
+
 
 '[entry(0x6000000c), helpstring("Create a multi-part form handle")]
 'long _stdcall vbcurl_form_create();
+Public Declare Function vbcurl_form_create Lib "vblibcurl.dll" () As Long
+
 
 '[entry(0x6000000d), helpstring("Create a multi-part form-part")]
 'long _stdcall vbcurl_form_create_part([in] long form);
+Public Declare Function vbcurl_form_create_part Lib "vblibcurl.dll" (ByVal hForm As Long) As Long
+
 
 '[entry(0x6000000e), helpstring("Free a form and all its parts")]
 'void _stdcall vbcurl_form_free([in] long form);
+Public Declare Sub vbcurl_form_free Lib "vblibcurl.dll" (ByVal hForm As Long)
 
 
 
@@ -610,7 +644,7 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 
 
 
-'string lists
+'string lists - https://curl.se/libcurl/c/CURLOPT_HTTPHEADER.html
 '---------------------------------------------------------------------
 '[entry(0x60000018), helpstring("Append a string to an slist")]
 'void _stdcall vbcurl_slist_append(

@@ -20,8 +20,30 @@ Option Explicit
 'arent always friendly and are all longer by default
 
 Public hCurl As Long
-Public INotify As ICurlProgress
 Public errList As ListBox  'for when we move this to a dll, could be a collection but thats not immediate feedback, should be a function on iNotify i suppose
+
+Event Init(obj As CCurlResponse)
+Event Progress(obj As CCurlResponse)
+Event Complete(obj As CCurlResponse)
+Event Header(obj As CCurlResponse, ByVal msg As String)
+Event InfoMsg(obj As CCurlResponse, ByVal info As curl_infotype, ByVal msg As String)
+
+Enum curlEvents
+    ceInit
+    ceProgress
+    ceComplete
+    ceHeader
+    ceInfo
+End Enum
+
+Friend Sub TriggerEvent(e As curlEvents, obj As CCurlResponse, Optional arg1, Optional arg2)
+    If e = ceInit Then RaiseEvent Init(obj)
+    If e = ceProgress Then RaiseEvent Progress(obj)
+    If e = ceComplete Then RaiseEvent Complete(obj)
+    If e = ceHeader Then RaiseEvent Header(obj, arg1)
+    If e = ceInfo Then RaiseEvent InfoMsg(obj, arg1, arg2)
+End Sub
+
 
 Private Sub Class_Initialize()
     hCurl = vbcurl_easy_init()
@@ -34,7 +56,6 @@ End Sub
 'these ones are typically set once per class use so give one liner shortcut
 Sub Configure(Useragent As String, _
              Optional followRedirects As Boolean = True, _
-             Optional notifyUI As ICurlProgress = Nothing, _
              Optional maxTimeout As Long, _
              Optional connectTimeout As Long, _
              Optional erList As ListBox = Nothing _
@@ -44,7 +65,7 @@ Sub Configure(Useragent As String, _
     Me.followRedirects = followRedirects
     Me.maxTime = maxTimeout
     Me.connectTimeout = connectTimeout
-    If Not notifyUI Is Nothing Then Set INotify = notifyUI
+    'If Not notifyUI Is Nothing Then Set INotify = notifyUI
     If Not erList Is Nothing Then Set errList = erList
     
 End Sub
@@ -89,10 +110,10 @@ Property Let Cookie(c As String)
 End Property
 
 
-Function Download(url As String, Optional toFile As String, Optional INotify As ICurlProgress) As CCurlResponse
+Function Download(url As String, Optional toFile As String) As CCurlResponse
  
     Set Download = New CCurlResponse 'always a valid class to return
-    If Not INotify Is Nothing Then Set Me.INotify = INotify
+    'If Not INotify Is Nothing Then Set Me.INotify = INotify
      
     If Not initLib(errList) Then Exit Function
     
@@ -117,6 +138,8 @@ Function Download(url As String, Optional toFile As String, Optional INotify As 
     
         .CurlReturnCode = vbcurl_easy_perform(hCurl)
         .Finalize
+        
+        'vbcurl_easy_reset hCurl  'wipe out entire config for next time
         
     End With
     
