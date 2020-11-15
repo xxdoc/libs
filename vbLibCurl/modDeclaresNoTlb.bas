@@ -626,18 +626,28 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 
 
 
-'escape/unescape
+'we cant return As String because runtime will give us another BSTR with double %00
+'so we will have to steal a reference to the one the dll gives us directly
+'this is probably a difference between the C api declares mechanism and tlb import mechanism
 '---------------------------------------------------------------------
 '[entry(0x6000001b), helpstring("Escape an URL")]
 'BSTR _stdcall vbcurl_string_escape(
 '                [in] BSTR url,
 '                [in] long len);
+Public Declare Function vbcurl_string_escape Lib "vblibcurl.dll" ( _
+    ByVal strPtr As Long, _
+    ByVal sz As Long _
+) As Long
+
 
 '[entry(0x6000001c), helpstring("Unescape an URL")]
 'BSTR _stdcall vbcurl_string_unescape(
 '                [in] BSTR url,
 '                [in] long len);
-
+Public Declare Function vbcurl_string_unescape Lib "vblibcurl.dll" ( _
+    ByVal strPtr As Long, _
+    ByVal sz As Long _
+) As Long
 
 
 

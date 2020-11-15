@@ -65,6 +65,19 @@ Property Let maxTime(secs As Long)
     vbcurl_easy_setopt hCurl, CURLOPT_TIMEOUT, secs
 End Property
 
+Function escape(ByVal buf As String) As String
+    Dim tmp As Long, s As String
+    tmp = vbcurl_string_escape(strPtr(buf), Len(buf))
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    escape = s
+End Function
+
+Function unescape(ByVal buf As String) As String
+    Dim tmp  As Long, s As String
+    tmp = vbcurl_string_unescape(strPtr(buf), Len(buf))
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    unescape = s
+End Function
 
 'these are usually set per request
 Property Let Referrer(v As String)

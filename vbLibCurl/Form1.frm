@@ -257,7 +257,7 @@ Private Sub cmdDl_Click()
     
     On Error GoTo hell
     curl.Configure "vbLibCurl Test Edition", , Me, totalTimeout, connectTimeout, List1
-    curl.Referrer = "http://test.edition/yaBoy"
+    curl.Referrer = "http://test.edition/yaBoy?" & curl.escape("this is my escape test!!")
     curl.Cookie = "monster:true;"
     
     If Len(txtSaveAs) = 0 Then
@@ -300,9 +300,17 @@ Private Sub Form_Load()
     b.memAppendBuf VarPtr(b1(0)), UBound(b1) + 1
     b.memAppendBuf VarPtr(b2(0)), UBound(b2) + 1
     b.memAppendBuf VarPtr(b3(0)), UBound(b3) + 1
-    txtOutput = "CMemBufTest: " & vbCrLf & HexDump(b.binData())
+    txtOutput = "CMemBufTest: " & vbCrLf & HexDump(b.binData()) & vbCrLf
+
+    'escape unescape test
     '--------------------------------
- 
+    Dim c As New CCurlDownload, tmp As String, org As String, dec As String
+    org = "this.is#my test!?%"
+    tmp = c.escape(org)
+    dec = c.unescape(tmp)
+    txtOutput = txtOutput & vbCrLf & "Escape/Unescape test = " & (org = dec) & vbCrLf & HexDump(tmp)
+    '--------------------------------
+    
     On Error Resume Next
     Set fso = CreateObject("dzrt.CFileSystem3")
     If Err.Number <> 0 Then
@@ -310,7 +318,7 @@ Private Sub Form_Load()
         List1.AddItem "dzrt.dll not found browse file disabled"
     End If
     
-    
+
 End Sub
 
 Private Sub List1_DblClick()

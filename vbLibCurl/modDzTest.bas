@@ -6,7 +6,7 @@ Public hLib2 As Long
 Public caBundle As String
 Public ActiveResponse As CCurlResponse 'one active instance for simplicity
 
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
+Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
 Function initLib(errList As ListBox) As Boolean
