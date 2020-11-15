@@ -22,7 +22,7 @@ Const URL_SCAN_URL = "url/scan"
 Const URL_URL_REPORT = "url/report"
 Const URL_MAKE_COMMENT = "comments/put"
 Private API_KEY As String
-Const PUBLIC_API_KEY = "a949ea9c64e7145a065b0e562673a66216a132712e958168c8c00ee5f451485b"
+Const PUBLIC_API_KEY = "cc766a4dd619aff188f98a4bc8851695744560da90b529a0c524d4bdd8a68e8e"
 
 Public report_cache_dir As String 'if this is set it will cache the results here in case looked up again.
 Public debugLog As Object         'set to a listbox for live logging, or it will default to a collection
@@ -345,21 +345,32 @@ hell: writeFile = False
 End Function
 
 Function SetPrivateApiKey(ByVal key As String)
-
+    Dim isUserKey As Boolean
+    
     key = Trim(key)
     
-    If key <> API_KEY Then
-        SaveSetting "VirusTotal", "config", "private_api_key", key
+    If Left(key, 5) = "user:" Then
+        key = Mid(key, 6)
+        isUserKey = True
     End If
     
-    If Len(key) > 0 Then
+    If isUserKey Then
+        API_KEY = key
+        m_delayInterval = 17300 '4 requests per minute max
+        m_usingPrivateKey = False
+        SaveSetting "VirusTotal", "config", "user_public_api_key", key
+        SaveSetting "VirusTotal", "config", "key_option", 1
+    ElseIf Len(key) > 0 Then
         API_KEY = key
         m_delayInterval = 0
         m_usingPrivateKey = True
+        SaveSetting "VirusTotal", "config", "private_api_key", key
+        SaveSetting "VirusTotal", "config", "key_option", 2
     Else
         API_KEY = PUBLIC_API_KEY
         m_delayInterval = 17300 '4 requests per minute max
         m_usingPrivateKey = False
+        SaveSetting "VirusTotal", "config", "key_option", 0
     End If
     
 End Function
@@ -369,8 +380,23 @@ Function ReadPrivateApiKey() As String
 End Function
 
 Private Sub Class_Initialize()
+    Dim i As Long, userKey As String
+    
     NeedsDelay = False
-    SetPrivateApiKey ReadPrivateApiKey()
+    i = GetSetting("VirusTotal", "config", "key_option", 0)
+    userKey = GetSetting("VirusTotal", "config", "user_public_api_key", "")
+    
+    If i = 0 Then
+        SetPrivateApiKey Empty
+    ElseIf i = 1 Then
+        If Len(userKey) = 0 Then
+            SetPrivateApiKey Empty
+        Else
+            SetPrivateApiKey "user:" & userKey
+        End If
+    Else
+        SetPrivateApiKey ReadPrivateApiKey()
+    End If
 End Sub
 
 Private Sub Timer1_Timer()

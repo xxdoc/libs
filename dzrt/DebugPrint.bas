@@ -37,9 +37,13 @@ Private Function canStartServer() As Boolean
     Shell pth, vbNormalFocus
     
     If Err.Number = 0 Then
-        canStartServer = True
-        Sleep 400
+        Sleep 250
         ValidateTargetHwnd
+        If mhWndTarget = 0 Then
+            Sleep 250
+            ValidateTargetHwnd
+        End If
+        canStartServer = (mhWndTarget <> 0)
     End If
     
 End Function
@@ -69,23 +73,24 @@ End Sub
 Private Sub ValidateTargetHwnd()
     If IsWindow(mhWndTarget) Then
         Select Case WindowClass(mhWndTarget)
-        Case "ThunderForm", "ThunderRT6Form"
-            If WindowText(mhWndTarget) = "Persistent Debug Print Window" Then
-                Exit Sub
-            End If
+            Case "ThunderForm", "ThunderRT6Form"
+                If WindowText(mhWndTarget) = "Persistent Debug Print Window" Then
+                    Exit Sub
+                End If
         End Select
     End If
     EnumWindows AddressOf EnumToFindTargetHwnd, 0&
 End Sub
 
+'callback - must be in a module
 Private Function EnumToFindTargetHwnd(ByVal hWnd As Long, ByVal lParam As Long) As Long
     mhWndTarget = 0&                        ' We just set it every time to keep from needing to think about it before this is called.
     Select Case WindowClass(hWnd)
-    Case "ThunderForm", "ThunderRT6Form"
-        If WindowText(hWnd) = "Persistent Debug Print Window" Then
-            mhWndTarget = hWnd
-            Exit Function
-        End If
+        Case "ThunderForm", "ThunderRT6Form"
+            If WindowText(hWnd) = "Persistent Debug Print Window" Then
+                mhWndTarget = hWnd
+                Exit Function
+            End If
     End Select
     EnumToFindTargetHwnd = 1&               ' Keep looking.
 End Function

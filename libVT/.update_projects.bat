@@ -1,6 +1,6 @@
 ::echo off
 
-copy libVT.dll D:\_code\iDef\MAP\dependancies\
-copy libVT.dll D:\_code\iDef\SysAnalyzer\dependancy\
+copy libVT.dll D:\_code\MAP\dependancies\
+copy libVT.dll D:\_code\SysAnalyzer\dependancy\
 
-pause
+::pause hangs postbuild command...

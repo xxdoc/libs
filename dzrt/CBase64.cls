@@ -183,17 +183,17 @@ Public Function DecodeBytes(ByRef data() As Byte, ByRef out() As Byte) As Boolea
     Wend
         
     If fileIn(UBound(fileIn) - 1) = Asc("=") Then
-        pad = 2
+        Pad = 2
     ElseIf fileIn(UBound(fileIn)) = Asc("=") Then
-        pad = 1
+        Pad = 1
     Else
-        pad = 0
+        Pad = 0
     End If
 
     'MsgBox pad
     
     Lenght = UBound(fileIn) ' + 1    'lenght of the string
-    BytesOut = ((Lenght / 4) * 3) - pad ' how many bytes will the b64Decoded string have
+    BytesOut = ((Lenght / 4) * 3) - Pad ' how many bytes will the b64Decoded string have
     ReDim out(BytesOut)
 
     For i = 0 To Lenght Step 4
@@ -209,13 +209,13 @@ Public Function DecodeBytes(ByRef data() As Byte, ByRef out() As Byte) As Boolea
                 '2 bytes out
                 out(iTemp) = (inp(0) * 4) Or ((inp(1) \ 16) And &H3)
                 out(iTemp + 1) = ((inp(1) And &HF) * 16) Or ((inp(2) \ 4) And &HF)
-                Exit Function
+                GoTo retNow
             ElseIf inp(2) = 64 Then
                 inp(0) = decodeTable(fileIn(i))
                 inp(1) = decodeTable(fileIn(i + 1))
                 '1 byte out
                 out(iTemp) = (inp(0) * 4) Or ((inp(1) \ 16) And &H3)
-                Exit Function
+                GoTo retNow
             End If
         End If
         '3 bytes out
@@ -225,13 +225,14 @@ Public Function DecodeBytes(ByRef data() As Byte, ByRef out() As Byte) As Boolea
         iTemp = iTemp + 3
     Next
     
+retNow:
     DecodeBytes = (Err.Number = 0)
     
 End Function
 
 Public Function Span(bAryOrString, Optional CharsPerLine As Long = 72) As Variant
     
-    Dim b() As Byte, i As Long, cnt As Long, j As Long
+    Dim b() As Byte, i As Long, cnt As Long, J As Long
     Dim tmp() As Byte
     Dim isString As Boolean
     
@@ -248,12 +249,12 @@ Public Function Span(bAryOrString, Optional CharsPerLine As Long = 72) As Varian
     If cnt > 0 Then
         ReDim tmp(UBound(b) + (cnt * 2))
         For i = 1 To UBound(b) + 1
-            tmp(j) = b(i - 1)
-            j = j + 1
+            tmp(J) = b(i - 1)
+            J = J + 1
             If i Mod CharsPerLine = 0 Then
-                tmp(j) = &HD
-                tmp(j + 1) = &HA
-                j = j + 2
+                tmp(J) = &HD
+                tmp(J + 1) = &HA
+                J = J + 2
             End If
         Next
         b() = tmp()
@@ -300,7 +301,7 @@ End Function
 'if arg is a string, it returns a string,
 'if arg is byte array it returns a byte array
 Public Function Unspan(bAryOrString) As Variant
-    Dim b() As Byte, i As Long, cnt As Long, j As Long
+    Dim b() As Byte, i As Long, cnt As Long, J As Long
     Dim tmp() As Byte
     Dim isString As Boolean
     
@@ -321,8 +322,8 @@ Public Function Unspan(bAryOrString) As Variant
         ReDim tmp(UBound(b) - cnt)
         For i = 0 To UBound(b)
             If b(i) <> 10 And b(i) <> 13 Then
-                tmp(j) = b(i)
-                j = j + 1
+                tmp(J) = b(i)
+                J = J + 1
             End If
         Next
     
@@ -344,23 +345,23 @@ Function EncodeString(ByVal it As String, Optional autoSpan As Boolean = True) A
    EncodeString = ByteArrayToString(Span(b2))
 End Function
    
-Function EncodeFileToString(ByVal fPath As String, Optional autoSpan As Boolean = True) As String
+Function EncodeFileToString(ByVal fpath As String, Optional autoSpan As Boolean = True) As String
    Dim b() As Byte, b2() As Byte
    
-   If Not FileExists(fPath) Then Exit Function
+   If Not FileExists(fpath) Then Exit Function
    
-   LoadFile CStr(fPath), b()
+   LoadFile CStr(fpath), b()
    b2() = EncodeBytes(b, autoSpan)
    EncodeFileToString = ByteArrayToString(Span(b2))
    
 End Function
 
-Function EncodeFileToFile(ByVal fPath As String, ByVal saveAsPath As String, Optional autoSpan As Boolean = True) As Boolean
+Function EncodeFileToFile(ByVal fpath As String, ByVal saveAsPath As String, Optional autoSpan As Boolean = True) As Boolean
    Dim b() As Byte, b2() As Byte
    On Error Resume Next
-   LoadFile CStr(fPath), b()
+   LoadFile CStr(fpath), b()
    b2() = EncodeBytes(b, autoSpan)
-   writeFile saveAsPath, Span(b2)
+   WriteFile saveAsPath, Span(b2)
    EncodeFileToFile = (Err.Number = 0)
 End Function
 
@@ -372,15 +373,15 @@ Function DecodeString(ByVal mimedata As String, ByRef dataOut) As Boolean
    DecodeString = ok
 End Function
 
-Function DecodeStringToFile(ByVal fPath As String, ByVal mimedata As String) As Boolean
+Function DecodeStringToFile(ByVal fpath As String, ByVal mimedata As String) As Boolean
     Dim b() As Byte, b2() As Byte, ok As Boolean
     On Error Resume Next
     
-    If Not FileExists(fPath) Then Exit Function
+    If Not FileExists(fpath) Then Exit Function
 
     b() = StrConv(mimedata, vbFromUnicode, LANG_US)
     ok = DecodeBytes(b(), b2())
-    writeFile CStr(fPath), b2()
+    WriteFile CStr(fpath), b2()
     
     DecodeStringToFile = ok
     If Err.Number <> 0 Then DecodeStringToFile = False
@@ -397,39 +398,39 @@ Function DecodeFileToFile(ByVal inFile As String, ByVal outFile As String) As Bo
     
     LoadFile inFile, b()
     ok = DecodeBytes(b(), b2())
-    writeFile outFile, b2()
+    WriteFile outFile, b2()
     
     DecodeFileToFile = ok
     If Err.Number <> 0 Then DecodeFileToFile = False
 
 End Function
 
-Private Function CountOccurances(it, find) As Integer
+Private Function countOccurances(it, find) As Integer
     Dim tmp() As String
-    If InStr(1, it, find, vbTextCompare) < 1 Then CountOccurances = 0: Exit Function
-    tmp = Split(it, find, , vbTextCompare)
-    CountOccurances = UBound(tmp)
+    If InStr(1, it, find, vbTextCompare) < 1 Then countOccurances = 0: Exit Function
+    tmp = split(it, find, , vbTextCompare)
+    countOccurances = UBound(tmp)
 End Function
 
 Private Function ByteArrayToString(ByRef pbArrayInput() As Byte) As String
    ByteArrayToString = StrConv(pbArrayInput, vbUnicode, LANG_US)
 End Function
 
-Private Sub LoadFile(fPath, ByRef out() As Byte)
+Private Sub LoadFile(fpath, ByRef out() As Byte)
   
-   fsize = FileLen(fPath) - 1
+   fsize = FileLen(fpath) - 1
    f = FreeFile
    ReDim out(fsize)
    
-   Open fPath For Binary As f
+   Open fpath For Binary As f
    Get f, , out()
    Close f
 
 End Sub
 
-Private Sub writeFile(fPath, bAry() As Byte)
+Private Sub WriteFile(fpath, bAry() As Byte)
     f = FreeFile
-    Open fPath For Binary As f
+    Open fpath For Binary As f
     Put f, , bAry()
     Close f
 End Sub
@@ -445,9 +446,9 @@ End Function
 
 Private Function AryIsEmpty(ary) As Boolean
   On Error GoTo oops
-  Dim x
+  Dim X
   
-    x = UBound(ary)
+    X = UBound(ary)
     AryIsEmpty = False
   Exit Function
 oops: AryIsEmpty = True

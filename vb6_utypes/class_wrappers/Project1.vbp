@@ -1,11 +1,7 @@
 Type=Exe
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
+Reference=*\G{C76AEA4D-5CD1-43D8-8A0F-8CC96040E0BB}#1.1#0#..\vbUtypes.dll#Sandsprite 64Bit Unsigned Math Library For VB6
 Form=Form1.frm
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
-Class=ULong64; ULong64.cls
-Class=ULong; ULong.cls
-Module=Module1; Module1.bas
-Class=UByte; UByte.cls
-Class=UInt; UInt.cls
 IconForm="Form1"
 Startup="Form1"
 Command32=""

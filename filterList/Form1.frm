@@ -3,12 +3,12 @@ Begin VB.Form Form1
    Caption         =   "Form1"
    ClientHeight    =   8730
    ClientLeft      =   165
-   ClientTop       =   735
+   ClientTop       =   810
    ClientWidth     =   9540
    LinkTopic       =   "Form1"
    ScaleHeight     =   8730
    ScaleWidth      =   9540
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
    Begin VB.CheckBox chkCencelDelete 
       Caption         =   "Cancel Delete in event"
       Height          =   285
@@ -123,22 +123,27 @@ Private Sub Form_Load()
     mnuPopup.Visible = False
     lvFilter.HideSelection = False
     lvFilter.MultiSelect = True
-    lvFilter.setFont "tahoma", 9
+    lvFilter.SetFont "tahoma", 9
+    
+    'Debug.Print "'" & lvFilter.pad("a") & "'"
+    'End
+    
+    
     
     'you can set the filtercolumn either with the property manually, or by adding an * in the column header..
     'lvFilter.FilterColumn = 2
-    lvFilter.SetColumnHeaders "test1,test2,test3*,test4"
+    lvFilter.SetColumnHeaders "test1,test2,test3*,test4,x"
     
     Dim li As ListItem
     For i = 0 To 5
     
-        Set li = lvFilter.AddItem("text" & i)
+        Set li = lvFilter.AddItem("text" & i, , , , i)
         li.subItems(1) = "taco1 " & i
         li.subItems(2) = "test3 " & i
-        li.subItems(3) = "test4 " & i
+        li.subItems(3) = String(RandomNumber(20, 5), Chr(RandomNumber(Asc("z"), &H41)))
         li.Tag = "whatever"
         
-        Set li = lvFilter.AddItem("item " & i)
+        Set li = lvFilter.AddItem("item " & i, , , , i * 2)
         li.subItems(1) = "item taco2  " & i
         li.subItems(2) = "item 2 test " & i
         li.subItems(3) = "item 2 test " & i
@@ -151,13 +156,22 @@ Private Sub Form_Load()
     
 End Sub
 
+Public Function RandomNumber(ByVal MaxValue As Long, Optional _
+ByVal MinValue As Long = 0)
+
+  On Error Resume Next
+  Randomize Timer
+  RandomNumber = Int((MaxValue - MinValue + 1) * Rnd) + MinValue
+
+End Function
+
 Private Sub Form_Resize()
     On Error Resume Next
     lvFilter.Width = Me.Width - lvFilter.Left - 300
 End Sub
 
 Private Sub lvFilter_BeforeDelete(cancel As Boolean)
-    If MsgBox("Are you sure you want to delete these " & lvFilter.selCount & " items?", vbYesNo) = vbNo Then
+    If MsgBox("Are you sure you want to delete these " & lvFilter.SelCount & " items?", vbYesNo) = vbNo Then
         cancel = True
     End If
 End Sub
@@ -183,7 +197,7 @@ Private Sub lvFilter_ItemDeleted(Item As MSComctlLib.ListItem, cancel As Boolean
     End If
 End Sub
 
-Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub lvFilter_MouseUp(Button As Integer, Shift As Integer, X As Single, y As Single)
     If Button = 2 Then PopupMenu mnuPopup
 End Sub
 

@@ -1,0 +1,116 @@
+https://www.vbforums.com/showthread.php?649507-VB6-PipeRPC-RPC-Over-Named-Pipes
+
+    Title
+
+    PipeRPC, a UserControl providing remote procedure calls over Named Pipes written in VB6.
+
+    Description
+
+    PipeRPC is a VB6 UserControl that uses Named Pipes to provide a very easy to use mechanism to make calls between clients and servers running (a.) in the same machine or (b.) across a Local Area Network.
+
+    No more fighting with the Winsock control.
+
+    No more struggling with DCOM (PipeRPC is great for portable applications that use reg-free COM).
+
+    None of the ugliness of Web Services.
+
+    Feature list
+
+        Client and server functionality in one control.
+        Clients can make connected or disconnected (one time) calls.
+        Uses Named Pipes, so no firewall rules are required.
+        Works whether your LAN is based on TCP/IP, NetBEUI, or IPX/SPX network protocols. No TCP/IP required!
+        So easy.... well anyone can do it.
+
+
+    Screenshot
+
+    N/A since this is not a visible control at runtime.
+
+    Author name
+
+    Bob Riemersma
+
+    System requirements
+
+    Requires Windows 2000 or later.
+
+    For machine-to-machine operation:
+    Windows Networking enabled, firewalls must permit Windows Networking traffic ("File and Print Sharing").
+
+    A common Workgroup or Domain and common Users. The Windows Client and Server services must be running.
+    No special processor, disk, or memory requirements. Requires Visual Basic 6.0 development system, preferably Service Pack 6b or later, Standard Edition or better.
+
+    License info
+
+    Copyright © 2011 Robert D. Riemersma, Jr.
+    All Rights Reserved
+
+    PipeRPC is free for general use for any legal purpose, and derivative works are encouraged. Users are responsible for determining fitness and proper use. No liability is accepted and no warranty or guarantee of support is offered. This is “as is” software and related documentation and examples.
+
+    PipeRPC and related materials may be freely distributed in source or binary form as long as the notices are kept intact. Programs using PipeRPC do not require attribution in documentation or at runtime, however there is a Copyright property programs could use to display such information in About dialogs, etc. if desired.
+
+    Usage
+
+    Add the UserControl to your VB6 project. PipeRPC.rtf contains developer documentation, sample projects are also included in the package.
+
+    A Minimal Client and Server
+
+    Here is a "calculation client" that passes two operands and an operator to the server and displays the returned result:
+    Code:
+
+    Option Explicit
+
+    Private Request() As Byte
+    Private Response() As Byte
+    Private Operation As String
+
+    Private Sub cmdCalculate_Click()
+        Request = txtA.Text & "|" _
+                & Operation & "|" _
+                & txtB.Text
+        ReDim Response(199)
+        pipeCalculate.PipeCall Request, Response
+        txtResults.Text = Response
+        txtA.SetFocus
+    End Sub
+
+    Private Sub Form_Load()
+        Operation = "+"
+    End Sub
+
+    Private Sub optOperation_Click(Index As Integer)
+        Operation = Choose(Index + 1, "+", "-", "*", "÷")
+    End Sub
+
+    Here is the calculation server:
+    Code:
+
+    Option Explicit
+
+    Private Sub Form_Load()
+        pipeCalculate.Listen
+    End Sub
+
+    Private Sub Form_Unload(Cancel As Integer)
+        pipeCalculate.ClosePipe
+    End Sub
+
+    Private Sub pipeCalculate_Called(ByVal Pipe As Long, Request() As Byte, Response() As Byte)
+        Dim ReqParts() As String
+        
+        ReqParts = Split(Request, "|")
+        On Error Resume Next
+        Select Case ReqParts(1)
+            Case "+"
+                Response = CStr(CDbl(ReqParts(0)) + CDbl(ReqParts(2)))
+            Case "-"
+                Response = CStr(CDbl(ReqParts(0)) - CDbl(ReqParts(2)))
+            Case "*"
+                Response = CStr(CDbl(ReqParts(0)) * CDbl(ReqParts(2)))
+            Case "÷"
+                Response = CStr(CDbl(ReqParts(0)) / CDbl(ReqParts(2)))
+        End Select
+        If Err Then Response = Err.Description
+    End Sub
+
