@@ -2,7 +2,7 @@ Attribute VB_Name = "modDeclares"
 Option Explicit
 'this is to (start to) eliminate the need for the vblibcurl.tlb
 'typelibs put imports right into our import table, so dependancy dlls
-'must be found on startup by windows loader, we cant hunt for them
+'must be found on startup by windows loader, we can't hunt for them
 'during dev this can be annoying unless you put everything in system path
 '(and remember to update them if they change in dev)
 
@@ -132,7 +132,8 @@ Public Enum curl_ftpauth
     CURLFTPAUTH_LAST = 3
 End Enum
     
-Public Enum CURLoption
+
+Public Enum CURLoption               'https://curl.se/libcurl/c/curl_easy_setopt.html
     CURLOPT_AUTOREFERER = 58
     CURLOPT_BUFFERSIZE = 98
     CURLOPT_CAINFO = 10065
@@ -478,9 +479,21 @@ Public Declare Function vbcurl_easy_getinfo Lib "vblibcurl.dll" ( _
 ) As CURLcode
 
 
+
+
 '[entry(0x60000003), helpstring("Initialize an easy session")]
 'long _stdcall vbcurl_easy_init();
 Public Declare Function vbcurl_easy_init Lib "vblibcurl.dll" () As Long
+'
+'If you did not already call curl_global_init, curl_easy_init does it automatically.
+'This may be lethal in multi-threaded cases, since curl_global_init is not thread-safe,
+'and it may result in resource problems because there is no corresponding cleanup.
+'
+'You are strongly advised to not allow this automatic behaviour,
+'https://curl.se/libcurl/c/curl_easy_init.html
+'
+'Note: curl_global_init not exposed by vblibcurl and it only calls curl_easy_init
+
 
 
 '[entry(0x60000004), helpstring("Perform an easy transfer")]
@@ -673,4 +686,104 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 
 '[entry(0x6000002a), helpstring("Get version string")]
 'BSTR _stdcall vbcurl_version_string([in] long ver);
+
+
+
+'enum2Text functions for logging...
+'--------------------------------------------------------------------
+Function info2Text(i As curl_infotype) As String
+    
+    Dim s As String
+    
+    If i = CURLINFO_TEXT Then s = "TEXT"                '0
+    If i = CURLINFO_HEADER_IN Then s = "HEADER_IN"      '1
+    If i = CURLINFO_HEADER_OUT Then s = "HEADER_OUT"    '2
+    If i = CURLINFO_DATA_IN Then s = "DATA_IN"          '3
+    If i = CURLINFO_DATA_OUT Then s = "DATA_OUT"        '4
+    If i = CURLINFO_SSL_DATA_IN Then s = "SSL_IN"       '5
+    If i = CURLINFO_SSL_DATA_OUT Then s = "SSL_OUT"     '6
+    If i = CURLINFO_END Then s = "END"                  '7
+    If Len(s) = 0 Then s = "Unknown " & i
+    
+    info2Text = s
+    
+End Function
+
+Function curlCode2Text(X As CURLcode) As String
+    
+    Dim s As String
+    s = "Unknown " & X
+    
+    If X = 0 Then s = "CURLE_OK"
+    If X = 42 Then s = "CURLE_ABORTED_BY_CALLBACK"
+    If X = 44 Then s = "CURLE_BAD_CALLING_ORDER"
+    If X = 61 Then s = "CURLE_BAD_CONTENT_ENCODING"
+    If X = 36 Then s = "CURLE_BAD_DOWNLOAD_RESUME"
+    If X = 43 Then s = "CURLE_BAD_FUNCTION_ARGUMENT"
+    If X = 46 Then s = "CURLE_BAD_PASSWORD_ENTERED"
+    If X = 7 Then s = "CURLE_COULDNT_CONNECT"
+    If X = 6 Then s = "CURLE_COULDNT_RESOLVE_HOST"
+    If X = 5 Then s = "CURLE_COULDNT_RESOLVE_PROXY"
+    If X = 2 Then s = "CURLE_FAILED_INIT"
+    If X = 63 Then s = "CURLE_FILESIZE_EXCEEDED"
+    If X = 37 Then s = "CURLE_FILE_COULDNT_READ_FILE"
+    If X = 9 Then s = "CURLE_FTP_ACCESS_DENIED"
+    If X = 15 Then s = "CURLE_FTP_CANT_GET_HOST"
+    If X = 16 Then s = "CURLE_FTP_CANT_RECONNECT"
+    If X = 32 Then s = "CURLE_FTP_COULDNT_GET_SIZE"
+    If X = 19 Then s = "CURLE_FTP_COULDNT_RETR_FILE"
+    If X = 29 Then s = "CURLE_FTP_COULDNT_SET_ASCII"
+    If X = 17 Then s = "CURLE_FTP_COULDNT_SET_BINARY"
+    If X = 25 Then s = "CURLE_FTP_COULDNT_STOR_FILE"
+    If X = 31 Then s = "CURLE_FTP_COULDNT_USE_REST"
+    If X = 30 Then s = "CURLE_FTP_PORT_FAILED"
+    If X = 21 Then s = "CURLE_FTP_QUOTE_ERROR"
+    If X = 64 Then s = "CURLE_FTP_SSL_FAILED"
+    If X = 10 Then s = "CURLE_FTP_USER_PASSWORD_INCORRECT"
+    If X = 14 Then s = "CURLE_FTP_WEIRD_227_FORMAT"
+    If X = 11 Then s = "CURLE_FTP_WEIRD_PASS_REPLY"
+    If X = 13 Then s = "CURLE_FTP_WEIRD_PASV_REPLY"
+    If X = 8 Then s = "CURLE_FTP_WEIRD_SERVER_REPLY"
+    If X = 12 Then s = "CURLE_FTP_WEIRD_USER_REPLY"
+    If X = 20 Then s = "CURLE_FTP_WRITE_ERROR"
+    If X = 41 Then s = "CURLE_FUNCTION_NOT_FOUND"
+    If X = 52 Then s = "CURLE_GOT_NOTHING"
+    If X = 34 Then s = "CURLE_HTTP_POST_ERROR"
+    If X = 33 Then s = "CURLE_HTTP_RANGE_ERROR"
+    If X = 22 Then s = "CURLE_HTTP_RETURNED_ERROR"
+    If X = 45 Then s = "CURLE_INTERFACE_FAILED"
+    If X = 67 Then s = "CURLE_LAST"
+    If X = 38 Then s = "CURLE_LDAP_CANNOT_BIND"
+    If X = 62 Then s = "CURLE_LDAP_INVALID_URL"
+    If X = 39 Then s = "CURLE_LDAP_SEARCH_FAILED"
+    If X = 40 Then s = "CURLE_LIBRARY_NOT_FOUND"
+    If X = 24 Then s = "CURLE_MALFORMAT_USER"
+    If X = 50 Then s = "CURLE_OBSOLETE"
+    If X = 28 Then s = "CURLE_OPERATION_TIMEOUTED"
+    If X = 27 Then s = "CURLE_OUT_OF_MEMORY"
+    If X = 18 Then s = "CURLE_PARTIAL_FILE"
+    If X = 26 Then s = "CURLE_READ_ERROR"
+    If X = 56 Then s = "CURLE_RECV_ERROR"
+    If X = 55 Then s = "CURLE_SEND_ERROR"
+    If X = 65 Then s = "CURL_SEND_FAIL_REWIND"
+    If X = 57 Then s = "CURLE_SHARE_IN_USE"
+    If X = 60 Then s = "CURLE_SSL_CACERT"
+    If X = 58 Then s = "CURLE_SSL_CERTPROBLEM"
+    If X = 59 Then s = "CURLE_SSL_CIPHER"
+    If X = 35 Then s = "CURLE_SSL_CONNECT_ERROR"
+    If X = 66 Then s = "CURLE_SSL_ENGINE_INITFAILED"
+    If X = 53 Then s = "CURLE_SSL_ENGINE_NOTFOUND"
+    If X = 54 Then s = "CURLE_SSL_ENGINE_SETFAILED"
+    If X = 51 Then s = "CURLE_SSL_PEER_CERTIFICATE"
+    If X = 49 Then s = "CURLE_TELNET_OPTION_SYNTAX"
+    If X = 47 Then s = "CURLE_TOO_MANY_REDIRECTS"
+    If X = 48 Then s = "CURLE_UNKNOWN_TELNET_OPTION"
+    If X = 1 Then s = "CURLE_UNSUPPORTED_PROTOCOL"
+    If X = 3 Then s = "CURLE_URL_MALFORMAT"
+    If X = 4 Then s = "CURLE_URL_MALFORMAT_USER"
+    If X = 23 Then s = "CURLE_WRITE_ERROR"
+
+    curlCode2Text = s
+    
+End Function
 

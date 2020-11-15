@@ -236,7 +236,7 @@ Private Sub cmdDl_Click()
     On Error Resume Next
     
     Dim X, resp As CCurlResponse
-    Dim totalTimeout As Long, connectTimeout As Long
+    Dim totalTimeout As Long, connectTimeout As Long, cookie As String
         
     List1.Clear
     txtOutput = Empty
@@ -256,11 +256,15 @@ Private Sub cmdDl_Click()
     
     On Error GoTo hell
     
+    modDzTest.UserAgent = "vbLibCurl Test Edition"
+    modDzTest.Referrer = "http://test.edition/yaBoy"
+    cookie = "monster:true;"
+    
     If Len(txtSaveAs) = 0 Then
-        Set resp = Download(txtUrl, , Me, connectTimeout, totalTimeout)
+        Set resp = Download(txtUrl, , Me, connectTimeout, totalTimeout, , cookie)
         txtOutput = resp.dump & vbCrLf & vbCrLf & resp.memFile.asString
     Else
-        Set resp = Download(txtUrl, txtSaveAs, Me, connectTimeout, totalTimeout)
+        Set resp = Download(txtUrl, txtSaveAs, Me, connectTimeout, totalTimeout, , cookie)
         txtOutput = resp.dump
         'txtOutput = txtOutput & vbCrLf & "MD5: " & hash.HashFile(txtSaveAs)
     End If
@@ -307,5 +311,7 @@ Private Sub Form_Load()
     
 End Sub
 
-
-
+Private Sub List1_DblClick()
+    On Error Resume Next
+    MsgBox List1.List(List1.ListIndex)
+End Sub
