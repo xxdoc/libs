@@ -235,9 +235,10 @@ Private Sub cmdDl_Click()
 
     On Error Resume Next
     
-    Dim X, resp As CCurlResponse
-    Dim totalTimeout As Long, connectTimeout As Long, cookie As String
-        
+    Dim resp As CCurlResponse
+    Dim curl As New CCurlDownload
+    Dim totalTimeout As Long, connectTimeout As Long
+    
     List1.Clear
     txtOutput = Empty
     abort = False
@@ -255,19 +256,20 @@ Private Sub cmdDl_Click()
     End If
     
     On Error GoTo hell
-    
-    modDzTest.UserAgent = "vbLibCurl Test Edition"
-    modDzTest.Referrer = "http://test.edition/yaBoy"
-    cookie = "monster:true;"
+    curl.Configure "vbLibCurl Test Edition", , Me, totalTimeout, connectTimeout, List1
+    curl.Referrer = "http://test.edition/yaBoy"
+    curl.Cookie = "monster:true;"
     
     If Len(txtSaveAs) = 0 Then
-        Set resp = Download(txtUrl, , Me, connectTimeout, totalTimeout, , cookie)
+        Set resp = curl.Download(txtUrl)
         txtOutput = resp.dump & vbCrLf & vbCrLf & resp.memFile.asString
     Else
-        Set resp = Download(txtUrl, txtSaveAs, Me, connectTimeout, totalTimeout, , cookie)
+        Set resp = curl.Download(txtUrl, txtSaveAs)
         txtOutput = resp.dump
-        'txtOutput = txtOutput & vbCrLf & "MD5: " & hash.HashFile(txtSaveAs)
+        'List1.AddItem "MD5: " & hash.HashFile(txtSaveAs)
     End If
+    
+    List1.AddItem "Download 2 same handle received bytes: " & curl.Download(txtUrl).BytesReceived
     
     Exit Sub
 hell:
@@ -276,7 +278,7 @@ End Sub
 
 Private Sub Form_Load()
 
-    If Not initLib() Then
+    If Not initLib(List1) Then
         cmdDl.Enabled = False
         List1.AddItem "This demo requires vblibcurl.dll and libcurl.dll"
         List1.AddItem "https://sourceforge.net/projects/libcurl-vb/files/libcurl-vb/libcurl.vb%201.01/"

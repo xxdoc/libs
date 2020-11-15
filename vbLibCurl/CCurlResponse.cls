@@ -13,29 +13,32 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
+Public owner As CCurlDownload
 Public CurlReturnCode As CURLcode
-Public ContentType
-Public ResponseCode 'As Long
-Public DownloadLength 'As Long
-Public TotalTime 'As Long
-Public BytesReceived As Double 'huge downloads could overflow
-Public abort As Boolean
-Public hCurl As Long
-Public hFile As Long
 Public memFile As CMemBuffer
 Public headers As New Collection
 Public DebugMsgs As New Collection
+
+Public TotalTime
+Public ContentType
+Public ResponseCode
+Public DownloadLength 'if not set in header then will be -1
+Public BytesReceived As Double
+
+Public abort As Boolean
+Public hFile As Long
 Public localPath As String
 Public url As String
-Public INotify As ICurlProgress
+
 Private gotSizes As Boolean
 
-Function Initilize(url As String, Optional toFile As String, Optional INotify As ICurlProgress) As Boolean
+
+Function Initilize(url As String, Optional toFile As String) As Boolean
     
     On Error GoTo hell
-    
-    Set Me.INotify = INotify
+
     Me.url = url
+    If owner.hCurl = 0 Then Exit Function
     
     If Len(toFile) > 0 Then
         If FileExists(toFile) Then DeleteFile toFile
@@ -46,8 +49,7 @@ Function Initilize(url As String, Optional toFile As String, Optional INotify As
         Set memFile = New CMemBuffer
     End If
     
-    hCurl = vbcurl_easy_init()
-    If hCurl <> 0 Then Initilize = True
+    Initilize = True
     
     Exit Function
 hell:
@@ -60,27 +62,26 @@ Sub Finalize()
     
     Dim v As Variant, ret As CURLcode
     
-    ret = vbcurl_easy_getinfo(hCurl, CURLINFO_CONTENT_TYPE, v)
+    ''set request stats in this class
+    ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_CONTENT_TYPE, v)
     If ret = CURLE_OK Then ContentType = v
     
-    ret = vbcurl_easy_getinfo(hCurl, CURLINFO_RESPONSE_CODE, v)
+    ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_RESPONSE_CODE, v)
     If ret = CURLE_OK Then ResponseCode = v
     
-    ret = vbcurl_easy_getinfo(hCurl, CURLINFO_TOTAL_TIME, v)
+    ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_TOTAL_TIME, v)
     If ret = CURLE_OK Then TotalTime = v
-   
-    vbcurl_easy_cleanup hCurl
-    hCurl = 0
     
     If memFile Is Nothing Then
         Close hFile
         hFile = 0
     End If
     
-    If Not INotify Is Nothing Then INotify.Complete Me
+    If Not owner.INotify Is Nothing Then owner.INotify.Complete Me
     
 End Sub
 
+'we already have this w/ BytesReceived
 'Property Get CurrentDownloadSize() As Long
 '        'ret = vbcurl_easy_getinfo(hCurl, CURLINFO_SIZE_DOWNLOAD, v)
 '        'If ret = CURLE_OK Then DownloadSize = v
@@ -93,12 +94,12 @@ End Property
 'response header from server
 Friend Function addHeader(msg As String)
     headers.Add msg
-    If Not INotify Is Nothing Then INotify.Header Me, msg
+    If Not owner.INotify Is Nothing Then owner.INotify.Header Me, msg
 End Function
 
 Friend Function addInfo(info As curl_infotype, msg As String)
     DebugMsgs.Add msg
-    If Not INotify Is Nothing Then INotify.InfoMsg Me, info, msg
+    If Not owner.INotify Is Nothing Then owner.INotify.InfoMsg Me, info, msg
 End Function
 
 Friend Function notifyParent(size As Long) As Long
@@ -109,13 +110,13 @@ Friend Function notifyParent(size As Long) As Long
     BytesReceived = BytesReceived + size
     
     If Not gotSizes Then
-        ret = vbcurl_easy_getinfo(hCurl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, v)
+        ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, v)
         If ret = CURLE_OK Then DownloadLength = v
-        If Not INotify Is Nothing Then INotify.Init Me
+        If Not owner.INotify Is Nothing Then owner.INotify.Init Me
         gotSizes = True
     End If
     
-    If Not INotify Is Nothing Then INotify.Progress Me 'consumer can set abort if desired...
+    If Not owner.INotify Is Nothing Then owner.INotify.progress Me 'consumer can set abort if desired...
     
     If abort Then
         notifyParent = 0
