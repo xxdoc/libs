@@ -19,8 +19,10 @@ Upgraded to the current libcurl v7.73 which was a drop in replacement
 for the 15yr old version originally used (v7.13). 
 
 The newer versions will run on XP SP2 and newer because of the 
-normaliz.Idn2Ascii import. The updated libcurl is required to talk to modern 
-ssl servers. The old libcurl would run on win2k or newer. 
+normaliz.Idn2Ascii import and openssl requires Kernel32.ConvertFiberToThread.
+
+The updated libcurl is required to talk to modern ssl servers. The old libcurl 
+would run on win2k or newer. normaliz.dll from xpsp3 will run on win2k.
 
 vb's built in Put file write command has a 2gb file size limit. I will leave it 
 to the reader to switch over to API file writes if you need it.

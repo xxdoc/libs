@@ -20,6 +20,8 @@ Option Explicit
 'arent always friendly and are all longer by default
 
 Public hCurl As Long
+Private hList As Long
+
 Public errList As ListBox  'for when we move this to a dll, could be a collection but thats not immediate feedback, should be a function on iNotify i suppose
 
 Event Init(obj As CCurlResponse)
@@ -44,6 +46,28 @@ Friend Sub TriggerEvent(e As curlEvents, obj As CCurlResponse, Optional arg1, Op
     If e = ceInfo Then RaiseEvent InfoMsg(obj, arg1, arg2)
 End Sub
 
+Function AddHeader(aryStrOrCol) As Boolean
+    On Error GoTo hell
+    Dim s As String, x
+    If hList = 0 Then hList = vbcurl_slist_create()
+    If IsArray(aryStrOrCol) Or TypeName(aryStrOrCol) = "Collection" Then
+        For Each x In aryStrOrCol
+            s = CStr(x)
+            If Len(s) > 0 Then vbcurl_slist_append hList, strPtr(s)
+        Next
+    Else
+        s = CStr(aryStrOrCol)
+        If Len(s) > 0 Then vbcurl_slist_append hList, strPtr(s)
+    End If
+    AddHeader = True
+Exit Function
+hell:
+End Function
+
+Sub ClearHeaders()
+     If hList <> 0 Then vbcurl_slist_free hList
+     hList = 0
+End Sub
 
 Private Sub Class_Initialize()
     hCurl = vbcurl_easy_init()
@@ -51,6 +75,7 @@ End Sub
 
 Private Sub Class_Terminate()
     vbcurl_easy_cleanup hCurl
+    If hList <> 0 Then vbcurl_slist_free hList
 End Sub
 
 'these ones are typically set once per class use so give one liner shortcut
@@ -135,7 +160,8 @@ Function Download(url As String, Optional toFile As String) As CCurlResponse
         vbcurl_easy_setopt hCurl, CURLOPT_DEBUGFUNCTION, AddressOf DebugFunction
         vbcurl_easy_setopt hCurl, CURLOPT_VERBOSE, True
         If FileExists(caBundle) Then vbcurl_easy_setopt hCurl, CURLOPT_CAINFO, caBundle
-    
+        If hList <> 0 Then vbcurl_easy_setopt hCurl, CURLOPT_HTTPHEADER, hList
+        
         .CurlReturnCode = vbcurl_easy_perform(hCurl)
         .Finalize
         

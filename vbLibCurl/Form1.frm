@@ -292,6 +292,11 @@ Private Sub cmdDl_Click()
     curl.Referrer = "http://test.edition/yaBoy?" & curl.escape("this is my escape test!!")
     curl.Cookie = "monster:true;"
     
+    curl.AddHeader "X-MyHeader: Works"
+    curl.AddHeader "X-LibCurl: Rocks"
+    curl.AddHeader "Accept: No Substitutes" 'overrides existing
+    curl.AddHeader Array("X-Ary1: 1", "X-Ary2: 2")
+    
     'todo a simple post:
     'vbcurl_easy_setopt curl.hCurl, CURLOPT_POSTFIELDS, "m-address=your@mail.com"
 

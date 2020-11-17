@@ -14,6 +14,7 @@ Attribute VB_Exposed = False
 Option Explicit
 Private hForm As Long
 'there is much more than can be done with this, this is a basic implementation with room to grow.
+'we could streamline it into the CCurlDownload but this might get big and it will only grow itself..
 
 Private Sub Class_Initialize()
     hForm = vbcurl_form_create()
