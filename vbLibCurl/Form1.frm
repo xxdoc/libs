@@ -217,7 +217,9 @@ Dim fso As Object 'if they have dzrt.CFileSystem3 then browse button is availabl
 '   removed tlb references w/modDeclares.bas (all enums covered but not all api declares written yet)
 '   added higher level framework around low level api
 '   file progress, response object, abort, download to memory only
-'   still more that could be done/cleaned up but this is all i need for now and keystrokes are limited :(
+'   add/remove/overwrite headers
+'   add form elements and file uploads
+'   version info
 
 
 Private Sub cmdAbort_Click()
@@ -267,7 +269,7 @@ Private Sub cmdDl_Click()
     On Error Resume Next
     
     Dim resp As CCurlResponse
-    Dim f As CCurlForm, ret As CURLcode
+    Dim ret As CURLcode
     Dim totalTimeout As Long, connectTimeout As Long
     
     List1.Clear
@@ -294,7 +296,7 @@ Private Sub cmdDl_Click()
     
     curl.AddHeader "X-MyHeader: Works"
     curl.AddHeader "X-LibCurl: Rocks"
-    curl.AddHeader "Accept: No Substitutes" 'overrides existing
+    curl.AddHeader "Accept:" 'this will remove the automatic Accept header we could also override it here
     curl.AddHeader Array("X-Ary1: 1", "X-Ary2: 2")
     
     'todo a simple post:
@@ -302,15 +304,11 @@ Private Sub cmdDl_Click()
 
     If chkPost.value = 1 Then
         'try: https://postman-echo.com/post
-        Set f = New CCurlForm
-        ret = f.AddNameValueField("test", "taco breath")
+         ret = curl.AddFormElement("test", "taco breath")
          List1.AddItem "Add form field test: " & curlCode2Text(ret)
     
-        ret = f.AddFileUpload("fart", "D:\_code\libs\vbLibCurl\libcurlvb-1_01\samples\ReadMe.samples")
+         ret = curl.AddFormFileUpload("fart", App.path & "\readme.txt")
          List1.AddItem "Add form field fart: " & curlCode2Text(ret)
-    
-        ret = f.Attach(curl.hCurl)
-        List1.AddItem "Form attach: " & curlCode2Text(ret)
     End If
     
     
@@ -336,8 +334,13 @@ Private Sub Form_Load()
         cmdDl.Enabled = False
         List1.AddItem "This demo requires vblibcurl.dll and libcurl.dll"
         List1.AddItem "https://sourceforge.net/projects/libcurl-vb/files/libcurl-vb/libcurl.vb%201.01/"
+    Else
+        List1.AddItem "libCurl Version: " & libCurlVersion()
+        List1.AddItem "Protocols: " & Join(libcurlProtocols(), ",")
+        List1.AddItem "Zlib version: " & libZVersion()
+        List1.AddItem "SSL Version: " & sslVersion()
     End If
-        
+    
     cboUrl.AddItem "http://sandsprite.com/tools.php"
     cboUrl.AddItem "https://postman-echo.com/get"
     cboUrl.AddItem "https://postman-echo.com/post"

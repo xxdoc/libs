@@ -21,6 +21,7 @@ Option Explicit
 
 Public hCurl As Long
 Private hList As Long
+Private hForm As Long
 
 Public errList As ListBox  'for when we move this to a dll, could be a collection but thats not immediate feedback, should be a function on iNotify i suppose
 
@@ -46,6 +47,7 @@ Friend Sub TriggerEvent(e As curlEvents, obj As CCurlResponse, Optional arg1, Op
     If e = ceInfo Then RaiseEvent InfoMsg(obj, arg1, arg2)
 End Sub
 
+'you can overwrite an automatic header, or remove it by specifying "name;"
 Function AddHeader(aryStrOrCol) As Boolean
     On Error GoTo hell
     Dim s As String, x
@@ -64,9 +66,49 @@ Exit Function
 hell:
 End Function
 
+Function AddFormElement(name As String, value As String) As CURLFORMcode
+    Dim part As Long
+    
+    If hForm = 0 Then hForm = vbcurl_form_create()
+    
+    part = vbcurl_form_create_part(hForm)
+    
+    Call vbcurl_form_add_four_to_part( _
+        part, _
+        CURLFORM_COPYNAME, name, _
+        CURLFORM_COPYCONTENTS, value _
+    )
+    
+    AddFormElement = vbcurl_form_add_part(hForm, part)
+    
+End Function
+
+Function AddFormFileUpload(name As String, path As String, Optional contentType As String = "application/binary") As CURLFORMcode
+    Dim part As Long
+    
+    If hForm = 0 Then hForm = vbcurl_form_create()
+    
+    part = vbcurl_form_create_part(hForm)
+    
+    Call vbcurl_form_add_six_to_part( _
+        part, _
+        CURLFORM_COPYNAME, name, _
+        CURLFORM_FILE, path, _
+        CURLFORM_CONTENTTYPE, contentType _
+    )
+                    
+    AddFormFileUpload = vbcurl_form_add_part(hForm, part)
+    
+End Function
+
 Sub ClearHeaders()
      If hList <> 0 Then vbcurl_slist_free hList
      hList = 0
+End Sub
+
+Sub ClearForm()
+    If hForm <> 0 Then vbcurl_form_free hForm
+    hForm = 0
 End Sub
 
 Private Sub Class_Initialize()
@@ -76,6 +118,7 @@ End Sub
 Private Sub Class_Terminate()
     vbcurl_easy_cleanup hCurl
     If hList <> 0 Then vbcurl_slist_free hList
+    If hForm <> 0 Then vbcurl_form_free hForm
 End Sub
 
 'these ones are typically set once per class use so give one liner shortcut
@@ -125,6 +168,10 @@ Function unescape(ByVal buf As String) As String
     unescape = s
 End Function
 
+Property Get CurlVersion() As String
+    CurlVersion = libCurlVersion()
+End Property
+
 'these are usually set per request
 Property Let Referrer(v As String)
      vbcurl_easy_setopt hCurl, CURLOPT_REFERER, v
@@ -134,6 +181,9 @@ Property Let Cookie(c As String)
      vbcurl_easy_setopt hCurl, CURLOPT_COOKIE, c
 End Property
 
+Property Get SupportedProtocols() As String()
+    SupportedProtocols = libcurlProtocols()
+End Property
 
 Function Download(url As String, Optional toFile As String) As CCurlResponse
  
@@ -161,6 +211,7 @@ Function Download(url As String, Optional toFile As String) As CCurlResponse
         vbcurl_easy_setopt hCurl, CURLOPT_VERBOSE, True
         If FileExists(caBundle) Then vbcurl_easy_setopt hCurl, CURLOPT_CAINFO, caBundle
         If hList <> 0 Then vbcurl_easy_setopt hCurl, CURLOPT_HTTPHEADER, hList
+        If hForm <> 0 Then vbcurl_easy_setopt hCurl, CURLOPT_HTTPPOST, hForm
         
         .CurlReturnCode = vbcurl_easy_perform(hCurl)
         .Finalize
@@ -172,5 +223,4 @@ Function Download(url As String, Optional toFile As String) As CCurlResponse
     Set ActiveResponse = Nothing
     
 End Function
-
 

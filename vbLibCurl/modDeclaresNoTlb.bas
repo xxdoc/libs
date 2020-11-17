@@ -423,7 +423,7 @@ Public Enum CURLSHoption
     CURLSHOPT_LAST = 6
 End Enum
     
-Public Enum CURLversion
+Public Enum CurlVersion
     CURLVERSION_FIRST = 0
     CURLVERSION_SECOND = 1
     CURLVERSION_THIRD = 2
@@ -482,9 +482,6 @@ Public Declare Function vbcurl_easy_getinfo Lib "vblibcurl.dll" ( _
     ByRef value As Variant _
 ) As CURLcode
 
-
-
-
 '[entry(0x60000003), helpstring("Initialize an easy session")]
 'long _stdcall vbcurl_easy_init();
 Public Declare Function vbcurl_easy_init Lib "vblibcurl.dll" () As Long
@@ -521,13 +518,13 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 ) As CURLcode
 
 
-
+'we have an internal version in vb see curlCode2Text below
 '[entry(0x60000007), helpstring("Get a string description of an error code")]
 'BSTR _stdcall vbcurl_easy_strerror([in] CURLcode err);
 
 
 
-'forms
+'forms (complete)
 '---------------------------------------------------------------------
 '[entry(0x60000008), helpstring("Add two option/value pairs to a form part")]
 'CURLFORMcode _stdcall vbcurl_form_add_four_to_part(
@@ -603,7 +600,7 @@ Public Declare Sub vbcurl_form_free Lib "vblibcurl.dll" (ByVal hForm As Long)
 
 
 
-'multi handles
+'multi handles (multi threaded downloads)
 '---------------------------------------------------------------------
 '[entry(0x6000000f), helpstring("Add an easy handle")]
 'CURLMcode _stdcall vbcurl_multi_add_handle(
@@ -648,7 +645,7 @@ Public Declare Sub vbcurl_form_free Lib "vblibcurl.dll" (ByVal hForm As Long)
 
 
 
-'string lists - https://curl.se/libcurl/c/CURLOPT_HTTPHEADER.html
+'string lists (complete) - https://curl.se/libcurl/c/CURLOPT_HTTPHEADER.html
 'other places used: Smtp recipients, walking CURLINFO_CERTINFO return info
 '---------------------------------------------------------------------
 '[entry(0x60000018), helpstring("Append a string to an slist")]
@@ -670,7 +667,7 @@ Public Declare Sub vbcurl_slist_free Lib "vblibcurl.dll" (ByVal hList As Long)
 
 
 
-
+'(complete)
 'we cant return As String because runtime will give us another BSTR with double %00
 'so we will have to steal a reference to the one the dll gives us directly
 'this is probably a difference between the C api declares mechanism and tlb import mechanism
@@ -698,8 +695,20 @@ Public Declare Function vbcurl_string_unescape Lib "vblibcurl.dll" ( _
 
 'version/build info
 '---------------------------------------------------------------------
+'[entry(0x60000023), helpstring("Get libcurl version info")]
+'long _stdcall vbcurl_version_info([in] CURLversion age);
+Public Declare Function vbcurl_version_info Lib "vblibcurl.dll" (age As CurlVersion) As Long
+
 '[entry(0x6000001d), helpstring("Get the underlying libcurl version string")]
 'BSTR _stdcall vbcurl_string_version();
+Private Declare Function vbcurl_string_version Lib "vblibcurl.dll" () As Long
+
+'[entry(0x60000027), helpstring("Get supported protocols")]
+'void _stdcall vbcurl_version_protocols(
+'                [in] long ver,
+'                [out] SAFEARRAY(BSTR)* ppsa);
+Private Declare Sub vbcurl_version_protocols Lib "vblibcurl.dll" (ByVal hVerInfo As Long, ByRef ary() As Long)
+
 
 '[entry(0x6000001e), helpstring("Age of libcurl version")]
 'long _stdcall vbcurl_version_age([in] long ver);
@@ -716,25 +725,19 @@ Public Declare Function vbcurl_string_unescape Lib "vblibcurl.dll" ( _
 '[entry(0x60000022), helpstring("Info of host on which libcurl was built")]
 'BSTR _stdcall vbcurl_version_host([in] long ver);
 
-'[entry(0x60000023), helpstring("Get libcurl version info")]
-'long _stdcall vbcurl_version_info([in] CURLversion age);
-
 '[entry(0x60000024), helpstring("Get libidn version, if present")]
 'BSTR _stdcall vbcurl_version_libidn([in] long ver);
 
 '[entry(0x60000025), helpstring("Get libz version, if present")]
 'BSTR _stdcall vbcurl_version_libz([in] long ver);
+Private Declare Function vbcurl_version_libz Lib "vblibcurl.dll" (ByVal hVer As Long) As Long
 
 '[entry(0x60000026), helpstring("Get numeric version number")]
 'long _stdcall vbcurl_version_num([in] long ver);
 
-'[entry(0x60000027), helpstring("Get supported protocols")]
-'void _stdcall vbcurl_version_protocols(
-'                [in] long ver,
-'                [out] SAFEARRAY(BSTR)* ppsa);
-
 '[entry(0x60000028), helpstring("Get SSL version string")]
 'BSTR _stdcall vbcurl_version_ssl([in] long ver);
+Private Declare Function vbcurl_version_ssl Lib "vblibcurl.dll" (ByVal hVer As Long) As Long
 
 '[entry(0x60000029), helpstring("Get SSL version number")]
 'long _stdcall vbcurl_version_ssl_num([in] long ver);
@@ -742,6 +745,48 @@ Public Declare Function vbcurl_string_unescape Lib "vblibcurl.dll" ( _
 '[entry(0x6000002a), helpstring("Get version string")]
 'BSTR _stdcall vbcurl_version_string([in] long ver);
 
+
+Function libCurlVersion() As String
+    Dim tmp  As Long, s As String
+    tmp = vbcurl_string_version()
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    libCurlVersion = s
+End Function
+
+Function libZVersion() As String
+    Dim tmp  As Long, s As String, hVer As Long
+    hVer = vbcurl_version_info(CURLVERSION_NOW)
+    tmp = vbcurl_version_libz(hVer)
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    libZVersion = s
+End Function
+
+Function sslVersion() As String
+    Dim tmp  As Long, s As String, hVer As Long
+    hVer = vbcurl_version_info(CURLVERSION_NOW)
+    tmp = vbcurl_version_ssl(hVer)
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    sslVersion = s
+End Function
+
+Function libcurlProtocols() As String()
+    Dim ptr() As Long, vd As Long, i As Long, s() As String, tmp As String
+    
+    vd = vbcurl_version_info(CURLVERSION_NOW)
+    vbcurl_version_protocols vd, ptr
+    
+    If AryIsEmpty(ptr) Then Exit Function
+    
+    ReDim s(UBound(ptr))
+    For i = 0 To UBound(ptr)
+        CopyMemory ByVal VarPtr(tmp), ptr(i), 4 'steal a ref to an existing BSTR so we now own it
+        s(i) = tmp
+        'Debug.Print ptr(i) & " " & s(i)
+    Next
+    
+    libcurlProtocols = s()
+    
+End Function
 
 
 'enum2Text functions for logging...

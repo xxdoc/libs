@@ -8,7 +8,6 @@ Module=modDeclares; modDeclaresNoTlb.bas
 Class=CCurlResponse; CCurlResponse.cls
 Module=modSupport; modSupport.bas
 Class=CCurlDownload; CCurlDownload.cls
-Class=CCurlForm; CCurlForm.cls
 Startup="Form1"
 ExeName32="Project1.exe"
 Command32=""
