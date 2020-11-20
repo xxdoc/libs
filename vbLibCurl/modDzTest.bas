@@ -9,6 +9,14 @@ Public ActiveResponse As CCurlResponse 'one active instance for simplicity
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDest As Any, pSrc As Any, ByVal ByteLen As Long)
 Private Declare Function LoadLibrary Lib "kernel32" Alias "LoadLibraryA" (ByVal lpLibFileName As String) As Long
 
+Enum curlEvents
+    ceInit
+    ceProgress
+    ceComplete
+    ceHeader
+    ceInfo
+End Enum
+
 Function initLib(errList As ListBox) As Boolean
     
     If hLib <> 0 And hLib2 <> 0 Then
@@ -71,7 +79,7 @@ Function DebugFunction(ByVal info As curl_infotype, ByVal rawBytes As Long, ByVa
     tmp = StrConv(b, vbUnicode, &H409)
     
     If info = CURLINFO_HEADER_IN Then
-        ActiveResponse.addHeader tmp
+        ActiveResponse.AddHeader tmp
     Else
         ActiveResponse.addInfo info, tmp
     End If

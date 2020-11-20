@@ -24,6 +24,21 @@ Dim m_file As String
 
 Event KeyPress(KeyAscii As Integer)
 
+Private Const CB_LIMITTEXT = &H141
+Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+
+Private Sub UserControl_Initialize()
+    'usual limit is 255 on paste?!, 2800 on programatic set .text still has limits though
+    'paste might not even work on a 50kb post
+    SendMessage cbo.hwnd, CB_LIMITTEXT, 0, ByVal 0&
+End Sub
+
+Sub SetFont(name As String, size As Long)
+    On Error Resume Next
+    cbo.Font.name = name
+    cbo.Font.size = size
+End Sub
+
 Property Get Text() As String
 Attribute Text.VB_UserMemId = 0
     Text = cbo.Text

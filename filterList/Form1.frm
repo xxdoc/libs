@@ -3,7 +3,7 @@ Begin VB.Form Form1
    Caption         =   "Form1"
    ClientHeight    =   8730
    ClientLeft      =   165
-   ClientTop       =   810
+   ClientTop       =   510
    ClientWidth     =   9540
    LinkTopic       =   "Form1"
    ScaleHeight     =   8730
@@ -56,7 +56,7 @@ Begin VB.Form Form1
       Top             =   5175
       Width           =   1365
    End
-   Begin Project1.ucFilterList lvFilter 
+   Begin FilterList.ucFilterList lvFilter 
       Height          =   4650
       Left            =   180
       TabIndex        =   0

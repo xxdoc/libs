@@ -136,6 +136,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+Option Explicit
+
 'author:  David Zimmer <dzzie@yahoo.com>
 'site:    http://sandsprite.com
 'License: free for any use
@@ -144,6 +146,8 @@ Attribute VB_Exposed = False
 
 Public AllowDelete As Boolean
 
+Private manuallyCleared As Boolean
+Private abortFilter As Boolean
 Private m_Locked As Boolean
 Private m_FilterColumn As Long
 Private m_FilterColumnPreset As Long
@@ -161,6 +165,7 @@ Const LVM_FIRST = &H1000
 Const LVM_GETSELECTEDCOUNT = (LVM_FIRST + 50)
 
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
+Private Declare Function LockWindowUpdate Lib "user32" (ByVal hwndLock As Long) As Long
 
 
 #If 0 Then
@@ -317,7 +322,7 @@ End Property
 Function AddItem(txt, ParamArray subItems()) As ListItem
     On Error Resume Next
     
-    Dim i As Integer
+    Dim i As Integer, si
     
     If m_Locked Then Exit Function
     
@@ -361,7 +366,7 @@ End Sub
 Sub SetColumnHeaders(csvList As String, Optional csvWidths As String)
     
     On Error Resume Next
-    Dim i As Long, fc As Long, ch As ColumnHeader
+    Dim i As Long, fc As Long, ch As ColumnHeader, tmp() As String, t
     
     fc = -1
     lv.ColumnHeaders.Clear
@@ -667,25 +672,20 @@ Sub ApplyFilter()
     Dim uv As Long, v As Long
     
     On Error Resume Next
+    'applying the filter can be a long process on huge sets..if they start to enter a command
+    'we need to be sure not to trigger to early. so only on return key for / commands..(keypress event)
     
     If m_Locked Then Exit Sub
     
-    If Len(txtFilter) = 0 Then GoTo hideExit
-    
-    If Len(txtFilter) = 1 Then
-        If VBA.Left(txtFilter, 1) = "/" Then GoTo hideExit
-    End If
-        
-    If VBA.Left(txtFilter, 1) = "/" Then
-        t = Replace(txtFilter, "/", Empty)
-        If IsNumeric(t) Then GoTo hideExit 'they are going to change the FilterColumn on "cmdline"
-    End If
-    
-    If txtFilter = "/distinct" Or txtFilter = "/d" Then
-         distinctFilter
+    If manuallyCleared Then
+         manuallyCleared = False
          Exit Sub
     End If
     
+    If Len(txtFilter) = 0 Then GoTo hideExit
+    If VBA.Left(txtFilter, 1) = "/" Then Exit Sub 'GoTo hideExit 'wait until a return is hit to process these..
+    
+    'I want within:5/10 mode or similar
     If VBA.Left(txtFilter, 1) = ">" Then
         gtMode = True
         If Len(Trim(txtFilter)) = 1 Then GoTo hideExit
@@ -701,25 +701,6 @@ Sub ApplyFilter()
         If VBA.Right(txtFilter, 1) = "," Then Exit Sub 'they are adding more criteria
     End If
 
-    If Left(txtFilter, 2) = "/t" Then
-         t = Trim(Mid(txtFilter, 3))
-         If myIsNumeric(t, uv) Then  'we will use converted UserVal (uv) value below..
-            If uv > 0 Or uv <= lv.ColumnHeaders.Count Then
-                v = totalColumn(uv, addit)
-                MsgBox "Total for " & lv.ColumnHeaders(uv).Text & " = " & v & IIf(addit, " - An error was generated", ""), vbInformation
-                txtFilter = Empty
-            End If
-         Else
-            uv = ColIndexForName(t) + 1 '0 based , -1 on error
-            If uv > 0 Then
-                tot = totalColumn(uv, addit)
-                MsgBox "Total for " & lv.ColumnHeaders(uv).Text & " = " & tot & IIf(addit, vbCrLf & vbCrLf & " - An error was generated", ""), vbInformation
-                txtFilter = Empty
-            End If
-         End If
-         GoTo hideExit
-    End If
-    
     'should multiple (csv) filters only apply on hitting return?
     'so you can see full list to work off of?
     
@@ -754,10 +735,15 @@ Sub ApplyFilter()
         End If
     End If
     
+    abortFilter = False
+    
     'we allow for csv multiple criteria, also
     'you can use a subtractive filter like -mnu,cmd,lv
      For Each li In lv.ListItems
         
+         If abortFilter Then Exit For
+         If lvFilter.ListItems.Count > 50 Then LockWindowUpdate lvFilter.hwnd 'they cant see it anymore anyway stop flicker
+
          If FilterColumn = 1 Then
             t = li.Text
          Else
@@ -801,8 +787,10 @@ Sub ApplyFilter()
              CloneListItemTo li, lvFilter
          End If
       
+         If lvFilter.ListItems.Count Mod 20 = 0 Then DoEvents
      Next
 
+    LockWindowUpdate 0
      
 Exit Sub
 
@@ -901,8 +889,11 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
     
     On Error Resume Next
     Dim t As String, b As Boolean, tot As Long, i As Long
+    Dim addit As Boolean, uv As Long, v As Long
     
     If m_Locked Then Exit Sub
+    
+    abortFilter = True
     
     If KeyAscii = vbKeyEscape Then
         KeyAscii = 0
@@ -914,24 +905,58 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
         If Len(txtFilter) > 0 Then
             If Left(txtFilter, 1) = "/" Then
                 t = Replace(txtFilter, "/", Empty)
+                
+                'total mode /t <index or name>
+                If Left(txtFilter, 2) = "/t" Then
+                     t = Trim(Mid(txtFilter, 3))
+                     If myIsNumeric(t, uv) Then  'we will use converted UserVal (uv) value below..
+                        If uv > 0 Or uv <= lv.ColumnHeaders.Count Then
+                            v = totalColumn(uv, addit)
+                            MsgBox "Total for " & lv.ColumnHeaders(uv).Text & " = " & v & IIf(addit, " - An error was generated", ""), vbInformation
+                            manuallyCleared = True
+                            txtFilter = Empty
+                            Exit Sub
+                        End If
+                     Else
+                        uv = ColIndexForName(t) + 1 '0 based , -1 on error
+                        If uv > 0 Then
+                            tot = totalColumn(uv, addit)
+                            MsgBox "Total for " & lv.ColumnHeaders(uv).Text & " = " & tot & IIf(addit, vbCrLf & vbCrLf & " - An error was generated", ""), vbInformation
+                            manuallyCleared = True
+                            txtFilter = Empty
+                             Exit Sub
+                        End If
+                     End If
+                    
+                End If
+                
+                'distinct filter
+                If txtFilter = "/distinct" Or txtFilter = "/d" Then
+                     lvFilter.Visible = True
+                     distinctFilter
+                     manuallyCleared = True
+                     txtFilter = Empty
+                     Exit Sub
+                End If
+
+                'trying to change the filter column by index or name?
+                'this must be last since we shortcut allow partial names in colIndexforName (/t /d would to easily match all)
                 If IsNumeric(t) Then
                     FilterColumn = CLng(t)
+                    manuallyCleared = True
                     Filter = Empty
+                    Exit Sub
+                Else
+                    i = ColIndexForName(t)
+                    If i <> -1 Then
+                        FilterColumn = i + 1
+                        manuallyCleared = True
+                        Filter = Empty
+                        Exit Sub
+                    End If
                 End If
-'                ElseIf Left(t, 3) = "tot" Then
-'                    t = Trim(Mid(t, 4))
-'                    If IsNumeric(t) Then
-'                        tot = totalColumn(CLng(t), b)
-'                        MsgBox "Total for " & lv.ColumnHeaders(CLng(t) + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
-'                    Else
-'                        i = ColIndexForName(t)
-'                        If i >= 0 Then
-'                            tot = totalColumn(i, b)
-'                            MsgBox "Total for " & lv.ColumnHeaders(i + 1).Text & " = " & tot & IIf(b, vbCrLf & vbCrLf & " An error was generated", ""), vbInformation
-'                        End If
-'                    End If
-'                    Filter = Empty
-'                End If
+                
+                
                 
             End If
             

@@ -15,7 +15,7 @@ Option Explicit
 
 Public owner As CCurlDownload
 Public CurlReturnCode As CURLcode
-Public memFile As CMemBuffer
+Public memFile As CMemBuffer  'can be nothing if downloading to file
 Public headers As New Collection
 Public DebugMsgs As New Collection
 
@@ -33,7 +33,7 @@ Public url As String
 Private gotSizes As Boolean
 
 
-Function Initilize(url As String, Optional toFile As String) As Boolean
+Friend Function Initilize(url As String, Optional toFile As String) As Boolean
     
     On Error GoTo hell
 
@@ -58,7 +58,7 @@ hell:
 
 End Function
 
-Sub Finalize()
+Friend Sub Finalize()
     
     Dim v As Variant, ret As CURLcode
     
@@ -93,7 +93,7 @@ Property Get isMemFile() As Boolean
 End Property
 
 'response header from server
-Friend Function addHeader(msg As String)
+Friend Function AddHeader(msg As String)
     headers.Add msg
     'If Not owner.INotify Is Nothing Then owner.INotify.Header Me, msg
     owner.TriggerEvent ceHeader, Me, msg
@@ -113,7 +113,7 @@ Friend Function notifyParent(size As Long) As Long
     BytesReceived = BytesReceived + size
     
     If Not gotSizes Then
-        ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, v)
+        ret = vbcurl_easy_getinfo(owner.hCurl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, v) 'can be -1 if not set in http header
         If ret = CURLE_OK Then DownloadLength = v
         'If Not owner.INotify Is Nothing Then owner.INotify.Init Me
         owner.TriggerEvent ceInit, Me

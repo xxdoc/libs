@@ -12,7 +12,6 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'todo: support POST and form fields
 
 'so we broke this out into its own class because libcurl supports soooo many options
 'once you get to wanting to configure it more you are beyond the number of args you want to
@@ -30,14 +29,6 @@ Event Progress(obj As CCurlResponse)
 Event Complete(obj As CCurlResponse)
 Event Header(obj As CCurlResponse, ByVal msg As String)
 Event InfoMsg(obj As CCurlResponse, ByVal info As curl_infotype, ByVal msg As String)
-
-Enum curlEvents
-    ceInit
-    ceProgress
-    ceComplete
-    ceHeader
-    ceInfo
-End Enum
 
 Friend Sub TriggerEvent(e As curlEvents, obj As CCurlResponse, Optional arg1, Optional arg2)
     If e = ceInit Then RaiseEvent Init(obj)
