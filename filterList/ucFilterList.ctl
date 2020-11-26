@@ -907,7 +907,7 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
                 t = Replace(txtFilter, "/", Empty)
                 
                 'total mode /t <index or name>
-                If Left(txtFilter, 2) = "/t" Then
+                If Left(txtFilter, 3) = "/t " Then
                      t = Trim(Mid(txtFilter, 3))
                      If myIsNumeric(t, uv) Then  'we will use converted UserVal (uv) value below..
                         If uv > 0 Or uv <= lv.ColumnHeaders.Count Then
@@ -934,8 +934,8 @@ Private Sub txtFilter_KeyPress(KeyAscii As Integer)
                 If txtFilter = "/distinct" Or txtFilter = "/d" Then
                      lvFilter.Visible = True
                      distinctFilter
-                     manuallyCleared = True
-                     txtFilter = Empty
+                     'manuallyCleared = True
+                     'txtFilter = Empty
                      Exit Sub
                 End If
 
