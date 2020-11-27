@@ -2,9 +2,13 @@ Attribute VB_Name = "modDeclares"
 Option Explicit
 'this is to (start to) eliminate the need for the vblibcurl.tlb
 'typelibs put imports right into our import table, so dependancy dlls
-'must be found on startup by windows loader, we cant hunt for them
+'must be found on startup by windows loader, we can't hunt for them
 'during dev this can be annoying unless you put everything in system path
 '(and remember to update them if they change in dev)
+
+
+'these enum constants are circa curl 7.13 compiled 2.15.2005
+'whats new? current version 15yrs later is 7.73 compiled 10.14.2020
 
 Public Enum curlioerr
     CURLIOE_OK = 0
@@ -132,7 +136,8 @@ Public Enum curl_ftpauth
     CURLFTPAUTH_LAST = 3
 End Enum
     
-Public Enum CURLoption
+
+Public Enum CURLoption               'https://curl.se/libcurl/c/curl_easy_setopt.html
     CURLOPT_AUTOREFERER = 58
     CURLOPT_BUFFERSIZE = 98
     CURLOPT_CAINFO = 10065
@@ -418,7 +423,7 @@ Public Enum CURLSHoption
     CURLSHOPT_LAST = 6
 End Enum
     
-Public Enum CURLversion
+Public Enum CurlVersion
     CURLVERSION_FIRST = 0
     CURLVERSION_SECOND = 1
     CURLVERSION_THIRD = 2
@@ -474,13 +479,22 @@ Public Declare Sub vbcurl_easy_cleanup Lib "vblibcurl.dll" (ByVal easy As Long)
 Public Declare Function vbcurl_easy_getinfo Lib "vblibcurl.dll" ( _
     ByVal easy As Long, _
     ByVal info As CURLINFO, _
-    ByRef Value As Variant _
+    ByRef value As Variant _
 ) As CURLcode
-
 
 '[entry(0x60000003), helpstring("Initialize an easy session")]
 'long _stdcall vbcurl_easy_init();
 Public Declare Function vbcurl_easy_init Lib "vblibcurl.dll" () As Long
+'
+'If you did not already call curl_global_init, curl_easy_init does it automatically.
+'This may be lethal in multi-threaded cases, since curl_global_init is not thread-safe,
+'and it may result in resource problems because there is no corresponding cleanup.
+'
+'You are strongly advised to not allow this automatic behaviour,
+'https://curl.se/libcurl/c/curl_easy_init.html
+'
+'Note: curl_global_init not exposed by vblibcurl and it only calls curl_easy_init
+
 
 
 '[entry(0x60000004), helpstring("Perform an easy transfer")]
@@ -490,6 +504,7 @@ Public Declare Function vbcurl_easy_perform Lib "vblibcurl.dll" (ByVal easy As L
 
 '[entry(0x60000005), helpstring("Reset an easy handle")]
 'void _stdcall vbcurl_easy_reset([in] long easy);
+Public Declare Sub vbcurl_easy_reset Lib "vblibcurl.dll" (ByVal easy As Long)
 
 '[entry(0x60000006), helpstring("Set option for easy transfer")]
 'CURLcode _stdcall vbcurl_easy_setopt(
@@ -499,17 +514,17 @@ Public Declare Function vbcurl_easy_perform Lib "vblibcurl.dll" (ByVal easy As L
 Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
     ByVal easy As Long, _
     ByVal opt As CURLoption, _
-    ByRef Value As Variant _
+    ByRef value As Variant _
 ) As CURLcode
 
 
-
+'we have an internal version in vb see curlCode2Text below
 '[entry(0x60000007), helpstring("Get a string description of an error code")]
 'BSTR _stdcall vbcurl_easy_strerror([in] CURLcode err);
 
 
 
-'forms
+'forms (complete)
 '---------------------------------------------------------------------
 '[entry(0x60000008), helpstring("Add two option/value pairs to a form part")]
 'CURLFORMcode _stdcall vbcurl_form_add_four_to_part(
@@ -518,17 +533,35 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '                [in] VARIANT* val1,
 '                [in] CURLformoption opt2,
 '                [in] VARIANT* val2);
+Public Declare Function vbcurl_form_add_four_to_part Lib "vblibcurl.dll" ( _
+    ByVal hPart As Long, _
+    ByVal opt1 As CURLformoption, _
+    ByRef name As Variant, _
+    ByVal opt2 As CURLformoption, _
+    ByRef value As Variant _
+) As CURLFORMcode
 
 '[entry(0x60000009), helpstring("Add an option/value pair to a form part")]
 'CURLFORMcode _stdcall vbcurl_form_add_pair_to_part(
 '                [in] long part,
 '                [in] CURLformoption opt,
 '                [in] VARIANT* val);
+Public Declare Function vbcurl_form_add_pair_to_part Lib "vblibcurl.dll" ( _
+    ByVal hPart As Long, _
+    ByVal opt1 As CURLformoption, _
+    ByRef field1 As Variant _
+) As CURLFORMcode
 
 '[entry(0x6000000a), helpstring("Add a completed part to a multi-part form")]
 'CURLFORMcode _stdcall vbcurl_form_add_part(
 '                [in] long form,
 '                [in] long part);
+Public Declare Function vbcurl_form_add_part Lib "vblibcurl.dll" ( _
+    ByVal hForm As Long, _
+    ByVal hPart As Long _
+) As CURLFORMcode
+
+
 
 '[entry(0x6000000b), helpstring("Add three option/value pairs to a form part")]
 'CURLFORMcode _stdcall vbcurl_form_add_six_to_part(
@@ -539,20 +572,35 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '                [in] VARIANT* val2,
 '                [in] CURLformoption opt3,
 '                [in] VARIANT* val3);
+Public Declare Function vbcurl_form_add_six_to_part Lib "vblibcurl.dll" ( _
+    ByVal hPart As Long, _
+    ByVal opt1 As CURLformoption, _
+    ByRef field1 As Variant, _
+    ByVal opt2 As CURLformoption, _
+    ByRef field2 As Variant, _
+    ByVal opt3 As CURLformoption, _
+    ByRef field3 As Variant _
+) As CURLFORMcode
+
 
 '[entry(0x6000000c), helpstring("Create a multi-part form handle")]
 'long _stdcall vbcurl_form_create();
+Public Declare Function vbcurl_form_create Lib "vblibcurl.dll" () As Long
+
 
 '[entry(0x6000000d), helpstring("Create a multi-part form-part")]
 'long _stdcall vbcurl_form_create_part([in] long form);
+Public Declare Function vbcurl_form_create_part Lib "vblibcurl.dll" (ByVal hForm As Long) As Long
+
 
 '[entry(0x6000000e), helpstring("Free a form and all its parts")]
 'void _stdcall vbcurl_form_free([in] long form);
+Public Declare Sub vbcurl_form_free Lib "vblibcurl.dll" (ByVal hForm As Long)
 
 
 
 
-'multi handles
+'multi handles (multi threaded downloads)
 '---------------------------------------------------------------------
 '[entry(0x6000000f), helpstring("Add an easy handle")]
 'CURLMcode _stdcall vbcurl_multi_add_handle(
@@ -597,41 +645,70 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 
 
 
-'string lists
+'string lists (complete) - https://curl.se/libcurl/c/CURLOPT_HTTPHEADER.html
+'other places used: Smtp recipients, walking CURLINFO_CERTINFO return info
 '---------------------------------------------------------------------
 '[entry(0x60000018), helpstring("Append a string to an slist")]
 'void _stdcall vbcurl_slist_append(
 '                [in] long slist,
 '                [in] BSTR str);
+Public Declare Sub vbcurl_slist_append Lib "vblibcurl.dll" (ByVal hList As Long, ByVal strPtr As Long)
+
 
 '[entry(0x60000019), helpstring("Create a string list")]
 'long _stdcall vbcurl_slist_create();
+Public Declare Function vbcurl_slist_create Lib "vblibcurl.dll" () As Long
+
 
 '[entry(0x6000001a), helpstring("Free a created string list")]
 'void _stdcall vbcurl_slist_free([in] long slist);
+Public Declare Sub vbcurl_slist_free Lib "vblibcurl.dll" (ByVal hList As Long)
 
 
 
 
-'escape/unescape
+'(complete)
+'we cant return As String because runtime will give us another BSTR with double %00
+'so we will have to steal a reference to the one the dll gives us directly
+'this is probably a difference between the C api declares mechanism and tlb import mechanism
 '---------------------------------------------------------------------
 '[entry(0x6000001b), helpstring("Escape an URL")]
 'BSTR _stdcall vbcurl_string_escape(
 '                [in] BSTR url,
 '                [in] long len);
+Public Declare Function vbcurl_string_escape Lib "vblibcurl.dll" ( _
+    ByVal strPtr As Long, _
+    ByVal sz As Long _
+) As Long
+
 
 '[entry(0x6000001c), helpstring("Unescape an URL")]
 'BSTR _stdcall vbcurl_string_unescape(
 '                [in] BSTR url,
 '                [in] long len);
-
+Public Declare Function vbcurl_string_unescape Lib "vblibcurl.dll" ( _
+    ByVal strPtr As Long, _
+    ByVal sz As Long _
+) As Long
 
 
 
 'version/build info
 '---------------------------------------------------------------------
+'[entry(0x60000023), helpstring("Get libcurl version info")]
+'long _stdcall vbcurl_version_info([in] CURLversion age);
+Public Declare Function vbcurl_version_info Lib "vblibcurl.dll" (age As CurlVersion) As Long
+
 '[entry(0x6000001d), helpstring("Get the underlying libcurl version string")]
 'BSTR _stdcall vbcurl_string_version();
+Private Declare Function vbcurl_string_version Lib "vblibcurl.dll" () As Long
+
+'[entry(0x60000027), helpstring("Get supported protocols")]
+'void _stdcall vbcurl_version_protocols(
+'                [in] long ver,
+'                [out] SAFEARRAY(BSTR)* ppsa);
+Private Declare Sub vbcurl_version_protocols Lib "vblibcurl.dll" (ByVal hVerInfo As Long, ByRef ary() As Long)
+
 
 '[entry(0x6000001e), helpstring("Age of libcurl version")]
 'long _stdcall vbcurl_version_age([in] long ver);
@@ -648,29 +725,165 @@ Public Declare Function vbcurl_easy_setopt Lib "vblibcurl.dll" ( _
 '[entry(0x60000022), helpstring("Info of host on which libcurl was built")]
 'BSTR _stdcall vbcurl_version_host([in] long ver);
 
-'[entry(0x60000023), helpstring("Get libcurl version info")]
-'long _stdcall vbcurl_version_info([in] CURLversion age);
-
 '[entry(0x60000024), helpstring("Get libidn version, if present")]
 'BSTR _stdcall vbcurl_version_libidn([in] long ver);
 
 '[entry(0x60000025), helpstring("Get libz version, if present")]
 'BSTR _stdcall vbcurl_version_libz([in] long ver);
+Private Declare Function vbcurl_version_libz Lib "vblibcurl.dll" (ByVal hVer As Long) As Long
 
 '[entry(0x60000026), helpstring("Get numeric version number")]
 'long _stdcall vbcurl_version_num([in] long ver);
 
-'[entry(0x60000027), helpstring("Get supported protocols")]
-'void _stdcall vbcurl_version_protocols(
-'                [in] long ver,
-'                [out] SAFEARRAY(BSTR)* ppsa);
-
 '[entry(0x60000028), helpstring("Get SSL version string")]
 'BSTR _stdcall vbcurl_version_ssl([in] long ver);
+Private Declare Function vbcurl_version_ssl Lib "vblibcurl.dll" (ByVal hVer As Long) As Long
 
 '[entry(0x60000029), helpstring("Get SSL version number")]
 'long _stdcall vbcurl_version_ssl_num([in] long ver);
 
 '[entry(0x6000002a), helpstring("Get version string")]
 'BSTR _stdcall vbcurl_version_string([in] long ver);
+
+
+Function libCurlVersion() As String
+    Dim tmp  As Long, s As String
+    tmp = vbcurl_string_version()
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    libCurlVersion = s
+End Function
+
+Function libZVersion() As String
+    Dim tmp  As Long, s As String, hVer As Long
+    hVer = vbcurl_version_info(CURLVERSION_NOW)
+    tmp = vbcurl_version_libz(hVer)
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    libZVersion = s
+End Function
+
+Function sslVersion() As String
+    Dim tmp  As Long, s As String, hVer As Long
+    hVer = vbcurl_version_info(CURLVERSION_NOW)
+    tmp = vbcurl_version_ssl(hVer)
+    CopyMemory ByVal VarPtr(s), tmp, 4 'steal a ref to an existing BSTR so we now own it
+    sslVersion = s
+End Function
+
+Function libcurlProtocols() As String()
+    Dim ptr() As Long, vd As Long, i As Long, s() As String, tmp As String
+    
+    vd = vbcurl_version_info(CURLVERSION_NOW)
+    vbcurl_version_protocols vd, ptr
+    
+    If AryIsEmpty(ptr) Then Exit Function
+    
+    ReDim s(UBound(ptr))
+    For i = 0 To UBound(ptr)
+        CopyMemory ByVal VarPtr(tmp), ptr(i), 4 'steal a ref to an existing BSTR so we now own it
+        s(i) = tmp
+        'Debug.Print ptr(i) & " " & s(i)
+    Next
+    
+    libcurlProtocols = s()
+    
+End Function
+
+
+'enum2Text functions for logging...
+'--------------------------------------------------------------------
+Function info2Text(i As curl_infotype) As String
+    
+    Dim s As String
+    
+    If i = CURLINFO_TEXT Then s = "TEXT"                '0
+    If i = CURLINFO_HEADER_IN Then s = "HEADER_IN"      '1
+    If i = CURLINFO_HEADER_OUT Then s = "HEADER_OUT"    '2
+    If i = CURLINFO_DATA_IN Then s = "DATA_IN"          '3
+    If i = CURLINFO_DATA_OUT Then s = "DATA_OUT"        '4
+    If i = CURLINFO_SSL_DATA_IN Then s = "SSL_IN"       '5
+    If i = CURLINFO_SSL_DATA_OUT Then s = "SSL_OUT"     '6
+    If i = CURLINFO_END Then s = "END"                  '7
+    If Len(s) = 0 Then s = "Unknown " & i
+    
+    info2Text = s
+    
+End Function
+
+Function curlCode2Text(x As CURLcode) As String
+    
+    Dim s As String
+    s = "Unknown " & x
+    
+    If x = 0 Then s = "CURLE_OK"
+    If x = 42 Then s = "CURLE_ABORTED_BY_CALLBACK"
+    If x = 44 Then s = "CURLE_BAD_CALLING_ORDER"
+    If x = 61 Then s = "CURLE_BAD_CONTENT_ENCODING"
+    If x = 36 Then s = "CURLE_BAD_DOWNLOAD_RESUME"
+    If x = 43 Then s = "CURLE_BAD_FUNCTION_ARGUMENT"
+    If x = 46 Then s = "CURLE_BAD_PASSWORD_ENTERED"
+    If x = 7 Then s = "CURLE_COULDNT_CONNECT"
+    If x = 6 Then s = "CURLE_COULDNT_RESOLVE_HOST"
+    If x = 5 Then s = "CURLE_COULDNT_RESOLVE_PROXY"
+    If x = 2 Then s = "CURLE_FAILED_INIT"
+    If x = 63 Then s = "CURLE_FILESIZE_EXCEEDED"
+    If x = 37 Then s = "CURLE_FILE_COULDNT_READ_FILE"
+    If x = 9 Then s = "CURLE_FTP_ACCESS_DENIED"
+    If x = 15 Then s = "CURLE_FTP_CANT_GET_HOST"
+    If x = 16 Then s = "CURLE_FTP_CANT_RECONNECT"
+    If x = 32 Then s = "CURLE_FTP_COULDNT_GET_SIZE"
+    If x = 19 Then s = "CURLE_FTP_COULDNT_RETR_FILE"
+    If x = 29 Then s = "CURLE_FTP_COULDNT_SET_ASCII"
+    If x = 17 Then s = "CURLE_FTP_COULDNT_SET_BINARY"
+    If x = 25 Then s = "CURLE_FTP_COULDNT_STOR_FILE"
+    If x = 31 Then s = "CURLE_FTP_COULDNT_USE_REST"
+    If x = 30 Then s = "CURLE_FTP_PORT_FAILED"
+    If x = 21 Then s = "CURLE_FTP_QUOTE_ERROR"
+    If x = 64 Then s = "CURLE_FTP_SSL_FAILED"
+    If x = 10 Then s = "CURLE_FTP_USER_PASSWORD_INCORRECT"
+    If x = 14 Then s = "CURLE_FTP_WEIRD_227_FORMAT"
+    If x = 11 Then s = "CURLE_FTP_WEIRD_PASS_REPLY"
+    If x = 13 Then s = "CURLE_FTP_WEIRD_PASV_REPLY"
+    If x = 8 Then s = "CURLE_FTP_WEIRD_SERVER_REPLY"
+    If x = 12 Then s = "CURLE_FTP_WEIRD_USER_REPLY"
+    If x = 20 Then s = "CURLE_FTP_WRITE_ERROR"
+    If x = 41 Then s = "CURLE_FUNCTION_NOT_FOUND"
+    If x = 52 Then s = "CURLE_GOT_NOTHING"
+    If x = 34 Then s = "CURLE_HTTP_POST_ERROR"
+    If x = 33 Then s = "CURLE_HTTP_RANGE_ERROR"
+    If x = 22 Then s = "CURLE_HTTP_RETURNED_ERROR"
+    If x = 45 Then s = "CURLE_INTERFACE_FAILED"
+    If x = 67 Then s = "CURLE_LAST"
+    If x = 38 Then s = "CURLE_LDAP_CANNOT_BIND"
+    If x = 62 Then s = "CURLE_LDAP_INVALID_URL"
+    If x = 39 Then s = "CURLE_LDAP_SEARCH_FAILED"
+    If x = 40 Then s = "CURLE_LIBRARY_NOT_FOUND"
+    If x = 24 Then s = "CURLE_MALFORMAT_USER"
+    If x = 50 Then s = "CURLE_OBSOLETE"
+    If x = 28 Then s = "CURLE_OPERATION_TIMEOUTED"
+    If x = 27 Then s = "CURLE_OUT_OF_MEMORY"
+    If x = 18 Then s = "CURLE_PARTIAL_FILE"
+    If x = 26 Then s = "CURLE_READ_ERROR"
+    If x = 56 Then s = "CURLE_RECV_ERROR"
+    If x = 55 Then s = "CURLE_SEND_ERROR"
+    If x = 65 Then s = "CURL_SEND_FAIL_REWIND"
+    If x = 57 Then s = "CURLE_SHARE_IN_USE"
+    If x = 60 Then s = "CURLE_SSL_CACERT"
+    If x = 58 Then s = "CURLE_SSL_CERTPROBLEM"
+    If x = 59 Then s = "CURLE_SSL_CIPHER"
+    If x = 35 Then s = "CURLE_SSL_CONNECT_ERROR"
+    If x = 66 Then s = "CURLE_SSL_ENGINE_INITFAILED"
+    If x = 53 Then s = "CURLE_SSL_ENGINE_NOTFOUND"
+    If x = 54 Then s = "CURLE_SSL_ENGINE_SETFAILED"
+    If x = 51 Then s = "CURLE_SSL_PEER_CERTIFICATE"
+    If x = 49 Then s = "CURLE_TELNET_OPTION_SYNTAX"
+    If x = 47 Then s = "CURLE_TOO_MANY_REDIRECTS"
+    If x = 48 Then s = "CURLE_UNKNOWN_TELNET_OPTION"
+    If x = 1 Then s = "CURLE_UNSUPPORTED_PROTOCOL"
+    If x = 3 Then s = "CURLE_URL_MALFORMAT"
+    If x = 4 Then s = "CURLE_URL_MALFORMAT_USER"
+    If x = 23 Then s = "CURLE_WRITE_ERROR"
+
+    curlCode2Text = s
+    
+End Function
 

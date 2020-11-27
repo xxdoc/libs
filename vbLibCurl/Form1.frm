@@ -2,7 +2,7 @@ VERSION 5.00
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form1 
    Caption         =   "vbLibCurl Demo"
-   ClientHeight    =   8790
+   ClientHeight    =   10995
    ClientLeft      =   60
    ClientTop       =   405
    ClientWidth     =   13365
@@ -16,13 +16,37 @@ Begin VB.Form Form1
       Strikethrough   =   0   'False
    EndProperty
    LinkTopic       =   "Form1"
-   ScaleHeight     =   8790
+   ScaleHeight     =   10995
    ScaleWidth      =   13365
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox chkPost 
+      Caption         =   "POST demo"
+      Height          =   285
+      Left            =   8775
+      TabIndex        =   20
+      Top             =   1485
+      Width           =   1995
+   End
+   Begin VB.ComboBox cboUrl 
+      Height          =   360
+      Left            =   1170
+      TabIndex        =   19
+      Top             =   135
+      Width           =   11130
+   End
+   Begin VB.TextBox txtSent 
+      Height          =   2220
+      Left            =   945
+      MultiLine       =   -1  'True
+      ScrollBars      =   2  'Vertical
+      TabIndex        =   18
+      Top             =   4860
+      Width           =   12300
+   End
    Begin VB.TextBox txtConnectTimeout 
       Height          =   360
       Left            =   7650
-      TabIndex        =   16
+      TabIndex        =   15
       Text            =   "15"
       Top             =   1395
       Width           =   465
@@ -30,7 +54,7 @@ Begin VB.Form Form1
    Begin VB.TextBox txtTimeout 
       Height          =   360
       Left            =   4365
-      TabIndex        =   14
+      TabIndex        =   13
       Text            =   "0"
       Top             =   1395
       Width           =   510
@@ -39,14 +63,14 @@ Begin VB.Form Form1
       Caption         =   "Abort"
       Height          =   420
       Left            =   10395
-      TabIndex        =   12
+      TabIndex        =   11
       Top             =   1035
       Width           =   1140
    End
    Begin MSComctlLib.ProgressBar pb 
       Height          =   285
       Left            =   5985
-      TabIndex        =   11
+      TabIndex        =   10
       Top             =   1080
       Width           =   4290
       _ExtentX        =   7567
@@ -58,23 +82,23 @@ Begin VB.Form Form1
       Caption         =   "..."
       Height          =   285
       Left            =   12375
-      TabIndex        =   9
+      TabIndex        =   8
       Top             =   630
       Width           =   645
    End
    Begin VB.TextBox txtOutput 
       Height          =   3300
-      Left            =   810
+      Left            =   990
       MultiLine       =   -1  'True
       ScrollBars      =   2  'Vertical
-      TabIndex        =   8
-      Top             =   5265
+      TabIndex        =   7
+      Top             =   7515
       Width           =   12300
    End
    Begin VB.ListBox List1 
       Height          =   2220
       Left            =   945
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   2475
       Width           =   12345
    End
@@ -82,31 +106,31 @@ Begin VB.Form Form1
       Caption         =   "Download"
       Height          =   465
       Left            =   11700
-      TabIndex        =   4
+      TabIndex        =   3
       Top             =   1035
       Width           =   1500
    End
    Begin VB.TextBox txtSaveAs 
       Height          =   360
       Left            =   1215
-      TabIndex        =   3
+      TabIndex        =   2
       Top             =   540
       Width           =   11040
    End
-   Begin VB.TextBox txtUrl 
-      Height          =   360
-      Left            =   1215
-      TabIndex        =   2
-      Text            =   "http://sandsprite.com/tools.php"
-      Top             =   135
-      Width           =   10995
+   Begin VB.Label Label9 
+      Caption         =   "Sent"
+      Height          =   330
+      Left            =   90
+      TabIndex        =   17
+      Top             =   4995
+      Width           =   600
    End
    Begin VB.Label Label8 
       Caption         =   "Note: VB file commands have 2gb max file size limit switch to API if necessary"
       ForeColor       =   &H00FF0000&
       Height          =   330
       Left            =   1125
-      TabIndex        =   17
+      TabIndex        =   16
       Top             =   1935
       Width           =   11220
    End
@@ -114,7 +138,7 @@ Begin VB.Form Form1
       Caption         =   "Connect timeout    (s)"
       Height          =   285
       Left            =   5535
-      TabIndex        =   15
+      TabIndex        =   14
       Top             =   1440
       Width           =   3120
    End
@@ -122,7 +146,7 @@ Begin VB.Form Form1
       Caption         =   "Total DL Timeout    (s)"
       Height          =   285
       Left            =   2115
-      TabIndex        =   13
+      TabIndex        =   12
       Top             =   1440
       Width           =   3390
    End
@@ -130,7 +154,7 @@ Begin VB.Form Form1
       Caption         =   "Empty SaveAs path = mem only"
       Height          =   285
       Left            =   1260
-      TabIndex        =   10
+      TabIndex        =   9
       Top             =   990
       Width           =   4155
    End
@@ -138,15 +162,15 @@ Begin VB.Form Form1
       Caption         =   "Output"
       Height          =   375
       Left            =   0
-      TabIndex        =   7
-      Top             =   5130
+      TabIndex        =   6
+      Top             =   7470
       Width           =   915
    End
    Begin VB.Label Label3 
       Caption         =   "Debug"
       Height          =   240
       Left            =   45
-      TabIndex        =   6
+      TabIndex        =   5
       Top             =   2430
       Width           =   690
    End
@@ -173,7 +197,10 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
-Implements ICurlProgress
+'Implements ICurlProgress
+Dim WithEvents curl As CCurlDownload
+Attribute curl.VB_VarHelpID = -1
+
 
 Private abort As Boolean
 Dim fso As Object 'if they have dzrt.CFileSystem3 then browse button is available..
@@ -190,37 +217,43 @@ Dim fso As Object 'if they have dzrt.CFileSystem3 then browse button is availabl
 '   removed tlb references w/modDeclares.bas (all enums covered but not all api declares written yet)
 '   added higher level framework around low level api
 '   file progress, response object, abort, download to memory only
-'   still more that could be done/cleaned up but this is all i need for now and keystrokes are limited :(
+'   add/remove/overwrite headers
+'   add form elements and file uploads
+'   version info
 
 
 Private Sub cmdAbort_Click()
     abort = True
 End Sub
 
-Private Sub ICurlProgress_Header(obj As CCurlResponse, msg As String)
+Private Sub curl_Header(obj As CCurlResponse, ByVal msg As String)
      List1.AddItem "header: " & msg
 End Sub
 
-Private Sub ICurlProgress_InfoMsg(obj As CCurlResponse, info As curl_infotype, msg As String)
-    List1.AddItem "info: " & info & " (" & info2Text(info) & ") " & msg
+Private Sub curl_InfoMsg(obj As CCurlResponse, ByVal info As curl_infotype, ByVal msg As String)
+    If info = CURLINFO_HEADER_OUT Then
+        txtSent = msg
+    Else
+        List1.AddItem "info: " & info & " (" & info2Text(info) & ") " & msg
+    End If
 End Sub
 
-Private Sub ICurlProgress_Init(obj As CCurlResponse)
+Private Sub curl_Init(obj As CCurlResponse)
     On Error Resume Next
     If obj.DownloadLength > 0 Then pb.Max = obj.DownloadLength
 End Sub
 
-Private Sub ICurlProgress_Progress(obj As CCurlResponse)
+Private Sub curl_Progress(obj As CCurlResponse)
     On Error Resume Next
-    pb.Value = obj.BytesReceived
+    pb.value = obj.BytesReceived
     If abort Then
         List1.AddItem "Aborting at user request..."
         obj.abort = True
     End If
 End Sub
 
-Private Sub ICurlProgress_Complete(obj As CCurlResponse)
-    pb.Value = 0
+Private Sub curl_Complete(obj As CCurlResponse)
+    pb.value = 0
     List1.AddItem "Download complete resp code: " & obj.ResponseCode & " time: " & obj.TotalTime
 End Sub
 
@@ -235,9 +268,10 @@ Private Sub cmdDl_Click()
 
     On Error Resume Next
     
-    Dim X, resp As CCurlResponse
+    Dim resp As CCurlResponse
+    Dim ret As CURLcode
     Dim totalTimeout As Long, connectTimeout As Long
-        
+    
     List1.Clear
     txtOutput = Empty
     abort = False
@@ -253,17 +287,41 @@ Private Sub cmdDl_Click()
         List1.AddItem "Invalid connect timeout"
         Exit Sub
     End If
-    
+
     On Error GoTo hell
+    Set curl = New CCurlDownload
+    curl.Configure "vbLibCurl Test Edition", , totalTimeout, connectTimeout, List1
+    curl.Referrer = "http://test.edition/yaBoy?" & curl.escape("this is my escape test!!")
+    curl.Cookie = "monster:true;"
+    
+    curl.AddHeader "X-MyHeader: Works"
+    curl.AddHeader "X-LibCurl: Rocks"
+    curl.AddHeader "Accept:" 'this will remove the automatic Accept header we could also override it here
+    curl.AddHeader Array("X-Ary1: 1", "X-Ary2: 2")
+    
+    'todo a simple post:
+    'vbcurl_easy_setopt curl.hCurl, CURLOPT_POSTFIELDS, "m-address=your@mail.com"
+
+    If chkPost.value = 1 Then
+        'try: https://postman-echo.com/post
+         ret = curl.AddFormElement("test", "taco breath")
+         List1.AddItem "Add form field test: " & curlCode2Text(ret)
+    
+         ret = curl.AddFormFileUpload("fart", App.path & "\readme.txt")
+         List1.AddItem "Add form field fart: " & curlCode2Text(ret)
+    End If
+    
     
     If Len(txtSaveAs) = 0 Then
-        Set resp = Download(txtUrl, , Me, connectTimeout, totalTimeout)
+        Set resp = curl.Download(cboUrl.Text)
         txtOutput = resp.dump & vbCrLf & vbCrLf & resp.memFile.asString
     Else
-        Set resp = Download(txtUrl, txtSaveAs, Me, connectTimeout, totalTimeout)
+        Set resp = curl.Download(cboUrl.Text, txtSaveAs)
         txtOutput = resp.dump
-        'txtOutput = txtOutput & vbCrLf & "MD5: " & hash.HashFile(txtSaveAs)
+        'List1.AddItem "MD5: " & hash.HashFile(txtSaveAs)
     End If
+    
+    'List1.AddItem "Download 2 same handle received bytes: " & curl.Download(cboUrl.Text).BytesReceived
     
     Exit Sub
 hell:
@@ -272,11 +330,21 @@ End Sub
 
 Private Sub Form_Load()
 
-    If Not initLib() Then
+    If Not initLib(List1) Then
         cmdDl.Enabled = False
         List1.AddItem "This demo requires vblibcurl.dll and libcurl.dll"
         List1.AddItem "https://sourceforge.net/projects/libcurl-vb/files/libcurl-vb/libcurl.vb%201.01/"
+    Else
+        List1.AddItem "libCurl Version: " & libCurlVersion()
+        List1.AddItem "Protocols: " & Join(libcurlProtocols(), ",")
+        List1.AddItem "Zlib version: " & libZVersion()
+        List1.AddItem "SSL Version: " & sslVersion()
     End If
+    
+    cboUrl.AddItem "http://sandsprite.com/tools.php"
+    cboUrl.AddItem "https://postman-echo.com/get"
+    cboUrl.AddItem "https://postman-echo.com/post"
+    cboUrl.ListIndex = 0
     
     'membuf test
     '--------------------------------
@@ -294,9 +362,17 @@ Private Sub Form_Load()
     b.memAppendBuf VarPtr(b1(0)), UBound(b1) + 1
     b.memAppendBuf VarPtr(b2(0)), UBound(b2) + 1
     b.memAppendBuf VarPtr(b3(0)), UBound(b3) + 1
-    txtOutput = "CMemBufTest: " & vbCrLf & HexDump(b.binData())
+    txtOutput = "CMemBufTest: " & vbCrLf & HexDump(b.binData()) & vbCrLf
+
+    'escape unescape test
     '--------------------------------
- 
+    Dim c As New CCurlDownload, tmp As String, org As String, dec As String
+    org = "this.is#my test!?%"
+    tmp = c.escape(org)
+    dec = c.unescape(tmp)
+    txtOutput = txtOutput & vbCrLf & "Escape/Unescape test = " & (org = dec) & vbCrLf & HexDump(tmp)
+    '--------------------------------
+    
     On Error Resume Next
     Set fso = CreateObject("dzrt.CFileSystem3")
     If Err.Number <> 0 Then
@@ -304,8 +380,10 @@ Private Sub Form_Load()
         List1.AddItem "dzrt.dll not found browse file disabled"
     End If
     
-    
+
 End Sub
 
-
-
+Private Sub List1_DblClick()
+    On Error Resume Next
+    MsgBox List1.List(List1.ListIndex)
+End Sub

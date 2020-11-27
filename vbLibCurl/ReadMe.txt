@@ -2,8 +2,31 @@
 modified sample for Jeffery Phillips vbLibCurl 
   https://sourceforge.net/projects/libcurl-vb/files/libcurl-vb/libcurl.vb%201.01/
 
-Upgraded to the current libcurl seems to be a drop in replacement 
-for the 15yr old version originally used (v7.13)
+this repo: https://github.com/dzzie/libs/tree/master/vbLibCurl
+
+Additions:
+-------------------------------
+- initLib() to find/load C dll dependencies on the fly from different paths
+- removed tlb requirements (all enums covered but not all api declares written yet)
+- added higher level framework around low level api
+- file progress, response object, abort
+- download to memory only or file
+- file downloads do not touch cache or temp
+
+Notes:
+
+Upgraded to the current libcurl v7.73 which was a drop in replacement 
+for the 15yr old version originally used (v7.13). 
+
+The newer versions will run on XP SP2 and newer because of the 
+normaliz.Idn2Ascii import and openssl requires Kernel32.ConvertFiberToThread.
+
+The updated libcurl is required to talk to modern ssl servers. The old libcurl 
+would run on win2k or newer. normaliz.dll from xpsp3 will run on win2k.
+
+vb's built in Put file write command has a 2gb file size limit. I will leave it 
+to the reader to switch over to API file writes if you need it.
+------------------------------
 
 https://curl.se/windows/
 https://curl.se/windows/dl-7.73.0_1/openssl-1.1.1h_1-win32-mingw.zip
@@ -28,3 +51,4 @@ The following tools/compilers were used in the build process:
 
 
 we dont use curl.exe but i included it just in case it might be handy
+
